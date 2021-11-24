@@ -1,6 +1,6 @@
 use bevy::ecs::world::World;
 use bevy::render2::{
-    camera::{CameraPlugin, ExtractedCameraNames},
+    camera::ExtractedCameraNames,
     render_graph::{Node, NodeRunError, RenderGraphContext, SlotValue},
     renderer::RenderContext,
 };

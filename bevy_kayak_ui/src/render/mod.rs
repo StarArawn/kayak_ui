@@ -1,15 +1,9 @@
 use bevy::{
-    prelude::{Commands, Entity, Plugin, Query, Res, ResMut, With},
+    prelude::{Commands, Plugin, Res},
     render2::{
         camera::ActiveCameras,
         render_graph::{EmptyNode, RenderGraph, SlotInfo, SlotType},
         render_phase::{sort_phase_system, DrawFunctions, RenderPhase},
-        render_resource::{
-            Extent3d, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages,
-        },
-        renderer::RenderDevice,
-        texture::TextureCache,
-        view::{ExtractedView, ViewDepthTexture},
         RenderApp, RenderStage,
     },
 };

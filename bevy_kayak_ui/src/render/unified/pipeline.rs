@@ -4,8 +4,8 @@ use bevy::{
         lifetimeless::{Read, SQuery, SRes},
         SystemState,
     },
-    math::{const_vec3, Mat4, Quat, Vec2, Vec3},
-    prelude::{Bundle, Commands, Entity, FromWorld, Handle, Query, Res, ResMut, World},
+    math::{const_vec3, Mat4, Quat, Vec3},
+    prelude::{Bundle, Entity, FromWorld, Handle, Query, Res, ResMut, World},
     render2::{
         color::Color,
         render_phase::{Draw, DrawFunctions, RenderPhase, TrackedRenderPass},
@@ -13,10 +13,9 @@ use bevy::{
             BindGroup, BindGroupDescriptor, BindGroupEntry, BindGroupLayout,
             BindGroupLayoutDescriptor, BindGroupLayoutEntry, BindingType, BlendComponent,
             BlendFactor, BlendOperation, BlendState, BufferBindingType, BufferSize, BufferUsages,
-            BufferVec, CachedPipelineId, ColorTargetState, ColorWrites, CompareFunction,
-            DepthBiasState, DepthStencilState, DynamicUniformVec, FragmentState, FrontFace,
-            MultisampleState, PolygonMode, PrimitiveState, PrimitiveTopology, RenderPipelineCache,
-            RenderPipelineDescriptor, Shader, ShaderStages, StencilFaceState, StencilState,
+            BufferVec, CachedPipelineId, ColorTargetState, ColorWrites, DynamicUniformVec,
+            FragmentState, FrontFace, MultisampleState, PolygonMode, PrimitiveState,
+            PrimitiveTopology, RenderPipelineCache, RenderPipelineDescriptor, Shader, ShaderStages,
             TextureFormat, TextureSampleType, TextureViewDimension, VertexAttribute,
             VertexBufferLayout, VertexFormat, VertexState, VertexStepMode,
         },
@@ -31,7 +30,7 @@ use crevice::std140::AsStd140;
 
 use super::font::{FontTextureCache, KayakFont};
 use super::UNIFIED_SHADER_HANDLE;
-use crate::{render::ui_pass::TransparentUI, BevyContext};
+use crate::render::ui_pass::TransparentUI;
 
 pub struct UnifiedPipeline {
     view_layout: BindGroupLayout,

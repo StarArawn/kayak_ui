@@ -1,7 +1,6 @@
 use bevy::{
     math::Vec2,
-    prelude::{Assets, Bundle, Commands, Handle, Res, ResMut},
-    render2::color::Color,
+    prelude::{Assets, Commands, Res, ResMut},
     sprite2::Rect,
 };
 use kayak_core::render_primitive::RenderPrimitive;

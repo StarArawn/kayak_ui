@@ -6,9 +6,9 @@ use bevy::render2::render_resource::{CachedPipelineId, RenderPassColorAttachment
 use bevy::render2::{
     render_graph::{Node, NodeRunError, RenderGraphContext, SlotInfo, SlotType},
     render_phase::{DrawFunctions, RenderPhase, TrackedRenderPass},
-    render_resource::{LoadOp, Operations, RenderPassDepthStencilAttachment, RenderPassDescriptor},
+    render_resource::{LoadOp, Operations, RenderPassDescriptor},
     renderer::RenderContext,
-    view::{ExtractedView, ViewDepthTexture, ViewTarget},
+    view::{ExtractedView, ViewTarget},
 };
 
 pub struct TransparentUI {

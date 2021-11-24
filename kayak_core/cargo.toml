@@ -1,0 +1,17 @@
+[package]
+name = "kayak_core"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+as-any = "0.2"
+diff-struct = "0.3"
+derivative = "2.2"
+fontdue = "0.6"
+
+kayak_render_macros = { path = "../kayak_render_macros" }
+morphorm = { git = "https://github.com/geom3trik/morphorm" }
+# dyn_partial_eq = "0.1"
+resources = "1.1"

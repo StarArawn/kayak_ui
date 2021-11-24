@@ -1,0 +1,17 @@
+[package]
+name = "kayak_font"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+arrayvec = "0.7"
+bitflags = "1.0"
+lyon_path = "0.12"
+lyon_geom = "0.12"
+fontdue = "0.6"
+ttf-parser = "0.13"
+
+[dev-dependencies]
+png = "0.16.3"

@@ -1,0 +1,8 @@
+[package]
+name = "kayak_components"
+version = "0.1.0"
+edition = "2021"
+resolver = "2"
+
+[dependencies]
+kayak_core = { path = "../kayak_core", version = "0.1.0" }

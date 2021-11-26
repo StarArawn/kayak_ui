@@ -1,6 +1,9 @@
 pub mod color;
 pub mod context;
+pub mod event;
 pub mod fragment;
+pub(crate) mod generational_arena;
+mod input_event;
 pub mod layout_cache;
 pub mod node;
 pub mod render_command;
@@ -10,19 +13,47 @@ pub mod tree;
 pub mod widget;
 pub mod widget_manager;
 
-pub(crate) mod generational_arena;
+use std::sync::{Arc, RwLock};
 
+pub use event::*;
+pub use fragment::Fragment;
 pub use generational_arena::{Arena, Index};
-
+pub use input_event::*;
+pub use kayak_render_macros::{render, rsx, widget};
 pub use widget::Widget;
 
-pub use kayak_render_macros::{render, rsx, widget};
+pub type Children =
+    Option<Arc<dyn Fn(Option<crate::Index>, &mut crate::context::KayakContext) + Send + Sync>>;
 
-pub use fragment::Fragment;
+#[derive(Clone)]
+pub struct OnEvent(
+    pub  Arc<
+        RwLock<dyn FnMut(&mut crate::context::KayakContext, &mut Event) + Send + Sync + 'static>,
+    >,
+);
 
-pub type Children = Option<
-    std::sync::Arc<dyn Fn(Option<crate::Index>, &mut crate::context::KayakContext) + Send + Sync>,
->;
+impl OnEvent {
+    pub fn new<F: FnMut(&mut crate::context::KayakContext, &mut Event) + Send + Sync + 'static>(
+        f: F,
+    ) -> OnEvent {
+        OnEvent(Arc::new(RwLock::new(f)))
+    }
+}
+
+// impl std::ops::Deref for OnEvent {
+//     type Target =
+//         Arc<RwLock<dyn FnMut(&mut crate::context::KayakContext, &mut Event) + Send + Sync>>;
+
+//     fn deref(&self) -> &Self::Target {
+//         &self.0
+//     }
+// }
+
+// impl std::ops::DerefMut for OnEvent {
+//     fn deref_mut(&mut self) -> &mut Self::Target {
+//         &mut self.0
+//     }
+// }
 
 pub mod derivative {
     pub use derivative::*;

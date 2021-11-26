@@ -36,7 +36,7 @@ pub fn extract_quads(mut commands: Commands, context: Res<BevyContext>) {
             extracted_quad: ExtractedQuad {
                 rect: Rect {
                     min: Vec2::new(layout.posx, layout.posy),
-                    max: Vec2::new(layout.width, layout.height),
+                    max: Vec2::new(layout.posx + layout.width, layout.posy + layout.height),
                 },
                 color: to_bevy_color(background_color),
                 vertex_index: 0,

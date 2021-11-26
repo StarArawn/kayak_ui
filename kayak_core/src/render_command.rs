@@ -1,6 +1,7 @@
 #[derive(Debug, Clone, PartialEq)]
 pub enum RenderCommand {
     Empty,
+    Window,
     Clip,
     Quad,
     Text {

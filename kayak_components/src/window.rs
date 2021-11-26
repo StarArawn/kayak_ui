@@ -16,22 +16,6 @@ pub fn Window(
     size: (f32, f32),
     title: String,
 ) {
-    // let mut changed_styles = styles.clone().unwrap_or_default();
-    // changed_styles.render_command = RenderCommand::Quad;
-    // changed_styles.position_type = Some(PositionType::Absolute);
-    // changed_styles.background = Some(Color::new(0.0588, 0.0588, 0.588, 1.0));
-    // changed_styles.position = Some(Rect {
-    //     start: Dimension::Points(position.x),
-    //     end: Dimension::Points(position.x + size.width),
-    //     top: Dimension::Points(position.y),
-    //     bottom: Dimension::Points(position.y + size.height),
-    // });
-    // changed_styles.size = Some(Size {
-    //     width: Dimension::Points(size.width),
-    //     height: Dimension::Points(size.height),
-    // });
-    // styles = Some(changed_styles);
-
     *styles = Some(Style {
         background_color: StyleProp::Value(Color::new(0.125, 0.125, 0.125, 1.0)),
         render_command: StyleProp::Value(RenderCommand::Quad),
@@ -49,12 +33,7 @@ pub fn Window(
         ..Style::default()
     };
 
-    let title_text_styles = Style {
-        position_type: StyleProp::Value(PositionType::SelfDirected),
-        top: StyleProp::Value(Units::Pixels(-22.0)),
-        left: StyleProp::Value(Units::Pixels(5.0)),
-        ..Style::default()
-    };
+    let title_text_styles = Style { ..Style::default() };
 
     let title = title.clone();
     rsx! {

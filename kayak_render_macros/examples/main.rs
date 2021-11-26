@@ -11,6 +11,8 @@ struct Test {
     foo: u32,
     #[derivative(Debug = "ignore", PartialEq = "ignore")]
     children: Children,
+    #[derivative(Debug = "ignore", PartialEq = "ignore")]
+    pub on_event: Option<kayak_core::OnEvent>,
 }
 
 impl Widget for Test {
@@ -23,6 +25,14 @@ impl Widget for Test {
     }
 
     fn get_styles(&self) -> Option<Style> {
+        todo!()
+    }
+
+    fn get_name(&self) -> String {
+        todo!()
+    }
+
+    fn on_event(&mut self, _context: &mut KayakContext, _event: &mut kayak_core::Event) {
         todo!()
     }
 

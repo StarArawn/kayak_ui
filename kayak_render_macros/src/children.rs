@@ -16,10 +16,6 @@ impl Children {
         Children { nodes }
     }
 
-    pub fn len(&self) -> usize {
-        self.nodes.len()
-    }
-
     pub fn get_clonable_attributes(&self, index: usize) -> Vec<proc_macro2::TokenStream> {
         let mut tokens = Vec::new();
 
@@ -63,7 +59,7 @@ impl Children {
             .collect();
 
         match children_quotes.len() {
-            0 => quote! { Option::<()>::None },
+            0 => quote! { None },
             1 => {
                 let child = if children_quotes[0].to_string() == "{ }" {
                     quote! { None }

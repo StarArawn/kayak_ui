@@ -85,6 +85,13 @@ pub fn create_function_component(f: syn::ItemFn) -> TokenStream {
                 pub children: kayak_core::Children
             },
         ),
+        (
+            vec!["on_event : Option<kayak_core::OnEvent>"],
+            quote! {
+                #[derivative(Debug = "ignore", PartialEq = "ignore")]
+                pub on_event: Option<kayak_core::OnEvent>
+            },
+        ),
     ];
 
     for (names, token) in missing_struct_inputs {
@@ -144,8 +151,20 @@ pub fn create_function_component(f: syn::ItemFn) -> TokenStream {
                 self.styles.clone()
             }
 
+            fn get_name(&self) -> String {
+                String::from(stringify!(#struct_name))
+            }
+
+            fn on_event(&mut self, context: &mut ::kayak_core::context::KayakContext, event: &mut ::kayak_core::Event) {
+                if let Some(on_event) = self.on_event.as_ref() {
+                    if let Ok(mut on_event) = on_event.0.write() {
+                        on_event(context, event);
+                    }
+                }
+            }
+
             fn render(&mut self, context: &mut ::kayak_core::context::KayakContext) {
-                dbg!(stringify!(Rendering widget: #struct_name));
+                // dbg!(stringify!(Rendering widget: #struct_name));
                 let parent_id = self.get_id();
                 context.set_current_id(parent_id);
                 let parent_id = Some(parent_id);

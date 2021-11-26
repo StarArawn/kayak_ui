@@ -13,6 +13,13 @@ pub struct Rect {
     pub z_index: f32,
 }
 
+impl Rect {
+    pub fn contains(&self, point: &(f32, f32)) -> bool {
+        (point.0 >= self.posx && point.0 <= self.posx + self.width)
+            && (point.1 >= self.posy && point.1 <= self.posy + self.height)
+    }
+}
+
 #[derive(Debug, Default, Clone, Copy)]
 pub struct Space {
     pub left: f32,

@@ -6,9 +6,11 @@ use crate::{context::KayakContext, styles::Style, Index, Widget};
 #[derivative(Debug, PartialEq)]
 pub struct Fragment {
     pub id: Index,
+    pub styles: Option<Style>,
     #[derivative(Debug = "ignore", PartialEq = "ignore")]
     pub children: crate::Children,
-    pub styles: Option<Style>,
+    #[derivative(Debug = "ignore", PartialEq = "ignore")]
+    pub on_event: Option<crate::OnEvent>,
 }
 
 impl Widget for Fragment {
@@ -22,6 +24,14 @@ impl Widget for Fragment {
 
     fn get_styles(&self) -> Option<Style> {
         self.styles.clone()
+    }
+
+    fn get_name(&self) -> String {
+        String::from("Fragment")
+    }
+
+    fn on_event(&mut self, _context: &mut KayakContext, _event: &mut crate::Event) {
+        // Do nothing.
     }
 
     fn render(&mut self, context: &mut KayakContext) {

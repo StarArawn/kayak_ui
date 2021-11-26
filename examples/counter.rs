@@ -5,24 +5,45 @@ use bevy::{
     PipelinedDefaultPlugins,
 };
 use bevy_kayak_ui::{BevyContext, BevyKayakUIPlugin, UICameraBundle};
-use kayak_components::Window;
-use kayak_core::Index;
+use kayak_components::{Button, Text, Window};
+use kayak_core::{
+    styles::{Style, StyleProp, Units},
+    EventType, Index, OnEvent,
+};
 use kayak_ui::components::App;
 use kayak_ui::core::{rsx, widget};
 
 #[widget]
-fn TestState() {
-    let _new_x = {
-        let x = context.create_state(0.0f32).unwrap();
-        *x + 0.1
+fn Counter() {
+    let count = {
+        let x = context.create_state(0i32).unwrap();
+        *x
     };
+    let text_styles = Style {
+        bottom: StyleProp::Value(Units::Stretch(1.0)),
+        left: StyleProp::Value(Units::Stretch(1.0)),
+        right: StyleProp::Value(Units::Stretch(1.0)),
+        top: StyleProp::Value(Units::Stretch(1.0)),
+        height: StyleProp::Value(Units::Pixels(26.0)),
+        ..Default::default()
+    };
+
+    let id = self.get_id();
+    let on_event = OnEvent::new(move |context, event| match event.event_type {
+        EventType::Click => {
+            context.set_current_id(id);
+            context.set_state(count + 1);
+        }
+        _ => {}
+    });
+
     rsx! {
         <>
-            <Window position={(50.0, 50.0)} size={(300.0, 300.0)} title={"Window 1".to_string()}>
-                {}
-            </Window>
-            <Window position={(550.0, 50.0)} size={(200.0, 200.0)} title={"Window 2".to_string()}>
-                {}
+            <Window position={(50.0, 50.0)} size={(300.0, 300.0)} title={"Counter Example".to_string()}>
+                <Text size={16.0} content={format!("Current Count: {}", count).to_string()}>{}</Text>
+                <Button on_event={Some(on_event)}>
+                    <Text styles={Some(text_styles)} size={24.0} content={"Count!".to_string()}>{}</Text>
+                </Button>
             </Window>
         </>
     }
@@ -42,12 +63,7 @@ fn startup(mut commands: Commands, windows: Res<Windows>) {
         let parent_id: Option<Index> = None;
         rsx! {
             <App styles={Some(styles.clone())}>
-                <Window position={(50.0, 50.0)} size={(300.0, 300.0)} title={"Window 1".to_string()}>
-                    {}
-                </Window>
-                <Window position={(800.0, 50.0)} size={(200.0, 200.0)} title={"Window 2".to_string()}>
-                    {}
-                </Window>
+                <Counter />
             </App>
         }
     });

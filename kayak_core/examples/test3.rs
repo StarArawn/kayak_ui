@@ -44,6 +44,7 @@ fn main() {
             height: StyleProp::Value(Units::Pixels(720.0)),
             ..Style::default()
         }),
+        on_event: None,
     };
 
     let (_, widget_id) = context.widget_manager.create_widget(0, my_widget, None);

@@ -49,7 +49,7 @@ pub struct Style {
 impl Default for Style {
     fn default() -> Self {
         Self {
-            background_color: StyleProp::Value(Color::TRANSPARENT),
+            background_color: StyleProp::Default,
             render_command: StyleProp::Value(RenderCommand::Empty),
             bottom: StyleProp::Default,
             color: StyleProp::Inherit,

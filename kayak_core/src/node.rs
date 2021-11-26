@@ -73,11 +73,11 @@ impl<'a> morphorm::Node<'a> for NodeIndex {
                 return match node.styles.layout_type {
                     StyleProp::Default => Some(morphorm::LayoutType::default()),
                     StyleProp::Value(prop) => Some(prop),
-                    _ => None,
+                    _ => Some(morphorm::LayoutType::default()),
                 };
             }
         }
-        return None;
+        return Some(morphorm::LayoutType::default());
     }
 
     fn position_type(&self, store: &'_ Self::Data) -> Option<morphorm::PositionType> {
@@ -86,11 +86,11 @@ impl<'a> morphorm::Node<'a> for NodeIndex {
                 return match node.styles.position_type {
                     StyleProp::Default => Some(morphorm::PositionType::default()),
                     StyleProp::Value(prop) => Some(prop),
-                    _ => None,
+                    _ => Some(morphorm::PositionType::default()),
                 };
             }
         }
-        return None;
+        return Some(morphorm::PositionType::default());
     }
 
     fn width(&self, store: &'_ Self::Data) -> Option<morphorm::Units> {
@@ -99,11 +99,11 @@ impl<'a> morphorm::Node<'a> for NodeIndex {
                 return match node.styles.width {
                     StyleProp::Default => Some(morphorm::Units::Stretch(1.0)),
                     StyleProp::Value(prop) => Some(prop),
-                    _ => None,
+                    _ => Some(morphorm::Units::Stretch(1.0)),
                 };
             }
         }
-        return None;
+        return Some(morphorm::Units::Stretch(1.0));
     }
 
     fn height(&self, store: &'_ Self::Data) -> Option<morphorm::Units> {
@@ -112,11 +112,11 @@ impl<'a> morphorm::Node<'a> for NodeIndex {
                 return match node.styles.height {
                     StyleProp::Default => Some(morphorm::Units::Stretch(1.0)),
                     StyleProp::Value(prop) => Some(prop),
-                    _ => None,
+                    _ => Some(morphorm::Units::Stretch(1.0)),
                 };
             }
         }
-        return None;
+        return Some(morphorm::Units::Stretch(1.0));
     }
 
     fn min_width(&self, _store: &'_ Self::Data) -> Option<morphorm::Units> {
@@ -141,11 +141,11 @@ impl<'a> morphorm::Node<'a> for NodeIndex {
                 return match node.styles.left {
                     StyleProp::Default => Some(morphorm::Units::Auto),
                     StyleProp::Value(prop) => Some(prop),
-                    _ => None,
+                    _ => Some(morphorm::Units::Auto),
                 };
             }
         }
-        return None;
+        return Some(morphorm::Units::Auto);
     }
 
     fn right(&self, store: &'_ Self::Data) -> Option<morphorm::Units> {
@@ -154,11 +154,11 @@ impl<'a> morphorm::Node<'a> for NodeIndex {
                 return match node.styles.right {
                     StyleProp::Default => Some(morphorm::Units::Auto),
                     StyleProp::Value(prop) => Some(prop),
-                    _ => None,
+                    _ => Some(morphorm::Units::Auto),
                 };
             }
         }
-        return None;
+        return Some(morphorm::Units::Auto);
     }
 
     fn top(&self, store: &'_ Self::Data) -> Option<morphorm::Units> {
@@ -167,11 +167,11 @@ impl<'a> morphorm::Node<'a> for NodeIndex {
                 return match node.styles.top {
                     StyleProp::Default => Some(morphorm::Units::Auto),
                     StyleProp::Value(prop) => Some(prop),
-                    _ => None,
+                    _ => Some(morphorm::Units::Auto),
                 };
             }
         }
-        return None;
+        return Some(morphorm::Units::Auto);
     }
 
     fn bottom(&self, store: &'_ Self::Data) -> Option<morphorm::Units> {
@@ -180,11 +180,11 @@ impl<'a> morphorm::Node<'a> for NodeIndex {
                 return match node.styles.bottom {
                     StyleProp::Default => Some(morphorm::Units::Auto),
                     StyleProp::Value(prop) => Some(prop),
-                    _ => None,
+                    _ => Some(morphorm::Units::Auto),
                 };
             }
         }
-        return None;
+        return Some(morphorm::Units::Auto);
     }
 
     fn min_left(&self, _store: &'_ Self::Data) -> Option<morphorm::Units> {

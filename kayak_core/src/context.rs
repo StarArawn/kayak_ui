@@ -2,12 +2,13 @@ use std::collections::HashMap;
 
 use resources::Ref;
 
-use crate::widget_manager::WidgetManager;
+use crate::{node::NodeIndex, widget_manager::WidgetManager, Event, EventType, Index, InputEvent};
 
 pub struct KayakContext {
     component_states: HashMap<crate::Index, resources::Resources>,
     current_id: crate::Index,
     pub widget_manager: WidgetManager,
+    last_mouse_position: (f32, f32),
 }
 
 impl std::fmt::Debug for KayakContext {
@@ -24,6 +25,7 @@ impl KayakContext {
             component_states: HashMap::new(),
             current_id: crate::Index::default(),
             widget_manager: WidgetManager::new(),
+            last_mouse_position: (0.0, 0.0),
         }
     }
 
@@ -72,10 +74,7 @@ impl KayakContext {
                 );
             }
         } else {
-            panic!(
-                "No state created for component with id: {:?}!",
-                self.current_id
-            );
+            // Do nothing..
         }
     }
 
@@ -98,5 +97,65 @@ impl KayakContext {
 
         self.widget_manager.render();
         self.widget_manager.calculate_layout();
+    }
+
+    pub fn process_events(&mut self, input_events: Vec<InputEvent>) {
+        let mut events_stream = Vec::new();
+        for (index, _) in self.widget_manager.nodes.iter() {
+            if let Some(layout) = self.widget_manager.layout_cache.rect.get(&NodeIndex(index)) {
+                for input_event in input_events.iter() {
+                    match input_event {
+                        InputEvent::MouseMoved(point) => {
+                            // Hover event.
+                            if layout.contains(point) {
+                                let hover_event = Event {
+                                    target: index,
+                                    event_type: EventType::Hover,
+                                    ..Event::default()
+                                };
+                                events_stream.push(hover_event);
+                            }
+                            self.last_mouse_position = *point;
+                        }
+                        InputEvent::MouseLeftClick => {
+                            if layout.contains(&self.last_mouse_position) {
+                                let click_event = Event {
+                                    target: index,
+                                    event_type: EventType::Click,
+                                    ..Event::default()
+                                };
+                                events_stream.push(click_event);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Propagate Events
+        for event in events_stream.iter_mut() {
+            let mut parents: Vec<Index> = Vec::new();
+            self.get_all_parents(event.target, &mut parents);
+
+            // First call target
+            let mut target_widget = self.widget_manager.take(event.target);
+            target_widget.on_event(self, event);
+            self.widget_manager.repossess(target_widget);
+
+            for parent in parents {
+                if event.should_propagate {
+                    let mut parent_widget = self.widget_manager.take(parent);
+                    parent_widget.on_event(self, event);
+                    self.widget_manager.repossess(parent_widget);
+                }
+            }
+        }
+    }
+
+    fn get_all_parents(&self, current: Index, parents: &mut Vec<Index>) {
+        if let Some(parent) = self.widget_manager.tree.parents.get(&current) {
+            parents.push(*parent);
+            self.get_all_parents(*parent, parents);
+        }
     }
 }

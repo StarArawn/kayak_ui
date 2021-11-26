@@ -1,6 +1,7 @@
 use crate::{
     layout_cache::LayoutCache,
     node::{Node, NodeBuilder, NodeIndex},
+    render_command::RenderCommand,
     render_primitive::RenderPrimitive,
     styles::Style,
     tree::Tree,
@@ -10,11 +11,12 @@ use as_any::Downcast;
 
 #[derive(Debug)]
 pub struct WidgetManager {
-    current_widgets: Arena<Option<Box<dyn Widget>>>,
+    pub(crate) current_widgets: Arena<Option<Box<dyn Widget>>>,
     pub(crate) dirty_render_nodes: Vec<Index>,
     pub(crate) dirty_nodes: Vec<Index>,
     pub(crate) nodes: Arena<Option<Node>>,
     pub tree: Tree,
+    pub node_tree: Tree,
     pub layout_cache: LayoutCache,
     current_z: f32,
 }
@@ -27,6 +29,7 @@ impl WidgetManager {
             dirty_nodes: Vec::new(),
             nodes: Arena::new(),
             tree: Tree::default(),
+            node_tree: Tree::default(),
             layout_cache: LayoutCache::default(),
             current_z: 0.0,
         }
@@ -63,23 +66,23 @@ impl WidgetManager {
                         self.dirty_nodes.remove(index);
                     }
 
-                    if &widget
-                        != self.current_widgets[*widget_id]
-                            .as_ref()
-                            .unwrap()
-                            .downcast_ref::<T>()
-                            .unwrap()
-                    {
-                        let boxed_widget: Box<dyn Widget> = Box::new(widget);
-                        *self.current_widgets[*widget_id].as_mut().unwrap() = boxed_widget;
-                        dbg!("Widget changed!");
-                        // Tell renderer that the nodes changed.
-                        self.dirty_render_nodes.push(*widget_id);
-                        return (true, *widget_id);
-                    } else {
-                        dbg!("No widget changes!");
-                        return (false, *widget_id);
-                    }
+                    // if &widget
+                    //     != self.current_widgets[*widget_id]
+                    //         .as_ref()
+                    //         .unwrap()
+                    //         .downcast_ref::<T>()
+                    //         .unwrap()
+                    // {
+                    let boxed_widget: Box<dyn Widget> = Box::new(widget);
+                    *self.current_widgets[*widget_id].as_mut().unwrap() = boxed_widget;
+                    dbg!("Widget changed!");
+                    // Tell renderer that the nodes changed.
+                    self.dirty_render_nodes.push(*widget_id);
+                    return (true, *widget_id);
+                    // } else {
+                    //     dbg!("No widget changes!");
+                    //     return (false, *widget_id);
+                    // }
                 }
             }
         }
@@ -169,7 +172,6 @@ impl WidgetManager {
                     z
                 }
             };
-            dbg!(current_z);
 
             let mut styles = dirty_widget.get_styles();
             if styles.is_some() {
@@ -181,19 +183,59 @@ impl WidgetManager {
                 .get(&dirty_node_index)
                 .cloned()
                 .unwrap_or(vec![]);
+            let styles = styles.unwrap_or(default_styles.clone());
+            if matches!(styles.render_command.resolve(), RenderCommand::Empty) {
+                continue;
+            }
             let mut node = NodeBuilder::empty()
                 .with_id(dirty_node_index)
-                .with_styles(styles.unwrap_or(default_styles.clone()))
+                .with_styles(styles)
                 .with_children(children)
                 .build();
             node.z = current_z;
 
             self.nodes[dirty_node_index] = Some(node);
         }
+
+        self.node_tree = self.build_nodes_tree();
+
+        // let mut last_parent = Index::default();
+        // let mut space_count_lookup = HashMap::<Index, u32>::new();
+        // let mut space_count: u32 = 0;
+        // for node in self.node_tree.down_iter() {
+        //     space_count_lookup.insert(node.0, space_count);
+        //     let child_widget = &self.current_widgets[node.0].as_ref().unwrap();
+        //     let (child_id, _) = node.0.into_raw_parts();
+        //     println!(
+        //         "{:indent$}Widget: {} {}",
+        //         "",
+        //         child_widget.get_name(),
+        //         child_id,
+        //         indent = space_count as usize,
+        //     );
+        //     if let Some(parent_id) = self.node_tree.parents.get(&node.0) {
+        //         let parent_widget = &self.current_widgets[*parent_id].as_ref().unwrap();
+        //         println!(
+        //             "{:indent$}parent: {} {}",
+        //             "",
+        //             parent_widget.get_name(),
+        //             parent_id.into_raw_parts().0,
+        //             indent = space_count as usize,
+        //         );
+        //         if last_parent != *parent_id {
+        //             if let Some(stored_space_count) = space_count_lookup.get(parent_id) {
+        //                 space_count = *stored_space_count;
+        //             }
+        //         }
+        //         last_parent = *parent_id;
+        //     }
+        //     space_count += 2;
+        // }
+        // panic!();
     }
 
     pub fn calculate_layout(&mut self) {
-        morphorm::layout(&mut self.layout_cache, &self.tree, &self.nodes);
+        morphorm::layout(&mut self.layout_cache, &self.node_tree, &self.nodes);
     }
 
     pub fn build_render_primitives(&self) -> Vec<RenderPrimitive> {
@@ -212,5 +254,64 @@ impl WidgetManager {
         }
 
         render_primitives
+    }
+
+    fn build_nodes_tree(&self) -> Tree {
+        let mut tree = Tree::default();
+        let (root_node_id, _) = self.current_widgets.iter().next().unwrap();
+        tree.root_node = root_node_id;
+        tree.children
+            .insert(tree.root_node, self.get_valid_node_children(tree.root_node));
+        for (widget_id, widget) in self.current_widgets.iter().skip(1) {
+            let widget_styles = widget.as_ref().unwrap().get_styles();
+            if let Some(widget_styles) = widget_styles {
+                // Only add widgets who have renderable nodes.
+                if widget_styles.render_command.resolve() != RenderCommand::Empty {
+                    let valid_children = self.get_valid_node_children(widget_id);
+                    tree.children.insert(widget_id, valid_children);
+                    let valid_parent = self.get_valid_parent(widget_id);
+                    if let Some(valid_parent) = valid_parent {
+                        tree.parents.insert(widget_id, valid_parent);
+                    }
+                }
+            }
+        }
+        tree
+    }
+
+    fn get_valid_node_children(&self, node_id: Index) -> Vec<Index> {
+        let mut children = Vec::new();
+        if let Some(node_children) = self.tree.children.get(&node_id) {
+            for child_id in node_children {
+                if let Some(child_widget) = &self.current_widgets[*child_id] {
+                    if let Some(child_styles) = child_widget.get_styles() {
+                        if child_styles.render_command.resolve() != RenderCommand::Empty {
+                            children.push(*child_id);
+                        } else {
+                            children.extend(self.get_valid_node_children(*child_id));
+                        }
+                    } else {
+                        children.extend(self.get_valid_node_children(*child_id));
+                    }
+                }
+            }
+        }
+
+        children
+    }
+
+    fn get_valid_parent(&self, node_id: Index) -> Option<Index> {
+        if let Some(parent_id) = self.tree.parents.get(&node_id) {
+            if let Some(parent_widget) = &self.current_widgets[*parent_id] {
+                if let Some(parent_styles) = parent_widget.get_styles() {
+                    if parent_styles.render_command.resolve() != RenderCommand::Empty {
+                        return Some(*parent_id);
+                    }
+                }
+
+                return self.get_valid_parent(*parent_id);
+            }
+        }
+        None
     }
 }

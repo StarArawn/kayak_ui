@@ -24,7 +24,7 @@ fn MyWidget(context: &mut KayakContext, children: Children) {
 
 #[widget]
 fn MyWidget2(test: u32, children: Children) {
-    dbg!(test);
+    let _test = test;
     rsx! {
         <>
             {children}

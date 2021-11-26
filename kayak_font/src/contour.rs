@@ -75,7 +75,6 @@ pub fn rescale_contours(
     //     (new_width, new_height)
     // };
 
-    // dbg!(new_width, new_height);
 
     // let x_scale = new_width / initial_bounds.size.width;
     // let y_scale = new_height / initial_bounds.size.height;

@@ -53,8 +53,6 @@ pub fn extract_texts(
         if new_chars.len() > 0 {
             let font = fonts.get_mut(font_handle.clone()).unwrap();
             for c in new_chars {
-                dbg!("Adding char: ");
-                dbg!(c);
                 font.font.add_character(c);
             }
         }

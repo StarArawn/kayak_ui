@@ -35,7 +35,6 @@ impl Widget for Fragment {
     }
 
     fn render(&mut self, context: &mut KayakContext) {
-        dbg!("Rendering fragment children!");
         if let Some(children) = self.children.as_ref() {
             children(Some(self.get_id()), context);
         }

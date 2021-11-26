@@ -7,7 +7,7 @@ use crate::{
     tree::Tree,
     Arena, Index, Widget,
 };
-use as_any::Downcast;
+// use as_any::Downcast;
 
 #[derive(Debug)]
 pub struct WidgetManager {
@@ -66,6 +66,9 @@ impl WidgetManager {
                         self.dirty_nodes.remove(index);
                     }
 
+                    // TODO: Figure a good way of diffing props passed to children of a widget
+                    // that wont naturally-rerender it's children because of a lack of changes
+                    // to it's own props.
                     // if &widget
                     //     != self.current_widgets[*widget_id]
                     //         .as_ref()
@@ -75,12 +78,10 @@ impl WidgetManager {
                     // {
                     let boxed_widget: Box<dyn Widget> = Box::new(widget);
                     *self.current_widgets[*widget_id].as_mut().unwrap() = boxed_widget;
-                    dbg!("Widget changed!");
                     // Tell renderer that the nodes changed.
                     self.dirty_render_nodes.push(*widget_id);
                     return (true, *widget_id);
                     // } else {
-                    //     dbg!("No widget changes!");
                     //     return (false, *widget_id);
                     // }
                 }

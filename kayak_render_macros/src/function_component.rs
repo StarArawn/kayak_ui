@@ -164,7 +164,6 @@ pub fn create_function_component(f: syn::ItemFn) -> TokenStream {
             }
 
             fn render(&mut self, context: &mut ::kayak_core::context::KayakContext) {
-                // dbg!(stringify!(Rendering widget: #struct_name));
                 let parent_id = self.get_id();
                 context.set_current_id(parent_id);
                 let parent_id = Some(parent_id);

@@ -52,8 +52,6 @@ fn load_fonts(mut font_assets: ResMut<Assets<KayakFont>>, mut font_mapping: ResM
 
     let handle = font_assets.add(KayakFont { font });
     font_mapping.add(handle);
-
-    dbg!("Loaded base font!");
 }
 
 fn extract_fonts(
@@ -68,11 +66,9 @@ fn extract_fonts(
         match event {
             AssetEvent::Created { handle } => {
                 changed_assets.insert(handle);
-                dbg!("New font added!");
             }
             AssetEvent::Modified { handle } => {
                 changed_assets.insert(handle);
-                dbg!("Font changed!");
             }
             AssetEvent::Removed { handle } => {
                 if !changed_assets.remove(handle) {

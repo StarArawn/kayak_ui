@@ -219,20 +219,56 @@ impl<'a> morphorm::Node<'a> for NodeIndex {
         Some(morphorm::Units::Auto)
     }
 
-    fn child_left(&self, _store: &'_ Self::Data) -> Option<morphorm::Units> {
-        Some(morphorm::Units::Auto)
+    fn child_left(&self, store: &'_ Self::Data) -> Option<morphorm::Units> {
+        if let Some(node) = store.get(self.0) {
+            if let Some(node) = node {
+                return match node.styles.padding_left {
+                    StyleProp::Default => Some(morphorm::Units::Auto),
+                    StyleProp::Value(prop) => Some(prop),
+                    _ => Some(morphorm::Units::Auto),
+                };
+            }
+        }
+        return Some(morphorm::Units::Auto);
     }
 
-    fn child_right(&self, _store: &'_ Self::Data) -> Option<morphorm::Units> {
-        Some(morphorm::Units::Auto)
+    fn child_right(&self, store: &'_ Self::Data) -> Option<morphorm::Units> {
+        if let Some(node) = store.get(self.0) {
+            if let Some(node) = node {
+                return match node.styles.padding_right {
+                    StyleProp::Default => Some(morphorm::Units::Auto),
+                    StyleProp::Value(prop) => Some(prop),
+                    _ => Some(morphorm::Units::Auto),
+                };
+            }
+        }
+        return Some(morphorm::Units::Auto);
     }
 
-    fn child_top(&self, _store: &'_ Self::Data) -> Option<morphorm::Units> {
-        Some(morphorm::Units::Auto)
+    fn child_top(&self, store: &'_ Self::Data) -> Option<morphorm::Units> {
+        if let Some(node) = store.get(self.0) {
+            if let Some(node) = node {
+                return match node.styles.padding_top {
+                    StyleProp::Default => Some(morphorm::Units::Auto),
+                    StyleProp::Value(prop) => Some(prop),
+                    _ => Some(morphorm::Units::Auto),
+                };
+            }
+        }
+        return Some(morphorm::Units::Auto);
     }
 
-    fn child_bottom(&self, _store: &'_ Self::Data) -> Option<morphorm::Units> {
-        Some(morphorm::Units::Auto)
+    fn child_bottom(&self, store: &'_ Self::Data) -> Option<morphorm::Units> {
+        if let Some(node) = store.get(self.0) {
+            if let Some(node) = node {
+                return match node.styles.padding_bottom {
+                    StyleProp::Default => Some(morphorm::Units::Auto),
+                    StyleProp::Value(prop) => Some(prop),
+                    _ => Some(morphorm::Units::Auto),
+                };
+            }
+        }
+        return Some(morphorm::Units::Auto);
     }
 
     fn row_between(&self, _store: &'_ Self::Data) -> Option<morphorm::Units> {

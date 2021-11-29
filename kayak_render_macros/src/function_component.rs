@@ -35,16 +35,6 @@ pub fn create_function_component(f: syn::ItemFn) -> TokenStream {
         })
         .collect();
 
-    // let missing_names = vec!["styles"];
-    // missing_names.iter().for_each(|missing| {
-    //     if !input_names
-    //         .iter()
-    //         .any(|input| input.to_string() == missing.to_string())
-    //     {
-    //         input_names.push(quote! { #missing });
-    //     }
-    // });
-
     let mut input_block_names: Vec<_> = inputs
         .iter()
         .filter(|input| {
@@ -172,39 +162,5 @@ pub fn create_function_component(f: syn::ItemFn) -> TokenStream {
                 #block
             }
         }
-
-        // impl #impl_generics ::kayak_core::Render for #struct_name #ty_generics #where_clause {
-        //     fn render_into(&self, nodes: &mut Vec<::kayak_core::Node>, context: ::std::sync::Arc<::std::sync::RwLock<::kayak_core::KayakContext>>, parent_styles: Option<kayak_core::Style>) -> Option<usize> {
-        //         let _ = rsx! {
-        //             <>{}</>
-        //         }; // Used to fake out the compiler into thinking we require rsx! still.
-        //         let result = {
-        //             #inputs_reading_ref
-        //             let mut styles = styles.clone();
-        //             let result = if let Ok(mut context) = context.write() {
-        //                 context.set_current_id(self.component_id);
-        //                 #ref_block
-        //             } else { panic!("Couldn't get write lock for context!"); };
-
-        //             (result, styles)
-        //         };
-        //         let child_index = ::kayak_core::Render::render_into(&result.0, nodes, context, result.1.clone());
-        //         let mut builder = ::kayak_core::NodeBuilder::empty()
-        //             .with_id(self.component_id)
-        //             .with_children(vec![
-        //                 child_index
-        //             ].iter().filter_map(|x| *x).collect());
-        //         if let Some(styles) = result.1 {
-        //             let new_styles = if let Some(parent_styles) = parent_styles {
-        //                 styles // parent_styles.merge(&styles)
-        //             } else { styles };
-        //             builder = builder.with_styles(new_styles)
-        //         }
-        //         let node = builder.build();
-        //         let node_index = nodes.len();
-        //         nodes.push(node);
-        //         Some(node_index)
-        // }
-        // }
     })
 }

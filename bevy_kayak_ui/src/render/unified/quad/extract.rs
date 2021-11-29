@@ -24,11 +24,12 @@ pub fn extract_quads(mut commands: Commands, context: Res<BevyContext>) {
 
     let mut extracted_quads = Vec::new();
     for render_primitive in quad_commands {
-        let (background_color, layout) = match render_primitive {
+        let (background_color, layout, border_radius) = match render_primitive {
             RenderPrimitive::Quad {
                 background_color,
                 layout,
-            } => (background_color, layout),
+                border_radius,
+            } => (background_color, layout, border_radius),
             _ => panic!(""),
         };
 
@@ -45,6 +46,7 @@ pub fn extract_quads(mut commands: Commands, context: Res<BevyContext>) {
                 font_handle: None,
                 quad_type: UIQuadType::Quad,
                 type_index: 0,
+                border_radius: *border_radius,
             },
         });
     }

@@ -124,11 +124,16 @@ impl WidgetManager {
     pub fn render(&mut self) {
         let default_styles = Style {
             background_color: crate::styles::StyleProp::Default,
+            border_radius: crate::styles::StyleProp::Default,
             bottom: crate::styles::StyleProp::Default,
             color: crate::styles::StyleProp::Default,
             height: crate::styles::StyleProp::Default,
             layout_type: crate::styles::StyleProp::Default,
             left: crate::styles::StyleProp::Default,
+            padding_bottom: crate::styles::StyleProp::Default,
+            padding_left: crate::styles::StyleProp::Default,
+            padding_right: crate::styles::StyleProp::Default,
+            padding_top: crate::styles::StyleProp::Default,
             position_type: crate::styles::StyleProp::Default,
             render_command: crate::styles::StyleProp::Default,
             right: crate::styles::StyleProp::Default,

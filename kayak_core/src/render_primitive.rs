@@ -14,6 +14,7 @@ pub enum RenderPrimitive {
     Quad {
         layout: Rect,
         background_color: Color,
+        border_radius: (f32, f32, f32, f32),
     },
     Text {
         layout: Rect,
@@ -53,6 +54,7 @@ impl From<&Style> for RenderPrimitive {
             },
             RenderCommand::Quad => Self::Quad {
                 background_color: background_color,
+                border_radius: style.border_radius.resolve(),
                 layout: Rect::default(),
             },
             RenderCommand::Text {

@@ -4,7 +4,7 @@ use bevy::{
         lifetimeless::{Read, SQuery, SRes},
         SystemState,
     },
-    math::{const_vec3, Mat4, Quat, Vec3},
+    math::{const_vec3, Mat4, Quat, Vec3, Vec4},
     prelude::{Bundle, Entity, FromWorld, Handle, Query, Res, ResMut, World},
     render2::{
         color::Color,
@@ -113,7 +113,7 @@ impl FromWorld for UnifiedPipeline {
         });
 
         let vertex_buffer_layout = VertexBufferLayout {
-            array_stride: 40,
+            array_stride: 60,
             step_mode: VertexStepMode::Vertex,
             attributes: vec![
                 VertexAttribute {
@@ -127,9 +127,14 @@ impl FromWorld for UnifiedPipeline {
                     shader_location: 1,
                 },
                 VertexAttribute {
-                    format: VertexFormat::Float32x3,
+                    format: VertexFormat::Float32x4,
                     offset: 28,
                     shader_location: 2,
+                },
+                VertexAttribute {
+                    format: VertexFormat::Float32x4,
+                    offset: 44,
+                    shader_location: 3,
                 },
             ],
         };
@@ -217,6 +222,7 @@ pub struct ExtractedQuad {
     pub font_handle: Option<Handle<KayakFont>>,
     pub quad_type: UIQuadType,
     pub type_index: u32,
+    pub border_radius: (f32, f32, f32, f32),
 }
 
 #[repr(C)]
@@ -224,7 +230,8 @@ pub struct ExtractedQuad {
 struct QuadVertex {
     pub position: [f32; 3],
     pub color: [f32; 4],
-    pub uv: [f32; 3],
+    pub uv: [f32; 4],
+    pub pos_size: [f32; 4],
 }
 
 #[repr(C)]
@@ -286,12 +293,32 @@ pub fn prepare_quads(
             UIQuadType::Text => extracted_sprite.type_index = text_type_offset,
         };
 
-        let bottom_left = Vec3::new(0.0, 1.0, extracted_sprite.char_id as f32);
-        let top_left = Vec3::new(0.0, 0.0, extracted_sprite.char_id as f32);
-        let top_right = Vec3::new(1.0, 0.0, extracted_sprite.char_id as f32);
-        let bottom_right = Vec3::new(1.0, 1.0, extracted_sprite.char_id as f32);
+        let bottom_left = Vec4::new(
+            0.0,
+            1.0,
+            extracted_sprite.char_id as f32,
+            extracted_sprite.border_radius.0,
+        );
+        let top_left = Vec4::new(
+            0.0,
+            0.0,
+            extracted_sprite.char_id as f32,
+            extracted_sprite.border_radius.1,
+        );
+        let top_right = Vec4::new(
+            1.0,
+            0.0,
+            extracted_sprite.char_id as f32,
+            extracted_sprite.border_radius.2,
+        );
+        let bottom_right = Vec4::new(
+            1.0,
+            1.0,
+            extracted_sprite.char_id as f32,
+            extracted_sprite.border_radius.3,
+        );
 
-        let uvs: [[f32; 3]; 6] = [
+        let uvs: [[f32; 4]; 6] = [
             bottom_left.into(),
             top_right.into(),
             top_left.into(),
@@ -312,6 +339,12 @@ pub fn prepare_quads(
                 position: final_position.into(),
                 color,
                 uv: uvs[index],
+                pos_size: [
+                    sprite_rect.min.x,
+                    sprite_rect.min.y,
+                    sprite_rect.size().x,
+                    sprite_rect.size().y,
+                ],
             });
         }
     }

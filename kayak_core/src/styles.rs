@@ -34,6 +34,7 @@ where
 #[derive(Debug, Clone, PartialEq)]
 pub struct Style {
     pub background_color: StyleProp<Color>,
+    pub border_radius: StyleProp<(f32, f32, f32, f32)>,
     pub bottom: StyleProp<Units>,
     pub color: StyleProp<Color>,
     pub height: StyleProp<Units>,
@@ -44,12 +45,17 @@ pub struct Style {
     pub right: StyleProp<Units>,
     pub top: StyleProp<Units>,
     pub width: StyleProp<Units>,
+    pub padding_left: StyleProp<Units>,
+    pub padding_right: StyleProp<Units>,
+    pub padding_top: StyleProp<Units>,
+    pub padding_bottom: StyleProp<Units>,
 }
 
 impl Default for Style {
     fn default() -> Self {
         Self {
             background_color: StyleProp::Default,
+            border_radius: StyleProp::Default,
             render_command: StyleProp::Value(RenderCommand::Empty),
             bottom: StyleProp::Default,
             color: StyleProp::Inherit,
@@ -60,6 +66,10 @@ impl Default for Style {
             right: StyleProp::Default,
             top: StyleProp::Default,
             width: StyleProp::Default,
+            padding_left: StyleProp::Default,
+            padding_right: StyleProp::Default,
+            padding_top: StyleProp::Default,
+            padding_bottom: StyleProp::Default,
         }
     }
 }
@@ -69,6 +79,12 @@ impl Style {
         match self.background_color {
             StyleProp::Inherit => {
                 self.background_color = other.background_color.clone();
+            }
+            _ => (),
+        }
+        match self.border_radius {
+            StyleProp::Inherit => {
+                self.border_radius = other.border_radius.clone();
             }
             _ => (),
         }
@@ -130,6 +146,22 @@ impl Style {
             StyleProp::Inherit => {
                 self.width = other.width.clone();
             }
+            _ => (),
+        }
+        match self.padding_left {
+            StyleProp::Inherit => self.padding_left = other.padding_left.clone(),
+            _ => (),
+        }
+        match self.padding_right {
+            StyleProp::Inherit => self.padding_right = other.padding_right.clone(),
+            _ => (),
+        }
+        match self.padding_top {
+            StyleProp::Inherit => self.padding_top = other.padding_top.clone(),
+            _ => (),
+        }
+        match self.padding_bottom {
+            StyleProp::Inherit => self.padding_bottom = other.padding_bottom.clone(),
             _ => (),
         }
     }

@@ -76,6 +76,7 @@ pub fn extract_texts(
                     z_index: layout.z_index,
                     quad_type: UIQuadType::Text,
                     type_index: 0,
+                    border_radius: (0.0, 0.0, 0.0, 0.0),
                 },
             });
         }

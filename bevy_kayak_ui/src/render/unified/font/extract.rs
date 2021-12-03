@@ -57,28 +57,91 @@ pub fn extract_texts(
             }
         }
         let font = fonts.get(font_handle.clone()).unwrap();
-        let char_layouts = font.font.get_layout(content, font_size);
+        let max_glyph_size = font
+            .sdf
+            .as_ref()
+            .and_then(|sdf| Some(sdf.max_glyph_size()))
+            .unwrap_or_default();
+        // let char_layouts = font.font.get_layout(
+        //     content,
+        //     font_size,
+        //     font.sdf.as_ref().unwrap().atlas.size,
+        //     (max_glyph_size.x, max_glyph_size.y),
+        // );
+        // let font_scale = font_size / font.font.units_per_em() as f32;
+        // for (c, (x, y), (width, height)) in char_layouts {
+        //     // let size = font.font.get_size(c, font_size);
+        //     let position_x = layout.posx + x;
+        //     let position_y = layout.posy + y;
+        //     extracted_texts.push(ExtractQuadBundle {
+        //         extracted_quad: ExtractedQuad {
+        //             font_handle: Some(font_handle.clone()),
+        //             rect: Rect {
+        //                 min: Vec2::new(position_x, position_y),
+        //                 max: Vec2::new(position_x + width, position_y + height),
+        //             },
+        //             color: to_bevy_color(background_color),
+        //             vertex_index: 0,
+        //             char_id: font.font.get_char_id(c),
+        //             z_index: layout.z_index,
+        //             quad_type: UIQuadType::Text,
+        //             type_index: 0,
+        //             border_radius: (0.0, 0.0, 0.0, 0.0),
+        //         },
+        //     });
+        // }
 
-        for (c, (x, y), (width, height)) in char_layouts {
-            // let size = font.font.get_size(c, font_size);
-            let position_x = layout.posx + x;
-            let position_y = layout.posy + y;
-            extracted_texts.push(ExtractQuadBundle {
-                extracted_quad: ExtractedQuad {
-                    font_handle: Some(font_handle.clone()),
-                    rect: Rect {
-                        min: Vec2::new(position_x, position_y),
-                        max: Vec2::new(position_x + width, position_y + height),
+        let mut x = 0.0;
+        for c in content.chars() {
+            if let Some(glyph) = font
+                .sdf
+                .as_ref()
+                .unwrap()
+                .glyphs
+                .iter()
+                .find(|glyph| glyph.unicode == c)
+            {
+                let plane_bounds = glyph.plane_bounds.as_ref();
+                let (left, top, width, height) = match plane_bounds {
+                    Some(val) => (
+                        val.left,
+                        val.top,
+                        val.size().x * font_size,
+                        val.size().y * font_size,
+                    ),
+                    None => (0.0, 0.0, 0.0, 0.0),
+                };
+
+                let font_ratio = font_size / font.sdf.as_ref().unwrap().atlas.size;
+                let resized_max_glyph_size =
+                    (max_glyph_size.x * font_ratio, max_glyph_size.y * font_ratio);
+
+                let shift_y = resized_max_glyph_size.1 - height;
+
+                let position_x = layout.posx + x + left * font_size;
+                let position_y = (layout.posy + (-top * font_size)) + font_size;
+                extracted_texts.push(ExtractQuadBundle {
+                    extracted_quad: ExtractedQuad {
+                        font_handle: Some(font_handle.clone()),
+                        rect: Rect {
+                            min: Vec2::new(position_x, position_y),
+                            max: Vec2::new(
+                                position_x + resized_max_glyph_size.0,
+                                position_y + resized_max_glyph_size.1,
+                            ),
+                        },
+                        color: to_bevy_color(background_color),
+                        vertex_index: 0,
+                        char_id: font.font.get_char_id(c),
+                        z_index: layout.z_index,
+                        quad_type: UIQuadType::Text,
+                        type_index: 0,
+                        border_radius: (0.0, 0.0, 0.0, 0.0),
                     },
-                    color: to_bevy_color(background_color),
-                    vertex_index: 0,
-                    char_id: font.font.get_char_id(c),
-                    z_index: layout.z_index,
-                    quad_type: UIQuadType::Text,
-                    type_index: 0,
-                    border_radius: (0.0, 0.0, 0.0, 0.0),
-                },
-            });
+                });
+
+                x += glyph.advance * font_size;
+            }
         }
     }
     commands.spawn_batch(extracted_texts);

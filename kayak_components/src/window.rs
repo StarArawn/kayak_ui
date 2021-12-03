@@ -47,7 +47,7 @@ pub fn Window(
     };
 
     let title_text_styles = Style {
-        height: StyleProp::Value(Units::Pixels(16.0)),
+        height: StyleProp::Value(Units::Pixels(22.0)),
         ..Style::default()
     };
 
@@ -56,7 +56,7 @@ pub fn Window(
         <Fragment>
             <Clip>
                 <Background styles={Some(title_background_styles)}>
-                    <Text styles={Some(title_text_styles)} size={14.0} content={title}>{}</Text>
+                    <Text styles={Some(title_text_styles)} size={16.0} content={title}>{}</Text>
                 </Background>
             </Clip>
             <Clip>

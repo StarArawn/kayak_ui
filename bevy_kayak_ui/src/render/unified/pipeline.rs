@@ -5,7 +5,7 @@ use bevy::{
         SystemState,
     },
     math::{const_vec3, Mat4, Quat, Vec3, Vec4},
-    prelude::{Bundle, Entity, FromWorld, Handle, Query, Res, ResMut, World},
+    prelude::{Bundle, Component, Entity, FromWorld, Handle, Query, Res, ResMut, World},
     render2::{
         color::Color,
         render_phase::{Draw, DrawFunctions, RenderPhase, TrackedRenderPass},
@@ -213,6 +213,7 @@ pub enum UIQuadType {
     Text,
 }
 
+#[derive(Component)]
 pub struct ExtractedQuad {
     pub rect: Rect,
     pub color: Color,

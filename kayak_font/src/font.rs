@@ -8,14 +8,14 @@ use crate::{compute_msdf, recolor_contours, rescale_contours, PathCollector};
 #[derive(Debug, Clone)]
 pub struct FontCache {
     count: usize,
-    pub dimensions: u32,
+    pub dimensions: (u32, u32),
     chars: HashMap<char, (usize, Vec<u8>)>,
     needs_processing: HashSet<usize>,
     id_to_char_mappings: HashMap<usize, char>,
 }
 
 impl FontCache {
-    pub fn new(texture_size: u32) -> Self {
+    pub fn new(texture_size: (u32, u32)) -> Self {
         Self {
             count: 0,
             dimensions: texture_size,
@@ -23,6 +23,12 @@ impl FontCache {
             needs_processing: HashSet::default(),
             id_to_char_mappings: HashMap::default(),
         }
+    }
+
+    pub fn add_character(&mut self, c: char) {
+        self.chars.insert(c, (self.count, vec![]));
+        self.id_to_char_mappings.insert(self.count, c);
+        self.count += 1;
     }
 
     fn set_texture(&mut self, c: char, texture_data: Vec<Vec<(f32, f32, f32)>>) {
@@ -63,11 +69,11 @@ impl FontCache {
         self.count += 1;
     }
 
-    fn has_character(&self, c: char) -> bool {
+    pub fn has_character(&self, c: char) -> bool {
         self.chars.contains_key(&c)
     }
 
-    fn get_dimensions(&self) -> u32 {
+    fn get_dimensions(&self) -> (u32, u32) {
         self.dimensions
     }
 }
@@ -80,7 +86,7 @@ pub struct Font {
 }
 
 impl Font {
-    pub fn new(font_data: &'static [u8], texture_size: u32) -> Font {
+    pub fn new(font_data: &'static [u8], texture_size: (u32, u32)) -> Font {
         Font {
             internal_face: ttf_parser::Face::from_slice(&font_data, 0).unwrap(),
             font: fontdue::Font::from_bytes(font_data.clone(), fontdue::FontSettings::default())
@@ -109,12 +115,19 @@ impl Font {
         &self,
         content: &String,
         font_size: f32,
+        original_font_size: f32,
+        max_glyph_size: (f32, f32),
     ) -> Vec<(char, (f32, f32), (f32, f32))> {
         let mut layout =
             fontdue::layout::Layout::new(fontdue::layout::CoordinateSystem::PositiveYDown);
         layout.append(
             &[&self.font],
             &fontdue::layout::TextStyle::new(content, font_size, 0),
+        );
+        let font_ratio = font_size / original_font_size;
+        let resized_max_glyph_size = (
+            (max_glyph_size.0 * font_ratio).round(),
+            (max_glyph_size.1 * font_ratio).round(),
         );
 
         let glyphs = layout.glyphs();
@@ -125,37 +138,12 @@ impl Font {
                     return None;
                 }
                 // let metrics = self.font.metrics(glyph_position.parent, font_size);
-                let font_scale = font_size / self.font.units_per_em() as f32;
-                let scale =
-                    if let Some(glyph) = self.internal_face.glyph_index(glyph_position.parent) {
-                        // TODO: Cache this in add_character..
-                        let mut path_collector = PathCollector::new();
-                        let rect = self
-                            .internal_face
-                            .outline_glyph(glyph, &mut path_collector)
-                            .unwrap();
-                        let width = rect.width();
-                        let height = rect.height();
-                        width.max(height) as f32 * font_scale
-                    } else {
-                        0.0
-                    };
 
-                // let shift_x = if scale > glyph_position.width as f32 {
-                //     scale - glyph_position.width as f32
-                // } else {
-                //     // glyph_position.width as f32 - scale
-                //     0.0
-                // };
-                let shift_y = if scale > glyph_position.height as f32 {
-                    scale - glyph_position.height as f32
-                } else {
-                    0.0
-                };
+                let shift_y = resized_max_glyph_size.1 - glyph_position.height as f32;
                 Some((
                     glyph_position.parent,
                     (glyph_position.x, glyph_position.y - shift_y),
-                    (scale, scale),
+                    resized_max_glyph_size,
                 ))
             })
             .collect();
@@ -215,7 +203,7 @@ impl Font {
                     self.internal_face.units_per_em(),
                 );
                 let contours = recolor_contours(contours, Angle::degrees(3.0), 1);
-                let msdf = compute_msdf(&contours, self.cache.get_dimensions() as usize);
+                let msdf = compute_msdf(&contours, self.cache.get_dimensions().0 as usize);
 
                 self.cache.set_texture(c, msdf);
             }
@@ -250,4 +238,30 @@ impl Font {
             .filter(|c| !self.cache.chars.contains_key(&c))
             .collect()
     }
+
+    pub fn units_per_em(&self) -> f32 {
+        self.font.units_per_em()
+    }
+}
+
+fn get_new_size(org_width: f32, new_width: f32, org_height: f32, new_height: f32) -> (f32, f32) {
+    let ratio = calculate_ratio(org_width, new_width, org_height, new_height);
+    // let ratio = new_width / new_height;
+    (org_width * ratio, org_height * ratio)
+}
+
+pub fn calculate_ratio(org_width: f32, new_width: f32, org_height: f32, new_height: f32) -> f32 {
+    let mut area_size = 0.0;
+    let mut image_size = 0.0;
+
+    if new_height * org_width > new_width * org_height {
+        area_size = new_height;
+        image_size = org_height;
+    } else {
+        area_size = new_width;
+        image_size = org_width;
+    }
+
+    let ratio = area_size / image_size;
+    ratio
 }

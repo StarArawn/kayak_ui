@@ -48,7 +48,7 @@ var sprite_texture: texture_2d_array<f32>;
 [[group(1), binding(1)]]
 var sprite_sampler: sampler;
 
-let RADIUS: f32 = 0.5;
+let RADIUS: f32 = 0.1;
 
 
 fn sd_box_rounded(
@@ -71,6 +71,9 @@ fn sd_box_rounded(
 
 [[stage(fragment)]]
 fn fragment(in: VertexOutput) -> [[location(0)]] vec4<f32> {
+    var pxRange = 2.5;
+    var tex_dimensions = textureDimensions(sprite_texture);
+    var msdfUnit = vec2<f32>(pxRange, pxRange) / vec2<f32>(f32(tex_dimensions.x), f32(tex_dimensions.y));
     if (quad_type.t == 0) {
         var dist = sd_box_rounded(
             in.position.xy,
@@ -86,12 +89,22 @@ fn fragment(in: VertexOutput) -> [[location(0)]] vec4<f32> {
         return vec4<f32>(in.color.rgb, dist);
     }
     if (quad_type.t == 1) {
-        var x = textureSample(sprite_texture, sprite_sampler, in.uv.xy, i32(in.uv.z)); 
+        var x = textureSample(sprite_texture, sprite_sampler, vec2<f32>(in.uv.x, 1.0 - in.uv.y), i32(in.uv.z)); 
         var v = max(min(x.r, x.g), min(max(x.r, x.g), x.b));
         var c = v; //remap(v);
 
-        var v2 = c / fwidth( c );
-        var a = v2 + RADIUS; //clamp( v2 + RADIUS, 0.0, 1.0 );
+        // var v2 = c / fwidth( c );
+        // var a = clamp( v2 + RADIUS, 0.0, 1.0 );
+        // var a = smoothStep(
+        //     max(RADIUS - 0.5, 0.0),
+        //     RADIUS + 0.5,
+        //     c);
+
+        // var w = fwidth(c);
+        // var a = smoothStep(0.5 - w, 0.5 + w, c);
+
+        var sigDist = (c - 0.5) * dot(msdfUnit, 0.5 / fwidth(in.uv.xy));
+        var a = clamp(sigDist + 0.5, 0.0, 1.0);
 
         return vec4<f32>(in.color.rgb, a);
     }

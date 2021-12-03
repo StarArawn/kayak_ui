@@ -1,8 +1,24 @@
-use bevy::{prelude::Handle, render2::{render_resource::{AddressMode, BindGroup, BindGroupDescriptor, BindGroupEntry, BindGroupLayout, BindingResource, Extent3d, FilterMode, ImageCopyTexture, ImageDataLayout, Origin3d, SamplerDescriptor, TextureAspect, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages, TextureViewDescriptor, TextureViewDimension}, renderer::{RenderDevice, RenderQueue}, texture::{GpuImage, TextureFormatPixelInfo}}, utils::HashMap};
+use bevy::{
+    math::Vec2,
+    prelude::{Assets, Handle, Res},
+    render2::{
+        render_asset::RenderAssets,
+        render_resource::{
+            AddressMode, BindGroup, BindGroupDescriptor, BindGroupEntry, BindGroupLayout,
+            BindingResource, CommandEncoderDescriptor, Extent3d, FilterMode, ImageCopyTexture,
+            ImageDataLayout, Origin3d, SamplerDescriptor, TextureAspect, TextureDescriptor,
+            TextureDimension, TextureFormat, TextureUsages, TextureViewDescriptor,
+            TextureViewDimension,
+        },
+        renderer::{RenderDevice, RenderQueue},
+        texture::{GpuImage, Image, TextureFormatPixelInfo},
+    },
+    utils::HashMap,
+};
 
 use crate::render::unified::pipeline::UnifiedPipeline;
 
-use super::font::KayakFont;
+use super::{font::KayakFont, sdf::Sdf};
 
 pub const MAX_CHARACTERS: u32 = 100;
 
@@ -43,36 +59,67 @@ impl FontTextureCache {
         }
     }
 
-    pub fn process_new(&mut self, device: &RenderDevice, pipeline: &UnifiedPipeline) {
-        let new_fonts = self.new_fonts.drain(..);
+    pub fn process_new(
+        &mut self,
+        device: &RenderDevice,
+        queue: &RenderQueue,
+        pipeline: &UnifiedPipeline,
+        render_images: &Res<RenderAssets<Image>>,
+    ) {
+        let new_fonts: Vec<_> = self.new_fonts.drain(..).collect();
         for kayak_font_handle in new_fonts {
+            let mut was_processed = true;
             if let Some(font) = self.fonts.get(&kayak_font_handle) {
-                Self::create_texture(
-                    &mut self.images,
-                    kayak_font_handle.clone_weak(),
-                    font,
-                    device,
-                );
+                if let Some(sdf) = &font.sdf {
+                    let atlas_handle = font.atlas_image.as_ref().unwrap();
+                    if let Some(atlas_texture) = render_images.get(atlas_handle) {
+                        Self::create_from_atlas(
+                            &mut self.images,
+                            &mut self.bind_groups,
+                            sdf,
+                            kayak_font_handle.clone_weak(),
+                            device,
+                            queue,
+                            pipeline,
+                            atlas_texture,
+                            sdf.max_glyph_size(),
+                        );
+                    } else {
+                        was_processed = false;
+                    }
+                } else {
+                    Self::create_texture(
+                        &mut self.images,
+                        kayak_font_handle.clone_weak(),
+                        (font.font.cache.dimensions.0, font.font.cache.dimensions.1),
+                        device,
+                        TextureFormat::Rgba32Float,
+                    );
 
-                let gpu_image = self.images.get(&kayak_font_handle).unwrap();
+                    let gpu_image = self.images.get(&kayak_font_handle).unwrap();
 
-                // create bind group
-                let binding = device.create_bind_group(&BindGroupDescriptor {
-                    label: Some("text_image_bind_group"),
-                    entries: &[
-                        BindGroupEntry {
-                            binding: 0,
-                            resource: BindingResource::TextureView(&gpu_image.texture_view),
-                        },
-                        BindGroupEntry {
-                            binding: 1,
-                            resource: BindingResource::Sampler(&gpu_image.sampler),
-                        },
-                    ],
-                    layout: &pipeline.image_layout,
-                });
+                    // create bind group
+                    let binding = device.create_bind_group(&BindGroupDescriptor {
+                        label: Some("text_image_bind_group"),
+                        entries: &[
+                            BindGroupEntry {
+                                binding: 0,
+                                resource: BindingResource::TextureView(&gpu_image.texture_view),
+                            },
+                            BindGroupEntry {
+                                binding: 1,
+                                resource: BindingResource::Sampler(&gpu_image.sampler),
+                            },
+                        ],
+                        layout: &pipeline.image_layout,
+                    });
 
-                self.bind_groups.insert(kayak_font_handle, binding);
+                    self.bind_groups
+                        .insert(kayak_font_handle.clone_weak(), binding);
+                }
+            }
+            if !was_processed {
+                self.new_fonts.push(kayak_font_handle.clone_weak());
             }
         }
     }
@@ -94,20 +141,21 @@ impl FontTextureCache {
     fn create_texture(
         images: &mut HashMap<Handle<KayakFont>, GpuImage>,
         font_handle: Handle<KayakFont>,
-        font: &KayakFont,
+        size: (u32, u32),
         device: &RenderDevice,
+        format: TextureFormat,
     ) {
         let texture_descriptor = TextureDescriptor {
             label: Some("font_texture_array"),
             size: Extent3d {
-                width: font.font.cache.dimensions,
-                height: font.font.cache.dimensions,
+                width: size.0,
+                height: size.1,
                 depth_or_array_layers: MAX_CHARACTERS,
             },
             mip_level_count: 1,
             sample_count: 1,
             dimension: TextureDimension::D2,
-            format: TextureFormat::Rgba32Float,
+            format,
             usage: TextureUsages::TEXTURE_BINDING | TextureUsages::COPY_DST,
         };
 
@@ -174,13 +222,13 @@ impl FontTextureCache {
                     ImageDataLayout {
                         offset: 0,
                         bytes_per_row: Some(
-                            std::num::NonZeroU32::new(size * format_size as u32).unwrap(),
+                            std::num::NonZeroU32::new(size.0 * format_size as u32).unwrap(),
                         ),
                         rows_per_image: None,
                     },
                     Extent3d {
-                        width: size,
-                        height: size,
+                        width: size.0,
+                        height: size.1,
                         depth_or_array_layers: 1,
                     },
                 );
@@ -244,5 +292,91 @@ impl FontTextureCache {
         });
 
         (image, binding)
+    }
+
+    pub fn create_from_atlas(
+        images: &mut HashMap<Handle<KayakFont>, GpuImage>,
+        bind_groups: &mut HashMap<Handle<KayakFont>, BindGroup>,
+        sdf: &Sdf,
+        font_handle: Handle<KayakFont>,
+        device: &RenderDevice,
+        queue: &RenderQueue,
+        pipeline: &UnifiedPipeline,
+        atlas_texture: &GpuImage,
+        size: Vec2,
+    ) {
+        dbg!(size);
+        Self::create_texture(
+            images,
+            font_handle.clone_weak(),
+            (size.x as u32, size.y as u32),
+            device,
+            TextureFormat::Rgba8Unorm,
+        );
+
+        let mut command_encoder = device.create_command_encoder(&CommandEncoderDescriptor {
+            label: Some("create_sdf_from_atlas_encoder"),
+        });
+
+        let gpu_image = images.get(&font_handle).unwrap();
+
+        // create bind group
+        let binding = device.create_bind_group(&BindGroupDescriptor {
+            label: Some("text_image_bind_group"),
+            entries: &[
+                BindGroupEntry {
+                    binding: 0,
+                    resource: BindingResource::TextureView(&gpu_image.texture_view),
+                },
+                BindGroupEntry {
+                    binding: 1,
+                    resource: BindingResource::Sampler(&gpu_image.sampler),
+                },
+            ],
+            layout: &pipeline.image_layout,
+        });
+
+        bind_groups.insert(font_handle.clone_weak(), binding);
+
+        // Now fill the texture data.
+
+        let atlas_width = sdf.atlas.width;
+        let atlas_height = sdf.atlas.height;
+
+        for (i, glyph) in sdf.glyphs.iter().enumerate() {
+            if let Some(atlas_bounds) = glyph.atlas_bounds {
+                let glyph_size = atlas_bounds.size();
+                command_encoder.copy_texture_to_texture(
+                    ImageCopyTexture {
+                        texture: &atlas_texture.texture,
+                        mip_level: 0,
+                        origin: Origin3d {
+                            x: atlas_bounds.left as u32,
+                            y: atlas_height - atlas_bounds.top as u32,
+                            z: 0,
+                        },
+                        aspect: TextureAspect::All,
+                    },
+                    ImageCopyTexture {
+                        texture: &gpu_image.texture,
+                        mip_level: 0,
+                        origin: Origin3d {
+                            x: 0,
+                            y: 0,
+                            z: i as u32,
+                        },
+                        aspect: TextureAspect::All,
+                    },
+                    Extent3d {
+                        width: glyph_size.x as u32,
+                        height: glyph_size.y as u32,
+                        depth_or_array_layers: 1,
+                    },
+                );
+            }
+        }
+
+        let command_buffer = command_encoder.finish();
+        queue.submit(vec![command_buffer]);
     }
 }

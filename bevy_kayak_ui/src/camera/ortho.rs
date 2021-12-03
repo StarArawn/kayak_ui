@@ -1,11 +1,12 @@
 use bevy::ecs::reflect::ReflectComponent;
+use bevy::prelude::Component;
 use bevy::{
     math::Mat4,
     reflect::Reflect,
     render2::camera::{CameraProjection, DepthCalculation, ScalingMode, WindowOrigin},
 };
 
-#[derive(Debug, Clone, Reflect)]
+#[derive(Debug, Clone, Component, Reflect)]
 #[reflect(Component)]
 pub struct UIOrthographicProjection {
     pub left: f32,

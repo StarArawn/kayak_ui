@@ -40,7 +40,7 @@ fn Counter() {
     rsx! {
         <>
             <Window position={(50.0, 50.0)} size={(300.0, 300.0)} title={"Counter Example".to_string()}>
-                <Text size={16.0} content={format!("Current Count: {}", count).to_string()}>{}</Text>
+                <Text size={32.0} content={format!("Current Count: {}", count).to_string()}>{}</Text>
                 <Button on_event={Some(on_event)}>
                     <Text styles={Some(text_styles)} size={24.0} content={"Count!".to_string()}>{}</Text>
                 </Button>

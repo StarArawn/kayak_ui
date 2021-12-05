@@ -8,22 +8,26 @@ use bevy::{
     prelude::{Bundle, Component, Entity, FromWorld, Handle, Query, Res, ResMut, World},
     render2::{
         color::Color,
+        render_asset::RenderAssets,
         render_phase::{Draw, DrawFunctions, RenderPhase, TrackedRenderPass},
         render_resource::{
             BindGroup, BindGroupDescriptor, BindGroupEntry, BindGroupLayout,
-            BindGroupLayoutDescriptor, BindGroupLayoutEntry, BindingType, BlendComponent,
-            BlendFactor, BlendOperation, BlendState, BufferBindingType, BufferSize, BufferUsages,
-            BufferVec, CachedPipelineId, ColorTargetState, ColorWrites, DynamicUniformVec,
-            FragmentState, FrontFace, MultisampleState, PolygonMode, PrimitiveState,
-            PrimitiveTopology, RenderPipelineCache, RenderPipelineDescriptor, Shader, ShaderStages,
-            TextureFormat, TextureSampleType, TextureViewDimension, VertexAttribute,
-            VertexBufferLayout, VertexFormat, VertexState, VertexStepMode,
+            BindGroupLayoutDescriptor, BindGroupLayoutEntry, BindingResource, BindingType,
+            BlendComponent, BlendFactor, BlendOperation, BlendState, BufferBindingType, BufferSize,
+            BufferUsages, BufferVec, CachedPipelineId, ColorTargetState, ColorWrites,
+            DynamicUniformVec, Extent3d, FragmentState, FrontFace, MultisampleState, PolygonMode,
+            PrimitiveState, PrimitiveTopology, RenderPipelineCache, RenderPipelineDescriptor,
+            SamplerDescriptor, Shader, ShaderStages, TextureDescriptor, TextureDimension,
+            TextureFormat, TextureSampleType, TextureUsages, TextureViewDescriptor,
+            TextureViewDimension, VertexAttribute, VertexBufferLayout, VertexFormat, VertexState,
+            VertexStepMode,
         },
         renderer::{RenderDevice, RenderQueue},
-        texture::{BevyDefault, GpuImage},
+        texture::{BevyDefault, GpuImage, Image},
         view::{ViewUniformOffset, ViewUniforms},
     },
     sprite2::Rect,
+    utils::HashMap,
 };
 use bytemuck::{Pod, Zeroable};
 use crevice::std140::AsStd140;
@@ -35,9 +39,11 @@ use crate::render::ui_pass::TransparentUI;
 pub struct UnifiedPipeline {
     view_layout: BindGroupLayout,
     types_layout: BindGroupLayout,
-    pub(crate) image_layout: BindGroupLayout,
+    pub(crate) font_image_layout: BindGroupLayout,
+    image_layout: BindGroupLayout,
     pipeline: CachedPipelineId,
     empty_font_texture: (GpuImage, BindGroup),
+    default_image: (GpuImage, BindGroup),
 }
 
 const QUAD_VERTEX_POSITIONS: &[Vec3] = &[
@@ -87,6 +93,33 @@ impl FromWorld for UnifiedPipeline {
             label: Some("ui_types_layout"),
         });
 
+        // Used by fonts
+        let font_image_layout =
+            render_device.create_bind_group_layout(&BindGroupLayoutDescriptor {
+                entries: &[
+                    BindGroupLayoutEntry {
+                        binding: 0,
+                        visibility: ShaderStages::FRAGMENT,
+                        ty: BindingType::Texture {
+                            multisampled: false,
+                            sample_type: TextureSampleType::Float { filterable: false },
+                            view_dimension: TextureViewDimension::D2Array,
+                        },
+                        count: None,
+                    },
+                    BindGroupLayoutEntry {
+                        binding: 1,
+                        visibility: ShaderStages::FRAGMENT,
+                        ty: BindingType::Sampler {
+                            comparison: false,
+                            filtering: true,
+                        },
+                        count: None,
+                    },
+                ],
+                label: Some("text_image_layout"),
+            });
+
         let image_layout = render_device.create_bind_group_layout(&BindGroupLayoutDescriptor {
             entries: &[
                 BindGroupLayoutEntry {
@@ -95,7 +128,7 @@ impl FromWorld for UnifiedPipeline {
                     ty: BindingType::Texture {
                         multisampled: false,
                         sample_type: TextureSampleType::Float { filterable: false },
-                        view_dimension: TextureViewDimension::D2Array,
+                        view_dimension: TextureViewDimension::D2,
                     },
                     count: None,
                 },
@@ -109,7 +142,7 @@ impl FromWorld for UnifiedPipeline {
                     count: None,
                 },
             ],
-            label: Some("text_image_layout"),
+            label: Some("image_layout"),
         });
 
         let vertex_buffer_layout = VertexBufferLayout {
@@ -139,7 +172,7 @@ impl FromWorld for UnifiedPipeline {
             ],
         };
 
-        let empty_font_texture = FontTextureCache::get_empty(&render_device, &image_layout);
+        let empty_font_texture = FontTextureCache::get_empty(&render_device, &font_image_layout);
 
         let pipeline_desc = RenderPipelineDescriptor {
             vertex: VertexState {
@@ -171,8 +204,9 @@ impl FromWorld for UnifiedPipeline {
             }),
             layout: Some(vec![
                 view_layout.clone(),
-                image_layout.clone(),
+                font_image_layout.clone(),
                 types_layout.clone(),
+                image_layout.clone(),
             ]),
             primitive: PrimitiveState {
                 front_face: FrontFace::Ccw,
@@ -189,15 +223,68 @@ impl FromWorld for UnifiedPipeline {
                 mask: !0,
                 alpha_to_coverage_enabled: false,
             },
-            label: Some("quad_pipeline".into()),
+            label: Some("unified_pipeline".into()),
         };
+
+        let texture_descriptor = TextureDescriptor {
+            label: Some("font_texture_array"),
+            size: Extent3d {
+                width: 1,
+                height: 1,
+                depth_or_array_layers: 1,
+            },
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: TextureDimension::D2,
+            format: TextureFormat::Rgba8UnormSrgb,
+            usage: TextureUsages::TEXTURE_BINDING | TextureUsages::COPY_DST,
+        };
+
+        let sampler_descriptor = SamplerDescriptor::default();
+
+        let texture = render_device.create_texture(&texture_descriptor);
+        let sampler = render_device.create_sampler(&sampler_descriptor);
+
+        let texture_view = texture.create_view(&TextureViewDescriptor {
+            label: Some("font_texture_array_view"),
+            format: None,
+            dimension: Some(TextureViewDimension::D2),
+            aspect: bevy::render2::render_resource::TextureAspect::All,
+            base_mip_level: 0,
+            base_array_layer: 0,
+            mip_level_count: None,
+            array_layer_count: None,
+        });
+
+        let image = GpuImage {
+            texture,
+            sampler,
+            texture_view,
+        };
+
+        let binding = render_device.create_bind_group(&BindGroupDescriptor {
+            label: Some("text_image_bind_group"),
+            entries: &[
+                BindGroupEntry {
+                    binding: 0,
+                    resource: BindingResource::TextureView(&image.texture_view),
+                },
+                BindGroupEntry {
+                    binding: 1,
+                    resource: BindingResource::Sampler(&image.sampler),
+                },
+            ],
+            layout: &image_layout,
+        });
 
         UnifiedPipeline {
             pipeline: pipeline_cache.queue(pipeline_desc),
             view_layout,
-            image_layout,
+            font_image_layout,
             empty_font_texture,
             types_layout,
+            image_layout,
+            default_image: (image, binding),
         }
     }
 }
@@ -211,6 +298,7 @@ pub struct ExtractQuadBundle {
 pub enum UIQuadType {
     Quad,
     Text,
+    Image,
 }
 
 #[derive(Component)]
@@ -224,6 +312,7 @@ pub struct ExtractedQuad {
     pub quad_type: UIQuadType,
     pub type_index: u32,
     pub border_radius: (f32, f32, f32, f32),
+    pub image: Option<Handle<Image>>,
 }
 
 #[repr(C)]
@@ -259,6 +348,11 @@ impl Default for QuadMeta {
     }
 }
 
+#[derive(Default)]
+pub struct ImageBindGroups {
+    values: HashMap<Handle<Image>, BindGroup>,
+}
+
 pub fn prepare_quads(
     render_device: Res<RenderDevice>,
     render_queue: Res<RenderQueue>,
@@ -266,7 +360,7 @@ pub fn prepare_quads(
     mut extracted_quads: Query<&mut ExtractedQuad>,
 ) {
     let extracted_sprite_len = extracted_quads.iter_mut().len();
-    // dont create buffers when there are no quads
+    // don't create buffers when there are no quads
     if extracted_sprite_len == 0 {
         return;
     }
@@ -275,6 +369,7 @@ pub fn prepare_quads(
     sprite_meta.types_buffer.reserve(2, &render_device);
     let quad_type_offset = sprite_meta.types_buffer.push(QuadType { t: 0 });
     let text_type_offset = sprite_meta.types_buffer.push(QuadType { t: 1 });
+    let image_type_offset = sprite_meta.types_buffer.push(QuadType { t: 2 });
     sprite_meta
         .types_buffer
         .write_buffer(&render_device, &render_queue);
@@ -292,6 +387,7 @@ pub fn prepare_quads(
         match extracted_sprite.quad_type {
             UIQuadType::Quad => extracted_sprite.type_index = quad_type_offset,
             UIQuadType::Text => extracted_sprite.type_index = text_type_offset,
+            UIQuadType::Image => extracted_sprite.type_index = image_type_offset,
         };
 
         let bottom_left = Vec4::new(
@@ -362,6 +458,9 @@ pub fn queue_quads(
     quad_pipeline: Res<UnifiedPipeline>,
     mut extracted_sprites: Query<(Entity, &ExtractedQuad)>,
     mut views: Query<&mut RenderPhase<TransparentUI>>,
+    mut image_bind_groups: ResMut<ImageBindGroups>,
+    unified_pipeline: Res<UnifiedPipeline>,
+    gpu_images: Res<RenderAssets<Image>>,
 ) {
     if let Some(type_binding) = sprite_meta.types_buffer.binding() {
         sprite_meta.types_bind_group =
@@ -384,9 +483,34 @@ pub fn queue_quads(
             label: Some("quad_view_bind_group"),
             layout: &quad_pipeline.view_layout,
         }));
+
         let draw_quad = draw_functions.read().get_id::<DrawUI>().unwrap();
         for mut transparent_phase in views.iter_mut() {
             for (entity, quad) in extracted_sprites.iter_mut() {
+                if let Some(image_handle) = quad.image.as_ref() {
+                    image_bind_groups
+                        .values
+                        .entry(image_handle.clone_weak())
+                        .or_insert_with(|| {
+                            let gpu_image = gpu_images.get(&image_handle).unwrap();
+                            render_device.create_bind_group(&BindGroupDescriptor {
+                                entries: &[
+                                    BindGroupEntry {
+                                        binding: 0,
+                                        resource: BindingResource::TextureView(
+                                            &gpu_image.texture_view,
+                                        ),
+                                    },
+                                    BindGroupEntry {
+                                        binding: 1,
+                                        resource: BindingResource::Sampler(&gpu_image.sampler),
+                                    },
+                                ],
+                                label: Some("ui_image_bind_group"),
+                                layout: &unified_pipeline.image_layout,
+                            })
+                        });
+                }
                 transparent_phase.add(TransparentUI {
                     draw_function: draw_quad,
                     pipeline: quad_pipeline.pipeline,
@@ -404,6 +528,7 @@ pub struct DrawUI {
         SRes<UnifiedPipeline>,
         SRes<RenderPipelineCache>,
         SRes<FontTextureCache>,
+        SRes<ImageBindGroups>,
         SQuery<Read<ViewUniformOffset>>,
         SQuery<Read<ExtractedQuad>>,
     )>,
@@ -425,8 +550,16 @@ impl Draw<TransparentUI> for DrawUI {
         view: Entity,
         item: &TransparentUI,
     ) {
-        let (quad_meta, unified_pipeline, pipelines, font_texture_cache, views, quads) =
-            self.params.get(world);
+        let (
+            quad_meta,
+            unified_pipeline,
+            pipelines,
+            font_texture_cache,
+            image_bind_groups,
+            views,
+            quads,
+        ) = self.params.get(world);
+
         let view_uniform = views.get(view).unwrap();
         let quad_meta = quad_meta.into_inner();
         let extracted_quad = quads.get(item.entity).unwrap();
@@ -445,20 +578,31 @@ impl Draw<TransparentUI> for DrawUI {
                 &[extracted_quad.type_index],
             );
 
+            let unified_pipeline = unified_pipeline.into_inner();
             if let Some(font_handle) = extracted_quad.font_handle.as_ref() {
                 if let Some(image_bindings) =
                     font_texture_cache.into_inner().bind_groups.get(font_handle)
                 {
                     pass.set_bind_group(1, image_bindings, &[]);
                 } else {
-                    pass.set_bind_group(
-                        1,
-                        &unified_pipeline.into_inner().empty_font_texture.1,
-                        &[],
-                    );
+                    pass.set_bind_group(1, &unified_pipeline.empty_font_texture.1, &[]);
                 }
             } else {
-                pass.set_bind_group(1, &unified_pipeline.into_inner().empty_font_texture.1, &[]);
+                pass.set_bind_group(1, &unified_pipeline.empty_font_texture.1, &[]);
+            }
+
+            if let Some(image_handle) = extracted_quad.image.as_ref() {
+                pass.set_bind_group(
+                    3,
+                    &image_bind_groups
+                        .into_inner()
+                        .values
+                        .get(image_handle)
+                        .unwrap(),
+                    &[],
+                );
+            } else {
+                pass.set_bind_group(3, &unified_pipeline.default_image.1, &[]);
             }
 
             pass.draw(

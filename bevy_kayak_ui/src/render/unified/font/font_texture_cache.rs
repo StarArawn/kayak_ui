@@ -111,7 +111,7 @@ impl FontTextureCache {
                                 resource: BindingResource::Sampler(&gpu_image.sampler),
                             },
                         ],
-                        layout: &pipeline.image_layout,
+                        layout: &pipeline.font_image_layout,
                     });
 
                     self.bind_groups
@@ -333,7 +333,7 @@ impl FontTextureCache {
                     resource: BindingResource::Sampler(&gpu_image.sampler),
                 },
             ],
-            layout: &pipeline.image_layout,
+            layout: &pipeline.font_image_layout,
         });
 
         bind_groups.insert(font_handle.clone_weak(), binding);

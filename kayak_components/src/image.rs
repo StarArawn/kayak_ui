@@ -1,9 +1,14 @@
-use kayak_core::{component, rsx, Render, Update};
+use kayak_core::{
+    render_command::RenderCommand,
+    rsx,
+    styles::{Style, StyleProp},
+    widget, Children,
+};
 
-#[component]
-pub fn Image<Children: Render + Update + Clone>(handle: u16, children: Children) {
+#[widget]
+pub fn Image(handle: u16, children: Children) {
     *styles = Some(Style {
-        render_command: StyleProp::Value(RenderCommand::Image { handle }),
+        render_command: StyleProp::Value(RenderCommand::Image { handle: *handle }),
         ..styles.clone().unwrap_or_default()
     });
 

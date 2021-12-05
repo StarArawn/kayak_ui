@@ -24,6 +24,7 @@ pub enum RenderPrimitive {
         font: u16,
     },
     Image {
+        layout: Rect,
         handle: u16,
     },
 }
@@ -34,6 +35,7 @@ impl RenderPrimitive {
             RenderPrimitive::Clip { layout, .. } => *layout = new_layout,
             RenderPrimitive::Quad { layout, .. } => *layout = new_layout,
             RenderPrimitive::Text { layout, .. } => *layout = new_layout,
+            RenderPrimitive::Image { layout, .. } => *layout = new_layout,
             _ => (),
         }
     }
@@ -71,7 +73,10 @@ impl From<&Style> for RenderPrimitive {
                 content,
                 font,
             },
-            RenderCommand::Image { handle } => Self::Image { handle },
+            RenderCommand::Image { handle } => Self::Image {
+                layout: Rect::default(),
+                handle,
+            },
         }
     }
 }

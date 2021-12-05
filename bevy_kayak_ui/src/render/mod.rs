@@ -19,7 +19,7 @@ use self::ui_pass::TransparentUI;
 
 mod ui_pass;
 mod ui_pass_driver;
-mod unified;
+pub mod unified;
 
 pub mod node {
     pub const UI_PASS_DEPENDENCIES: &str = "ui_pass_dependencies";

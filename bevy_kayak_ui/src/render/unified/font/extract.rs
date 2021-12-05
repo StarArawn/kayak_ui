@@ -14,7 +14,7 @@ use super::{font::KayakFont, font_mapping::FontMapping};
 
 pub fn extract_texts(
     mut commands: Commands,
-    context: Res<BevyContext<'static>>,
+    context: Res<BevyContext>,
     mut fonts: ResMut<Assets<KayakFont>>,
     font_mapping: Res<FontMapping>,
 ) {
@@ -137,6 +137,7 @@ pub fn extract_texts(
                         quad_type: UIQuadType::Text,
                         type_index: 0,
                         border_radius: (0.0, 0.0, 0.0, 0.0),
+                        image: None,
                     },
                 });
 

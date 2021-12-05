@@ -22,15 +22,10 @@ pub use input_event::*;
 pub use kayak_render_macros::{render, rsx, widget};
 pub use widget::Widget;
 
-pub type Children = Option<
-    Arc<
-        dyn for<'global_state> Fn(
-                Option<crate::Index>,
-                &mut crate::context::KayakContext,
-            ) + Send
-            + Sync,
-    >,
->;
+pub use resources::Resources;
+
+pub type Children =
+    Option<Arc<dyn Fn(Option<crate::Index>, &mut crate::context::KayakContext) + Send + Sync>>;
 
 #[derive(Clone)]
 pub struct OnEvent(

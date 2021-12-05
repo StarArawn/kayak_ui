@@ -6,11 +6,11 @@ use kayak_core::{
     styles::{Style, StyleProp, Units},
 };
 
-pub struct BevyContext<'a> {
-    pub kayak_context: Arc<RwLock<KayakContext<'a>>>,
+pub struct BevyContext {
+    pub kayak_context: Arc<RwLock<KayakContext>>,
 }
 
-impl<'a> BevyContext<'a> {
+impl BevyContext {
     pub fn new<F: Fn(&mut Style, &mut KayakContext)>(width: f32, height: f32, f: F) -> Self {
         let mut app_styles = Style {
             render_command: StyleProp::Value(RenderCommand::Window),

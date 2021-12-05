@@ -14,7 +14,7 @@ use super::{font::KayakFont, font_mapping::FontMapping};
 
 pub fn extract_texts(
     mut commands: Commands,
-    context: Res<BevyContext>,
+    context: Res<BevyContext<'static>>,
     mut fonts: ResMut<Assets<KayakFont>>,
     font_mapping: Res<FontMapping>,
 ) {

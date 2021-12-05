@@ -1,17 +1,21 @@
 use std::collections::HashMap;
 
+use as_any::AsAny;
 use resources::Ref;
 
 use crate::{node::NodeIndex, widget_manager::WidgetManager, Event, EventType, Index, InputEvent};
 
-pub struct KayakContext {
+pub trait GlobalState: Send + Sync {}
+
+pub struct KayakContext<'a> {
     component_states: HashMap<crate::Index, resources::Resources>,
     current_id: crate::Index,
     pub widget_manager: WidgetManager,
     last_mouse_position: (f32, f32),
+    global_state: Option<&'a mut dyn GlobalState>,
 }
 
-impl std::fmt::Debug for KayakContext {
+impl<'a> std::fmt::Debug for KayakContext<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("KayakContext")
             .field("current_id", &self.current_id)
@@ -19,13 +23,14 @@ impl std::fmt::Debug for KayakContext {
     }
 }
 
-impl KayakContext {
+impl<'a> KayakContext<'a> {
     pub fn new() -> Self {
         Self {
             component_states: HashMap::new(),
             current_id: crate::Index::default(),
             widget_manager: WidgetManager::new(),
             last_mouse_position: (0.0, 0.0),
+            global_state: None,
         }
     }
 
@@ -78,7 +83,9 @@ impl KayakContext {
         }
     }
 
-    pub fn render(&mut self) {
+    pub fn render(&mut self, global_state: &'a mut dyn GlobalState) {
+        self.global_state = Some(global_state);
+
         let dirty_nodes = self.widget_manager.dirty_nodes.clone();
         for node_index in dirty_nodes {
             if self
@@ -97,6 +104,8 @@ impl KayakContext {
 
         self.widget_manager.render();
         self.widget_manager.calculate_layout();
+
+        self.global_state = None;
     }
 
     pub fn process_events(&mut self, input_events: Vec<InputEvent>) {

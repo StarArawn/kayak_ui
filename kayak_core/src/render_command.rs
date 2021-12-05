@@ -9,6 +9,9 @@ pub enum RenderCommand {
         size: f32,
         font: u16,
     },
+    Image {
+        handle: u16,
+    },
 }
 
 impl Default for RenderCommand {

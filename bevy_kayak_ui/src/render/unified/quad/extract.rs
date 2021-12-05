@@ -10,7 +10,7 @@ use crate::{
     to_bevy_color, BevyContext,
 };
 
-pub fn extract_quads(mut commands: Commands, context: Res<BevyContext>) {
+pub fn extract_quads(mut commands: Commands, context: Res<BevyContext<'static>>) {
     let render_commands = if let Ok(context) = context.kayak_context.read() {
         context.widget_manager.build_render_primitives()
     } else {

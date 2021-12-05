@@ -23,6 +23,9 @@ pub enum RenderPrimitive {
         content: String,
         font: u16,
     },
+    Image {
+        handle: u16,
+    },
 }
 
 impl RenderPrimitive {
@@ -68,6 +71,7 @@ impl From<&Style> for RenderPrimitive {
                 content,
                 font,
             },
+            RenderCommand::Image { handle } => Self::Image { handle },
         }
     }
 }

@@ -43,7 +43,6 @@ fn BlueButton(context: KayakContext, children: Children, styles: Option<Style>) 
     };
 
     let current_button_handle = *context.create_state::<u16>(blue_button_handle).unwrap();
-    dbg!(current_button_handle);
 
     let button_styles = Style {
         width: StyleProp::Value(Units::Pixels(200.0)),
@@ -57,14 +56,15 @@ fn BlueButton(context: KayakContext, children: Children, styles: Option<Style>) 
 
     let button_id = self.get_id();
     let on_event = OnEvent::new(move |context, event| match event.event_type {
-        EventType::Click => {
-            dbg!("Clicked!");
+        EventType::MouseIn => {
             context.set_current_id(button_id);
             context.set_state::<u16>(blue_button_hover_handle);
         }
-        _ => {
+        EventType::MouseOut => {
+            context.set_current_id(button_id);
             context.set_state::<u16>(blue_button_handle);
         }
+        _ => (),
     });
 
     rsx! {

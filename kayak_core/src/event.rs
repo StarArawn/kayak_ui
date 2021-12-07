@@ -21,4 +21,6 @@ impl Default for Event {
 pub enum EventType {
     Click,
     Hover,
+    MouseIn,
+    MouseOut,
 }

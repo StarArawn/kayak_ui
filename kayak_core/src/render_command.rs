@@ -1,3 +1,5 @@
+use crate::layout_cache::Space;
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum RenderCommand {
     Empty,
@@ -8,6 +10,13 @@ pub enum RenderCommand {
         content: String,
         size: f32,
         font: u16,
+    },
+    Image {
+        handle: u16,
+    },
+    NinePatch {
+        border: Space,
+        handle: u16,
     },
 }
 

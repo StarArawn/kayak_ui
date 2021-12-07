@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use crate::{
     arc_function::build_arc_function,
     attribute::Attribute,
@@ -95,60 +97,101 @@ impl Children {
             _ => {
                 let mut iter = children_quotes.iter();
 
-                let first = iter.next().unwrap();
-                let second = iter.next().unwrap();
+                // First get shared and non-shared attributes..
+                let mut child_attributes_list = Vec::new();
+                for i in 0..children_quotes.len() {
+                    child_attributes_list.push(self.get_clonable_attributes(i));
+                }
 
-                let first = build_arc_function(quote! { child1 }, first.clone(), true, 0);
-                let second = build_arc_function(quote! { child2 }, second.clone(), true, 1);
+                let mut all_attributes = HashSet::new();
+                for child_attributes in child_attributes_list.iter() {
+                    for child_attribute in child_attributes {
+                        all_attributes.insert(child_attribute.to_string());
+                    }
+                }
 
-                let children_attributes0: Vec<_> = self.get_clonable_attributes(0);
-                let children_attributes1: Vec<_> = self.get_clonable_attributes(1);
-                let (children_attributes0, children_attributes1, matching) =
-                    handle_tuple_attributes(&children_attributes0, &children_attributes1);
-
-                let base_matching: Vec<proc_macro2::TokenStream> = matching
+                let base_matching: Vec<proc_macro2::TokenStream> = all_attributes
                     .iter()
-                    .map(|a| {
-                        format!("base_{}", a.to_string())
-                            .to_string()
-                            .parse()
-                            .unwrap()
-                    })
+                    .map(|a| format!("base_{}", a).to_string().parse().unwrap())
                     .collect();
 
+                let all_attributes: Vec<proc_macro2::TokenStream> =
+                    all_attributes.iter().map(|a| a.parse().unwrap()).collect();
+
                 let base_clone = quote! {
-                    #(let #base_matching = #matching.clone();)*
+                    #(let #base_matching = #all_attributes.clone();)*
                 };
 
                 let base_clones_inner = quote! {
-                    #(let #matching = #base_matching.clone();)*
+                    #(let #all_attributes = #base_matching.clone();)*
                 };
 
-                let cloned_attrs0 = quote! {
-                    #(let #children_attributes0 = #children_attributes0.clone();)*
-                };
-                let cloned_attrs1 = quote! {
-                    #(let #children_attributes1 = #children_attributes1.clone();)*
-                };
+                let mut output = Vec::new();
+                output.push(quote! { #base_clone });
+                for i in 0..children_quotes.len() {
+                    output.push(quote! { #base_clones_inner });
+                    let name: proc_macro2::TokenStream = format!("child{}", i).parse().unwrap();
+                    let child =
+                        build_arc_function(quote! { #name }, children_quotes[i].clone(), true, i);
+                    output.push(quote! { #child });
+                }
 
-                let tuple_of_tuples = iter.fold(
-                    quote! {
-                        #base_clone
-                        #cloned_attrs0
-                        #base_clones_inner
-                        #first
-                        #base_clones_inner
-                        #cloned_attrs1
-                        #second
-                    },
-                    |renderable, current| quote!((#renderable, #current)),
-                );
+                // let first = iter.next().unwrap();
+                // let second = iter.next().unwrap();
+
+                // let first = build_arc_function(quote! { child1 }, first.clone(), true, 0);
+                // let second = build_arc_function(quote! { child2 }, second.clone(), true, 1);
+
+                // let children_attributes0: Vec<_> = self.get_clonable_attributes(0);
+                // let children_attributes1: Vec<_> = self.get_clonable_attributes(1);
+                // let (children_attributes0, children_attributes1, matching) =
+                //     handle_tuple_attributes(&children_attributes0, &children_attributes1);
+
+                // let base_matching: Vec<proc_macro2::TokenStream> = matching
+                //     .iter()
+                //     .map(|a| {
+                //         format!("base_{}", a.to_string())
+                //             .to_string()
+                //             .parse()
+                //             .unwrap()
+                //     })
+                //     .collect();
+
+                // let base_clone = quote! {
+                //     #(let #base_matching = #matching.clone();)*
+                // };
+
+                // let base_clones_inner = quote! {
+                //     #(let #matching = #base_matching.clone();)*
+                // };
+
+                // let cloned_attrs0 = quote! {
+                //     #(let #children_attributes0 = #children_attributes0.clone();)*
+                // };
+                // let cloned_attrs1 = quote! {
+                //     #(let #children_attributes1 = #children_attributes1.clone();)*
+                // };
+
+                // let tuple_of_tuples = iter.fold(
+                //     quote! {
+                //         #base_clone
+                //         #cloned_attrs0
+                //         #base_clones_inner
+                //         #first
+                //         #base_clones_inner
+                //         #cloned_attrs1
+                //         #second
+                //     },
+                //     |renderable, current| quote!((#renderable, #current)),
+                // );
 
                 quote! {
                     Some(std::sync::Arc::new(move |parent_id: Option<kayak_core::Index>, context: &mut kayak_core::context::KayakContext| {
-                        #tuple_of_tuples
+                        #(#output)*
                     }))
                 }
+
+                // quote! {}
             }
         }
     }

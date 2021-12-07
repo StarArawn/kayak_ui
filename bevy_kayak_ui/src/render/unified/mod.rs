@@ -9,7 +9,11 @@ use crate::render::{
     unified::pipeline::{DrawUI, QuadMeta, UnifiedPipeline},
 };
 
+use self::pipeline::ImageBindGroups;
+
 pub mod font;
+pub mod image;
+mod nine_patch;
 mod pipeline;
 mod quad;
 
@@ -26,6 +30,7 @@ impl Plugin for UnifiedRenderPlugin {
 
         let render_app = app.sub_app(RenderApp);
         render_app
+            .init_resource::<ImageBindGroups>()
             .init_resource::<UnifiedPipeline>()
             .init_resource::<QuadMeta>()
             .add_system_to_stage(RenderStage::Prepare, pipeline::prepare_quads)
@@ -41,6 +46,8 @@ impl Plugin for UnifiedRenderPlugin {
             .add(draw_quad);
 
         app.add_plugin(font::TextRendererPlugin)
-            .add_plugin(quad::QuadRendererPlugin);
+            .add_plugin(quad::QuadRendererPlugin)
+            .add_plugin(image::ImageRendererPlugin)
+            .add_plugin(nine_patch::NinePatchRendererPlugin);
     }
 }

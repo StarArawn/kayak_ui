@@ -137,6 +137,9 @@ pub fn extract_texts(
                         quad_type: UIQuadType::Text,
                         type_index: 0,
                         border_radius: (0.0, 0.0, 0.0, 0.0),
+                        image: None,
+                        uv_max: None,
+                        uv_min: None,
                     },
                 });
 

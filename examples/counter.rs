@@ -7,6 +7,7 @@ use bevy::{
 use bevy_kayak_ui::{BevyContext, BevyKayakUIPlugin, UICameraBundle};
 use kayak_components::{Button, Text, Window};
 use kayak_core::{
+    context::KayakContext,
     styles::{Style, StyleProp, Units},
     EventType, Index, OnEvent,
 };
@@ -14,7 +15,7 @@ use kayak_ui::components::App;
 use kayak_ui::core::{rsx, widget};
 
 #[widget]
-fn Counter() {
+fn Counter(context: &mut KayakContext) {
     let count = {
         let x = context.create_state(0i32).unwrap();
         *x

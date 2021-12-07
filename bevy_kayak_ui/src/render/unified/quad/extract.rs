@@ -47,6 +47,9 @@ pub fn extract_quads(mut commands: Commands, context: Res<BevyContext>) {
                 quad_type: UIQuadType::Quad,
                 type_index: 0,
                 border_radius: *border_radius,
+                image: None,
+                uv_max: None,
+                uv_min: None,
             },
         });
     }

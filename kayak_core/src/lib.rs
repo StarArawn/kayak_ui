@@ -22,6 +22,8 @@ pub use input_event::*;
 pub use kayak_render_macros::{render, rsx, widget};
 pub use widget::Widget;
 
+pub use resources::Resources;
+
 pub type Children =
     Option<Arc<dyn Fn(Option<crate::Index>, &mut crate::context::KayakContext) + Send + Sync>>;
 

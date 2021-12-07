@@ -139,6 +139,7 @@ impl WidgetManager {
             right: crate::styles::StyleProp::Default,
             top: crate::styles::StyleProp::Default,
             width: crate::styles::StyleProp::Default,
+            ..Style::default()
         };
         for dirty_node_index in self.dirty_render_nodes.drain(..) {
             let dirty_widget = self.current_widgets[dirty_node_index].as_ref().unwrap();

@@ -1,6 +1,5 @@
-use std::collections::HashMap;
-
 use resources::Ref;
+use std::collections::HashMap;
 
 use crate::{node::NodeIndex, widget_manager::WidgetManager, Event, EventType, Index, InputEvent};
 
@@ -9,6 +8,7 @@ pub struct KayakContext {
     current_id: crate::Index,
     pub widget_manager: WidgetManager,
     last_mouse_position: (f32, f32),
+    pub global_state: resources::Resources,
 }
 
 impl std::fmt::Debug for KayakContext {
@@ -26,6 +26,7 @@ impl KayakContext {
             current_id: crate::Index::default(),
             widget_manager: WidgetManager::new(),
             last_mouse_position: (0.0, 0.0),
+            global_state: resources::Resources::default(),
         }
     }
 
@@ -37,6 +38,7 @@ impl KayakContext {
         &mut self,
         initial_state: T,
     ) -> Option<Ref<T>> {
+        dbg!(self.current_id);
         if self.component_states.contains_key(&self.current_id) {
             let states = self.component_states.get_mut(&self.current_id).unwrap();
             if !states.contains::<T>() {
@@ -61,10 +63,12 @@ impl KayakContext {
     }
 
     pub fn set_state<T: resources::Resource + Clone>(&mut self, state: T) {
+        dbg!(self.current_id);
         if self.component_states.contains_key(&self.current_id) {
             let states = self.component_states.get(&self.current_id).unwrap();
             if states.contains::<T>() {
                 let mut mutate_t = states.get_mut::<T>().unwrap();
+                dbg!("Mutating state!");
                 self.widget_manager.dirty_nodes.push(self.current_id);
                 *mutate_t = state;
             } else {
@@ -76,6 +80,20 @@ impl KayakContext {
         } else {
             // Do nothing..
         }
+    }
+
+    pub fn set_global_state<T: resources::Resource>(&mut self, state: T) {
+        self.global_state.insert(state);
+    }
+
+    pub fn get_global_state<T: resources::Resource>(
+        &mut self,
+    ) -> Result<resources::RefMut<T>, resources::CantGetResource> {
+        self.global_state.get_mut::<T>()
+    }
+
+    pub fn take_global_state<T: resources::Resource>(&mut self) -> Option<T> {
+        self.global_state.remove::<T>()
     }
 
     pub fn render(&mut self) {

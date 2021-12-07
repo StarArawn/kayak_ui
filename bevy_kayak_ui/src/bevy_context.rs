@@ -23,9 +23,6 @@ impl BevyContext {
 
         if let Ok(mut kayak_context) = kayak_context.write() {
             f(&mut app_styles, &mut kayak_context);
-
-            kayak_context.render();
-
             kayak_context.widget_manager.dirty(true);
         }
 

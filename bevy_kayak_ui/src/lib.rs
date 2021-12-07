@@ -1,7 +1,7 @@
 use bevy::{
     input::{mouse::MouseButtonInput, ElementState},
     math::Vec2,
-    prelude::{EventReader, MouseButton, Plugin, Res, ResMut},
+    prelude::{EventReader, IntoExclusiveSystem, MouseButton, Plugin, Res, World},
     render2::color::Color,
     window::{CursorMoved, Windows},
 };
@@ -13,6 +13,7 @@ mod render;
 pub use bevy_context::BevyContext;
 pub use camera::*;
 use kayak_core::InputEvent;
+pub use render::unified::image::ImageManager;
 
 #[derive(Default)]
 pub struct BevyKayakUIPlugin;
@@ -21,7 +22,8 @@ impl Plugin for BevyKayakUIPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
         app.add_plugin(render::BevyKayakUIRenderPlugin)
             .add_plugin(camera::KayakUICameraPlugin)
-            .add_system(update);
+            .add_system(process_events)
+            .add_system(update.exclusive_system());
     }
 }
 
@@ -29,11 +31,22 @@ pub(crate) fn to_bevy_color(color: &kayak_core::color::Color) -> Color {
     Color::rgba(color.r, color.g, color.b, color.a)
 }
 
-pub fn update(
-    bevy_context: ResMut<BevyContext>,
+pub fn update(world: &mut World) {
+    let bevy_context = world.remove_resource::<BevyContext>().unwrap();
+    if let Ok(mut context) = bevy_context.kayak_context.write() {
+        context.set_global_state(std::mem::take(world));
+        context.render();
+        *world = context.take_global_state::<World>().unwrap()
+    }
+
+    world.insert_resource(bevy_context);
+}
+
+pub fn process_events(
+    bevy_context: Res<BevyContext>,
+    windows: Res<Windows>,
     mut cursor_moved_events: EventReader<CursorMoved>,
     mut mouse_button_input_events: EventReader<MouseButtonInput>,
-    windows: Res<Windows>,
 ) {
     let window_size = if let Some(window) = windows.get_primary() {
         Vec2::new(window.width(), window.height())
@@ -42,9 +55,8 @@ pub fn update(
     };
 
     if let Ok(mut context) = bevy_context.kayak_context.write() {
-        context.render();
-
         let mut input_events = Vec::new();
+
         for event in cursor_moved_events.iter() {
             input_events.push(InputEvent::MouseMoved((
                 event.position.x as f32,

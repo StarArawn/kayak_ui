@@ -111,7 +111,7 @@ impl FontTextureCache {
                                 resource: BindingResource::Sampler(&gpu_image.sampler),
                             },
                         ],
-                        layout: &pipeline.image_layout,
+                        layout: &pipeline.font_image_layout,
                     });
 
                     self.bind_groups
@@ -305,7 +305,6 @@ impl FontTextureCache {
         atlas_texture: &GpuImage,
         size: Vec2,
     ) {
-        dbg!(size);
         Self::create_texture(
             images,
             font_handle.clone_weak(),
@@ -333,7 +332,7 @@ impl FontTextureCache {
                     resource: BindingResource::Sampler(&gpu_image.sampler),
                 },
             ],
-            layout: &pipeline.image_layout,
+            layout: &pipeline.font_image_layout,
         });
 
         bind_groups.insert(font_handle.clone_weak(), binding);

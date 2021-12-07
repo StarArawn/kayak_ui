@@ -10,7 +10,6 @@ use crate::{tags::OpenTag, widget_attributes::WidgetAttributes};
 
 #[derive(Debug, Clone)]
 pub struct Widget {
-    name: syn::Path,
     pub attributes: WidgetAttributes,
     pub children: Children,
     declaration: TokenStream,
@@ -82,7 +81,6 @@ impl Widget {
         };
 
         Ok(Widget {
-            name,
             attributes: open_tag.attributes,
             children,
             declaration,

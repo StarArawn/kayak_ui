@@ -49,6 +49,10 @@ pub struct Style {
     pub padding_right: StyleProp<Units>,
     pub padding_top: StyleProp<Units>,
     pub padding_bottom: StyleProp<Units>,
+    pub margin_left: StyleProp<Units>,
+    pub margin_right: StyleProp<Units>,
+    pub margin_top: StyleProp<Units>,
+    pub margin_bottom: StyleProp<Units>,
 }
 
 impl Default for Style {
@@ -70,6 +74,10 @@ impl Default for Style {
             padding_right: StyleProp::Default,
             padding_top: StyleProp::Default,
             padding_bottom: StyleProp::Default,
+            margin_left: StyleProp::Default,
+            margin_right: StyleProp::Default,
+            margin_top: StyleProp::Default,
+            margin_bottom: StyleProp::Default,
         }
     }
 }
@@ -162,6 +170,22 @@ impl Style {
         }
         match self.padding_bottom {
             StyleProp::Inherit => self.padding_bottom = other.padding_bottom.clone(),
+            _ => (),
+        }
+        match self.margin_left {
+            StyleProp::Inherit => self.margin_left = other.margin_left.clone(),
+            _ => (),
+        }
+        match self.margin_right {
+            StyleProp::Inherit => self.margin_right = other.margin_right.clone(),
+            _ => (),
+        }
+        match self.margin_top {
+            StyleProp::Inherit => self.margin_top = other.margin_top.clone(),
+            _ => (),
+        }
+        match self.margin_bottom {
+            StyleProp::Inherit => self.margin_bottom = other.margin_bottom.clone(),
             _ => (),
         }
     }

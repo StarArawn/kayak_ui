@@ -130,7 +130,7 @@ pub fn extract_nine_patch(
         extracted_quads.push(top_middle_quad);
 
         // Bottom
-        let bottom_y_pos = layout.posy + (layout.width - border.bottom);
+        let bottom_y_pos = layout.posy + (layout.height - border.bottom);
         let bottom_left_quad = ExtractQuadBundle {
             extracted_quad: ExtractedQuad {
                 rect: Rect {
@@ -245,7 +245,7 @@ pub fn extract_nine_patch(
                 },
                 uv_min: Some(Vec2::new(
                     border.left / image_size.x,
-                    border.bottom / image_size.y,
+                    border.top / image_size.y,
                 )),
                 uv_max: Some(Vec2::new(
                     (image_size.x - border.right) / image_size.x,

@@ -38,6 +38,7 @@ impl KayakContext {
         &mut self,
         initial_state: T,
     ) -> Option<Ref<T>> {
+        dbg!(self.current_id);
         if self.component_states.contains_key(&self.current_id) {
             let states = self.component_states.get_mut(&self.current_id).unwrap();
             if !states.contains::<T>() {
@@ -62,10 +63,12 @@ impl KayakContext {
     }
 
     pub fn set_state<T: resources::Resource + Clone>(&mut self, state: T) {
+        dbg!(self.current_id);
         if self.component_states.contains_key(&self.current_id) {
             let states = self.component_states.get(&self.current_id).unwrap();
             if states.contains::<T>() {
                 let mut mutate_t = states.get_mut::<T>().unwrap();
+                dbg!("Mutating state!");
                 self.widget_manager.dirty_nodes.push(self.current_id);
                 *mutate_t = state;
             } else {

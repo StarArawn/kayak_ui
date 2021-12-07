@@ -90,14 +90,11 @@ pub fn set_font_texture(
 ) {
     // quick and dirty, run this for all textures anytime a texture is created.
     for event in texture_events.iter() {
-        dbg!(&event);
         match event {
             AssetEvent::Created { handle } => {
                 let handle_path = asset_server.get_handle_path(handle).unwrap();
-                dbg!(&handle_path);
                 if handle_path.path().to_str().unwrap().contains("roboto") {
                     if let Some(mut texture) = textures.get_mut(handle) {
-                        dbg!("Setting font texture!");
                         texture.texture_descriptor.format = TextureFormat::Rgba8Unorm;
                         texture.sampler_descriptor.min_filter = FilterMode::Linear;
                         texture.sampler_descriptor.mipmap_filter = FilterMode::Linear;

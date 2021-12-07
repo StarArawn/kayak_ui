@@ -138,6 +138,8 @@ pub fn extract_texts(
                         type_index: 0,
                         border_radius: (0.0, 0.0, 0.0, 0.0),
                         image: None,
+                        uv_max: None,
+                        uv_min: None,
                     },
                 });
 

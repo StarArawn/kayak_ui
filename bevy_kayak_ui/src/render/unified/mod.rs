@@ -13,6 +13,7 @@ use self::pipeline::ImageBindGroups;
 
 pub mod font;
 pub mod image;
+mod nine_patch;
 mod pipeline;
 mod quad;
 
@@ -46,6 +47,7 @@ impl Plugin for UnifiedRenderPlugin {
 
         app.add_plugin(font::TextRendererPlugin)
             .add_plugin(quad::QuadRendererPlugin)
-            .add_plugin(image::ImageRendererPlugin);
+            .add_plugin(image::ImageRendererPlugin)
+            .add_plugin(nine_patch::NinePatchRendererPlugin);
     }
 }

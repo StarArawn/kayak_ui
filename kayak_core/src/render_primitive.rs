@@ -1,6 +1,6 @@
 use crate::{
     color::Color,
-    layout_cache::Rect,
+    layout_cache::{Rect, Space},
     render_command::RenderCommand,
     styles::{Style, StyleProp},
 };
@@ -27,6 +27,11 @@ pub enum RenderPrimitive {
         layout: Rect,
         handle: u16,
     },
+    NinePatch {
+        border: Space,
+        layout: Rect,
+        handle: u16,
+    },
 }
 
 impl RenderPrimitive {
@@ -36,6 +41,7 @@ impl RenderPrimitive {
             RenderPrimitive::Quad { layout, .. } => *layout = new_layout,
             RenderPrimitive::Text { layout, .. } => *layout = new_layout,
             RenderPrimitive::Image { layout, .. } => *layout = new_layout,
+            RenderPrimitive::NinePatch { layout, .. } => *layout = new_layout,
             _ => (),
         }
     }
@@ -74,6 +80,11 @@ impl From<&Style> for RenderPrimitive {
                 font,
             },
             RenderCommand::Image { handle } => Self::Image {
+                layout: Rect::default(),
+                handle,
+            },
+            RenderCommand::NinePatch { handle, border } => Self::NinePatch {
+                border,
                 layout: Rect::default(),
                 handle,
             },

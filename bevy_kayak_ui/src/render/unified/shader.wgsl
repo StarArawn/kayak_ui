@@ -38,7 +38,6 @@ fn vertex(
     out.uv = vertex_uv.xyz;
     out.size = vertex_pos_size.zw;
     out.border_radius = vertex_uv.w;
-
     return out;
 }
 

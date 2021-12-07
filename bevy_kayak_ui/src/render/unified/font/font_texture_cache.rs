@@ -305,7 +305,6 @@ impl FontTextureCache {
         atlas_texture: &GpuImage,
         size: Vec2,
     ) {
-        dbg!(size);
         Self::create_texture(
             images,
             font_handle.clone_weak(),

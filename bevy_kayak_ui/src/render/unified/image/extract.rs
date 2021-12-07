@@ -51,6 +51,8 @@ pub fn extract_images(
                 image: image_manager
                     .get_handle(handle)
                     .and_then(|a| Some(a.clone_weak())),
+                uv_max: None,
+                uv_min: None,
             },
         });
     }

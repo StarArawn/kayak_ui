@@ -20,7 +20,7 @@ impl Rect {
     }
 }
 
-#[derive(Debug, Default, Clone, Copy)]
+#[derive(Debug, Default, Clone, Copy, PartialEq)]
 pub struct Space {
     pub left: f32,
     pub right: f32,

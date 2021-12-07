@@ -22,7 +22,7 @@ impl ImageManager {
         } else {
             let id = self.count;
             self.count += 1;
-            self.mapping.insert(id, image_handle.clone_weak());
+            self.mapping.insert(id, image_handle.clone());
             self.reverse_mapping.insert(image_handle.clone_weak(), id);
             return id;
         }

@@ -4,7 +4,7 @@ use bevy::{
         lifetimeless::{Read, SQuery, SRes},
         SystemState,
     },
-    math::{const_vec3, Mat4, Quat, Vec3, Vec4},
+    math::{const_vec3, Mat4, Quat, Vec2, Vec3, Vec4},
     prelude::{Bundle, Component, Entity, FromWorld, Handle, Query, Res, ResMut, World},
     render2::{
         color::Color,
@@ -289,7 +289,7 @@ impl FromWorld for UnifiedPipeline {
     }
 }
 
-#[derive(Bundle)]
+#[derive(Debug, Bundle)]
 pub struct ExtractQuadBundle {
     pub(crate) extracted_quad: ExtractedQuad,
 }
@@ -301,7 +301,7 @@ pub enum UIQuadType {
     Image,
 }
 
-#[derive(Component)]
+#[derive(Debug, Component, Clone)]
 pub struct ExtractedQuad {
     pub rect: Rect,
     pub color: Color,
@@ -313,6 +313,8 @@ pub struct ExtractedQuad {
     pub type_index: u32,
     pub border_radius: (f32, f32, f32, f32),
     pub image: Option<Handle<Image>>,
+    pub uv_min: Option<Vec2>,
+    pub uv_max: Option<Vec2>,
 }
 
 #[repr(C)]
@@ -390,27 +392,30 @@ pub fn prepare_quads(
             UIQuadType::Image => extracted_sprite.type_index = image_type_offset,
         };
 
+        let uv_min = extracted_sprite.uv_min.unwrap_or(Vec2::ZERO);
+        let uv_max = extracted_sprite.uv_max.unwrap_or(Vec2::ONE);
+
         let bottom_left = Vec4::new(
-            0.0,
-            1.0,
+            uv_min.x,
+            uv_max.y,
             extracted_sprite.char_id as f32,
             extracted_sprite.border_radius.0,
         );
         let top_left = Vec4::new(
-            0.0,
-            0.0,
+            uv_min.x,
+            uv_min.y,
             extracted_sprite.char_id as f32,
             extracted_sprite.border_radius.1,
         );
         let top_right = Vec4::new(
-            1.0,
-            0.0,
+            uv_max.x,
+            uv_min.y,
             extracted_sprite.char_id as f32,
             extracted_sprite.border_radius.2,
         );
         let bottom_right = Vec4::new(
-            1.0,
-            1.0,
+            uv_max.x,
+            uv_max.y,
             extracted_sprite.char_id as f32,
             extracted_sprite.border_radius.3,
         );

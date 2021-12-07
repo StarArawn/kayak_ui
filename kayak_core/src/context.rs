@@ -5,10 +5,11 @@ use crate::{node::NodeIndex, widget_manager::WidgetManager, Event, EventType, In
 
 pub struct KayakContext {
     component_states: HashMap<crate::Index, resources::Resources>,
-    current_id: crate::Index,
+    current_id: Index,
     pub widget_manager: WidgetManager,
     last_mouse_position: (f32, f32),
     pub global_state: resources::Resources,
+    previous_events: HashMap<Index, Option<EventType>>,
 }
 
 impl std::fmt::Debug for KayakContext {
@@ -27,6 +28,7 @@ impl KayakContext {
             widget_manager: WidgetManager::new(),
             last_mouse_position: (0.0, 0.0),
             global_state: resources::Resources::default(),
+            previous_events: HashMap::new(),
         }
     }
 
@@ -38,7 +40,6 @@ impl KayakContext {
         &mut self,
         initial_state: T,
     ) -> Option<Ref<T>> {
-        dbg!(self.current_id);
         if self.component_states.contains_key(&self.current_id) {
             let states = self.component_states.get_mut(&self.current_id).unwrap();
             if !states.contains::<T>() {
@@ -63,12 +64,10 @@ impl KayakContext {
     }
 
     pub fn set_state<T: resources::Resource + Clone>(&mut self, state: T) {
-        dbg!(self.current_id);
         if self.component_states.contains_key(&self.current_id) {
             let states = self.component_states.get(&self.current_id).unwrap();
             if states.contains::<T>() {
                 let mut mutate_t = states.get_mut::<T>().unwrap();
-                dbg!("Mutating state!");
                 self.widget_manager.dirty_nodes.push(self.current_id);
                 *mutate_t = state;
             } else {
@@ -126,12 +125,51 @@ impl KayakContext {
                         InputEvent::MouseMoved(point) => {
                             // Hover event.
                             if layout.contains(point) {
+                                if Self::get_last_event(&self.previous_events, &index).is_none() {
+                                    let mouse_in_event = Event {
+                                        target: index,
+                                        event_type: EventType::MouseIn,
+                                        ..Event::default()
+                                    };
+                                    events_stream.push(mouse_in_event);
+                                    Self::set_last_event(
+                                        &mut self.previous_events,
+                                        &index,
+                                        Some(EventType::MouseIn),
+                                    );
+                                }
                                 let hover_event = Event {
                                     target: index,
                                     event_type: EventType::Hover,
                                     ..Event::default()
                                 };
                                 events_stream.push(hover_event);
+                                Self::set_last_event(
+                                    &mut self.previous_events,
+                                    &index,
+                                    Some(EventType::Hover),
+                                );
+                            } else {
+                                if let Some(event) =
+                                    Self::get_last_event(&self.previous_events, &index)
+                                {
+                                    if matches!(event, EventType::Hover)
+                                        | matches!(event, EventType::MouseIn)
+                                    {
+                                        let mouse_out_event = Event {
+                                            target: index,
+                                            event_type: EventType::MouseOut,
+                                            ..Event::default()
+                                        };
+                                        events_stream.push(mouse_out_event);
+                                        Self::set_last_event(
+                                            &mut self.previous_events,
+                                            &index,
+                                            Some(EventType::MouseOut),
+                                        );
+                                    }
+                                }
+                                Self::set_last_event(&mut self.previous_events, &index, None);
                             }
                             self.last_mouse_position = *point;
                         }
@@ -168,6 +206,25 @@ impl KayakContext {
                 }
             }
         }
+    }
+
+    fn get_last_event(
+        previous_events: &HashMap<Index, Option<EventType>>,
+        widget_id: &Index,
+    ) -> Option<EventType> {
+        if previous_events.contains_key(widget_id) {
+            previous_events.get(widget_id).and_then(|e| *e)
+        } else {
+            None
+        }
+    }
+
+    fn set_last_event(
+        previous_events: &mut HashMap<Index, Option<EventType>>,
+        widget_id: &Index,
+        event_type: Option<EventType>,
+    ) {
+        previous_events.insert(*widget_id, event_type);
     }
 
     fn get_all_parents(&self, current: Index, parents: &mut Vec<Index>) {

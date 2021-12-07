@@ -46,7 +46,6 @@ pub fn extract_nine_patch(
         let image = images.get(image_handle.as_ref().unwrap());
 
         if image.is_none() {
-            dbg!("Uh oh no image! :(");
             continue;
         }
 

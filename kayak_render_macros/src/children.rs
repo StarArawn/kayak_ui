@@ -95,8 +95,6 @@ impl Children {
                 }
             }
             _ => {
-                let mut iter = children_quotes.iter();
-
                 // First get shared and non-shared attributes..
                 let mut child_attributes_list = Vec::new();
                 for i in 0..children_quotes.len() {
@@ -218,41 +216,41 @@ impl ToTokens for Children {
 
 // Takes two incoming attribute streams like: "styles foo bar" and "styles" and resolves
 // them into three separate lists like: "foo bar", "", and "styles"
-fn handle_tuple_attributes(
-    a: &Vec<proc_macro2::TokenStream>,
-    b: &Vec<proc_macro2::TokenStream>,
-) -> (
-    Vec<proc_macro2::TokenStream>,
-    Vec<proc_macro2::TokenStream>,
-    Vec<proc_macro2::TokenStream>,
-) {
-    let mut stream1: Vec<String> = a.iter().map(|a| a.to_string()).collect();
-    let mut stream2: Vec<String> = b.iter().map(|b| b.to_string()).collect();
-    let matching1: Vec<&String> = stream1
-        .iter()
-        .filter(|a| stream2.iter().any(|b| *a == b))
-        .collect();
-    let matching2: Vec<&String> = stream2
-        .iter()
-        .filter(|a| stream1.iter().any(|b| *a == b))
-        .collect();
-    let mut matching: Vec<String> = Vec::new();
-    matching.extend(matching1.iter().map(|x| (*x).clone()).collect::<Vec<_>>());
-    matching.extend(matching2.iter().map(|x| (*x).clone()).collect::<Vec<_>>());
-    matching.sort_unstable();
-    matching.dedup_by(|a, b| a.eq(&b));
+// fn handle_tuple_attributes(
+//     a: &Vec<proc_macro2::TokenStream>,
+//     b: &Vec<proc_macro2::TokenStream>,
+// ) -> (
+//     Vec<proc_macro2::TokenStream>,
+//     Vec<proc_macro2::TokenStream>,
+//     Vec<proc_macro2::TokenStream>,
+// ) {
+//     let mut stream1: Vec<String> = a.iter().map(|a| a.to_string()).collect();
+//     let mut stream2: Vec<String> = b.iter().map(|b| b.to_string()).collect();
+//     let matching1: Vec<&String> = stream1
+//         .iter()
+//         .filter(|a| stream2.iter().any(|b| *a == b))
+//         .collect();
+//     let matching2: Vec<&String> = stream2
+//         .iter()
+//         .filter(|a| stream1.iter().any(|b| *a == b))
+//         .collect();
+//     let mut matching: Vec<String> = Vec::new();
+//     matching.extend(matching1.iter().map(|x| (*x).clone()).collect::<Vec<_>>());
+//     matching.extend(matching2.iter().map(|x| (*x).clone()).collect::<Vec<_>>());
+//     matching.sort_unstable();
+//     matching.dedup_by(|a, b| a.eq(&b));
 
-    stream1 = stream1
-        .into_iter()
-        .filter(|a| !matching.iter().any(|b| a == b))
-        .collect();
-    stream2 = stream2
-        .into_iter()
-        .filter(|a| !matching.iter().any(|b| a == b))
-        .collect();
+//     stream1 = stream1
+//         .into_iter()
+//         .filter(|a| !matching.iter().any(|b| a == b))
+//         .collect();
+//     stream2 = stream2
+//         .into_iter()
+//         .filter(|a| !matching.iter().any(|b| a == b))
+//         .collect();
 
-    let matching = matching.iter().map(|m| m.parse().unwrap()).collect();
-    let stream1 = stream1.iter().map(|m| m.parse().unwrap()).collect();
-    let stream2 = stream2.iter().map(|m| m.parse().unwrap()).collect();
-    (stream1, stream2, matching)
-}
+//     let matching = matching.iter().map(|m| m.parse().unwrap()).collect();
+//     let stream1 = stream1.iter().map(|m| m.parse().unwrap()).collect();
+//     let stream2 = stream2.iter().map(|m| m.parse().unwrap()).collect();
+//     (stream1, stream2, matching)
+// }

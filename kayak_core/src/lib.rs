@@ -15,6 +15,7 @@ pub mod widget_manager;
 
 use std::sync::{Arc, RwLock};
 
+pub use context::*;
 pub use event::*;
 pub use fragment::Fragment;
 pub use generational_arena::{Arena, Index};

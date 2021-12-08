@@ -92,15 +92,17 @@ pub fn set_font_texture(
     for event in texture_events.iter() {
         match event {
             AssetEvent::Created { handle } => {
-                let handle_path = asset_server.get_handle_path(handle).unwrap();
-                if handle_path.path().to_str().unwrap().contains("roboto") {
-                    if let Some(mut texture) = textures.get_mut(handle) {
-                        texture.texture_descriptor.format = TextureFormat::Rgba8Unorm;
-                        texture.sampler_descriptor.min_filter = FilterMode::Linear;
-                        texture.sampler_descriptor.mipmap_filter = FilterMode::Linear;
-                        texture.sampler_descriptor.mag_filter = FilterMode::Linear;
-                        texture.texture_descriptor.usage =
-                            TextureUsages::COPY_DST | TextureUsages::COPY_SRC;
+                if let Some(handle_path) = asset_server.get_handle_path(handle) {
+                    if handle_path.path().to_str().unwrap().contains("roboto") {
+                        if let Some(mut texture) = textures.get_mut(handle) {
+                            texture.texture_descriptor.format = TextureFormat::Rgba8Unorm;
+                            texture.sampler_descriptor.min_filter = FilterMode::Linear;
+                            texture.sampler_descriptor.mipmap_filter = FilterMode::Linear;
+                            texture.sampler_descriptor.mag_filter = FilterMode::Linear;
+                            texture.texture_descriptor.usage = TextureUsages::TEXTURE_BINDING
+                                | TextureUsages::COPY_DST
+                                | TextureUsages::COPY_SRC;
+                        }
                     }
                 }
             }
@@ -114,7 +116,7 @@ fn extract_fonts(
     mut commands: Commands,
     font_assets: Res<Assets<KayakFont>>,
     mut events: EventReader<AssetEvent<KayakFont>>,
-    mut textures: ResMut<Assets<Image>>,
+    textures: Res<Assets<Image>>,
 ) {
     let mut extracted_fonts = ExtractedFonts { fonts: Vec::new() };
     let mut changed_assets = HashSet::default();

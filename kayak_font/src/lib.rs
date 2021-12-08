@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 mod color_flags;
 mod contour;
 mod font;

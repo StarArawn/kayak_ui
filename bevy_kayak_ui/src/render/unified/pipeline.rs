@@ -102,7 +102,7 @@ impl FromWorld for UnifiedPipeline {
                         visibility: ShaderStages::FRAGMENT,
                         ty: BindingType::Texture {
                             multisampled: false,
-                            sample_type: TextureSampleType::Float { filterable: false },
+                            sample_type: TextureSampleType::Float { filterable: true },
                             view_dimension: TextureViewDimension::D2Array,
                         },
                         count: None,
@@ -127,7 +127,7 @@ impl FromWorld for UnifiedPipeline {
                     visibility: ShaderStages::FRAGMENT,
                     ty: BindingType::Texture {
                         multisampled: false,
-                        sample_type: TextureSampleType::Float { filterable: false },
+                        sample_type: TextureSampleType::Float { filterable: true },
                         view_dimension: TextureViewDimension::D2,
                     },
                     count: None,
@@ -247,7 +247,7 @@ impl FromWorld for UnifiedPipeline {
 
         let texture_view = texture.create_view(&TextureViewDescriptor {
             label: Some("font_texture_array_view"),
-            format: None,
+            format: Some(TextureFormat::Rgba8UnormSrgb),
             dimension: Some(TextureViewDimension::D2),
             aspect: bevy::render2::render_resource::TextureAspect::All,
             base_mip_level: 0,

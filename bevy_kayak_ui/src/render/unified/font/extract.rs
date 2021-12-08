@@ -102,7 +102,7 @@ pub fn extract_texts(
                 .find(|glyph| glyph.unicode == c)
             {
                 let plane_bounds = glyph.plane_bounds.as_ref();
-                let (left, top, width, height) = match plane_bounds {
+                let (left, top, _width, _height) = match plane_bounds {
                     Some(val) => (
                         val.left,
                         val.top,
@@ -115,8 +115,6 @@ pub fn extract_texts(
                 let font_ratio = font_size / font.sdf.as_ref().unwrap().atlas.size;
                 let resized_max_glyph_size =
                     (max_glyph_size.x * font_ratio, max_glyph_size.y * font_ratio);
-
-                let shift_y = resized_max_glyph_size.1 - height;
 
                 let position_x = layout.posx + x + left * font_size;
                 let position_y = (layout.posy + (-top * font_size)) + font_size;

@@ -1,6 +1,6 @@
 use bevy::{
     math::Vec2,
-    prelude::{Assets, Handle, Res},
+    prelude::{Handle, Res},
     render2::{
         render_asset::RenderAssets,
         render_resource::{
@@ -179,7 +179,7 @@ impl FontTextureCache {
 
         let texture_view = texture.create_view(&TextureViewDescriptor {
             label: Some("font_texture_array_view"),
-            format: None,
+            format: Some(format),
             dimension: Some(TextureViewDimension::D2Array),
             aspect: bevy::render2::render_resource::TextureAspect::All,
             base_mip_level: 0,
@@ -339,7 +339,7 @@ impl FontTextureCache {
 
         // Now fill the texture data.
 
-        let atlas_width = sdf.atlas.width;
+        let _atlas_width = sdf.atlas.width;
         let atlas_height = sdf.atlas.height;
 
         for (i, glyph) in sdf.glyphs.iter().enumerate() {

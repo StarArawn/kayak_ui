@@ -1,21 +1,6 @@
-use crate::render::unified::pipeline::UnifiedPipeline;
-
-use self::{
-    atlas::Atlas,
-    glyph::{Glyph, Rect},
-    metrics::Metrics,
-};
-use bevy::{
-    math::Vec2,
-    prelude::Handle,
-    render2::{
-        renderer::{RenderDevice, RenderQueue},
-        texture::GpuImage,
-    },
-};
+use self::{atlas::Atlas, glyph::Glyph, metrics::Metrics};
+use bevy::math::Vec2;
 use serde::Deserialize;
-
-use super::{FontTextureCache, KayakFont};
 
 mod atlas;
 mod glyph;

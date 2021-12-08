@@ -251,8 +251,8 @@ fn get_new_size(org_width: f32, new_width: f32, org_height: f32, new_height: f32
 }
 
 pub fn calculate_ratio(org_width: f32, new_width: f32, org_height: f32, new_height: f32) -> f32 {
-    let mut area_size = 0.0;
-    let mut image_size = 0.0;
+    let area_size;
+    let image_size;
 
     if new_height * org_width > new_width * org_height {
         area_size = new_height;

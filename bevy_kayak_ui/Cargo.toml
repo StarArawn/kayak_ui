@@ -5,12 +5,12 @@ edition = "2021"
 
 [dependencies]
 bytemuck = "1.7.2"
-bevy = { git = "https://github.com/StarArawn/bevy", rev = "146ddbe5f839d5d635fe350a535155231d4050c2" }
+bevy = { git = "https://github.com/StarArawn/bevy", rev = "f3c82f2b0091aefa832ab45eaf15c2be2faa0785" }
 kayak_core = { path = "../kayak_core" }
 kayak_components = { path = "../kayak_components" }
 kayak_render_macros = { path = "../kayak_render_macros" }
 kayak_font = { path = "../kayak_font" }
-crevice = { git = "https://github.com/StarArawn/bevy", rev = "146ddbe5f839d5d635fe350a535155231d4050c2" }
+crevice = { git = "https://github.com/StarArawn/bevy", rev = "f3c82f2b0091aefa832ab45eaf15c2be2faa0785" }
 serde = "1.0"
 serde_json = "1.0"
 serde_path_to_error = "0.1"

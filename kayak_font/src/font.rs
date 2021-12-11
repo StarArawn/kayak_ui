@@ -25,6 +25,12 @@ pub struct LayoutRect {
     pub content: char,
 }
 
+#[derive(Debug, Clone, Copy)]
+pub enum CoordinateSystem {
+    PositiveYUp,
+    PositiveYDown,
+}
+
 impl KayakFont {
     pub fn new(sdf: Sdf, atlas_image: Handle<Image>) -> Self {
         Self {
@@ -46,7 +52,13 @@ impl KayakFont {
         self.char_ids.get(&c).and_then(|id| Some(*id))
     }
 
-    pub fn get_layout(&self, position: Vec2, content: &String, font_size: f32) -> Vec<LayoutRect> {
+    pub fn get_layout(
+        &self,
+        axis_alignment: CoordinateSystem,
+        position: Vec2,
+        content: &String,
+        font_size: f32,
+    ) -> Vec<LayoutRect> {
         let mut positions_and_size = Vec::new();
         let max_glyph_size = self.sdf.max_glyph_size();
         let font_ratio = font_size / self.sdf.atlas.size;
@@ -66,8 +78,13 @@ impl KayakFont {
                     None => (0.0, 0.0, 0.0, 0.0),
                 };
 
+                let shift_sign = match axis_alignment {
+                    CoordinateSystem::PositiveYDown => -1.0,
+                    CoordinateSystem::PositiveYUp => 1.0,
+                };
+
                 let position_x = position.x + x + left * font_size;
-                let position_y = (position.y + (-top * font_size)) + font_size;
+                let position_y = (position.y + (shift_sign * top * font_size)) + font_size;
 
                 positions_and_size.push(LayoutRect {
                     position: Vec2::new(position_x, position_y),

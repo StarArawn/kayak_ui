@@ -4,7 +4,7 @@ use bevy::{
     sprite2::Rect,
 };
 use kayak_core::render_primitive::RenderPrimitive;
-use kayak_font::KayakFont;
+use kayak_font::{CoordinateSystem, KayakFont};
 
 use crate::{
     render::unified::pipeline::{ExtractQuadBundle, ExtractedQuad, UIQuadType},
@@ -52,8 +52,12 @@ pub fn extract_texts(
 
         let font = font.unwrap();
 
-        let chars_layouts =
-            font.get_layout(Vec2::new(layout.posx, layout.posy), content, font_size);
+        let chars_layouts = font.get_layout(
+            CoordinateSystem::PositiveYDown,
+            Vec2::new(layout.posx, layout.posy),
+            content,
+            font_size,
+        );
 
         for char_layout in chars_layouts {
             extracted_texts.push(ExtractQuadBundle {

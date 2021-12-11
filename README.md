@@ -1,7 +1,7 @@
 <p align="center">
     <img src="images/kayak.svg" alt="Kayak UI" width="600" />
 </p>
-<br/><br/><br/><br/>
+<br/>
 
 <h1>
     <p align="center">
@@ -12,12 +12,8 @@
 ## What is Kayak UI?
 Kayak UI is a declarative UI that can be used to make user interfaces in Rust primarily targeting games. It's free an open-source!
 
-<br/>
-
 ## WARNING
 Kayak UI is in the very early stages of development. Important features are missing and documentation is non-existent. There are a few weird oddities because of how the rsx proc macro works, but these could be fixed in the future. Currently kayak is built to be used inside of bevy and as such the existing renderer is built with that in mind, however Kayak UI is render agnostic and could be rendered using any modern rendering API. 
-
-<br/>
 
 ## Features
 - Easy to use declarative syntax using a custom proc macro
@@ -37,7 +33,6 @@ Kayak UI is in the very early stages of development. Important features are miss
 
 ## Example Screenshot
 <img src="images/screen1.png" alt="Kayak UI" width="600" />
-<br/><br/>
 
 ## Declarative
 Kayak UI makes it painless to build out complex UI's using custom or pre-built widgets. Custom widgets are layed out in a XML like syntax that allows you to more easily visualize the widget tree. Here's an example of that syntax:
@@ -65,7 +60,6 @@ pub fn MyCustomWidget(children: Children, styles: Option<Style>) {
     }
 }
 ```
-<br/>
 
 ## Widget State
 ```rust

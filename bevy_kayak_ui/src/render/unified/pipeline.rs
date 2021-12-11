@@ -499,28 +499,29 @@ pub fn queue_quads(
         for mut transparent_phase in views.iter_mut() {
             for (entity, quad) in extracted_sprites.iter_mut() {
                 if let Some(image_handle) = quad.image.as_ref() {
-                    image_bind_groups
-                        .values
-                        .entry(image_handle.clone_weak())
-                        .or_insert_with(|| {
-                            let gpu_image = gpu_images.get(&image_handle).unwrap();
-                            render_device.create_bind_group(&BindGroupDescriptor {
-                                entries: &[
-                                    BindGroupEntry {
-                                        binding: 0,
-                                        resource: BindingResource::TextureView(
-                                            &gpu_image.texture_view,
-                                        ),
-                                    },
-                                    BindGroupEntry {
-                                        binding: 1,
-                                        resource: BindingResource::Sampler(&gpu_image.sampler),
-                                    },
-                                ],
-                                label: Some("ui_image_bind_group"),
-                                layout: &unified_pipeline.image_layout,
-                            })
-                        });
+                    if let Some(gpu_image) = gpu_images.get(&image_handle) {
+                        image_bind_groups
+                            .values
+                            .entry(image_handle.clone_weak())
+                            .or_insert_with(|| {
+                                render_device.create_bind_group(&BindGroupDescriptor {
+                                    entries: &[
+                                        BindGroupEntry {
+                                            binding: 0,
+                                            resource: BindingResource::TextureView(
+                                                &gpu_image.texture_view,
+                                            ),
+                                        },
+                                        BindGroupEntry {
+                                            binding: 1,
+                                            resource: BindingResource::Sampler(&gpu_image.sampler),
+                                        },
+                                    ],
+                                    label: Some("ui_image_bind_group"),
+                                    layout: &unified_pipeline.image_layout,
+                                })
+                            });
+                    }
                 }
                 transparent_phase.add(TransparentUI {
                     draw_function: draw_quad,
@@ -603,15 +604,11 @@ impl Draw<TransparentUI> for DrawUI {
             }
 
             if let Some(image_handle) = extracted_quad.image.as_ref() {
-                pass.set_bind_group(
-                    3,
-                    &image_bind_groups
-                        .into_inner()
-                        .values
-                        .get(image_handle)
-                        .unwrap(),
-                    &[],
-                );
+                if let Some(bind_group) = image_bind_groups.into_inner().values.get(image_handle) {
+                    pass.set_bind_group(3, &bind_group, &[]);
+                } else {
+                    pass.set_bind_group(3, &unified_pipeline.default_image.1, &[]);
+                }
             } else {
                 pass.set_bind_group(3, &unified_pipeline.default_image.1, &[]);
             }

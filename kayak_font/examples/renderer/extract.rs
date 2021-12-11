@@ -20,8 +20,11 @@ pub fn extract(
         if let Some(font) = fonts.get(font_handle) {
             let layouts = font.get_layout(
                 CoordinateSystem::PositiveYUp,
+                text.horz_alignment,
                 text.position,
+                text.size,
                 &text.content,
+                text.line_height,
                 text.font_size,
             );
 

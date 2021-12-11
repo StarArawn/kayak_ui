@@ -25,10 +25,17 @@ pub struct LayoutRect {
     pub content: char,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum CoordinateSystem {
     PositiveYUp,
     PositiveYDown,
+}
+
+#[derive(Copy, Clone, PartialEq)]
+pub enum Alignment {
+    Start,
+    Middle,
+    End,
 }
 
 impl KayakFont {
@@ -52,23 +59,12 @@ impl KayakFont {
         self.char_ids.get(&c).and_then(|id| Some(*id))
     }
 
-    pub fn get_layout(
-        &self,
-        axis_alignment: CoordinateSystem,
-        position: Vec2,
-        content: &String,
-        font_size: f32,
-    ) -> Vec<LayoutRect> {
-        let mut positions_and_size = Vec::new();
-        let max_glyph_size = self.sdf.max_glyph_size();
-        let font_ratio = font_size / self.sdf.atlas.size;
-        let resized_max_glyph_size = (max_glyph_size.x * font_ratio, max_glyph_size.y * font_ratio);
-
-        let mut x = 0.0;
-        for c in content.chars() {
+    pub fn get_word_width(&self, word: &str, font_size: f32) -> f32 {
+        let mut width = 0.0;
+        for c in word.chars() {
             if let Some(glyph) = self.sdf.glyphs.iter().find(|glyph| glyph.unicode == c) {
                 let plane_bounds = glyph.plane_bounds.as_ref();
-                let (left, top, _width, _height) = match plane_bounds {
+                let (_, _, char_width, _) = match plane_bounds {
                     Some(val) => (
                         val.left,
                         val.top,
@@ -78,21 +74,112 @@ impl KayakFont {
                     None => (0.0, 0.0, 0.0, 0.0),
                 };
 
-                let shift_sign = match axis_alignment {
-                    CoordinateSystem::PositiveYDown => -1.0,
-                    CoordinateSystem::PositiveYUp => 1.0,
-                };
+                width += char_width;
+            }
+        }
 
-                let position_x = position.x + x + left * font_size;
-                let position_y = (position.y + (shift_sign * top * font_size)) + font_size;
+        width
+    }
 
-                positions_and_size.push(LayoutRect {
-                    position: Vec2::new(position_x, position_y),
-                    size: Vec2::new(resized_max_glyph_size.0, resized_max_glyph_size.1),
-                    content: c,
-                });
+    pub fn get_layout(
+        &self,
+        axis_alignment: CoordinateSystem,
+        alignment: Alignment,
+        position: Vec2,
+        max_size: Vec2,
+        content: &String,
+        line_height: f32,
+        font_size: f32,
+    ) -> Vec<LayoutRect> {
+        let mut positions_and_size = Vec::new();
+        let max_glyph_size = self.sdf.max_glyph_size();
+        let font_ratio = font_size / self.sdf.atlas.size;
+        let resized_max_glyph_size = (max_glyph_size.x * font_ratio, max_glyph_size.y * font_ratio);
 
-                x += glyph.advance * font_size;
+        // TODO: Make this configurable?
+        let split_chars = vec![' ', '\t', '-', '\n'];
+        let missing_chars: Vec<char> = content
+            .chars()
+            .filter(|c| split_chars.iter().any(|c2| c == c2))
+            .collect();
+
+        let shift_sign = match axis_alignment {
+            CoordinateSystem::PositiveYDown => -1.0,
+            CoordinateSystem::PositiveYUp => 1.0,
+        };
+
+        let mut line_widths = Vec::new();
+
+        let mut x = 0.0;
+        let mut y = 0.0;
+        let mut i = 0;
+        let mut line_starting_index = 0;
+        let mut last_width = 0.0;
+        for word in content.split(&split_chars[..]) {
+            let word_width = self.get_word_width(word, font_size);
+            if x + word_width > max_size.x {
+                y -= shift_sign * line_height;
+                line_widths.push((x, line_starting_index, positions_and_size.len()));
+                line_starting_index = positions_and_size.len();
+                x = 0.0;
+            }
+            for c in word.chars() {
+                if let Some(glyph) = self.sdf.glyphs.iter().find(|glyph| glyph.unicode == c) {
+                    let plane_bounds = glyph.plane_bounds.as_ref();
+                    let (left, top, width, _height) = match plane_bounds {
+                        Some(val) => (
+                            val.left,
+                            val.top,
+                            val.size().x * font_size,
+                            val.size().y * font_size,
+                        ),
+                        None => (0.0, 0.0, 0.0, 0.0),
+                    };
+
+                    last_width = width;
+
+                    let position_x = x + left * font_size;
+                    let position_y = y + (shift_sign * top * font_size);
+
+                    positions_and_size.push(LayoutRect {
+                        position: Vec2::new(position_x, position_y),
+                        size: Vec2::new(resized_max_glyph_size.0, resized_max_glyph_size.1),
+                        content: c,
+                    });
+
+                    x += glyph.advance * font_size;
+                }
+            }
+            if let Some(next_missing) = missing_chars.get(i) {
+                if let Some(glyph) = self
+                    .sdf
+                    .glyphs
+                    .iter()
+                    .find(|glyph| glyph.unicode == *next_missing)
+                {
+                    x += glyph.advance * font_size;
+                }
+                i += 1;
+            }
+        }
+
+        line_widths.push((
+            x + last_width,
+            line_starting_index,
+            positions_and_size.len(),
+        ));
+
+        for (line_width, starting_index, end_index) in line_widths {
+            let shift_x = match alignment {
+                Alignment::Start => 0.0,
+                Alignment::Middle => (max_size.x - line_width) / 2.0,
+                Alignment::End => max_size.x - line_width,
+            };
+            for i in starting_index..end_index {
+                let layout_rect = &mut positions_and_size[i];
+
+                layout_rect.position.x += position.x + shift_x;
+                layout_rect.position.y += position.y;
             }
         }
 

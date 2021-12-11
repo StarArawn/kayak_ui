@@ -5,7 +5,7 @@ use bevy::{
     window::WindowDescriptor,
     PipelinedDefaultPlugins,
 };
-use kayak_font::{KayakFont, KayakFontPlugin};
+use kayak_font::{Alignment, KayakFont, KayakFontPlugin};
 
 mod renderer;
 use renderer::FontRenderPlugin;
@@ -19,11 +19,39 @@ fn startup(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands
         .spawn()
         .insert(Text {
+            horz_alignment: Alignment::Start,
             color: Color::WHITE,
-            content: "Hello World!".into(),
+            content: "Hello World! This text should wrap because its super long!".into(),
             font_size: 32.0,
+            line_height: 32.0 * 1.2, // Firefox method of calculating default line heights see: https://developer.mozilla.org/en-US/docs/Web/CSS/line-height
             position: Vec2::new(5.0, 5.0),
-            size: Vec2::new(100.0, 100.0),
+            size: Vec2::new(250.0, 100.0),
+        })
+        .insert(font_handle.clone());
+
+    commands
+        .spawn()
+        .insert(Text {
+            horz_alignment: Alignment::End,
+            color: Color::WHITE,
+            content: "This is some text that will wrap and also be aligned to the right.".into(),
+            font_size: 32.0,
+            line_height: 32.0 * 1.2, // Firefox method of calculating default line heights see: https://developer.mozilla.org/en-US/docs/Web/CSS/line-height
+            position: Vec2::new(-255.0, 5.0),
+            size: Vec2::new(250.0, 100.0),
+        })
+        .insert(font_handle.clone());
+
+    commands
+        .spawn()
+        .insert(Text {
+            horz_alignment: Alignment::Middle,
+            color: Color::WHITE,
+            content: "This is some text that will wrap and also be aligned in the middle.".into(),
+            font_size: 32.0,
+            line_height: 32.0 * 1.2, // Firefox method of calculating default line heights see: https://developer.mozilla.org/en-US/docs/Web/CSS/line-height
+            position: Vec2::new(-125.0, -155.0),
+            size: Vec2::new(250.0, 100.0),
         })
         .insert(font_handle);
 }

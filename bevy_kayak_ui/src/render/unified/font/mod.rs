@@ -12,7 +12,7 @@ use bevy::{
     },
     utils::HashSet,
 };
-use kayak_font::{KayakFont, Sdf, FontTextureCache};
+use kayak_font::{FontTextureCache, KayakFont, Sdf};
 
 mod extract;
 mod font_mapping;
@@ -54,7 +54,6 @@ fn load_fonts(
     asset_server: Res<AssetServer>,
 ) {
     let sdf = Sdf::from_string(include_str!("../../../../../assets/roboto.json").to_string());
-    let max_glyph_size = sdf.max_glyph_size();
 
     let atlas_image: Handle<Image> = asset_server.load("roboto.png");
 

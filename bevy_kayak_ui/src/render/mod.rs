@@ -1,5 +1,5 @@
 use bevy::{
-    core_pipeline::{node::MAIN_PASS_DRIVER, MainPass2dNode},
+    core_pipeline::node::MAIN_PASS_DRIVER,
     prelude::{Commands, Plugin, Res},
     render2::{
         camera::ActiveCameras,

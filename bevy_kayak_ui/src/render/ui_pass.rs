@@ -1,5 +1,4 @@
 use bevy::core::FloatOrd;
-use bevy::core_pipeline::ClearColor;
 use bevy::ecs::prelude::*;
 use bevy::render2::render_phase::{DrawFunctionId, PhaseItem};
 use bevy::render2::render_resource::{CachedPipelineId, RenderPassColorAttachment};
@@ -67,7 +66,7 @@ impl Node for MainPassUINode {
             .query
             .get_manual(world, view_entity)
             .expect("view entity should exist");
-        let clear_color = world.get_resource::<ClearColor>().unwrap();
+        // let clear_color = world.get_resource::<ClearColor>().unwrap();
         {
             let pass_descriptor = RenderPassDescriptor {
                 label: Some("main_transparent_pass_UI"),

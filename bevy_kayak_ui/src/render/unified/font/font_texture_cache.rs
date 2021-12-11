@@ -70,70 +70,24 @@ impl FontTextureCache {
         for kayak_font_handle in new_fonts {
             let mut was_processed = true;
             if let Some(font) = self.fonts.get(&kayak_font_handle) {
-                if let Some(sdf) = &font.sdf {
-                    let atlas_handle = font.atlas_image.as_ref().unwrap();
-                    if let Some(atlas_texture) = render_images.get(atlas_handle) {
-                        Self::create_from_atlas(
-                            &mut self.images,
-                            &mut self.bind_groups,
-                            sdf,
-                            kayak_font_handle.clone_weak(),
-                            device,
-                            queue,
-                            pipeline,
-                            atlas_texture,
-                            sdf.max_glyph_size(),
-                        );
-                    } else {
-                        was_processed = false;
-                    }
-                } else {
-                    Self::create_texture(
+                if let Some(atlas_texture) = render_images.get(&font.atlas_image) {
+                    Self::create_from_atlas(
                         &mut self.images,
+                        &mut self.bind_groups,
+                        &font.sdf,
                         kayak_font_handle.clone_weak(),
-                        (font.font.cache.dimensions.0, font.font.cache.dimensions.1),
                         device,
-                        TextureFormat::Rgba32Float,
+                        queue,
+                        pipeline,
+                        atlas_texture,
+                        font.sdf.max_glyph_size(),
                     );
-
-                    let gpu_image = self.images.get(&kayak_font_handle).unwrap();
-
-                    // create bind group
-                    let binding = device.create_bind_group(&BindGroupDescriptor {
-                        label: Some("text_image_bind_group"),
-                        entries: &[
-                            BindGroupEntry {
-                                binding: 0,
-                                resource: BindingResource::TextureView(&gpu_image.texture_view),
-                            },
-                            BindGroupEntry {
-                                binding: 1,
-                                resource: BindingResource::Sampler(&gpu_image.sampler),
-                            },
-                        ],
-                        layout: &pipeline.font_image_layout,
-                    });
-
-                    self.bind_groups
-                        .insert(kayak_font_handle.clone_weak(), binding);
+                } else {
+                    was_processed = false;
                 }
             }
             if !was_processed {
                 self.new_fonts.push(kayak_font_handle.clone_weak());
-            }
-        }
-    }
-
-    pub fn process_updated(&mut self, queue: &RenderQueue) {
-        let updated_fonts = self.updated_fonts.drain(..);
-        for kayak_font_handle in updated_fonts {
-            if let Some(font) = self.fonts.get_mut(&kayak_font_handle) {
-                Self::process_new_chars_into_texture(
-                    &mut self.images,
-                    kayak_font_handle,
-                    font,
-                    queue,
-                );
             }
         }
     }
@@ -195,45 +149,6 @@ impl FontTextureCache {
         };
 
         images.insert(font_handle, image);
-    }
-
-    pub fn process_new_chars_into_texture(
-        images: &mut HashMap<Handle<KayakFont>, GpuImage>,
-        kayak_font_handle: Handle<KayakFont>,
-        font: &mut KayakFont,
-        queue: &RenderQueue,
-    ) {
-        let size = font.font.cache.dimensions;
-        if let Some(gpu_image) = images.get_mut(&kayak_font_handle) {
-            for (_, id, pixels) in font.font.get_data_to_process() {
-                let format_size = TextureFormat::Rgba32Float.pixel_size();
-                queue.write_texture(
-                    ImageCopyTexture {
-                        texture: &gpu_image.texture,
-                        mip_level: 0,
-                        origin: Origin3d {
-                            x: 0,
-                            y: 0,
-                            z: id as u32,
-                        },
-                        aspect: TextureAspect::All,
-                    },
-                    &pixels,
-                    ImageDataLayout {
-                        offset: 0,
-                        bytes_per_row: Some(
-                            std::num::NonZeroU32::new(size.0 * format_size as u32).unwrap(),
-                        ),
-                        rows_per_image: None,
-                    },
-                    Extent3d {
-                        width: size.0,
-                        height: size.1,
-                        depth_or_array_layers: 1,
-                    },
-                );
-            }
-        }
     }
 
     pub fn get_empty(

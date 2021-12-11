@@ -68,7 +68,7 @@ impl KayakContext {
             let states = self.component_states.get(&self.current_id).unwrap();
             if states.contains::<T>() {
                 let mut mutate_t = states.get_mut::<T>().unwrap();
-                self.widget_manager.dirty_nodes.push(self.current_id);
+                self.widget_manager.dirty_nodes.insert(self.current_id);
                 *mutate_t = state;
             } else {
                 panic!(
@@ -96,22 +96,21 @@ impl KayakContext {
     }
 
     pub fn render(&mut self) {
-        let dirty_nodes = self.widget_manager.dirty_nodes.clone();
+        let dirty_nodes: Vec<_> = self.widget_manager.dirty_nodes.drain().collect();
         for node_index in dirty_nodes {
-            if self
-                .widget_manager
-                .dirty_nodes
-                .iter()
-                .any(|dirty_index| node_index == *dirty_index)
-            {
+            // if self
+            //     .widget_manager
+            //     .dirty_nodes
+            //     .iter()
+            //     .any(|dirty_index| node_index == *dirty_index)
+            // {
                 let mut widget = self.widget_manager.take(node_index);
                 widget.render(self);
                 self.widget_manager.repossess(widget);
-            }
+            // }
         }
 
-        self.widget_manager.dirty_nodes.clear();
-
+        // self.widget_manager.dirty_nodes.clear();
         self.widget_manager.render();
         self.widget_manager.calculate_layout();
     }

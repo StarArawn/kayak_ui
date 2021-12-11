@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use crate::{
     layout_cache::LayoutCache,
     node::{Node, NodeBuilder, NodeIndex},
@@ -13,7 +15,7 @@ use crate::{
 pub struct WidgetManager {
     pub(crate) current_widgets: Arena<Option<Box<dyn Widget>>>,
     pub(crate) dirty_render_nodes: Vec<Index>,
-    pub(crate) dirty_nodes: Vec<Index>,
+    pub(crate) dirty_nodes: HashSet<Index>,
     pub(crate) nodes: Arena<Option<Node>>,
     pub tree: Tree,
     pub node_tree: Tree,
@@ -26,7 +28,7 @@ impl WidgetManager {
         Self {
             current_widgets: Arena::new(),
             dirty_render_nodes: Vec::new(),
-            dirty_nodes: Vec::new(),
+            dirty_nodes: HashSet::new(),
             nodes: Arena::new(),
             tree: Tree::default(),
             node_tree: Tree::default(),
@@ -40,11 +42,11 @@ impl WidgetManager {
     /// Can be slow.
     pub fn dirty(&mut self, force: bool) {
         // Force tree to re-render from root.
-        self.dirty_nodes.push(self.tree.root_node);
+        self.dirty_nodes.insert(self.tree.root_node);
 
         if force {
             for (node_index, _) in self.current_widgets.iter() {
-                self.dirty_nodes.push(node_index);
+                self.dirty_nodes.insert(node_index);
                 self.dirty_render_nodes.push(node_index);
             }
         }
@@ -62,9 +64,9 @@ impl WidgetManager {
                 if let Some(widget_id) = parent_children.get(index) {
                     widget.set_id(*widget_id);
                     // Remove from the dirty nodes lists.
-                    if let Some(index) = self.dirty_nodes.iter().position(|id| *widget_id == *id) {
-                        self.dirty_nodes.remove(index);
-                    }
+                    // if let Some(index) = self.dirty_nodes.iter().position(|id| *widget_id == *id) {
+                    //     self.dirty_nodes.remove(index);
+                    // }
 
                     // TODO: Figure a good way of diffing props passed to children of a widget
                     // that wont naturally-rerender it's children because of a lack of changes
@@ -102,9 +104,9 @@ impl WidgetManager {
         self.dirty_render_nodes.push(widget_id);
 
         // Remove from the dirty nodes lists.
-        if let Some(index) = self.dirty_nodes.iter().position(|id| widget_id == *id) {
-            self.dirty_nodes.remove(index);
-        }
+        // if let Some(index) = self.dirty_nodes.iter().position(|id| widget_id == *id) {
+        //     self.dirty_nodes.remove(index);
+        // }
 
         self.tree.add(0, widget_id, parent);
         self.layout_cache.add(NodeIndex(widget_id));

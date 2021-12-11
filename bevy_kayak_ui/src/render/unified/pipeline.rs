@@ -306,7 +306,7 @@ pub struct ExtractedQuad {
     pub rect: Rect,
     pub color: Color,
     pub vertex_index: usize,
-    pub char_id: usize,
+    pub char_id: u32,
     pub z_index: f32,
     pub font_handle: Option<Handle<KayakFont>>,
     pub quad_type: UIQuadType,

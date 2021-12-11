@@ -59,27 +59,15 @@ fn load_fonts(
     mut font_mapping: ResMut<FontMapping>,
     asset_server: Res<AssetServer>,
 ) {
-    let font_bytes = include_bytes!("../../../../../resources/Roboto-Regular.ttf");
     let sdf = Sdf::from_string(include_str!("../../../../../assets/roboto.json").to_string());
     let max_glyph_size = sdf.max_glyph_size();
-    let mut font = kayak_font::Font::new(
-        font_bytes,
-        (max_glyph_size.x as u32, max_glyph_size.y as u32),
-    );
 
     let atlas_image: Handle<Image> = asset_server.load("roboto.png");
 
-    for glyph in sdf.glyphs.iter() {
-        if !font.cache.has_character(glyph.unicode) {
-            font.cache.add_character(glyph.unicode);
-        }
-    }
+    let mut font = KayakFont::new(sdf, atlas_image);
+    font.generate_char_ids();
 
-    let handle = font_assets.add(KayakFont {
-        font,
-        atlas_image: Some(atlas_image),
-        sdf: Some(sdf),
-    });
+    let handle = font_assets.add(font);
     font_mapping.add(handle);
 }
 
@@ -143,20 +131,18 @@ fn extract_fonts(
 
     for handle in changed_assets {
         let font_asset = font_assets.get(&handle).unwrap();
-        if let Some(image) = font_asset.atlas_image.as_ref() {
-            if let Some(image) = textures.get(image) {
-                if !image
-                    .texture_descriptor
-                    .usage
-                    .contains(TextureUsages::COPY_SRC)
-                {
-                    not_processed.push(handle);
-                    continue;
-                }
-            } else {
+        if let Some(image) = textures.get(&font_asset.atlas_image) {
+            if !image
+                .texture_descriptor
+                .usage
+                .contains(TextureUsages::COPY_SRC)
+            {
                 not_processed.push(handle);
                 continue;
             }
+        } else {
+            not_processed.push(handle);
+            continue;
         }
 
         let font = font_asset.clone();
@@ -184,5 +170,4 @@ fn create_and_update_font_cache_texture(
     images: Res<RenderAssets<Image>>,
 ) {
     font_texture_cache.process_new(&device, &queue, &pipeline, &images);
-    font_texture_cache.process_updated(&queue);
 }

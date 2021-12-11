@@ -75,7 +75,7 @@ impl Node for MainPassUINode {
                     view: &target.view,
                     resolve_target: None,
                     ops: Operations {
-                        load: LoadOp::Clear(clear_color.0.into()),
+                        load: LoadOp::Load, //Clear(clear_color.0.into()),
                         store: true,
                     },
                 }],

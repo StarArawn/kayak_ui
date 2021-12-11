@@ -1,4 +1,5 @@
 use bevy::{
+    core_pipeline::{node::MAIN_PASS_DRIVER, MainPass2dNode},
     prelude::{Commands, Plugin, Res},
     render2::{
         camera::ActiveCameras,
@@ -69,6 +70,9 @@ impl Plugin for BevyKayakUIRenderPlugin {
         graph.add_node(node::UI_PASS_DRIVER, UIPassDriverNode);
         graph
             .add_node_edge(node::UI_PASS_DEPENDENCIES, node::UI_PASS_DRIVER)
+            .unwrap();
+        graph
+            .add_node_edge(MAIN_PASS_DRIVER, node::UI_PASS_DRIVER)
             .unwrap();
 
         app.add_plugin(UnifiedRenderPlugin);

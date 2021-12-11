@@ -93,19 +93,7 @@ fn fragment(in: VertexOutput) -> [[location(0)]] vec4<f32> {
         var msdf_unit = vec2<f32>(px_range, px_range) / vec2<f32>(f32(tex_dimensions.x), f32(tex_dimensions.y));
         var x = textureSample(font_texture, font_sampler, vec2<f32>(in.uv.x, 1.0 - in.uv.y), i32(in.uv.z)); 
         var v = max(min(x.r, x.g), min(max(x.r, x.g), x.b));
-        var c = v; //remap(v);
-
-        // var v2 = c / fwidth( c );
-        // var a = clamp( v2 + RADIUS, 0.0, 1.0 );
-        // var a = smoothStep(
-        //     max(RADIUS - 0.5, 0.0),
-        //     RADIUS + 0.5,
-        //     c);
-
-        // var w = fwidth(c);
-        // var a = smoothStep(0.5 - w, 0.5 + w, c);
-
-        var sig_dist = (c - 0.5) * dot(msdf_unit, 0.5 / fwidth(in.uv.xy));
+        var sig_dist = (v - 0.5) * dot(msdf_unit, 0.5 / fwidth(in.uv.xy));
         var a = clamp(sig_dist + 0.5, 0.0, 1.0);
 
         return vec4<f32>(in.color.rgb, a);

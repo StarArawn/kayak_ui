@@ -55,7 +55,7 @@ pub fn extract_texts(
         let chars_layouts = font.get_layout(
             CoordinateSystem::PositiveYDown,
             Alignment::Start,
-            Vec2::new(layout.posx, layout.posy),
+            Vec2::new(layout.posx, layout.posy + font_size),
             Vec2::new(layout.width, layout.height),
             content,
             font_size * 1.2,

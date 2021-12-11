@@ -6,12 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-arrayvec = "0.7"
-bitflags = "1.0"
-lyon_path = "0.12"
-lyon_geom = "0.12"
-fontdue = "0.6"
-ttf-parser = "0.13"
-
-[dev-dependencies]
-png = "0.16.3"
+bevy = { git = "https://github.com/bevyengine/bevy", rev = "38c7d5eb9e81ab8e1aec03673599b25a9aa0c69c" }
+serde = "1.0"
+serde_json = "1.0"
+serde_path_to_error = "0.1"

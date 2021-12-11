@@ -12,20 +12,14 @@ use bevy::{
     },
     utils::HashSet,
 };
-
-use self::{extract::extract_texts, sdf::Sdf};
-
-use super::pipeline::UnifiedPipeline;
+use kayak_font::{KayakFont, Sdf, FontTextureCache};
 
 mod extract;
-mod font;
 mod font_mapping;
-mod font_texture_cache;
-mod sdf;
 
-pub use font::*;
+use self::extract::extract_texts;
+use super::pipeline::UnifiedPipeline;
 pub use font_mapping::*;
-pub(crate) use font_texture_cache::FontTextureCache;
 
 #[derive(Default)]
 pub struct TextRendererPlugin;
@@ -169,5 +163,5 @@ fn create_and_update_font_cache_texture(
     mut font_texture_cache: ResMut<FontTextureCache>,
     images: Res<RenderAssets<Image>>,
 ) {
-    font_texture_cache.process_new(&device, &queue, &pipeline, &images);
+    font_texture_cache.process_new(&device, &queue, pipeline.into_inner(), &images);
 }

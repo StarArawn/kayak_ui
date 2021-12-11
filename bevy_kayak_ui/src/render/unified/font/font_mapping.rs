@@ -1,6 +1,5 @@
 use bevy::{prelude::Handle, utils::HashMap};
-
-use super::font::KayakFont;
+use kayak_font::KayakFont;
 
 pub struct FontMapping {
     count: u16,

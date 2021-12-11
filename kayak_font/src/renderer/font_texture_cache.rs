@@ -1,3 +1,4 @@
+use crate::{KayakFont, Sdf};
 use bevy::{
     math::Vec2,
     prelude::{Handle, Res},
@@ -16,9 +17,9 @@ use bevy::{
     utils::HashMap,
 };
 
-use crate::render::unified::pipeline::UnifiedPipeline;
-
-use super::{font::KayakFont, sdf::Sdf};
+pub trait FontRenderingPipeline {
+    fn get_font_image_layout(&self) -> &BindGroupLayout;
+}
 
 pub const MAX_CHARACTERS: u32 = 100;
 
@@ -59,11 +60,15 @@ impl FontTextureCache {
         }
     }
 
-    pub fn process_new(
+    pub fn get_binding(&self, handle: &Handle<KayakFont>) -> Option<&BindGroup> {
+        self.bind_groups.get(handle)
+    }
+
+    pub fn process_new<T: FontRenderingPipeline>(
         &mut self,
         device: &RenderDevice,
         queue: &RenderQueue,
-        pipeline: &UnifiedPipeline,
+        pipeline: &T,
         render_images: &Res<RenderAssets<Image>>,
     ) {
         let new_fonts: Vec<_> = self.new_fonts.drain(..).collect();
@@ -151,10 +156,7 @@ impl FontTextureCache {
         images.insert(font_handle, image);
     }
 
-    pub fn get_empty(
-        device: &RenderDevice,
-        image_layout: &BindGroupLayout,
-    ) -> (GpuImage, BindGroup) {
+    pub fn get_empty(device: &RenderDevice, layout: &BindGroupLayout) -> (GpuImage, BindGroup) {
         let texture_descriptor = TextureDescriptor {
             label: Some("font_texture_array"),
             size: Extent3d {
@@ -203,20 +205,20 @@ impl FontTextureCache {
                     resource: BindingResource::Sampler(&image.sampler),
                 },
             ],
-            layout: image_layout,
+            layout,
         });
 
         (image, binding)
     }
 
-    pub fn create_from_atlas(
+    pub fn create_from_atlas<T: FontRenderingPipeline>(
         images: &mut HashMap<Handle<KayakFont>, GpuImage>,
         bind_groups: &mut HashMap<Handle<KayakFont>, BindGroup>,
         sdf: &Sdf,
         font_handle: Handle<KayakFont>,
         device: &RenderDevice,
         queue: &RenderQueue,
-        pipeline: &UnifiedPipeline,
+        pipeline: &T,
         atlas_texture: &GpuImage,
         size: Vec2,
     ) {
@@ -247,7 +249,7 @@ impl FontTextureCache {
                     resource: BindingResource::Sampler(&gpu_image.sampler),
                 },
             ],
-            layout: &pipeline.font_image_layout,
+            layout: &pipeline.get_font_image_layout(),
         });
 
         bind_groups.insert(font_handle.clone_weak(), binding);

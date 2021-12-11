@@ -4,13 +4,14 @@ use bevy::{
     sprite2::Rect,
 };
 use kayak_core::render_primitive::RenderPrimitive;
+use kayak_font::KayakFont;
 
 use crate::{
     render::unified::pipeline::{ExtractQuadBundle, ExtractedQuad, UIQuadType},
     to_bevy_color, BevyContext,
 };
 
-use super::{font::KayakFont, font_mapping::FontMapping};
+use super::font_mapping::FontMapping;
 
 pub fn extract_texts(
     mut commands: Commands,

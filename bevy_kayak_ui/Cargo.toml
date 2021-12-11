@@ -9,6 +9,7 @@ bevy = { git = "https://github.com/bevyengine/bevy", rev = "38c7d5eb9e81ab8e1aec
 kayak_core = { path = "../kayak_core" }
 kayak_components = { path = "../kayak_components" }
 kayak_render_macros = { path = "../kayak_render_macros" }
+kayak_font = { path = "../kayak_font" }
 #kayak_font = { path = "../kayak_font" }
 crevice = { git = "https://github.com/bevyengine/bevy", rev = "38c7d5eb9e81ab8e1aec03673599b25a9aa0c69c" }
 serde = "1.0"

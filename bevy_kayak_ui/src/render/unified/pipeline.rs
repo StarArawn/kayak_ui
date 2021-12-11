@@ -31,8 +31,8 @@ use bevy::{
 };
 use bytemuck::{Pod, Zeroable};
 use crevice::std140::AsStd140;
+use kayak_font::{FontRenderingPipeline, FontTextureCache, KayakFont};
 
-use super::font::{FontTextureCache, KayakFont};
 use super::UNIFIED_SHADER_HANDLE;
 use crate::render::ui_pass::TransparentUI;
 
@@ -54,6 +54,12 @@ const QUAD_VERTEX_POSITIONS: &[Vec3] = &[
     const_vec3!([1.0, 0.0, 0.0]),
     const_vec3!([1.0, 1.0, 0.0]),
 ];
+
+impl FontRenderingPipeline for UnifiedPipeline {
+    fn get_font_image_layout(&self) -> &BindGroupLayout {
+        &self.font_image_layout
+    }
+}
 
 impl FromWorld for UnifiedPipeline {
     fn from_world(world: &mut World) -> Self {
@@ -586,7 +592,7 @@ impl Draw<TransparentUI> for DrawUI {
             let unified_pipeline = unified_pipeline.into_inner();
             if let Some(font_handle) = extracted_quad.font_handle.as_ref() {
                 if let Some(image_bindings) =
-                    font_texture_cache.into_inner().bind_groups.get(font_handle)
+                    font_texture_cache.into_inner().get_binding(font_handle)
                 {
                     pass.set_bind_group(1, image_bindings, &[]);
                 } else {

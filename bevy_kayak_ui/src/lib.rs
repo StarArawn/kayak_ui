@@ -13,6 +13,7 @@ mod render;
 pub use bevy_context::BevyContext;
 pub use camera::*;
 use kayak_core::InputEvent;
+pub use render::unified::font::FontMapping;
 pub use render::unified::image::ImageManager;
 
 #[derive(Default)]

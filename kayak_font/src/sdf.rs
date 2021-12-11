@@ -33,6 +33,21 @@ impl Sdf {
         value
     }
 
+    pub fn from_bytes(data: &[u8]) -> Sdf {
+        let value: Sdf = match serde_path_to_error::deserialize(
+            &mut serde_json::Deserializer::from_slice(&data),
+        ) {
+            Ok(v) => v,
+            Err(err) => {
+                let path = err.path().to_string();
+                dbg!(err);
+                panic!("failed to deserialize json! path: {}", path);
+            }
+        };
+
+        value
+    }
+
     pub fn max_glyph_size(&self) -> Vec2 {
         let mut size = Vec2::new(0.0, 0.0);
         self.glyphs.iter().for_each(|glyph| {
@@ -53,7 +68,7 @@ impl Sdf {
 
 #[test]
 fn test_sdf_loader() {
-    let sdf = Sdf::from_string(include_str!("../assets/roboto.json").to_string());
+    let sdf = Sdf::from_string(include_str!("../assets/roboto.kayak_font").to_string());
     assert!(sdf.max_glyph_size() == Vec2::new(30.0, 36.0));
     assert!(sdf.atlas.width == 212);
     assert!(sdf.atlas.height == 212);

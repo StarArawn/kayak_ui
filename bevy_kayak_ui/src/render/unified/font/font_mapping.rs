@@ -18,7 +18,7 @@ impl Default for FontMapping {
 }
 
 impl FontMapping {
-    pub(crate) fn add(&mut self, handle: Handle<KayakFont>) -> u16 {
+    pub fn add(&mut self, handle: Handle<KayakFont>) -> u16 {
         if !self.font_ids.contains_key(&handle) {
             let id = self.count;
             self.font_ids.insert(handle.clone(), id);
@@ -31,7 +31,7 @@ impl FontMapping {
         }
     }
 
-    pub(crate) fn get_handle(&self, id: u16) -> Option<Handle<KayakFont>> {
+    pub fn get_handle(&self, id: u16) -> Option<Handle<KayakFont>> {
         self.font_handles
             .get(&id)
             .and_then(|item| Some(item.clone()))

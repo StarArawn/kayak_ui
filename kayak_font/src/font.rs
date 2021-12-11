@@ -1,6 +1,12 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, path::PathBuf};
 
-use bevy::{math::Vec2, prelude::Handle, reflect::TypeUuid, render2::texture::Image};
+use bevy::{
+    asset::{AssetLoader, AssetPath, BoxedFuture, LoadContext, LoadedAsset},
+    math::Vec2,
+    prelude::Handle,
+    reflect::TypeUuid,
+    render2::texture::Image,
+};
 
 use crate::Sdf;
 
@@ -74,5 +80,38 @@ impl KayakFont {
         }
 
         positions_and_size
+    }
+}
+
+#[derive(Default)]
+pub struct KayakFontLoader;
+
+impl AssetLoader for KayakFontLoader {
+    fn load<'a>(
+        &'a self,
+        bytes: &'a [u8],
+        load_context: &'a mut LoadContext,
+    ) -> BoxedFuture<'a, Result<(), anyhow::Error>> {
+        Box::pin(async move {
+            let path = load_context.path();
+            let path = path.with_extension("png");
+            let atlas_image_path = AssetPath::new(path, None);
+            let mut font = KayakFont::new(
+                Sdf::from_bytes(bytes),
+                load_context.get_handle(atlas_image_path.clone()),
+            );
+
+            font.generate_char_ids();
+
+            load_context
+                .set_default_asset(LoadedAsset::new(font).with_dependency(atlas_image_path));
+
+            Ok(())
+        })
+    }
+
+    fn extensions(&self) -> &[&str] {
+        static EXTENSIONS: &[&str] = &["kayak_font"];
+        EXTENSIONS
     }
 }

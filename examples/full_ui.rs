@@ -4,7 +4,7 @@ use bevy::{
     window::{WindowDescriptor, Windows},
     PipelinedDefaultPlugins,
 };
-use bevy_kayak_ui::{BevyContext, BevyKayakUIPlugin, ImageManager, UICameraBundle};
+use bevy_kayak_ui::{BevyContext, BevyKayakUIPlugin, FontMapping, ImageManager, UICameraBundle};
 use kayak_components::{NinePatch, Text};
 use kayak_core::{
     context::KayakContext,
@@ -89,6 +89,7 @@ fn startup(
     windows: Res<Windows>,
     asset_server: Res<AssetServer>,
     mut image_manager: ResMut<ImageManager>,
+    mut font_mapping: ResMut<FontMapping>,
 ) {
     commands.spawn_bundle(UICameraBundle::new());
 
@@ -97,6 +98,8 @@ fn startup(
     } else {
         panic!("Couldn't find primary window!");
     };
+
+    font_mapping.add(asset_server.load("roboto.kayak_font"));
 
     let handle: Handle<bevy::render2::texture::Image> = asset_server.load("kenny/panel_brown.png");
     let panel_brown_handle = image_manager.get(&handle);

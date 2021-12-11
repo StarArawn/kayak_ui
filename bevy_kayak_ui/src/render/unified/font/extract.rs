@@ -44,7 +44,13 @@ pub fn extract_texts(
         };
 
         let font_handle = font_mapping.get_handle(font).unwrap();
-        let font = fonts.get(font_handle.clone()).unwrap();
+        let font = fonts.get(font_handle.clone());
+
+        if font.is_none() {
+            continue;
+        }
+
+        let font = font.unwrap();
 
         let chars_layouts =
             font.get_layout(Vec2::new(layout.posx, layout.posy), content, font_size);

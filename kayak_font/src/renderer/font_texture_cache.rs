@@ -7,12 +7,11 @@ use bevy::{
         render_resource::{
             AddressMode, BindGroup, BindGroupDescriptor, BindGroupEntry, BindGroupLayout,
             BindingResource, CommandEncoderDescriptor, Extent3d, FilterMode, ImageCopyTexture,
-            ImageDataLayout, Origin3d, SamplerDescriptor, TextureAspect, TextureDescriptor,
-            TextureDimension, TextureFormat, TextureUsages, TextureViewDescriptor,
-            TextureViewDimension,
+            Origin3d, SamplerDescriptor, TextureAspect, TextureDescriptor, TextureDimension,
+            TextureFormat, TextureUsages, TextureViewDescriptor, TextureViewDimension,
         },
         renderer::{RenderDevice, RenderQueue},
-        texture::{GpuImage, Image, TextureFormatPixelInfo},
+        texture::{GpuImage, Image},
     },
     utils::HashMap,
 };

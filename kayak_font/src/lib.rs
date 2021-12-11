@@ -12,7 +12,6 @@ use bevy::{
     },
     render2::{
         render_resource::{FilterMode, TextureFormat, TextureUsages},
-        renderer::{RenderDevice, RenderQueue},
         texture::Image,
         RenderApp, RenderStage,
     },

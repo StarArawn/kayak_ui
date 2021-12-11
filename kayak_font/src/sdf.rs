@@ -1,4 +1,4 @@
-use crate::{atlas::Atlas, glyph::Glyph, metrics::Metrics, SDFType};
+use crate::{atlas::Atlas, glyph::Glyph, metrics::Metrics};
 use bevy::math::Vec2;
 use serde::Deserialize;
 
@@ -68,6 +68,7 @@ impl Sdf {
 
 #[test]
 fn test_sdf_loader() {
+    use crate::SDFType;
     let sdf = Sdf::from_string(include_str!("../assets/roboto.kayak_font").to_string());
     assert!(sdf.max_glyph_size() == Vec2::new(30.0, 36.0));
     assert!(sdf.atlas.width == 212);

@@ -7,7 +7,6 @@ use bevy::{
 use bevy_kayak_ui::{BevyContext, BevyKayakUIPlugin, FontMapping, ImageManager, UICameraBundle};
 use kayak_components::{NinePatch, Text};
 use kayak_core::{
-    context::KayakContext,
     layout_cache::Space,
     styles::{LayoutType, Style, StyleProp, Units},
     widget, Children, EventType, Index, OnEvent,

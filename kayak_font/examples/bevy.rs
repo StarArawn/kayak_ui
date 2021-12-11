@@ -7,7 +7,6 @@ use kayak_font::{KayakFont, KayakFontPlugin};
 
 fn startup(mut commands: Commands, asset_server: Res<AssetServer>) {
     let font_handle: Handle<KayakFont> = asset_server.load("roboto.kayak_font");
-
     dbg!(font_handle);
 }
 

@@ -1,18 +1,13 @@
 use bevy::{
-    prelude::{
-        AddAsset, AssetEvent, AssetServer, Assets, Commands, EventReader, Handle, Local, Plugin,
-        Res, ResMut,
-    },
+    prelude::{Plugin, Res, ResMut},
     render2::{
         render_asset::RenderAssets,
-        render_resource::{FilterMode, TextureFormat, TextureUsages},
         renderer::{RenderDevice, RenderQueue},
         texture::Image,
         RenderApp, RenderStage,
     },
-    utils::HashSet,
 };
-use kayak_font::{FontTextureCache, KayakFont, KayakFontPlugin};
+use kayak_font::{FontTextureCache, KayakFontPlugin};
 
 mod extract;
 mod font_mapping;

@@ -2,12 +2,12 @@ use kayak_core::color::Color;
 use kayak_core::context::KayakContext;
 use kayak_core::render_command::RenderCommand;
 use kayak_core::styles::{Style, StyleProp};
-use kayak_core::{rsx, widget, Children, Index};
+use kayak_core::{rsx, widget, Bound, Children, Index, MutableBound};
 use morphorm::{PositionType, Units};
 
 #[widget]
 fn MyWidget(context: &mut KayakContext, children: Children) {
-    let number = *context.create_state::<u32>(0).unwrap();
+    let number = context.create_state::<u32>(0).unwrap();
     let my_styles = Style {
         render_command: StyleProp::Value(RenderCommand::Quad),
         width: StyleProp::Value(Units::Pixels(300.0)),
@@ -16,7 +16,7 @@ fn MyWidget(context: &mut KayakContext, children: Children) {
         ..Style::default()
     };
     rsx! {
-        <MyWidget2 styles={Some(my_styles)} test={number}>
+        <MyWidget2 styles={Some(my_styles)} test={number.get()}>
             {children}
         </MyWidget2>
     }
@@ -24,7 +24,7 @@ fn MyWidget(context: &mut KayakContext, children: Children) {
 
 #[widget]
 fn MyWidget2(test: u32, children: Children) {
-    let _test = test;
+    dbg!(test);
     rsx! {
         <>
             {children}
@@ -52,7 +52,8 @@ fn main() {
     let mut my_widget = context.widget_manager.take(widget_id);
     my_widget.render(&mut context);
     context.set_current_id(widget_id);
-    context.set_state::<u32>(1);
+    let number = context.create_state::<u32>(0).unwrap();
+    number.set(1);
     my_widget.render(&mut context);
     context.widget_manager.repossess(my_widget);
 

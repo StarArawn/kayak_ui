@@ -1,10 +1,11 @@
-use resources::Ref;
+use flo_binding::Changeable;
 use std::collections::HashMap;
 
 use crate::{node::NodeIndex, widget_manager::WidgetManager, Event, EventType, Index, InputEvent};
 
 pub struct KayakContext {
     component_states: HashMap<crate::Index, resources::Resources>,
+    // component_state_lifetimes: DashMap<crate::Index, Vec<Box<dyn crate::Releasable>>>,
     current_id: Index,
     pub widget_manager: WidgetManager,
     last_mouse_position: (f32, f32),
@@ -24,6 +25,7 @@ impl KayakContext {
     pub fn new() -> Self {
         Self {
             component_states: HashMap::new(),
+            // component_state_lifetimes: DashMap::new(),
             current_id: crate::Index::default(),
             widget_manager: WidgetManager::new(),
             last_mouse_position: (0.0, 0.0),
@@ -36,50 +38,94 @@ impl KayakContext {
         self.current_id = id;
     }
 
-    pub fn create_state<T: resources::Resource + Clone>(
+    pub fn create_state<T: resources::Resource + Clone + PartialEq>(
         &mut self,
         initial_state: T,
-    ) -> Option<Ref<T>> {
+    ) -> Option<crate::Binding<T>> {
         if self.component_states.contains_key(&self.current_id) {
             let states = self.component_states.get_mut(&self.current_id).unwrap();
-            if !states.contains::<T>() {
-                states.insert(initial_state);
+            if !states.contains::<crate::Binding<T>>() {
+                let state = crate::bind(initial_state);
+                let dirty_nodes = self.widget_manager.dirty_nodes.clone();
+                let cloned_id = self.current_id;
+                let mut lifetime = state.when_changed(crate::notify(move || {
+                    if let Ok(mut dirty_nodes) = dirty_nodes.lock() {
+                        dirty_nodes.insert(cloned_id);
+                    }
+                }));
+                lifetime.keep_alive();
+                // Self::insert_state_lifetime(
+                //     &mut self.component_state_lifetimes,
+                //     self.current_id,
+                //     lifetime,
+                // );
+                states.insert(state);
             }
         } else {
             let mut states = resources::Resources::default();
-            states.insert(initial_state);
+            let state = crate::bind(initial_state);
+            let dirty_nodes = self.widget_manager.dirty_nodes.clone();
+            let cloned_id = self.current_id;
+            let mut lifetime = state.when_changed(crate::notify(move || {
+                if let Ok(mut dirty_nodes) = dirty_nodes.lock() {
+                    dirty_nodes.insert(cloned_id);
+                }
+            }));
+            lifetime.keep_alive();
+            // Self::insert_state_lifetime(
+            //     &mut self.component_state_lifetimes,
+            //     self.current_id,
+            //     lifetime,
+            // );
+            states.insert(state);
             self.component_states.insert(self.current_id, states);
         }
         return self.get_state();
     }
 
-    fn get_state<T: resources::Resource + Clone>(&self) -> Option<Ref<T>> {
+    // fn insert_state_lifetime(
+    //     lifetimes: &mut DashMap<crate::Index, Vec<Box<dyn crate::Releasable>>>,
+    //     id: Index,
+    //     lifetime: Box<dyn crate::Releasable>,
+    // ) {
+    //     if lifetimes.contains_key(&id) {
+    //         if let Some(mut lifetimes) = lifetimes.get_mut(&id) {
+    //             lifetimes.push(lifetime);
+    //         }
+    //     } else {
+    //         lifetimes.insert(id, vec![lifetime]);
+    //     }
+    // }
+
+    fn get_state<T: resources::Resource + Clone + PartialEq>(&self) -> Option<T> {
         if self.component_states.contains_key(&self.current_id) {
             let states = self.component_states.get(&self.current_id).unwrap();
             if let Ok(state) = states.get::<T>() {
-                return Some(state);
+                return Some(state.clone());
             }
         }
         return None;
     }
 
-    pub fn set_state<T: resources::Resource + Clone>(&mut self, state: T) {
-        if self.component_states.contains_key(&self.current_id) {
-            let states = self.component_states.get(&self.current_id).unwrap();
-            if states.contains::<T>() {
-                let mut mutate_t = states.get_mut::<T>().unwrap();
-                self.widget_manager.dirty_nodes.insert(self.current_id);
-                *mutate_t = state;
-            } else {
-                panic!(
-                    "No specific state created for component with id: {:?}!",
-                    self.current_id
-                );
-            }
-        } else {
-            // Do nothing..
-        }
-    }
+    // pub fn set_state<T: resources::Resource + Clone>(&mut self, state: T) {
+    //     if self.component_states.contains_key(&self.current_id) {
+    //         let states = self.component_states.get(&self.current_id).unwrap();
+    //         if states.contains::<T>() {
+    //             let mut mutate_t = states.get_mut::<T>().unwrap();
+    //             if let Ok(mut dirty_nodes) = self.widget_manager.dirty_nodes.lock() {
+    //                 dirty_nodes.insert(self.current_id);
+    //             }
+    //             *mutate_t = state;
+    //         } else {
+    //             panic!(
+    //                 "No specific state created for component with id: {:?}!",
+    //                 self.current_id
+    //             );
+    //         }
+    //     } else {
+    //         // Do nothing..
+    //     }
+    // }
 
     pub fn set_global_state<T: resources::Resource>(&mut self, state: T) {
         self.global_state.insert(state);
@@ -96,7 +142,12 @@ impl KayakContext {
     }
 
     pub fn render(&mut self) {
-        let dirty_nodes: Vec<_> = self.widget_manager.dirty_nodes.drain().collect();
+        let dirty_nodes: Vec<_> =
+            if let Ok(mut dirty_nodes) = self.widget_manager.dirty_nodes.lock() {
+                dirty_nodes.drain().collect()
+            } else {
+                panic!("Couldn't get lock on dirty nodes!")
+            };
         for node_index in dirty_nodes {
             // if self
             //     .widget_manager
@@ -104,9 +155,9 @@ impl KayakContext {
             //     .iter()
             //     .any(|dirty_index| node_index == *dirty_index)
             // {
-                let mut widget = self.widget_manager.take(node_index);
-                widget.render(self);
-                self.widget_manager.repossess(widget);
+            let mut widget = self.widget_manager.take(node_index);
+            widget.render(self);
+            self.widget_manager.repossess(widget);
             // }
         }
 

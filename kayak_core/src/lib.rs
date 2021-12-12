@@ -1,3 +1,4 @@
+mod binding;
 pub mod color;
 pub mod context;
 pub mod event;
@@ -15,6 +16,7 @@ pub mod widget_manager;
 
 use std::sync::{Arc, RwLock};
 
+pub use binding::*;
 pub use context::*;
 pub use event::*;
 pub use fragment::Fragment;

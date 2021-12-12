@@ -12,10 +12,6 @@ use kayak_ui::core::{rsx, widget};
 
 #[widget]
 fn TestState() {
-    let _new_x = {
-        let x = context.create_state(0.0f32).unwrap();
-        *x + 0.1
-    };
     rsx! {
         <>
             <Window position={(50.0, 50.0)} size={(300.0, 300.0)} title={"Window 1".to_string()}>

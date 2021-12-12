@@ -8,17 +8,13 @@ use bevy_kayak_ui::{BevyContext, BevyKayakUIPlugin, FontMapping, UICameraBundle}
 use kayak_components::{Button, Text, Window};
 use kayak_core::{
     styles::{Style, StyleProp, Units},
-    EventType, Index, OnEvent,
+    Bound, EventType, Index, MutableBound, OnEvent,
 };
 use kayak_ui::components::App;
 use kayak_ui::core::{rsx, widget};
 
 #[widget]
 fn Counter(context: &mut KayakContext) {
-    let count = {
-        let x = context.create_state(0i32).unwrap();
-        *x
-    };
     let text_styles = Style {
         bottom: StyleProp::Value(Units::Stretch(1.0)),
         left: StyleProp::Value(Units::Stretch(1.0)),
@@ -28,19 +24,20 @@ fn Counter(context: &mut KayakContext) {
         ..Default::default()
     };
 
-    let id = self.get_id();
-    let on_event = OnEvent::new(move |context, event| match event.event_type {
+    let count = context.create_state(0i32).unwrap();
+    let cloned_count = count.clone();
+    let on_event = OnEvent::new(move |_, event| match event.event_type {
         EventType::Click => {
-            context.set_current_id(id);
-            context.set_state(count + 1);
+            cloned_count.set(cloned_count.get() + 1);
         }
         _ => {}
     });
 
+    let count_value = count.get();
     rsx! {
         <>
             <Window position={(50.0, 50.0)} size={(300.0, 300.0)} title={"Counter Example".to_string()}>
-                <Text size={32.0} content={format!("Current Count: {}", count).to_string()}>{}</Text>
+                <Text size={32.0} content={format!("Current Count: {}", count_value).to_string()}>{}</Text>
                 <Button on_event={Some(on_event)}>
                     <Text styles={Some(text_styles)} size={24.0} content={"Count!".to_string()}>{}</Text>
                 </Button>

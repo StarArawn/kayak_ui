@@ -9,7 +9,7 @@ use kayak_components::{NinePatch, Text};
 use kayak_core::{
     layout_cache::Space,
     styles::{LayoutType, Style, StyleProp, Units},
-    widget, Children, EventType, Index, OnEvent,
+    widget, Bound, Children, EventType, Index, MutableBound, OnEvent,
 };
 use kayak_ui::components::App;
 use kayak_ui::core::rsx;
@@ -41,7 +41,7 @@ fn BlueButton(context: KayakContext, children: Children, styles: Option<Style>) 
         (blue_button_handle, blue_button_hover_handle)
     };
 
-    let current_button_handle = *context.create_state::<u16>(blue_button_handle).unwrap();
+    let current_button_handle = context.create_state::<u16>(blue_button_handle).unwrap();
 
     let button_styles = Style {
         width: StyleProp::Value(Units::Pixels(200.0)),
@@ -53,15 +53,13 @@ fn BlueButton(context: KayakContext, children: Children, styles: Option<Style>) 
         ..styles.clone().unwrap_or_default()
     };
 
-    let button_id = self.get_id();
-    let on_event = OnEvent::new(move |context, event| match event.event_type {
+    let cloned_current_button_handle = current_button_handle.clone();
+    let on_event = OnEvent::new(move |_context, event| match event.event_type {
         EventType::MouseIn => {
-            context.set_current_id(button_id);
-            context.set_state::<u16>(blue_button_hover_handle);
+            cloned_current_button_handle.set(blue_button_hover_handle);
         }
         EventType::MouseOut => {
-            context.set_current_id(button_id);
-            context.set_state::<u16>(blue_button_handle);
+            cloned_current_button_handle.set(blue_button_handle);
         }
         _ => (),
     });
@@ -74,7 +72,7 @@ fn BlueButton(context: KayakContext, children: Children, styles: Option<Style>) 
                 top: 10.0,
                 bottom: 10.0,
             }}
-            handle={current_button_handle}
+            handle={current_button_handle.get()}
             styles={Some(button_styles)}
             on_event={Some(on_event)}
         >

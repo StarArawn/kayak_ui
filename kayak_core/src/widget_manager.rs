@@ -1,4 +1,7 @@
-use std::collections::HashSet;
+use std::{
+    collections::HashSet,
+    sync::{Arc, Mutex},
+};
 
 use crate::{
     layout_cache::LayoutCache,
@@ -15,7 +18,7 @@ use crate::{
 pub struct WidgetManager {
     pub(crate) current_widgets: Arena<Option<Box<dyn Widget>>>,
     pub(crate) dirty_render_nodes: Vec<Index>,
-    pub(crate) dirty_nodes: HashSet<Index>,
+    pub(crate) dirty_nodes: Arc<Mutex<HashSet<Index>>>,
     pub(crate) nodes: Arena<Option<Node>>,
     pub tree: Tree,
     pub node_tree: Tree,
@@ -28,7 +31,7 @@ impl WidgetManager {
         Self {
             current_widgets: Arena::new(),
             dirty_render_nodes: Vec::new(),
-            dirty_nodes: HashSet::new(),
+            dirty_nodes: Arc::new(Mutex::new(HashSet::new())),
             nodes: Arena::new(),
             tree: Tree::default(),
             node_tree: Tree::default(),
@@ -42,12 +45,14 @@ impl WidgetManager {
     /// Can be slow.
     pub fn dirty(&mut self, force: bool) {
         // Force tree to re-render from root.
-        self.dirty_nodes.insert(self.tree.root_node);
+        if let Ok(mut dirty_nodes) = self.dirty_nodes.lock() {
+            dirty_nodes.insert(self.tree.root_node);
 
-        if force {
-            for (node_index, _) in self.current_widgets.iter() {
-                self.dirty_nodes.insert(node_index);
-                self.dirty_render_nodes.push(node_index);
+            if force {
+                for (node_index, _) in self.current_widgets.iter() {
+                    dirty_nodes.insert(node_index);
+                    self.dirty_render_nodes.push(node_index);
+                }
             }
         }
     }

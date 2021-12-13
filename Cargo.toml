@@ -5,15 +5,10 @@ edition = "2021"
 resolver = "2"
 
 [workspace]
-members = [
-    "kayak_components",
-    "kayak_core",
-    "kayak_render_macros",
-    "kayak_font",
-]
+members = ["kayak_widgets", "kayak_core", "kayak_render_macros", "kayak_font"]
 
 [dependencies]
-kayak_components = { path = "kayak_components" }
+kayak_widgets = { path = "kayak_widgets" }
 kayak_core = { path = "kayak_core" }
 
 [dev-dependencies]

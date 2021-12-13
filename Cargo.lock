@@ -429,10 +429,10 @@ dependencies = [
  "bevy",
  "bytemuck",
  "crevice",
- "kayak_components",
  "kayak_core",
  "kayak_font",
  "kayak_render_macros",
+ "kayak_widgets",
  "serde",
  "serde_json",
  "serde_path_to_error",
@@ -1990,13 +1990,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "kayak_components"
-version = "0.1.0"
-dependencies = [
- "kayak_core",
-]
-
-[[package]]
 name = "kayak_core"
 version = "0.1.0"
 dependencies = [
@@ -2042,7 +2035,14 @@ version = "0.1.0"
 dependencies = [
  "bevy",
  "bevy_kayak_ui",
- "kayak_components",
+ "kayak_core",
+ "kayak_widgets",
+]
+
+[[package]]
+name = "kayak_widgets"
+version = "0.1.0"
+dependencies = [
  "kayak_core",
 ]
 

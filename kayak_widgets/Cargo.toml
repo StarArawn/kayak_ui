@@ -1,5 +1,5 @@
 [package]
-name = "kayak_components"
+name = "kayak_widgets"
 version = "0.1.0"
 edition = "2021"
 resolver = "2"

@@ -5,10 +5,10 @@ use bevy::{
     PipelinedDefaultPlugins,
 };
 use bevy_kayak_ui::{BevyContext, BevyKayakUIPlugin, FontMapping, UICameraBundle};
-use kayak_components::Window;
 use kayak_core::Index;
 use kayak_ui::components::App;
 use kayak_ui::core::{rsx, widget};
+use kayak_widgets::Window;
 
 #[widget]
 fn TestState() {

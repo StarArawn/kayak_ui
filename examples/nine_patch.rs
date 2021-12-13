@@ -5,7 +5,6 @@ use bevy::{
     PipelinedDefaultPlugins,
 };
 use bevy_kayak_ui::{BevyContext, BevyKayakUIPlugin, ImageManager, UICameraBundle};
-use kayak_components::NinePatch;
 use kayak_core::{
     layout_cache::Space,
     styles::{Style, StyleProp, Units},
@@ -13,6 +12,7 @@ use kayak_core::{
 };
 use kayak_ui::components::App;
 use kayak_ui::core::rsx;
+use kayak_widgets::NinePatch;
 
 fn startup(
     mut commands: Commands,

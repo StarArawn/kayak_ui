@@ -1,5 +1,5 @@
 pub mod components {
-    pub use kayak_components::*;
+    pub use kayak_widgets::*;
 }
 
 pub mod core {

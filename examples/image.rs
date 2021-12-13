@@ -5,10 +5,10 @@ use bevy::{
     PipelinedDefaultPlugins,
 };
 use bevy_kayak_ui::{BevyContext, BevyKayakUIPlugin, ImageManager, UICameraBundle};
-use kayak_widgets::Image;
 use kayak_core::Index;
-use kayak_ui::widgets::App;
 use kayak_ui::core::rsx;
+use kayak_ui::widgets::App;
+use kayak_widgets::Image;
 
 fn startup(
     mut commands: Commands,

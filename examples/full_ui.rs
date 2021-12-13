@@ -5,14 +5,14 @@ use bevy::{
     PipelinedDefaultPlugins,
 };
 use bevy_kayak_ui::{BevyContext, BevyKayakUIPlugin, FontMapping, ImageManager, UICameraBundle};
-use kayak_widgets::{NinePatch, Text};
 use kayak_core::{
     layout_cache::Space,
     styles::{LayoutType, Style, StyleProp, Units},
     widget, Bound, Children, EventType, Index, MutableBound, OnEvent,
 };
-use kayak_ui::widgets::App;
 use kayak_ui::core::rsx;
+use kayak_ui::widgets::App;
+use kayak_widgets::{NinePatch, Text};
 
 #[widget]
 fn BlueButton(context: KayakContext, children: Children, styles: Option<Style>) {

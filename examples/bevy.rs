@@ -6,8 +6,8 @@ use bevy::{
 };
 use bevy_kayak_ui::{BevyContext, BevyKayakUIPlugin, FontMapping, UICameraBundle};
 use kayak_core::Index;
-use kayak_ui::widgets::App;
 use kayak_ui::core::{rsx, widget};
+use kayak_ui::widgets::App;
 use kayak_widgets::Window;
 
 #[widget]

@@ -5,10 +5,10 @@ use bevy::{
     PipelinedDefaultPlugins,
 };
 use bevy_kayak_ui::{BevyContext, BevyKayakUIPlugin, FontMapping, UICameraBundle};
-use kayak_widgets::{Text, Window};
 use kayak_core::{bind, Binding, Bound, Index, MutableBound};
-use kayak_ui::widgets::App;
 use kayak_ui::core::{rsx, widget};
+use kayak_ui::widgets::App;
+use kayak_widgets::{Text, Window};
 
 #[derive(Clone, PartialEq)]
 struct GlobalCount(pub u32);

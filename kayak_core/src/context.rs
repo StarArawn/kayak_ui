@@ -4,9 +4,10 @@ use std::collections::HashMap;
 use crate::{node::NodeIndex, widget_manager::WidgetManager, Event, EventType, Index, InputEvent};
 
 pub struct KayakContext {
-    component_states: HashMap<crate::Index, resources::Resources>,
+    widget_states: HashMap<crate::Index, resources::Resources>,
     global_bindings: HashMap<crate::Index, Vec<flo_binding::Uuid>>,
-    // component_state_lifetimes: DashMap<crate::Index, Vec<Box<dyn crate::Releasable>>>,
+    widget_state_lifetimes:
+        HashMap<crate::Index, HashMap<flo_binding::Uuid, Box<dyn crate::Releasable>>>,
     current_id: Index,
     pub widget_manager: WidgetManager,
     last_mouse_position: (f32, f32),
@@ -25,9 +26,9 @@ impl std::fmt::Debug for KayakContext {
 impl KayakContext {
     pub fn new() -> Self {
         Self {
-            component_states: HashMap::new(),
+            widget_states: HashMap::new(),
             global_bindings: HashMap::new(),
-            // component_state_lifetimes: DashMap::new(),
+            widget_state_lifetimes: HashMap::new(),
             current_id: crate::Index::default(),
             widget_manager: WidgetManager::new(),
             last_mouse_position: (0.0, 0.0),
@@ -37,7 +38,7 @@ impl KayakContext {
     }
 
     /// Binds some global state to the current widget.
-    pub fn bind<T: Clone + PartialEq + Send + 'static>(
+    pub fn bind<T: Clone + PartialEq + Send + Sync + 'static>(
         &mut self,
         global_state: &crate::Binding<T>,
     ) {
@@ -50,18 +51,22 @@ impl KayakContext {
         if !global_binding_ids.contains(&global_state.id) {
             let cloned_id = self.current_id;
             let dirty_nodes = self.widget_manager.dirty_nodes.clone();
-            let mut lifetime = global_state.when_changed(crate::notify(move || {
+            let lifetime = global_state.when_changed(crate::notify(move || {
                 if let Ok(mut dirty_nodes) = dirty_nodes.lock() {
                     dirty_nodes.insert(cloned_id);
                 }
             }));
-            // TODO: Figure out how to store this so we can drop the lifetime on unbind.
-            lifetime.keep_alive();
+            Self::insert_state_lifetime(
+                &mut self.widget_state_lifetimes,
+                self.current_id,
+                global_state.id,
+                lifetime,
+            );
             global_binding_ids.push(global_state.id);
         }
     }
 
-    pub fn unbind<T: Clone + PartialEq + Send + 'static>(
+    pub fn unbind<T: Clone + PartialEq + Send + Sync + 'static>(
         &mut self,
         global_state: &crate::Binding<T>,
     ) {
@@ -72,6 +77,12 @@ impl KayakContext {
                 .position(|id| *id == global_state.id)
             {
                 global_binding_ids.remove(index);
+
+                Self::remove_state_lifetime(
+                    &mut self.widget_state_lifetimes,
+                    self.current_id,
+                    global_state.id,
+                );
             }
         }
     }
@@ -84,23 +95,23 @@ impl KayakContext {
         &mut self,
         initial_state: T,
     ) -> Option<crate::Binding<T>> {
-        if self.component_states.contains_key(&self.current_id) {
-            let states = self.component_states.get_mut(&self.current_id).unwrap();
+        if self.widget_states.contains_key(&self.current_id) {
+            let states = self.widget_states.get_mut(&self.current_id).unwrap();
             if !states.contains::<crate::Binding<T>>() {
                 let state = crate::bind(initial_state);
                 let dirty_nodes = self.widget_manager.dirty_nodes.clone();
                 let cloned_id = self.current_id;
-                let mut lifetime = state.when_changed(crate::notify(move || {
+                let lifetime = state.when_changed(crate::notify(move || {
                     if let Ok(mut dirty_nodes) = dirty_nodes.lock() {
                         dirty_nodes.insert(cloned_id);
                     }
                 }));
-                lifetime.keep_alive();
-                // Self::insert_state_lifetime(
-                //     &mut self.component_state_lifetimes,
-                //     self.current_id,
-                //     lifetime,
-                // );
+                Self::insert_state_lifetime(
+                    &mut self.widget_state_lifetimes,
+                    self.current_id,
+                    state.id,
+                    lifetime,
+                );
                 states.insert(state);
             }
         } else {
@@ -108,40 +119,66 @@ impl KayakContext {
             let state = crate::bind(initial_state);
             let dirty_nodes = self.widget_manager.dirty_nodes.clone();
             let cloned_id = self.current_id;
-            let mut lifetime = state.when_changed(crate::notify(move || {
+            let lifetime = state.when_changed(crate::notify(move || {
                 if let Ok(mut dirty_nodes) = dirty_nodes.lock() {
                     dirty_nodes.insert(cloned_id);
                 }
             }));
-            lifetime.keep_alive();
-            // Self::insert_state_lifetime(
-            //     &mut self.component_state_lifetimes,
-            //     self.current_id,
-            //     lifetime,
-            // );
+            Self::insert_state_lifetime(
+                &mut self.widget_state_lifetimes,
+                self.current_id,
+                state.id,
+                lifetime,
+            );
             states.insert(state);
-            self.component_states.insert(self.current_id, states);
+            self.widget_states.insert(self.current_id, states);
         }
         return self.get_state();
     }
 
-    // fn insert_state_lifetime(
-    //     lifetimes: &mut DashMap<crate::Index, Vec<Box<dyn crate::Releasable>>>,
-    //     id: Index,
-    //     lifetime: Box<dyn crate::Releasable>,
-    // ) {
-    //     if lifetimes.contains_key(&id) {
-    //         if let Some(mut lifetimes) = lifetimes.get_mut(&id) {
-    //             lifetimes.push(lifetime);
-    //         }
-    //     } else {
-    //         lifetimes.insert(id, vec![lifetime]);
-    //     }
-    // }
+    fn insert_state_lifetime(
+        lifetimes: &mut HashMap<
+            crate::Index,
+            HashMap<flo_binding::Uuid, Box<dyn crate::Releasable>>,
+        >,
+        id: Index,
+        binding_id: flo_binding::Uuid,
+        lifetime: Box<dyn crate::Releasable>,
+    ) {
+        if lifetimes.contains_key(&id) {
+            if let Some(lifetimes) = lifetimes.get_mut(&id) {
+                if !lifetimes.contains_key(&binding_id) {
+                    lifetimes.insert(binding_id, lifetime);
+                }
+            }
+        } else {
+            let mut new_hashmap = HashMap::new();
+            new_hashmap.insert(binding_id, lifetime);
+            lifetimes.insert(id, new_hashmap);
+        }
+    }
+
+    fn remove_state_lifetime(
+        lifetimes: &mut HashMap<
+            crate::Index,
+            HashMap<flo_binding::Uuid, Box<dyn crate::Releasable>>,
+        >,
+        id: Index,
+        binding_id: flo_binding::Uuid,
+    ) {
+        if lifetimes.contains_key(&id) {
+            if let Some(lifetimes) = lifetimes.get_mut(&id) {
+                if lifetimes.contains_key(&binding_id) {
+                    let mut binding_lifetime = lifetimes.remove(&binding_id).unwrap();
+                    binding_lifetime.done();
+                }
+            }
+        }
+    }
 
     fn get_state<T: resources::Resource + Clone + PartialEq>(&self) -> Option<T> {
-        if self.component_states.contains_key(&self.current_id) {
-            let states = self.component_states.get(&self.current_id).unwrap();
+        if self.widget_states.contains_key(&self.current_id) {
+            let states = self.widget_states.get(&self.current_id).unwrap();
             if let Ok(state) = states.get::<T>() {
                 return Some(state.clone());
             }

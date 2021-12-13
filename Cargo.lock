@@ -1482,13 +1482,13 @@ checksum = "398ea4fabe40b9b0d885340a2a991a44c8a645624075ad966d21f88688e2b69e"
 
 [[package]]
 name = "flo_binding"
-version = "2.0.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "711a65cd60b91114a1cecbf6a9d533c3fde6e38532506cde25bc5f7bc87d2fa0"
+version = "2.0.2"
+source = "git+https://github.com/StarArawn/flo_binding.git?rev=609883068c43dc897da2b277e91320a41892643d#609883068c43dc897da2b277e91320a41892643d"
 dependencies = [
  "desync",
  "flo_rope",
  "futures",
+ "uuid",
 ]
 
 [[package]]

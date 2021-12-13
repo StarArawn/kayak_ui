@@ -10,7 +10,7 @@ as-any = "0.2"
 dashmap = "4.0"
 diff-struct = "0.3"
 derivative = "2.2"
-flo_binding = "2.0.1"
+flo_binding = { git = "https://github.com/StarArawn/flo_binding.git", rev = "609883068c43dc897da2b277e91320a41892643d" }
 fontdue = "0.6"
 kayak_render_macros = { path = "../kayak_render_macros" }
 morphorm = { git = "https://github.com/geom3trik/morphorm" }

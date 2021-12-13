@@ -5,6 +5,7 @@ use crate::{node::NodeIndex, widget_manager::WidgetManager, Event, EventType, In
 
 pub struct KayakContext {
     component_states: HashMap<crate::Index, resources::Resources>,
+    global_bindings: HashMap<crate::Index, Vec<flo_binding::Uuid>>,
     // component_state_lifetimes: DashMap<crate::Index, Vec<Box<dyn crate::Releasable>>>,
     current_id: Index,
     pub widget_manager: WidgetManager,
@@ -25,12 +26,53 @@ impl KayakContext {
     pub fn new() -> Self {
         Self {
             component_states: HashMap::new(),
+            global_bindings: HashMap::new(),
             // component_state_lifetimes: DashMap::new(),
             current_id: crate::Index::default(),
             widget_manager: WidgetManager::new(),
             last_mouse_position: (0.0, 0.0),
             global_state: resources::Resources::default(),
             previous_events: HashMap::new(),
+        }
+    }
+
+    /// Binds some global state to the current widget.
+    pub fn bind<T: Clone + PartialEq + Send + 'static>(
+        &mut self,
+        global_state: &crate::Binding<T>,
+    ) {
+        if !self.global_bindings.contains_key(&self.current_id) {
+            self.global_bindings.insert(self.current_id, vec![]);
+        }
+
+        let global_binding_ids = self.global_bindings.get_mut(&self.current_id).unwrap();
+
+        if !global_binding_ids.contains(&global_state.id) {
+            let cloned_id = self.current_id;
+            let dirty_nodes = self.widget_manager.dirty_nodes.clone();
+            let mut lifetime = global_state.when_changed(crate::notify(move || {
+                if let Ok(mut dirty_nodes) = dirty_nodes.lock() {
+                    dirty_nodes.insert(cloned_id);
+                }
+            }));
+            // TODO: Figure out how to store this so we can drop the lifetime on unbind.
+            lifetime.keep_alive();
+            global_binding_ids.push(global_state.id);
+        }
+    }
+
+    pub fn unbind<T: Clone + PartialEq + Send + 'static>(
+        &mut self,
+        global_state: &crate::Binding<T>,
+    ) {
+        if self.global_bindings.contains_key(&self.current_id) {
+            let global_binding_ids = self.global_bindings.get_mut(&self.current_id).unwrap();
+            if let Some(index) = global_binding_ids
+                .iter()
+                .position(|id| *id == global_state.id)
+            {
+                global_binding_ids.remove(index);
+            }
         }
     }
 

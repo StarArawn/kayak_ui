@@ -52,6 +52,11 @@ impl Children {
     }
 
     pub fn as_option_of_tuples_tokens(&self) -> proc_macro2::TokenStream {
+        #[cfg(feature = "internal")]
+        let kayak_core = quote! { kayak_core };
+        #[cfg(not(feature = "internal"))]
+        let kayak_core = quote! { kayak_ui::core };
+
         let children_quotes: Vec<_> = self
             .nodes
             .iter()
@@ -82,8 +87,9 @@ impl Children {
                             true,
                             0,
                         );
+
                         quote! {
-                            Some(std::sync::Arc::new(move |parent_id: Option<kayak_core::Index>, context: &mut kayak_core::context::KayakContext| {
+                            Some(std::sync::Arc::new(move |parent_id: Option<#kayak_core::Index>, context: &mut #kayak_core::context::KayakContext| {
                                 #cloned_attrs
                                 #children_builder
                             }))
@@ -184,7 +190,7 @@ impl Children {
                 // );
 
                 quote! {
-                    Some(std::sync::Arc::new(move |parent_id: Option<kayak_core::Index>, context: &mut kayak_core::context::KayakContext| {
+                    Some(std::sync::Arc::new(move |parent_id: Option<#kayak_core::Index>, context: &mut #kayak_core::context::KayakContext| {
                         #(#output)*
                     }))
                 }

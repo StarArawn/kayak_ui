@@ -4,15 +4,14 @@ use bevy::{
     window::{WindowDescriptor, Windows},
     PipelinedDefaultPlugins,
 };
-use bevy_kayak_ui::{BevyContext, BevyKayakUIPlugin, ImageManager, UICameraBundle};
-use kayak_core::{
+use kayak_ui::bevy::{BevyContext, BevyKayakUIPlugin, ImageManager, UICameraBundle};
+use kayak_ui::core::{
     layout_cache::Space,
+    rsx,
     styles::{Style, StyleProp, Units},
     Index,
 };
-use kayak_ui::core::rsx;
-use kayak_ui::widgets::App;
-use kayak_widgets::NinePatch;
+use kayak_widgets::{App, NinePatch};
 
 fn startup(
     mut commands: Commands,

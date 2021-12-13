@@ -1,4 +1,4 @@
-use kayak_core::{
+use kayak_ui::core::{
     layout_cache::Space,
     render_command::RenderCommand,
     rsx,

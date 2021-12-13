@@ -4,11 +4,10 @@ use bevy::{
     window::{WindowDescriptor, Windows},
     PipelinedDefaultPlugins,
 };
-use bevy_kayak_ui::{BevyContext, BevyKayakUIPlugin, FontMapping, UICameraBundle};
-use kayak_core::Index;
+use kayak_ui::bevy::{BevyContext, BevyKayakUIPlugin, FontMapping, UICameraBundle};
+use kayak_ui::core::Index;
 use kayak_ui::core::{rsx, widget};
-use kayak_ui::widgets::App;
-use kayak_widgets::Window;
+use kayak_widgets::{App, Window};
 
 #[widget]
 fn TestState() {

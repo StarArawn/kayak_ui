@@ -32,7 +32,12 @@ pub fn render(input: TokenStream) -> TokenStream {
         input.map(|token_tree| proc_macro2::TokenStream::from(TokenStream::from(token_tree))),
     );
     let el = proc_macro2::TokenStream::from(rsx(TokenStream::from(rsx_data)));
-    let result = quote! { ::kayak_core::Render::render_into(&#el, #context, None) };
+    #[cfg(feature = "internal")]
+    let kayak_core = quote! { kayak_core };
+    #[cfg(not(feature = "internal"))]
+    let kayak_core = quote! { kayak_ui::core };
+
+    let result = quote! { #kayak_core::Render::render_into(&#el, #context, None) };
     TokenStream::from(result)
 }
 

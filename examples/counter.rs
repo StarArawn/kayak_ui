@@ -4,14 +4,13 @@ use bevy::{
     window::{WindowDescriptor, Windows},
     PipelinedDefaultPlugins,
 };
-use bevy_kayak_ui::{BevyContext, BevyKayakUIPlugin, FontMapping, UICameraBundle};
-use kayak_core::{
+use kayak_ui::bevy::{BevyContext, BevyKayakUIPlugin, FontMapping, ImageManager, UICameraBundle};
+use kayak_ui::core::{
+    rsx,
     styles::{Style, StyleProp, Units},
-    Bound, EventType, Index, MutableBound, OnEvent,
+    widget, Bound, EventType, Index, MutableBound, OnEvent,
 };
-use kayak_ui::core::{rsx, widget};
-use kayak_ui::widgets::App;
-use kayak_widgets::{Button, Text, Window};
+use kayak_widgets::{App, Button, Text, Window};
 
 #[widget]
 fn Counter(context: &mut KayakContext) {

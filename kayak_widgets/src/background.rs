@@ -1,4 +1,4 @@
-use kayak_core::{
+use kayak_ui::core::{
     render_command::RenderCommand,
     rsx,
     styles::{Style, StyleProp},

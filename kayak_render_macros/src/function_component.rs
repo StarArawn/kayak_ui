@@ -10,6 +10,11 @@ pub fn create_function_widget(f: syn::ItemFn) -> TokenStream {
     let block = f.block;
     let vis = f.vis;
 
+    #[cfg(feature = "internal")]
+    let kayak_core = quote! { kayak_core };
+    #[cfg(not(feature = "internal"))]
+    let kayak_core = quote! { kayak_ui::core };
+
     let mut input_names: Vec<_> = inputs
         .iter()
         .filter_map(|argument| match argument {
@@ -65,21 +70,24 @@ pub fn create_function_widget(f: syn::ItemFn) -> TokenStream {
                 "styles : Option< kayak_core :: styles :: Style >",
             ],
             quote! {
-                pub styles: Option<kayak_core::styles::Style>
+                pub styles: Option<#kayak_core::styles::Style>
             },
         ),
         (
             vec!["children : Children"],
             quote! {
                 #[derivative(Debug = "ignore", PartialEq = "ignore")]
-                pub children: kayak_core::Children
+                pub children: #kayak_core::Children
             },
         ),
         (
-            vec!["on_event : Option<kayak_core::OnEvent>"],
+            vec![
+                "on_event: Option<OnEvent>",
+                "on_event : Option<kayak_core::OnEvent>",
+            ],
             quote! {
                 #[derivative(Debug = "ignore", PartialEq = "ignore")]
-                pub on_event: Option<kayak_core::OnEvent>
+                pub on_event: Option<#kayak_core::OnEvent>
             },
         ),
     ];
@@ -119,25 +127,25 @@ pub fn create_function_widget(f: syn::ItemFn) -> TokenStream {
     };
 
     TokenStream::from(quote! {
-        use kayak_core::derivative::*;
+        use #kayak_core::derivative::*;
 
         #[derive(Derivative)]
         #[derivative(Debug, PartialEq)]
         #vis struct #struct_name #impl_generics {
-            pub id: ::kayak_core::Index,
+            pub id: #kayak_core::Index,
             #inputs_block
         }
 
-        impl #impl_generics ::kayak_core::Widget for #struct_name #ty_generics #where_clause {
-            fn get_id(&self) -> ::kayak_core::Index {
+        impl #impl_generics #kayak_core::Widget for #struct_name #ty_generics #where_clause {
+            fn get_id(&self) -> #kayak_core::Index {
                 self.id
             }
 
-            fn set_id(&mut self, id: ::kayak_core::Index) {
+            fn set_id(&mut self, id: #kayak_core::Index) {
                 self.id = id;
             }
 
-            fn get_styles(&self) -> Option<::kayak_core::styles::Style> {
+            fn get_styles(&self) -> Option<#kayak_core::styles::Style> {
                 self.styles.clone()
             }
 
@@ -145,7 +153,7 @@ pub fn create_function_widget(f: syn::ItemFn) -> TokenStream {
                 String::from(stringify!(#struct_name))
             }
 
-            fn on_event(&mut self, context: &mut ::kayak_core::context::KayakContext, event: &mut ::kayak_core::Event) {
+            fn on_event(&mut self, context: &mut #kayak_core::context::KayakContext, event: &mut #kayak_core::Event) {
                 if let Some(on_event) = self.on_event.as_ref() {
                     if let Ok(mut on_event) = on_event.0.write() {
                         on_event(context, event);
@@ -153,7 +161,7 @@ pub fn create_function_widget(f: syn::ItemFn) -> TokenStream {
                 }
             }
 
-            fn render(&mut self, context: &mut ::kayak_core::context::KayakContext) {
+            fn render(&mut self, context: &mut #kayak_core::context::KayakContext) {
                 let parent_id = self.get_id();
                 context.set_current_id(parent_id);
                 let parent_id = Some(parent_id);

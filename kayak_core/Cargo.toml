@@ -5,9 +5,12 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[features]
+default = []
+internal = ["kayak_render_macros/internal"]
+
 [dependencies]
 as-any = "0.2"
-dashmap = "4.0"
 diff-struct = "0.3"
 derivative = "2.2"
 flo_binding = { git = "https://github.com/StarArawn/flo_binding.git", rev = "c78431a56df5ec082b7e1c271871e6c0ac75e81e" }

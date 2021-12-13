@@ -12,7 +12,14 @@ pub struct OpenTag {
 }
 
 fn name_or_fragment(maybe_name: Result<syn::Path>) -> syn::Path {
-    maybe_name.unwrap_or_else(|_| syn::parse_str::<syn::Path>("::kayak_core::Fragment").unwrap())
+    #[cfg(feature = "internal")]
+    let kayak_core = "kayak_core";
+    #[cfg(not(feature = "internal"))]
+    let kayak_core = "kayak_ui::core";
+
+    maybe_name.unwrap_or_else(|_| {
+        syn::parse_str::<syn::Path>(&format!("::{}::Fragment", kayak_core)).unwrap()
+    })
 }
 
 fn is_custom_element_name(path: &syn::Path) -> bool {

@@ -1,4 +1,4 @@
-use kayak_core::{
+use kayak_ui::core::{
     color::Color,
     render_command::RenderCommand,
     rsx,

@@ -4,11 +4,9 @@ use bevy::{
     window::{WindowDescriptor, Windows},
     PipelinedDefaultPlugins,
 };
-use bevy_kayak_ui::{BevyContext, BevyKayakUIPlugin, FontMapping, UICameraBundle};
-use kayak_core::{bind, Binding, Bound, Index, MutableBound};
-use kayak_ui::core::{rsx, widget};
-use kayak_ui::widgets::App;
-use kayak_widgets::{Text, Window};
+use kayak_ui::bevy::{BevyContext, BevyKayakUIPlugin, FontMapping, UICameraBundle};
+use kayak_ui::core::{bind, rsx, widget, Binding, Bound, Index, MutableBound};
+use kayak_widgets::{App, Text, Window};
 
 #[derive(Clone, PartialEq)]
 struct GlobalCount(pub u32);

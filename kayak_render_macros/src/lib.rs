@@ -45,22 +45,6 @@ pub fn rsx(input: TokenStream) -> TokenStream {
     TokenStream::from(result)
 }
 
-// #[proc_macro]
-// #[proc_macro_error]
-// pub fn rsx_create(input: TokenStream) -> TokenStream {
-//     let el = parse_macro_input!(input as WidgetElement);
-//     let result = quote! { #el };
-//     TokenStream::from(result)
-// }
-
-// #[proc_macro]
-// #[proc_macro_error]
-// pub fn rsx_update(input: TokenStream) -> TokenStream {
-//     let el = parse_macro_input!(input as Element);
-//     let result = quote! { #el };
-//     TokenStream::from(result)
-// }
-
 #[proc_macro_attribute]
 #[proc_macro_error]
 pub fn widget(_attr: TokenStream, item: TokenStream) -> TokenStream {

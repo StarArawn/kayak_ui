@@ -7,9 +7,15 @@ resolver = "2"
 [workspace]
 members = ["kayak_widgets", "kayak_core", "kayak_render_macros", "kayak_font"]
 
+[features]
+default = ["bevy_renderer"]
+bevy_renderer = []
+
 [dependencies]
 kayak_widgets = { path = "kayak_widgets" }
 kayak_core = { path = "kayak_core" }
+bevy_kayak_ui = { path = "bevy_kayak_ui", optional = true }
+kayak_font = { path = "kayak_font", optional = true }
 
 [dev-dependencies]
 bevy = { git = "https://github.com/bevyengine/bevy", rev = "38c7d5eb9e81ab8e1aec03673599b25a9aa0c69c" }

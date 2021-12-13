@@ -3,7 +3,7 @@ use proc_macro_error::emit_error;
 use quote::{quote, ToTokens};
 use syn::spanned::Spanned;
 
-pub fn create_function_component(f: syn::ItemFn) -> TokenStream {
+pub fn create_function_widget(f: syn::ItemFn) -> TokenStream {
     let struct_name = f.sig.ident;
     let (impl_generics, ty_generics, where_clause) = f.sig.generics.split_for_impl();
     let inputs = f.sig.inputs;
@@ -25,7 +25,7 @@ pub fn create_function_component(f: syn::ItemFn) -> TokenStream {
                 }
             }
             syn::FnArg::Receiver(rec) => {
-                emit_error!(rec.span(), "Don't use `self` on components");
+                emit_error!(rec.span(), "Don't use `self` on widgets");
                 None
             }
         })

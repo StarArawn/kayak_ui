@@ -10,7 +10,7 @@ use kayak_core::{
     styles::{Style, StyleProp, Units},
     Index,
 };
-use kayak_ui::components::App;
+use kayak_ui::widgets::App;
 use kayak_ui::core::rsx;
 use kayak_widgets::NinePatch;
 

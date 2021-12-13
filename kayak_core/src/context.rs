@@ -186,26 +186,6 @@ impl KayakContext {
         return None;
     }
 
-    // pub fn set_state<T: resources::Resource + Clone>(&mut self, state: T) {
-    //     if self.component_states.contains_key(&self.current_id) {
-    //         let states = self.component_states.get(&self.current_id).unwrap();
-    //         if states.contains::<T>() {
-    //             let mut mutate_t = states.get_mut::<T>().unwrap();
-    //             if let Ok(mut dirty_nodes) = self.widget_manager.dirty_nodes.lock() {
-    //                 dirty_nodes.insert(self.current_id);
-    //             }
-    //             *mutate_t = state;
-    //         } else {
-    //             panic!(
-    //                 "No specific state created for component with id: {:?}!",
-    //                 self.current_id
-    //             );
-    //         }
-    //     } else {
-    //         // Do nothing..
-    //     }
-    // }
-
     pub fn set_global_state<T: resources::Resource>(&mut self, state: T) {
         self.global_state.insert(state);
     }

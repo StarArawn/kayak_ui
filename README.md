@@ -20,7 +20,7 @@ Kayak UI is in the very early stages of development. Important features are miss
 - Basic widget and global state management
 - Input events
 - Fast and accurate layouts using morphorm: https://github.com/geom3trik/morphorm
-- A bunch of default components check out `kayak_components`!
+- A bunch of default widgets check out `kayak_widgets`!
 - Style system built to kind of mimic CSS styles.
 - Image and Nine patch rendering.
 
@@ -30,6 +30,10 @@ Kayak UI is in the very early stages of development. Important features are miss
 - Quad renderer with rounded corners.
 - Custom UI node to ensure UI renders on top of 3D and 2D entities.
 - Fully integrated into bevy to capture input events, use bevy assets(images, etc).
+
+## Missing features
+- Tree diffing
+- Removing of widgets.
 
 ## Example Screenshot
 <img src="images/screen1.png" alt="Kayak UI" width="600" />

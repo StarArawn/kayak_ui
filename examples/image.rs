@@ -7,7 +7,7 @@ use bevy::{
 use bevy_kayak_ui::{BevyContext, BevyKayakUIPlugin, ImageManager, UICameraBundle};
 use kayak_widgets::Image;
 use kayak_core::Index;
-use kayak_ui::components::App;
+use kayak_ui::widgets::App;
 use kayak_ui::core::rsx;
 
 fn startup(

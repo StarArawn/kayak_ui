@@ -52,7 +52,7 @@ impl Attribute {
                 .join("_");
 
             let error_message = format!(
-                "Can't use dash-delimited values on custom components. Did you mean `{}`?",
+                "Can't use dash-delimited values on custom widgets. Did you mean `{}`?",
                 alternative_name
             );
 

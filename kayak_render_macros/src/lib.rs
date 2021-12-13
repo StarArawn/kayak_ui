@@ -5,11 +5,11 @@ mod tags;
 
 mod arc_function;
 mod attribute;
+mod child;
+mod children;
 mod partial_eq;
 mod widget;
 mod widget_attributes;
-mod child;
-mod children;
 
 use partial_eq::impl_dyn_partial_eq;
 use proc_macro::TokenStream;
@@ -36,7 +36,7 @@ pub fn render(input: TokenStream) -> TokenStream {
     TokenStream::from(result)
 }
 
-/// Generate a renderable component tree, before rendering it
+/// Generate a renderable widget tree, before rendering it
 #[proc_macro]
 #[proc_macro_error]
 pub fn rsx(input: TokenStream) -> TokenStream {
@@ -65,7 +65,7 @@ pub fn rsx(input: TokenStream) -> TokenStream {
 #[proc_macro_error]
 pub fn widget(_attr: TokenStream, item: TokenStream) -> TokenStream {
     let f = parse_macro_input!(item as syn::ItemFn);
-    function_component::create_function_component(f)
+    function_component::create_function_widget(f)
 }
 
 #[proc_macro_derive(DynPartialEq)]

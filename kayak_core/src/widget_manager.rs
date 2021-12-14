@@ -3,6 +3,8 @@ use std::{
     sync::{Arc, Mutex},
 };
 
+use morphorm::Hierarchy;
+
 use crate::{
     layout_cache::LayoutCache,
     node::{Node, NodeBuilder, NodeIndex},
@@ -252,22 +254,50 @@ impl WidgetManager {
         morphorm::layout(&mut self.layout_cache, &self.node_tree, &self.nodes);
     }
 
-    pub fn build_render_primitives(&self) -> Vec<RenderPrimitive> {
+    fn recurse_node_tree_to_build_primitives(
+        node_tree: &Tree,
+        layout_cache: &LayoutCache,
+        nodes: &Arena<Option<Node>>,
+        current_node: Index,
+    ) -> Vec<RenderPrimitive> {
         let mut render_primitives = Vec::new();
 
-        for (index, node) in self.nodes.iter() {
-            if let Some(layout) = self.layout_cache.rect.get(&NodeIndex(index)) {
-                if let Some(node) = node {
-                    let mut render_primitive: RenderPrimitive = (&node.styles).into();
-                    let mut layout = *layout;
-                    layout.z_index = node.z;
-                    render_primitive.set_layout(layout);
-                    render_primitives.push(render_primitive);
+        if let Some(node) = nodes.get(current_node).unwrap() {
+            if let Some(layout) = layout_cache.rect.get(&NodeIndex(current_node)) {
+                let mut render_primitive: RenderPrimitive = (&node.styles).into();
+                let mut layout = *layout;
+                layout.z_index = node.z;
+                render_primitive.set_layout(layout);
+                render_primitives.push(render_primitive.clone());
+
+                if node_tree.children.contains_key(&current_node) {
+                    for child in node_tree.children.get(&current_node).unwrap() {
+                        render_primitives.extend(Self::recurse_node_tree_to_build_primitives(
+                            node_tree,
+                            layout_cache,
+                            nodes,
+                            *child,
+                        ));
+
+                        // Between each child node we need to reset the clip.
+                        if matches!(render_primitive, RenderPrimitive::Clip { .. }) {
+                            render_primitives.push(render_primitive.clone());
+                        }
+                    }
                 }
             }
         }
 
         render_primitives
+    }
+
+    pub fn build_render_primitives(&self) -> Vec<RenderPrimitive> {
+        Self::recurse_node_tree_to_build_primitives(
+            &self.node_tree,
+            &self.layout_cache,
+            &self.nodes,
+            self.node_tree.root_node,
+        )
     }
 
     fn build_nodes_tree(&self) -> Tree {

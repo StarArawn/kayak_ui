@@ -1,12 +1,20 @@
 use bevy::{
-    prelude::{Assets, HandleUntyped, Plugin},
+    prelude::{Assets, Commands, HandleUntyped, Plugin, Res},
     reflect::TypeUuid,
-    render2::{render_phase::DrawFunctions, render_resource::Shader, RenderApp, RenderStage},
+    render2::{
+        render_phase::DrawFunctions, render_resource::Shader, texture::Image, RenderApp,
+        RenderStage,
+    },
 };
+use kayak_core::render_primitive::RenderPrimitive;
+use kayak_font::KayakFont;
 
-use crate::render::{
-    ui_pass::TransparentUI,
-    unified::pipeline::{DrawUI, QuadMeta, UnifiedPipeline},
+use crate::{
+    render::{
+        ui_pass::TransparentUI,
+        unified::pipeline::{DrawUI, QuadMeta, UnifiedPipeline},
+    },
+    BevyContext, FontMapping, ImageManager,
 };
 
 use self::pipeline::ImageBindGroups;
@@ -28,11 +36,15 @@ impl Plugin for UnifiedRenderPlugin {
         let unified_shader = Shader::from_wgsl(include_str!("shader.wgsl"));
         shaders.set_untracked(UNIFIED_SHADER_HANDLE, unified_shader);
 
+        app.add_plugin(font::TextRendererPlugin)
+            .add_plugin(image::ImageRendererPlugin);
+
         let render_app = app.sub_app(RenderApp);
         render_app
             .init_resource::<ImageBindGroups>()
             .init_resource::<UnifiedPipeline>()
             .init_resource::<QuadMeta>()
+            .add_system_to_stage(RenderStage::Extract, extract)
             .add_system_to_stage(RenderStage::Prepare, pipeline::prepare_quads)
             .add_system_to_stage(RenderStage::Queue, pipeline::queue_quads);
 
@@ -44,10 +56,46 @@ impl Plugin for UnifiedRenderPlugin {
             .unwrap()
             .write()
             .add(draw_quad);
-
-        app.add_plugin(font::TextRendererPlugin)
-            .add_plugin(quad::QuadRendererPlugin)
-            .add_plugin(image::ImageRendererPlugin)
-            .add_plugin(nine_patch::NinePatchRendererPlugin);
     }
+}
+
+pub fn extract(
+    mut commands: Commands,
+    context: Res<BevyContext>,
+    fonts: Res<Assets<KayakFont>>,
+    font_mapping: Res<FontMapping>,
+    image_manager: Res<ImageManager>,
+    images: Res<Assets<Image>>,
+) {
+    let render_primitives = if let Ok(context) = context.kayak_context.read() {
+        context.widget_manager.build_render_primitives()
+    } else {
+        vec![]
+    };
+
+    let mut extracted_quads = Vec::new();
+    for render_primitive in render_primitives {
+        match render_primitive {
+            RenderPrimitive::Text { .. } => {
+                let text_quads = font::extract_texts(&render_primitive, &fonts, &font_mapping);
+                extracted_quads.extend(text_quads);
+            }
+            RenderPrimitive::Image { .. } => {
+                let image_quads = image::extract_images(&render_primitive, &image_manager);
+                extracted_quads.extend(image_quads);
+            }
+            RenderPrimitive::Quad { .. } => {
+                let quad_quads = quad::extract_quads(&render_primitive);
+                extracted_quads.extend(quad_quads);
+            }
+            RenderPrimitive::NinePatch { .. } => {
+                let nine_patch_quads =
+                    nine_patch::extract_nine_patch(&render_primitive, &image_manager, &images);
+                extracted_quads.extend(nine_patch_quads);
+            }
+            _ => {}
+        }
+    }
+
+    commands.spawn_batch(extracted_quads);
 }

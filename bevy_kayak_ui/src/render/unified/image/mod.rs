@@ -1,10 +1,8 @@
-use bevy::{
-    prelude::Plugin,
-    render2::{RenderApp, RenderStage},
-};
+use bevy::prelude::Plugin;
 
 mod extract;
 mod image_manager;
+pub use extract::extract_images;
 pub use image_manager::ImageManager;
 
 pub struct ImageRendererPlugin;
@@ -12,8 +10,5 @@ pub struct ImageRendererPlugin;
 impl Plugin for ImageRendererPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
         app.insert_resource(ImageManager::new());
-
-        let render_app = app.sub_app(RenderApp);
-        render_app.add_system_to_stage(RenderStage::Extract, extract::extract_images);
     }
 }

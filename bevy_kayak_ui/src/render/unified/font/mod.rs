@@ -12,8 +12,8 @@ use kayak_font::{FontTextureCache, KayakFontPlugin};
 mod extract;
 mod font_mapping;
 
-use self::extract::extract_texts;
 use super::pipeline::UnifiedPipeline;
+pub use extract::extract_texts;
 pub use font_mapping::*;
 
 #[derive(Default)]
@@ -25,7 +25,6 @@ impl Plugin for TextRendererPlugin {
             .init_resource::<FontMapping>();
 
         let render_app = app.sub_app(RenderApp);
-        render_app.add_system_to_stage(RenderStage::Extract, extract_texts);
         render_app.add_system_to_stage(RenderStage::Queue, create_and_update_font_cache_texture);
     }
 }

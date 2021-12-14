@@ -24,6 +24,7 @@ impl std::fmt::Debug for KayakContext {
 }
 
 impl KayakContext {
+    /// Creates a new [`KayakContext`].
     pub fn new() -> Self {
         Self {
             widget_states: HashMap::new(),

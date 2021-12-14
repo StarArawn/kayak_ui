@@ -1,10 +1,10 @@
 use bevy::{
     core_pipeline::node::MAIN_PASS_DRIVER,
     prelude::{Commands, Plugin, Res},
-    render2::{
+    render::{
         camera::ActiveCameras,
         render_graph::{EmptyNode, RenderGraph, SlotInfo, SlotType},
-        render_phase::{sort_phase_system, DrawFunctions, RenderPhase},
+        render_phase::{DrawFunctions, RenderPhase},
         RenderApp, RenderStage,
     },
 };
@@ -44,8 +44,8 @@ impl Plugin for BevyKayakUIRenderPlugin {
         let render_app = app.sub_app(RenderApp);
         render_app
             .init_resource::<DrawFunctions<TransparentUI>>()
-            .add_system_to_stage(RenderStage::Extract, extract_core_pipeline_camera_phases)
-            .add_system_to_stage(RenderStage::PhaseSort, sort_phase_system::<TransparentUI>);
+            .add_system_to_stage(RenderStage::Extract, extract_core_pipeline_camera_phases);
+        // .add_system_to_stage(RenderStage::PhaseSort, sort_phase_system::<TransparentUI>);
 
         let pass_node_ui = MainPassUINode::new(&mut render_app.world);
         let mut graph = render_app.world.get_resource_mut::<RenderGraph>().unwrap();

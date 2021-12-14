@@ -2,7 +2,7 @@ use bevy::{
     math::Vec2,
     prelude::{App as BevyApp, AssetServer, Commands, Handle, Res, ResMut, World},
     window::{WindowDescriptor, Windows},
-    PipelinedDefaultPlugins,
+    DefaultPlugins,
 };
 use kayak_ui::bevy::{BevyContext, BevyKayakUIPlugin, FontMapping, ImageManager, UICameraBundle};
 use kayak_ui::core::{
@@ -25,9 +25,9 @@ fn BlueButton(context: KayakContext, children: Children, styles: Option<Style>) 
 
         let (handle1, handle2) = {
             let asset_server = world.get_resource::<AssetServer>().unwrap();
-            let handle1: Handle<bevy::render2::texture::Image> =
+            let handle1: Handle<bevy::render::texture::Image> =
                 asset_server.load("../assets/kenny/buttonSquare_blue.png");
-            let handle2: Handle<bevy::render2::texture::Image> =
+            let handle2: Handle<bevy::render::texture::Image> =
                 asset_server.load("../assets/kenny/buttonSquare_blue_pressed.png");
 
             (handle1, handle2)
@@ -97,7 +97,7 @@ fn startup(
 
     font_mapping.add(asset_server.load("roboto.kayak_font"));
 
-    let handle: Handle<bevy::render2::texture::Image> = asset_server.load("kenny/panel_brown.png");
+    let handle: Handle<bevy::render::texture::Image> = asset_server.load("kenny/panel_brown.png");
     let panel_brown_handle = image_manager.get(&handle);
 
     let context = BevyContext::new(window_size.x, window_size.y, |styles, context| {
@@ -189,7 +189,7 @@ fn main() {
             title: String::from("UI Example"),
             ..Default::default()
         })
-        .add_plugins(PipelinedDefaultPlugins)
+        .add_plugins(DefaultPlugins)
         .add_plugin(BevyKayakUIPlugin)
         .add_startup_system(startup)
         .run();

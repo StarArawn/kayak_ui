@@ -1,5 +1,5 @@
 use bevy::ecs::world::World;
-use bevy::render2::{
+use bevy::render::{
     camera::ExtractedCameraNames,
     render_graph::{Node, NodeRunError, RenderGraphContext, SlotValue},
     renderer::RenderContext,

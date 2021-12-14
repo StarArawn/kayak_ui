@@ -114,6 +114,8 @@ impl Children {
                     }
                 }
 
+                all_attributes.insert("children".to_string());
+
                 let base_matching: Vec<proc_macro2::TokenStream> = all_attributes
                     .iter()
                     .map(|a| format!("base_{}", a).to_string().parse().unwrap())

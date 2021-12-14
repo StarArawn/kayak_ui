@@ -3,8 +3,6 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-use morphorm::Hierarchy;
-
 use crate::{
     layout_cache::LayoutCache,
     node::{Node, NodeBuilder, NodeIndex},
@@ -259,6 +257,7 @@ impl WidgetManager {
         layout_cache: &LayoutCache,
         nodes: &Arena<Option<Node>>,
         current_node: Index,
+        mut main_z_index: f32,
     ) -> Vec<RenderPrimitive> {
         let mut render_primitives = Vec::new();
 
@@ -266,21 +265,36 @@ impl WidgetManager {
             if let Some(layout) = layout_cache.rect.get(&NodeIndex(current_node)) {
                 let mut render_primitive: RenderPrimitive = (&node.styles).into();
                 let mut layout = *layout;
-                layout.z_index = node.z;
+                let new_z_index = if matches!(render_primitive, RenderPrimitive::Clip { .. }) {
+                    main_z_index - 0.1
+                } else {
+                    main_z_index
+                };
+                layout.z_index = new_z_index;
                 render_primitive.set_layout(layout);
                 render_primitives.push(render_primitive.clone());
 
                 if node_tree.children.contains_key(&current_node) {
                     for child in node_tree.children.get(&current_node).unwrap() {
+                        main_z_index += 1.0;
                         render_primitives.extend(Self::recurse_node_tree_to_build_primitives(
                             node_tree,
                             layout_cache,
                             nodes,
                             *child,
+                            main_z_index,
                         ));
 
+                        main_z_index = layout.z_index;
                         // Between each child node we need to reset the clip.
                         if matches!(render_primitive, RenderPrimitive::Clip { .. }) {
+                            main_z_index = new_z_index;
+                            match &mut render_primitive {
+                                RenderPrimitive::Clip { layout } => {
+                                    layout.z_index = main_z_index + 0.1;
+                                }
+                                _ => {}
+                            };
                             render_primitives.push(render_primitive.clone());
                         }
                     }
@@ -297,6 +311,7 @@ impl WidgetManager {
             &self.layout_cache,
             &self.nodes,
             self.node_tree.root_node,
+            0.0,
         )
     }
 

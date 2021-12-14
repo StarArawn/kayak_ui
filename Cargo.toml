@@ -25,5 +25,5 @@ kayak_font = { path = "kayak_font", optional = true }
 kayak_render_macros = { path = "kayak_render_macros" }
 
 [dev-dependencies]
-bevy = { git = "https://github.com/bevyengine/bevy", rev = "38c7d5eb9e81ab8e1aec03673599b25a9aa0c69c" }
+bevy = { git = "https://github.com/StarArawn/bevy", rev = "bcca341d696c66d0173d8b0ac7a1b23b4b9e775c" }
 kayak_widgets = { path = "kayak_widgets" }

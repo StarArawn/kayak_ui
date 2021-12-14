@@ -1,7 +1,7 @@
 use bevy::{
     math::Vec2,
     prelude::{Assets, Res},
-    sprite2::Rect,
+    sprite::Rect,
 };
 use kayak_core::render_primitive::RenderPrimitive;
 use kayak_font::{Alignment, CoordinateSystem, KayakFont};
@@ -39,13 +39,15 @@ pub fn extract_texts(
 
     let font = font.unwrap();
 
+    let line_height = font_size * 1.2;
+
     let chars_layouts = font.get_layout(
         CoordinateSystem::PositiveYDown,
         Alignment::Start,
-        Vec2::new(layout.posx, layout.posy + font_size),
+        Vec2::new(layout.posx, layout.posy + line_height),
         Vec2::new(layout.width, layout.height),
         content,
-        font_size * 1.2,
+        line_height,
         font_size,
     );
 

@@ -1,4 +1,4 @@
-use bevy::{prelude::Handle, render2::texture::Image, utils::HashMap};
+use bevy::{prelude::Handle, render::texture::Image, utils::HashMap};
 
 #[derive(Debug, Clone)]
 pub struct ImageManager {

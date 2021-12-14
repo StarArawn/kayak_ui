@@ -48,6 +48,7 @@ fn main() {
         let foo = 10;
         let test_styles = Style::default();
         let parent_id: Option<Index> = None;
+        let children: Option<kayak_core::Children> = None;
         rsx! {
             <Fragment>
                 <Test foo={10}>
@@ -66,6 +67,7 @@ fn main() {
         let test_styles = Style::default();
 
         let parent_id: Option<Index> = None;
+        let children: Option<kayak_core::Children> = None;
         rsx! {
             <Fragment>
                 <Test foo={foo} styles={Some(test_styles)}>

@@ -1,6 +1,6 @@
 use bevy::{
     prelude::{Plugin, Res, ResMut},
-    render2::{
+    render::{
         render_asset::RenderAssets,
         renderer::{RenderDevice, RenderQueue},
         texture::Image,

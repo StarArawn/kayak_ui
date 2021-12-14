@@ -1,8 +1,8 @@
 use bevy::core::FloatOrd;
 use bevy::ecs::prelude::*;
-use bevy::render2::render_phase::{DrawFunctionId, PhaseItem};
-use bevy::render2::render_resource::{CachedPipelineId, RenderPassColorAttachment};
-use bevy::render2::{
+use bevy::render::render_phase::{DrawFunctionId, PhaseItem};
+use bevy::render::render_resource::{CachedPipelineId, RenderPassColorAttachment};
+use bevy::render::{
     render_graph::{Node, NodeRunError, RenderGraphContext, SlotInfo, SlotType},
     render_phase::{DrawFunctions, RenderPhase, TrackedRenderPass},
     render_resource::{LoadOp, Operations, RenderPassDescriptor},

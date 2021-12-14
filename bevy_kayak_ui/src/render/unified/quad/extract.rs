@@ -1,4 +1,4 @@
-use bevy::{math::Vec2, sprite2::Rect};
+use bevy::{math::Vec2, sprite::Rect};
 use kayak_core::render_primitive::RenderPrimitive;
 
 use crate::{

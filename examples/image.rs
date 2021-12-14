@@ -2,7 +2,7 @@ use bevy::{
     math::Vec2,
     prelude::{App as BevyApp, AssetServer, Commands, Handle, Res, ResMut},
     window::{WindowDescriptor, Windows},
-    PipelinedDefaultPlugins,
+    DefaultPlugins,
 };
 use kayak_ui::bevy::{BevyContext, BevyKayakUIPlugin, ImageManager, UICameraBundle};
 use kayak_ui::core::{rsx, Index};
@@ -22,12 +22,13 @@ fn startup(
         panic!("Couldn't find primary window!");
     };
 
-    let handle: Handle<bevy::render2::texture::Image> = asset_server.load("panel.png");
+    let handle: Handle<bevy::render::texture::Image> = asset_server.load("panel.png");
     let ui_image_handle = image_manager.get(&handle);
 
     let context = BevyContext::new(window_size.x, window_size.y, |styles, context| {
         // Hack to trick the proc macro for right now..
         let parent_id: Option<Index> = None;
+        let children: Option<kayak_ui::core::Children> = None;
         rsx! {
             <App styles={Some(styles.clone())}>
                 <Image handle={ui_image_handle} />
@@ -46,7 +47,7 @@ fn main() {
             title: String::from("UI Example"),
             ..Default::default()
         })
-        .add_plugins(PipelinedDefaultPlugins)
+        .add_plugins(DefaultPlugins)
         .add_plugin(BevyKayakUIPlugin)
         .add_startup_system(startup)
         .run();

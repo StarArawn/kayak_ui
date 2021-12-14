@@ -1,6 +1,6 @@
 use bevy::{
     prelude::{CoreStage, Plugin},
-    render2::camera::ActiveCameras,
+    render::camera::ActiveCameras,
 };
 
 mod camera;
@@ -17,7 +17,7 @@ impl Plugin for KayakUICameraPlugin {
         active_cameras.add(UICameraBundle::UI_CAMERA);
         app.add_system_to_stage(
             CoreStage::PostUpdate,
-            bevy::render2::camera::camera_system::<UIOrthographicProjection>,
+            bevy::render::camera::camera_system::<UIOrthographicProjection>,
         );
     }
 }

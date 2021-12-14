@@ -2,7 +2,7 @@ use bevy::{
     input::{mouse::MouseButtonInput, ElementState},
     math::Vec2,
     prelude::{EventReader, IntoExclusiveSystem, MouseButton, Plugin, Res, World},
-    render2::color::Color,
+    render::color::Color,
     window::{CursorMoved, Windows},
 };
 

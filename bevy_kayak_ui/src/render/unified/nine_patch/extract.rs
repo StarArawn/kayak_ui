@@ -1,8 +1,8 @@
 use bevy::{
     math::Vec2,
     prelude::{Assets, Res},
-    render2::{color::Color, texture::Image},
-    sprite2::Rect,
+    render::{color::Color, texture::Image},
+    sprite::Rect,
 };
 use kayak_core::render_primitive::RenderPrimitive;
 

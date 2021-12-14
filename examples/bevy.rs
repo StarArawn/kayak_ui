@@ -2,7 +2,7 @@ use bevy::{
     math::Vec2,
     prelude::{App as BevyApp, AssetServer, Commands, Res, ResMut},
     window::{WindowDescriptor, Windows},
-    PipelinedDefaultPlugins,
+    DefaultPlugins,
 };
 use kayak_ui::bevy::{BevyContext, BevyKayakUIPlugin, FontMapping, UICameraBundle};
 use kayak_ui::core::Index;
@@ -42,6 +42,8 @@ fn startup(
     let context = BevyContext::new(window_size.x, window_size.y, |styles, context| {
         // Hack to trick the proc macro for right now..
         let parent_id: Option<Index> = None;
+        let children: Option<kayak_ui::core::Children> = None;
+
         rsx! {
             <App styles={Some(styles.clone())}>
                 <Window position={(50.0, 50.0)} size={(300.0, 300.0)} title={"Window 1".to_string()}>
@@ -65,7 +67,7 @@ fn main() {
             title: String::from("UI Example"),
             ..Default::default()
         })
-        .add_plugins(PipelinedDefaultPlugins)
+        .add_plugins(DefaultPlugins)
         .add_plugin(BevyKayakUIPlugin)
         .add_startup_system(startup)
         .run();

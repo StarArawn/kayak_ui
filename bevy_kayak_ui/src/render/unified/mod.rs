@@ -1,10 +1,12 @@
 use bevy::{
+    math::Vec2,
     prelude::{Assets, Commands, HandleUntyped, Plugin, Res},
     reflect::TypeUuid,
-    render2::{
-        render_phase::DrawFunctions, render_resource::Shader, texture::Image, RenderApp,
-        RenderStage,
+    render::{
+        color::Color, render_phase::DrawFunctions, render_resource::Shader, texture::Image,
+        RenderApp, RenderStage,
     },
+    sprite::Rect,
 };
 use kayak_core::render_primitive::RenderPrimitive;
 use kayak_font::KayakFont;
@@ -17,7 +19,7 @@ use crate::{
     BevyContext, FontMapping, ImageManager,
 };
 
-use self::pipeline::ImageBindGroups;
+use self::pipeline::{ExtractQuadBundle, ExtractedQuad, ImageBindGroups, UIQuadType};
 
 pub mod font;
 pub mod image;
@@ -92,6 +94,28 @@ pub fn extract(
                 let nine_patch_quads =
                     nine_patch::extract_nine_patch(&render_primitive, &image_manager, &images);
                 extracted_quads.extend(nine_patch_quads);
+            }
+            RenderPrimitive::Clip { layout } => {
+                // dbg!(&layout);
+                extracted_quads.push(ExtractQuadBundle {
+                    extracted_quad: ExtractedQuad {
+                        rect: Rect {
+                            min: Vec2::new(layout.posx, layout.posy),
+                            max: Vec2::new(layout.posx + layout.width, layout.posy + layout.height),
+                        },
+                        color: Color::default(),
+                        vertex_index: 0,
+                        char_id: 0,
+                        z_index: layout.z_index,
+                        font_handle: None,
+                        quad_type: UIQuadType::Clip,
+                        type_index: 0,
+                        border_radius: (0.0, 0.0, 0.0, 0.0),
+                        image: None,
+                        uv_min: None,
+                        uv_max: None,
+                    },
+                });
             }
             _ => {}
         }

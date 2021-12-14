@@ -14,6 +14,7 @@ pub fn build_arc_function(
     };
 
     quote! {
+        let children = children.clone();
         let #widget_name = #children_quotes;
         let (should_rerender, child_id) =
             context

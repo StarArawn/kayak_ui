@@ -1,6 +1,6 @@
 use bevy::{
     prelude::{Bundle, GlobalTransform, Transform},
-    render2::{
+    render::{
         camera::{Camera, CameraProjection, DepthCalculation, WindowOrigin},
         primitives::Frustum,
         view::VisibleEntities,

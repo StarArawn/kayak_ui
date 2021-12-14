@@ -6,7 +6,7 @@ use bevy::{
     },
     math::{const_vec3, Mat4, Quat, Vec2, Vec3, Vec4},
     prelude::{Bundle, Component, Entity, FromWorld, Handle, Query, Res, ResMut, World},
-    render2::{
+    render::{
         color::Color,
         render_asset::RenderAssets,
         render_phase::{Draw, DrawFunctions, RenderPhase, TrackedRenderPass},
@@ -26,7 +26,7 @@ use bevy::{
         texture::{BevyDefault, GpuImage, Image},
         view::{ViewUniformOffset, ViewUniforms},
     },
-    sprite2::Rect,
+    sprite::Rect,
     utils::HashMap,
 };
 use bytemuck::{Pod, Zeroable};
@@ -255,7 +255,7 @@ impl FromWorld for UnifiedPipeline {
             label: Some("font_texture_array_view"),
             format: Some(TextureFormat::Rgba8UnormSrgb),
             dimension: Some(TextureViewDimension::D2),
-            aspect: bevy::render2::render_resource::TextureAspect::All,
+            aspect: bevy::render::render_resource::TextureAspect::All,
             base_mip_level: 0,
             base_array_layer: 0,
             mip_level_count: None,
@@ -305,6 +305,7 @@ pub enum UIQuadType {
     Quad,
     Text,
     Image,
+    Clip,
 }
 
 #[derive(Debug, Component, Clone)]
@@ -388,7 +389,11 @@ pub fn prepare_quads(
         &render_device,
     );
 
-    for (i, mut extracted_sprite) in extracted_quads.iter_mut().enumerate() {
+    for (i, mut extracted_sprite) in extracted_quads
+        .iter_mut()
+        .filter(|es| es.quad_type != UIQuadType::Clip)
+        .enumerate()
+    {
         let sprite_rect = extracted_sprite.rect;
         let color = extracted_sprite.color.as_linear_rgba_f32();
 
@@ -396,6 +401,7 @@ pub fn prepare_quads(
             UIQuadType::Quad => extracted_sprite.type_index = quad_type_offset,
             UIQuadType::Text => extracted_sprite.type_index = text_type_offset,
             UIQuadType::Image => extracted_sprite.type_index = image_type_offset,
+            UIQuadType::Clip => {}
         };
 
         let uv_min = extracted_sprite.uv_min.unwrap_or(Vec2::ZERO);
@@ -575,6 +581,16 @@ impl Draw<TransparentUI> for DrawUI {
         let view_uniform = views.get(view).unwrap();
         let quad_meta = quad_meta.into_inner();
         let extracted_quad = quads.get(item.entity).unwrap();
+
+        if extracted_quad.quad_type == UIQuadType::Clip {
+            let x = extracted_quad.rect.min.x as u32;
+            let y = extracted_quad.rect.min.y as u32;
+            let width = extracted_quad.rect.width() as u32;
+            let height = extracted_quad.rect.height() as u32;
+            pass.set_scissor_rect(x, y, width, height);
+            return;
+        }
+
         if let Some(pipeline) = pipelines.into_inner().get(item.pipeline) {
             pass.set_render_pipeline(pipeline);
             pass.set_vertex_buffer(0, quad_meta.vertices.buffer().unwrap().slice(..));

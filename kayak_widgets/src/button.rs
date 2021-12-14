@@ -11,6 +11,7 @@ pub fn Button(children: Children, styles: Option<Style>) {
     let base_styles = styles.clone().unwrap_or_default();
     *styles = Some(Style {
         render_command: StyleProp::Value(RenderCommand::Quad),
+        border_radius: StyleProp::Value((5.0, 5.0, 5.0, 5.0)),
         height: if base_styles.height == StyleProp::Default {
             StyleProp::Value(Units::Pixels(45.0))
         } else {
@@ -21,6 +22,8 @@ pub fn Button(children: Children, styles: Option<Style>) {
         } else {
             base_styles.background_color
         },
+        padding_left: StyleProp::Value(Units::Stretch(1.0)),
+        padding_right: StyleProp::Value(Units::Stretch(1.0)),
         ..base_styles
     });
     rsx! {

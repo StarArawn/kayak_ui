@@ -1,16 +1,18 @@
 use kayak_ui::core::{
     render_command::RenderCommand,
     rsx,
-    styles::{Style, StyleProp},
+    styles::{Style, StyleProp, Units},
     widget, Children,
 };
 
 #[widget]
 pub fn Clip(children: Children, styles: Option<Style>) {
-    if styles.is_none() {
-        *styles = Some(Style::default())
-    }
-    styles.as_mut().unwrap().render_command = StyleProp::Value(RenderCommand::Clip);
+    *styles = Some(Style {
+        render_command: StyleProp::Value(RenderCommand::Clip),
+        width: StyleProp::Value(Units::Stretch(1.0)),
+        height: StyleProp::Value(Units::Stretch(1.0)),
+        ..styles.clone().unwrap_or_default()
+    });
     rsx! {
         <>
             {children}

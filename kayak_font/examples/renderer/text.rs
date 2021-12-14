@@ -1,4 +1,4 @@
-use bevy::{math::Vec2, prelude::Component, render2::color::Color};
+use bevy::{math::Vec2, prelude::Component, render::color::Color};
 use kayak_font::Alignment;
 
 #[derive(Component)]

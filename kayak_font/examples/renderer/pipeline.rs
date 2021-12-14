@@ -7,7 +7,7 @@ use bevy::{
     },
     math::{const_vec3, Mat4, Quat, Vec2, Vec3, Vec4},
     prelude::{Bundle, Component, Entity, FromWorld, Handle, Query, Res, ResMut, World},
-    render2::{
+    render::{
         color::Color,
         render_phase::{Draw, DrawFunctions, RenderPhase, TrackedRenderPass},
         render_resource::{
@@ -24,7 +24,7 @@ use bevy::{
         texture::{BevyDefault, GpuImage},
         view::{ViewUniformOffset, ViewUniforms},
     },
-    sprite2::Rect,
+    sprite::Rect,
 };
 use bytemuck::{Pod, Zeroable};
 use crevice::std140::AsStd140;

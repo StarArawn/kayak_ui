@@ -2,7 +2,7 @@ use crate::{KayakFont, Sdf};
 use bevy::{
     math::Vec2,
     prelude::{Handle, Res},
-    render2::{
+    render::{
         render_asset::RenderAssets,
         render_resource::{
             AddressMode, BindGroup, BindGroupDescriptor, BindGroupEntry, BindGroupLayout,
@@ -139,7 +139,7 @@ impl FontTextureCache {
             label: Some("font_texture_array_view"),
             format: Some(format),
             dimension: Some(TextureViewDimension::D2Array),
-            aspect: bevy::render2::render_resource::TextureAspect::All,
+            aspect: bevy::render::render_resource::TextureAspect::All,
             base_mip_level: 0,
             base_array_layer: 0,
             mip_level_count: None,
@@ -179,7 +179,7 @@ impl FontTextureCache {
             label: Some("font_texture_array_view"),
             format: None,
             dimension: Some(TextureViewDimension::D2Array),
-            aspect: bevy::render2::render_resource::TextureAspect::All,
+            aspect: bevy::render::render_resource::TextureAspect::All,
             base_mip_level: 0,
             base_array_layer: 0,
             mip_level_count: None,

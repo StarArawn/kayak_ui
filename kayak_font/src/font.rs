@@ -5,7 +5,7 @@ use bevy::{
     math::Vec2,
     prelude::Handle,
     reflect::TypeUuid,
-    render2::texture::Image,
+    render::texture::Image,
 };
 
 use crate::Sdf;

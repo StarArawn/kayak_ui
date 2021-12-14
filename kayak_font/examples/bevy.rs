@@ -1,9 +1,9 @@
 use bevy::{
     math::Vec2,
     prelude::{App as BevyApp, AssetServer, Commands, Handle, Res},
-    render2::{camera::OrthographicCameraBundle, color::Color},
+    render::{camera::OrthographicCameraBundle, color::Color},
     window::WindowDescriptor,
-    PipelinedDefaultPlugins,
+    DefaultPlugins,
 };
 use kayak_font::{Alignment, KayakFont, KayakFontPlugin};
 
@@ -64,7 +64,7 @@ fn main() {
             title: String::from("UI Example"),
             ..Default::default()
         })
-        .add_plugins(PipelinedDefaultPlugins)
+        .add_plugins(DefaultPlugins)
         .add_plugin(KayakFontPlugin)
         .add_plugin(FontRenderPlugin)
         .add_startup_system(startup)

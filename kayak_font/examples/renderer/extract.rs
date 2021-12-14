@@ -1,6 +1,6 @@
 use bevy::{
     prelude::{Assets, Commands, Handle, Query, Res},
-    sprite2::Rect,
+    sprite::Rect,
 };
 use kayak_font::{CoordinateSystem, KayakFont};
 

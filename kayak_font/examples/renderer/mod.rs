@@ -2,7 +2,7 @@ use bevy::{
     core_pipeline::Transparent2d,
     prelude::{Assets, HandleUntyped, Plugin, Res, ResMut},
     reflect::TypeUuid,
-    render2::{
+    render::{
         render_asset::RenderAssets,
         render_phase::DrawFunctions,
         render_resource::Shader,

@@ -10,7 +10,7 @@ use bevy::{
     prelude::{
         AddAsset, AssetEvent, Assets, Commands, EventReader, Handle, Local, Plugin, Res, ResMut,
     },
-    render2::{
+    render::{
         render_resource::{FilterMode, TextureFormat, TextureUsages},
         texture::Image,
         RenderApp, RenderStage,

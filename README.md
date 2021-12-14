@@ -41,6 +41,18 @@ Kayak UI is in the very early stages of development. Important features are miss
 ## Example Screenshot
 <img src="images/screen1.png" alt="Kayak UI" width="600" />
 
+## Usage
+Because bevy's new renderer is not released yet there is no crate on crates.io yet. For now please use the following:
+
+```rust
+kayak_ui = { git="https://github.com/StarArawn/kayak_ui", rev="{INSERT_COMMIT_SHA_HERE}" }
+kayak_widgets = { git="https://github.com/StarArawn/kayak_ui", rev="{INSERT_COMMIT_SHA_HERE}" }
+```
+
+It's also worth mentioning that you will need to use the same bevy revision that this library uses which is currently: `bcca341d696c66d0173d8b0ac7a1b23b4b9e775c`.
+
+This is temporary and will change when bevy 0.6 is released.
+
 ## Declarative
 Kayak UI makes it painless to build out complex UI's using custom or pre-built widgets. Custom widgets are layed out in a XML like syntax that allows you to more easily visualize the widget tree. Here's an example of that syntax:
 ```rust

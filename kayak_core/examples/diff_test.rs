@@ -32,19 +32,19 @@ pub fn main() {
         on_event: None,
     };
 
-    let widget5 = Widget1 {
-        id: Index::default(),
-        styles: None,
-        children: None,
-        on_event: None,
-    };
+    // let widget5 = Widget1 {
+    //     id: Index::default(),
+    //     styles: None,
+    //     children: None,
+    //     on_event: None,
+    // };
 
     let mut widgets = Arena::<Box<dyn Widget>>::default();
     let widget1_id = widgets.insert(Box::new(widget1));
     let widget2_id = widgets.insert(Box::new(widget2));
     let widget3_id = widgets.insert(Box::new(widget3));
     let widget4_id = widgets.insert(Box::new(widget4));
-    let widget5_id = widgets.insert(Box::new(widget5));
+    // let widget5_id = widgets.insert(Box::new(widget5));
 
     let mut tree1 = Tree::default();
     tree1.add(widget1_id, None);

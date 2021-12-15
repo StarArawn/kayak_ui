@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use morphorm::{Cache, GeometryChanged};
 
-use crate::node::NodeIndex;
+use crate::Index;
 
 #[derive(Debug, Default, Clone, Copy, PartialEq)]
 pub struct Rect {
@@ -37,36 +37,36 @@ pub struct Size {
 #[derive(Default, Debug)]
 pub struct LayoutCache {
     // Computed Outputs
-    pub rect: HashMap<NodeIndex, Rect>,
+    pub rect: HashMap<Index, Rect>,
 
     // Intermediate Values
-    space: HashMap<NodeIndex, Space>,
-    size: HashMap<NodeIndex, Size>,
+    space: HashMap<Index, Space>,
+    size: HashMap<Index, Size>,
 
-    child_width_max: HashMap<NodeIndex, f32>,
-    child_height_max: HashMap<NodeIndex, f32>,
-    child_width_sum: HashMap<NodeIndex, f32>,
-    child_height_sum: HashMap<NodeIndex, f32>,
+    child_width_max: HashMap<Index, f32>,
+    child_height_max: HashMap<Index, f32>,
+    child_width_sum: HashMap<Index, f32>,
+    child_height_sum: HashMap<Index, f32>,
 
-    grid_row_max: HashMap<NodeIndex, f32>,
-    grid_col_max: HashMap<NodeIndex, f32>,
+    grid_row_max: HashMap<Index, f32>,
+    grid_col_max: HashMap<Index, f32>,
 
-    horizontal_free_space: HashMap<NodeIndex, f32>,
-    horizontal_stretch_sum: HashMap<NodeIndex, f32>,
+    horizontal_free_space: HashMap<Index, f32>,
+    horizontal_stretch_sum: HashMap<Index, f32>,
 
-    vertical_free_space: HashMap<NodeIndex, f32>,
-    vertical_stretch_sum: HashMap<NodeIndex, f32>,
+    vertical_free_space: HashMap<Index, f32>,
+    vertical_stretch_sum: HashMap<Index, f32>,
 
-    stack_first_child: HashMap<NodeIndex, bool>,
-    stack_last_child: HashMap<NodeIndex, bool>,
+    stack_first_child: HashMap<Index, bool>,
+    stack_last_child: HashMap<Index, bool>,
 
-    geometry_changed: HashMap<NodeIndex, GeometryChanged>,
+    geometry_changed: HashMap<Index, GeometryChanged>,
 
-    visible: HashMap<NodeIndex, bool>,
+    visible: HashMap<Index, bool>,
 }
 
 impl LayoutCache {
-    pub fn add(&mut self, node_index: NodeIndex) {
+    pub fn add(&mut self, node_index: Index) {
         self.rect.insert(node_index, Default::default());
 
         self.space.insert(node_index, Default::default());
@@ -102,7 +102,7 @@ impl LayoutCache {
 }
 
 impl Cache for LayoutCache {
-    type Item = NodeIndex;
+    type Item = Index;
 
     fn visible(&self, node: Self::Item) -> bool {
         if let Some(value) = self.visible.get(&node) {

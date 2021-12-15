@@ -2,7 +2,7 @@ use std::{collections::HashMap, iter::Rev};
 
 use morphorm::Hierarchy;
 
-use crate::{node::NodeIndex, Index};
+use crate::Index;
 
 #[derive(Default, Debug, PartialEq)]
 pub struct Tree {
@@ -34,47 +34,47 @@ impl Tree {
         }
     }
 
-    pub fn flatten(&self) -> Vec<NodeIndex> {
+    pub fn flatten(&self) -> Vec<Index> {
         if self.root_node.is_none() {
             return Vec::new();
         }
         let iterator = DownwardIterator {
             tree: &self,
-            current_node: Some(NodeIndex(self.root_node.unwrap())),
+            current_node: Some(self.root_node.unwrap()),
             starting: true,
         };
 
         iterator.collect::<Vec<_>>()
     }
 
-    pub fn get_parent(&self, index: NodeIndex) -> Option<NodeIndex> {
+    pub fn get_parent(&self, index: Index) -> Option<Index> {
         self.parents
-            .get(&index.0)
-            .map_or(None, |parent| Some(NodeIndex(*parent)))
+            .get(&index)
+            .map_or(None, |parent| Some(*parent))
     }
 
-    pub fn get_first_child(&self, index: NodeIndex) -> Option<NodeIndex> {
-        self.children.get(&index.0).map_or(None, |children| {
+    pub fn get_first_child(&self, index: Index) -> Option<Index> {
+        self.children.get(&index).map_or(None, |children| {
             children
                 .first()
-                .map_or(None, |first_child| Some(NodeIndex(*first_child)))
+                .map_or(None, |first_child| Some(*first_child))
         })
     }
 
-    pub fn get_last_child(&self, _index: NodeIndex) -> Option<NodeIndex> {
+    pub fn get_last_child(&self, _index: Index) -> Option<Index> {
         todo!()
     }
 
-    pub fn get_next_sibling(&self, index: NodeIndex) -> Option<NodeIndex> {
+    pub fn get_next_sibling(&self, index: Index) -> Option<Index> {
         if let Some(parent_index) = self.get_parent(index) {
-            self.children.get(&parent_index.0).map_or(None, |children| {
+            self.children.get(&parent_index).map_or(None, |children| {
                 children
                     .iter()
-                    .position(|child| *child == index.0)
+                    .position(|child| *child == index)
                     .map_or(None, |child_index| {
                         children
                             .get(child_index + 1)
-                            .map_or(None, |next_child| Some(NodeIndex(*next_child)))
+                            .map_or(None, |next_child| Some(*next_child))
                     })
             })
         } else {
@@ -82,20 +82,20 @@ impl Tree {
         }
     }
 
-    pub fn get_prev_sibling(&self, index: NodeIndex) -> Option<NodeIndex> {
-        self.children.get(&index.0).map_or(None, |children| {
+    pub fn get_prev_sibling(&self, index: Index) -> Option<Index> {
+        self.children.get(&index).map_or(None, |children| {
             children
                 .iter()
-                .position(|child| *child == index.0)
+                .position(|child| *child == index)
                 .map_or(None, |child_index| {
                     children
                         .get(child_index - 1)
-                        .map_or(None, |next_child| Some(NodeIndex(*next_child)))
+                        .map_or(None, |next_child| Some(*next_child))
                 })
         })
     }
 
-    pub fn diff(&self, other_tree: &Tree) -> Vec<(usize, NodeIndex, NodeIndex, Vec<Change>)> {
+    pub fn diff(&self, other_tree: &Tree) -> Vec<(usize, Index, Index, Vec<Change>)> {
         let mut changes = Vec::new();
 
         let mut tree1 = self.down_iter().enumerate().collect::<Vec<_>>();
@@ -191,7 +191,7 @@ impl Tree {
         &mut self,
         other: &Tree,
         root_node: Index,
-        changes: Vec<(usize, NodeIndex, NodeIndex, Vec<Change>)>,
+        changes: Vec<(usize, Index, Index, Vec<Change>)>,
     ) {
         let children_a = self.children.get_mut(&root_node);
         let children_b = other.children.get(&root_node);
@@ -211,18 +211,18 @@ impl Tree {
         for (id, node, parent_node, change) in changes {
             match change.as_slice() {
                 [Change::Inserted] => {
-                    children_a[id] = node.0;
-                    self.parents.insert(node.0, parent_node.0);
+                    children_a[id] = node;
+                    self.parents.insert(node, parent_node);
                 }
                 [Change::Moved, Change::Updated] => {
-                    children_a[id] = node.0;
-                    self.parents.insert(node.0, parent_node.0);
+                    children_a[id] = node;
+                    self.parents.insert(node, parent_node);
                 }
                 [Change::Updated] => {
-                    children_a[id] = node.0;
+                    children_a[id] = node;
                 }
                 [Change::Deleted] => {
-                    self.parents.remove(&node.0);
+                    self.parents.remove(&node);
                 }
                 _ => {}
             }
@@ -232,15 +232,15 @@ impl Tree {
 
 pub struct DownwardIterator<'a> {
     tree: &'a Tree,
-    current_node: Option<NodeIndex>,
+    current_node: Option<Index>,
     starting: bool,
 }
 
 impl<'a> DownwardIterator<'a> {}
 
 impl<'a> Iterator for DownwardIterator<'a> {
-    type Item = NodeIndex;
-    fn next(&mut self) -> Option<NodeIndex> {
+    type Item = Index;
+    fn next(&mut self) -> Option<Index> {
         if self.starting {
             self.starting = false;
             return self.current_node;
@@ -289,11 +289,11 @@ impl<'a> Iterator for DownwardIterator<'a> {
 
 pub struct ChildIterator<'a> {
     pub tree: &'a Tree,
-    pub current_node: Option<NodeIndex>,
+    pub current_node: Option<Index>,
 }
 
 impl<'a> Iterator for ChildIterator<'a> {
-    type Item = NodeIndex;
+    type Item = Index;
     fn next(&mut self) -> Option<Self::Item> {
         if let Some(entity) = self.current_node {
             self.current_node = self.tree.get_next_sibling(entity);
@@ -305,9 +305,9 @@ impl<'a> Iterator for ChildIterator<'a> {
 }
 
 impl<'a> Hierarchy<'a> for Tree {
-    type Item = NodeIndex;
-    type DownIter = std::vec::IntoIter<NodeIndex>;
-    type UpIter = Rev<std::vec::IntoIter<NodeIndex>>;
+    type Item = Index;
+    type DownIter = std::vec::IntoIter<Index>;
+    type UpIter = Rev<std::vec::IntoIter<Index>>;
     type ChildIter = ChildIterator<'a>;
 
     fn up_iter(&'a self) -> Self::UpIter {
@@ -327,8 +327,8 @@ impl<'a> Hierarchy<'a> for Tree {
     }
 
     fn parent(&self, node: Self::Item) -> Option<Self::Item> {
-        if let Some(parent_index) = self.parents.get(&node.0) {
-            return Some(NodeIndex(*parent_index));
+        if let Some(parent_index) = self.parents.get(&node) {
+            return Some(*parent_index);
         }
 
         None
@@ -350,9 +350,9 @@ impl<'a> Hierarchy<'a> for Tree {
 
     fn is_last_child(&self, node: Self::Item) -> bool {
         if let Some(parent) = self.parent(node) {
-            if let Some(parent_children) = self.children.get(&parent.0) {
+            if let Some(parent_children) = self.children.get(&parent) {
                 if let Some(last_child) = parent_children.last() {
-                    return *last_child == node.0;
+                    return *last_child == node;
                 }
             }
         }
@@ -392,7 +392,7 @@ fn test_tree() {
 
     let mapped = flattened
         .iter()
-        .map(|x| x.0.into_raw_parts().0)
+        .map(|x| x.into_raw_parts().0)
         .collect::<Vec<_>>();
 
     assert!(mapped[0] == 0);

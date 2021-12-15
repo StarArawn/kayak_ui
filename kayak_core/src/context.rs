@@ -1,7 +1,7 @@
 use flo_binding::Changeable;
 use std::collections::HashMap;
 
-use crate::{node::NodeIndex, widget_manager::WidgetManager, Event, EventType, Index, InputEvent};
+use crate::{widget_manager::WidgetManager, Event, EventType, Index, InputEvent};
 
 pub struct KayakContext {
     widget_states: HashMap<crate::Index, resources::Resources>,
@@ -229,7 +229,7 @@ impl KayakContext {
     pub fn process_events(&mut self, input_events: Vec<InputEvent>) {
         let mut events_stream = Vec::new();
         for (index, _) in self.widget_manager.nodes.iter() {
-            if let Some(layout) = self.widget_manager.layout_cache.rect.get(&NodeIndex(index)) {
+            if let Some(layout) = self.widget_manager.layout_cache.rect.get(&index) {
                 for input_event in input_events.iter() {
                     match input_event {
                         InputEvent::MouseMoved(point) => {

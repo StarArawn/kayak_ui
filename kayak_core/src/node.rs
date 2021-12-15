@@ -3,9 +3,6 @@ use crate::{
     Arena, Index,
 };
 
-#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
-pub struct NodeIndex(pub Index);
-
 #[derive(Debug, Clone)]
 pub struct Node {
     pub children: Vec<Index>,
@@ -64,11 +61,11 @@ impl NodeBuilder {
     }
 }
 
-impl<'a> morphorm::Node<'a> for NodeIndex {
+impl<'a> morphorm::Node<'a> for Index {
     type Data = Arena<Option<Node>>;
 
     fn layout_type(&self, store: &'_ Self::Data) -> Option<morphorm::LayoutType> {
-        if let Some(node) = store.get(self.0) {
+        if let Some(node) = store.get(*self) {
             if let Some(node) = node {
                 return match node.styles.layout_type {
                     StyleProp::Default => Some(morphorm::LayoutType::default()),
@@ -81,7 +78,7 @@ impl<'a> morphorm::Node<'a> for NodeIndex {
     }
 
     fn position_type(&self, store: &'_ Self::Data) -> Option<morphorm::PositionType> {
-        if let Some(node) = store.get(self.0) {
+        if let Some(node) = store.get(*self) {
             if let Some(node) = node {
                 return match node.styles.position_type {
                     StyleProp::Default => Some(morphorm::PositionType::default()),
@@ -94,7 +91,7 @@ impl<'a> morphorm::Node<'a> for NodeIndex {
     }
 
     fn width(&self, store: &'_ Self::Data) -> Option<morphorm::Units> {
-        if let Some(node) = store.get(self.0) {
+        if let Some(node) = store.get(*self) {
             if let Some(node) = node {
                 return match node.styles.width {
                     StyleProp::Default => Some(morphorm::Units::Stretch(1.0)),
@@ -107,7 +104,7 @@ impl<'a> morphorm::Node<'a> for NodeIndex {
     }
 
     fn height(&self, store: &'_ Self::Data) -> Option<morphorm::Units> {
-        if let Some(node) = store.get(self.0) {
+        if let Some(node) = store.get(*self) {
             if let Some(node) = node {
                 return match node.styles.height {
                     StyleProp::Default => Some(morphorm::Units::Stretch(1.0)),
@@ -136,7 +133,7 @@ impl<'a> morphorm::Node<'a> for NodeIndex {
     }
 
     fn left(&self, store: &'_ Self::Data) -> Option<morphorm::Units> {
-        if let Some(node) = store.get(self.0) {
+        if let Some(node) = store.get(*self) {
             if let Some(node) = node {
                 return match node.styles.left {
                     StyleProp::Default => Some(morphorm::Units::Auto),
@@ -149,7 +146,7 @@ impl<'a> morphorm::Node<'a> for NodeIndex {
     }
 
     fn right(&self, store: &'_ Self::Data) -> Option<morphorm::Units> {
-        if let Some(node) = store.get(self.0) {
+        if let Some(node) = store.get(*self) {
             if let Some(node) = node {
                 return match node.styles.right {
                     StyleProp::Default => Some(morphorm::Units::Auto),
@@ -162,7 +159,7 @@ impl<'a> morphorm::Node<'a> for NodeIndex {
     }
 
     fn top(&self, store: &'_ Self::Data) -> Option<morphorm::Units> {
-        if let Some(node) = store.get(self.0) {
+        if let Some(node) = store.get(*self) {
             if let Some(node) = node {
                 return match node.styles.top {
                     StyleProp::Default => Some(morphorm::Units::Auto),
@@ -175,7 +172,7 @@ impl<'a> morphorm::Node<'a> for NodeIndex {
     }
 
     fn bottom(&self, store: &'_ Self::Data) -> Option<morphorm::Units> {
-        if let Some(node) = store.get(self.0) {
+        if let Some(node) = store.get(*self) {
             if let Some(node) = node {
                 return match node.styles.bottom {
                     StyleProp::Default => Some(morphorm::Units::Auto),
@@ -220,7 +217,7 @@ impl<'a> morphorm::Node<'a> for NodeIndex {
     }
 
     fn child_left(&self, store: &'_ Self::Data) -> Option<morphorm::Units> {
-        if let Some(node) = store.get(self.0) {
+        if let Some(node) = store.get(*self) {
             if let Some(node) = node {
                 return match node.styles.padding_left {
                     StyleProp::Default => Some(morphorm::Units::Auto),
@@ -233,7 +230,7 @@ impl<'a> morphorm::Node<'a> for NodeIndex {
     }
 
     fn child_right(&self, store: &'_ Self::Data) -> Option<morphorm::Units> {
-        if let Some(node) = store.get(self.0) {
+        if let Some(node) = store.get(*self) {
             if let Some(node) = node {
                 return match node.styles.padding_right {
                     StyleProp::Default => Some(morphorm::Units::Auto),
@@ -246,7 +243,7 @@ impl<'a> morphorm::Node<'a> for NodeIndex {
     }
 
     fn child_top(&self, store: &'_ Self::Data) -> Option<morphorm::Units> {
-        if let Some(node) = store.get(self.0) {
+        if let Some(node) = store.get(*self) {
             if let Some(node) = node {
                 return match node.styles.padding_top {
                     StyleProp::Default => Some(morphorm::Units::Auto),
@@ -259,7 +256,7 @@ impl<'a> morphorm::Node<'a> for NodeIndex {
     }
 
     fn child_bottom(&self, store: &'_ Self::Data) -> Option<morphorm::Units> {
-        if let Some(node) = store.get(self.0) {
+        if let Some(node) = store.get(*self) {
             if let Some(node) = node {
                 return match node.styles.padding_bottom {
                     StyleProp::Default => Some(morphorm::Units::Auto),

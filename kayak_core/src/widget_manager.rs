@@ -5,7 +5,7 @@ use std::{
 
 use crate::{
     layout_cache::LayoutCache,
-    node::{Node, NodeBuilder, NodeIndex},
+    node::{Node, NodeBuilder},
     render_command::RenderCommand,
     render_primitive::RenderPrimitive,
     styles::Style,
@@ -114,7 +114,7 @@ impl WidgetManager {
         // }
 
         self.tree.add(0, widget_id, parent);
-        self.layout_cache.add(NodeIndex(widget_id));
+        self.layout_cache.add(widget_id);
 
         (true, widget_id)
     }
@@ -262,7 +262,7 @@ impl WidgetManager {
         let mut render_primitives = Vec::new();
 
         if let Some(node) = nodes.get(current_node).unwrap() {
-            if let Some(layout) = layout_cache.rect.get(&NodeIndex(current_node)) {
+            if let Some(layout) = layout_cache.rect.get(&current_node) {
                 let mut render_primitive: RenderPrimitive = (&node.styles).into();
                 let mut layout = *layout;
                 let new_z_index = if matches!(render_primitive, RenderPrimitive::Clip { .. }) {

@@ -6,6 +6,7 @@ pub fn build_arc_function(
     children_quotes: TokenStream,
     has_parent: bool,
     index: usize,
+    is_children: bool,
 ) -> TokenStream {
     let parent = if has_parent {
         quote! { parent_id }
@@ -13,13 +14,20 @@ pub fn build_arc_function(
         quote! { None }
     };
 
+    let tree_add = if is_children {
+        quote! { tree.add(child_id, #parent); }
+    } else {
+        quote! {}
+    };
+
     quote! {
         let children = children.clone();
         let #widget_name = #children_quotes;
         let (should_rerender, child_id) =
-            context
-                .widget_manager
-                .create_widget(#index, #widget_name, #parent);
+        context
+            .widget_manager
+            .create_widget(#index, #widget_name, #parent);
+        #tree_add
         if should_rerender {
             let mut child_widget = context.widget_manager.take(child_id);
             child_widget.render(context);

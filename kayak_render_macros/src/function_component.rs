@@ -167,7 +167,23 @@ pub fn create_function_widget(f: syn::ItemFn) -> TokenStream {
                 let parent_id = Some(parent_id);
                 #inputs_reading_ref
                 let children = children.clone();
+                let tree = #kayak_core::WidgetTree::new();
+
                 #block
+
+                // Consume the widget tree taking the inner value
+                let tree = tree.take();
+
+                // Evaluate changes to the tree.
+                let changes = context
+                    .widget_manager
+                    .tree
+                    .diff_children(&tree, self.get_id());
+
+                context
+                    .widget_manager
+                    .tree
+                    .merge(&tree, self.get_id(), changes);
             }
         }
     })

@@ -47,24 +47,43 @@ pub fn main() {
     let widget5_id = widgets.insert(Box::new(widget5));
 
     let mut tree1 = Tree::default();
-    tree1.add(0, widget1_id, None);
-    tree1.add(0, widget2_id, Some(widget1_id));
-    tree1.add(1, widget3_id, Some(widget1_id));
-    tree1.add(2, widget4_id, Some(widget1_id));
+    tree1.add(widget1_id, None);
+    tree1.add(widget2_id, Some(widget1_id));
+    tree1.add(widget3_id, Some(widget2_id));
+    // tree1.add(1, widget3_id, Some(widget1_id));
+    // tree1.add(2, widget4_id, Some(widget1_id));
 
     let mut tree2 = Tree::default();
-    tree2.add(0, widget1_id, None);
-    // tree2.add(0, widget2_id, Some(widget1_id));
-    tree2.add(0, widget4_id, Some(widget1_id));
-    tree2.add(1, widget3_id, Some(widget1_id));
-    tree2.add(2, widget5_id, Some(widget1_id));
+    tree2.add(widget1_id, None);
+    tree2.add(widget2_id, Some(widget1_id));
+    // tree2.add(0, widget3_id, Some(widget1_id));
+    // tree2.add(1, widget4_id, Some(widget1_id));
+    // tree2.add(2, widget5_id, Some(widget1_id));
 
-    let changes = tree1.diff(&tree2);
+    let changes = tree1.diff_children(&tree2, widget1_id);
+    dbg!(&changes);
+    tree1.merge(&tree2, widget1_id, changes);
+
+    let changes = tree1.diff_children(&tree2, widget1_id);
+
+    dbg!(&changes);
+
+    assert!(tree1 == tree2);
+
+    let mut tree1 = Tree::default();
+    tree1.add(widget1_id, None);
+    tree1.add(widget2_id, Some(widget1_id));
+    tree1.add(widget3_id, Some(widget2_id));
+
+    let mut tree2 = Tree::default();
+    tree2.add(widget1_id, None);
+    tree2.add(widget2_id, Some(widget1_id));
+    tree2.add(widget4_id, Some(widget2_id));
+
+    let changes = tree1.diff_children(&tree2, widget1_id);
     dbg!(&changes);
 
     tree1.merge(&tree2, widget1_id, changes);
-
-    dbg!(&tree1);
-
-    assert!(tree1 == tree2);
+    let differences = tree1.diff_children(&tree2, widget1_id);
+    dbg!(differences);
 }

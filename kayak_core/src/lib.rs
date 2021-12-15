@@ -23,12 +23,13 @@ pub use fragment::Fragment;
 pub use generational_arena::{Arena, Index};
 pub use input_event::*;
 pub use kayak_render_macros::{render, rsx, widget};
+pub use resources::Resources;
+pub use tree::{Tree, WidgetTree};
 pub use widget::Widget;
 
-pub use resources::Resources;
-
-pub type Children =
-    Option<Arc<dyn Fn(Option<crate::Index>, &mut crate::context::KayakContext) + Send + Sync>>;
+pub type Children = Option<
+    Arc<dyn Fn(WidgetTree, Option<crate::Index>, &mut crate::context::KayakContext) + Send + Sync>,
+>;
 
 #[derive(Clone)]
 pub struct OnEvent(

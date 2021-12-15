@@ -67,7 +67,7 @@ impl Widget {
             if !as_prop {
                 let attrs = quote! { #name #attrs };
                 let widget_block =
-                    build_arc_function(quote! { built_widget }, attrs, has_parent, 0);
+                    build_arc_function(quote! { built_widget }, attrs, has_parent, 0, true);
                 quote! {
                     #widget_block
                 }

@@ -35,8 +35,24 @@ impl Widget for Fragment {
     }
 
     fn render(&mut self, context: &mut KayakContext) {
-        if let Some(children) = self.children.as_ref() {
-            children(Some(self.get_id()), context);
+        let tree = crate::WidgetTree::new();
+
+        if let Some(children) = self.children.take() {
+            children(tree.clone(), Some(self.get_id()), context);
         }
+
+        // Consume the widget tree taking the inner value
+        let tree = tree.take();
+
+        // Evaluate changes to the tree.
+        let changes = context
+            .widget_manager
+            .tree
+            .diff_children(&tree, self.get_id());
+        // dbg!(&changes);
+        context
+            .widget_manager
+            .tree
+            .merge(&tree, self.get_id(), changes);
     }
 }

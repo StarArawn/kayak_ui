@@ -1,4 +1,8 @@
-use std::{collections::HashMap, iter::Rev};
+use std::{
+    collections::HashMap,
+    iter::Rev,
+    sync::{Arc, RwLock},
+};
 
 use morphorm::Hierarchy;
 
@@ -20,8 +24,23 @@ pub enum Change {
     Moved,
 }
 
+#[derive(Default, Debug, Clone)]
+pub struct ChildChanges {
+    pub changes: Vec<(usize, Index, Index, Vec<Change>)>,
+    pub child_changes: Vec<(usize, ChildChanges)>,
+}
+
+impl From<Vec<(usize, Index, Index, Vec<Change>)>> for ChildChanges {
+    fn from(changes: Vec<(usize, Index, Index, Vec<Change>)>) -> Self {
+        Self {
+            changes,
+            child_changes: Vec::new(),
+        }
+    }
+}
+
 impl Tree {
-    pub fn add(&mut self, _child_index: usize, index: Index, parent: Option<Index>) {
+    pub fn add(&mut self, index: Index, parent: Option<Index>) {
         if let Some(parent_index) = parent {
             self.parents.insert(index, parent_index);
             if let Some(parent_children) = self.children.get_mut(&parent_index) {
@@ -41,6 +60,19 @@ impl Tree {
         let iterator = DownwardIterator {
             tree: &self,
             current_node: Some(self.root_node.unwrap()),
+            starting: true,
+        };
+
+        iterator.collect::<Vec<_>>()
+    }
+
+    pub fn flatten_node(&self, root_node: Index) -> Vec<Index> {
+        if self.root_node.is_none() {
+            return Vec::new();
+        }
+        let iterator = DownwardIterator {
+            tree: &self,
+            current_node: Some(root_node),
             starting: true,
         };
 
@@ -95,12 +127,158 @@ impl Tree {
         })
     }
 
-    pub fn diff(&self, other_tree: &Tree) -> Vec<(usize, Index, Index, Vec<Change>)> {
+    pub fn diff_children(&self, other_tree: &Tree, root_node: Index) -> ChildChanges {
+        let children_a = self.children.get(&root_node);
+        let children_b = other_tree.children.get(&root_node);
+        // Handle both easy cases first..
+        if children_a.is_some() && children_b.is_none() {
+            return children_a
+                .unwrap()
+                .iter()
+                .enumerate()
+                .map(|(child_id, child_node)| {
+                    (child_id, *child_node, root_node, vec![Change::Deleted])
+                })
+                .collect::<Vec<_>>()
+                .into();
+        } else if children_a.is_none() && children_b.is_some() {
+            return children_b
+                .unwrap()
+                .iter()
+                .enumerate()
+                .map(|(child_id, child_node)| {
+                    (child_id, *child_node, root_node, vec![Change::Inserted])
+                })
+                .collect::<Vec<_>>()
+                .into();
+        } else if children_a.is_none() && children_b.is_none() {
+            return vec![].into();
+        }
+
+        let mut child_changes = ChildChanges::default();
+
+        let children_a = children_a
+            .unwrap()
+            .into_iter()
+            .map(|i| *i)
+            .enumerate()
+            .collect::<Vec<(usize, Index)>>();
+        let children_b = children_b
+            .unwrap()
+            .into_iter()
+            .map(|i| *i)
+            .enumerate()
+            .collect::<Vec<(usize, Index)>>();
+
+        let deleted_nodes = children_a
+            .iter()
+            // Find matching child
+            .filter(|(_, node)| !children_b.iter().any(|(_, node_b)| node == node_b))
+            .map(|(id, node)| (*id, *node, root_node, vec![Change::Deleted]))
+            .collect::<Vec<_>>();
+        child_changes.changes.extend(deleted_nodes);
+
+        let inserted_and_changed = children_b
+            .iter()
+            .map(|(id, node)| {
+                let old_node = children_a.get(*id);
+                let inserted =
+                    old_node.is_some() && !children_a.iter().any(|(_, old_node)| node == old_node);
+
+                let value_changed = if let Some((_, old_node)) = old_node {
+                    node != old_node
+                } else {
+                    false
+                };
+                let changed = match (inserted, value_changed) {
+                    (true, false) => Change::Inserted,
+                    (true, true) => Change::Inserted,
+                    (false, true) => Change::Updated,
+                    (false, false) => Change::Unchanged,
+                };
+
+                (*id, *node, root_node, vec![changed])
+            })
+            .collect::<Vec<_>>();
+        child_changes.changes.extend(inserted_and_changed);
+
+        let flat_tree_diff_nodes = child_changes
+            .changes
+            .iter()
+            .map(|(id, node, parent_node, change)| {
+                if change[0] == Change::Deleted {
+                    return (0, *node, *parent_node, change.clone());
+                } else if change[0] == Change::Inserted {
+                    let child_id = other_tree
+                        .children
+                        .get(parent_node)
+                        .unwrap()
+                        .iter()
+                        .position(|child| child == node)
+                        .unwrap();
+                    return (child_id, *node, *parent_node, change.clone());
+                }
+
+                let parent_a = self.parent(children_a.get(*id).unwrap().1);
+                let parent_b = self.parent(*node);
+                let definitely_moved = if parent_a.is_some() && parent_b.is_some() {
+                    let parent_a = parent_a.unwrap();
+                    let parent_b = parent_b.unwrap();
+                    parent_a != parent_b
+                        || (parent_a == parent_b
+                            && *node != children_a.get(*id).unwrap().1
+                            && children_a.iter().any(|(_, node_b)| node == node_b))
+                } else {
+                    false
+                };
+
+                if definitely_moved {
+                    let change = if change[0] == Change::Unchanged {
+                        vec![Change::Moved]
+                    } else {
+                        if change[0] == Change::Updated {
+                            vec![Change::Moved, Change::Updated]
+                        } else {
+                            vec![Change::Moved]
+                        }
+                    };
+                    return (*id, *node, *parent_node, change);
+                }
+
+                (*id, *node, *parent_node, change.clone())
+            })
+            .collect::<Vec<_>>();
+        child_changes.changes = flat_tree_diff_nodes;
+
+        // for (child_id, child_node) in children_a.iter() {
+        //     // Add children of child changes.
+        //     let children_of_child_changes = self.diff_children(other_tree, *child_node);
+        //     child_changes
+        //         .child_changes
+        //         .push((*child_id, children_of_child_changes));
+        // }
+
+        child_changes
+    }
+
+    pub fn diff(
+        &self,
+        other_tree: &Tree,
+        root_node: Index,
+    ) -> Vec<(usize, Index, Index, Vec<Change>)> {
         let mut changes = Vec::new();
 
-        let mut tree1 = self.down_iter().enumerate().collect::<Vec<_>>();
+        let mut tree1 = self
+            .flatten_node(root_node)
+            .into_iter()
+            .enumerate()
+            .collect::<Vec<_>>();
         let _root_a = tree1.remove(0);
-        let mut tree2 = other_tree.down_iter().enumerate().collect::<Vec<_>>();
+        let mut tree2 = other_tree
+            .flatten_node(root_node)
+            .into_iter()
+            .enumerate()
+            .collect::<Vec<_>>();
         let _root_b = tree2.remove(0);
 
         let deleted_nodes = tree1
@@ -117,6 +295,7 @@ impl Tree {
             })
             .collect::<Vec<_>>();
         changes.extend(deleted_nodes);
+        dbg!(&changes);
 
         let inserted_and_changed = tree2
             .iter()
@@ -146,14 +325,25 @@ impl Tree {
             })
             .collect::<Vec<_>>();
         changes.extend(inserted_and_changed);
+        dbg!(&changes);
 
         let flat_tree_diff_nodes = changes
             .iter()
             .map(|(id, node, parent_node, change)| {
-                if change[0] == Change::Inserted || change[0] == Change::Deleted {
-                    return (*id, *node, *parent_node, change.clone());
+                if change[0] == Change::Deleted {
+                    return (0, *node, *parent_node, change.clone());
+                } else if change[0] == Change::Inserted {
+                    let child_id = other_tree
+                        .children
+                        .get(parent_node)
+                        .unwrap()
+                        .iter()
+                        .position(|child| child == node)
+                        .unwrap();
+                    return (child_id, *node, *parent_node, change.clone());
                 }
 
+                dbg!(id, node, parent_node, change);
                 let parent_a = self.parent(tree1.get(*id).unwrap().1);
                 let parent_b = self.parent(*node);
                 let definitely_moved = if parent_a.is_some() && parent_b.is_some() {
@@ -187,45 +377,54 @@ impl Tree {
         flat_tree_diff_nodes
     }
 
-    pub fn merge(
-        &mut self,
-        other: &Tree,
-        root_node: Index,
-        changes: Vec<(usize, Index, Index, Vec<Change>)>,
-    ) {
+    pub fn merge(&mut self, other: &Tree, root_node: Index, changes: ChildChanges) {
         let children_a = self.children.get_mut(&root_node);
         let children_b = other.children.get(&root_node);
-        if (children_a.is_none() && children_b.is_none())
-            || (children_a.is_some() && children_b.is_none())
-        {
+        if children_a.is_none() && children_b.is_none() {
             // Nothing to do.
             return;
         } else if children_a.is_none() && children_b.is_some() {
             // Simple case of moving all children over to A.
             self.children.insert(root_node, children_b.unwrap().clone());
             return;
+        } else if children_a.is_some() && children_b.is_none() {
+            // Case for erasing all
+            let children_a = children_a.unwrap();
+            for child in children_a.iter() {
+                self.parents.remove(&*child);
+            }
+            self.children.remove(&root_node);
+            return;
         }
         let children_a = children_a.unwrap();
         let children_b = children_b.unwrap();
         children_a.resize(children_b.len(), Index::default());
-        for (id, node, parent_node, change) in changes {
+        for (id, node, parent_node, change) in changes.changes.iter() {
             match change.as_slice() {
                 [Change::Inserted] => {
-                    children_a[id] = node;
-                    self.parents.insert(node, parent_node);
+                    children_a[*id] = *node;
+                    self.parents.insert(*node, *parent_node);
                 }
                 [Change::Moved, Change::Updated] => {
-                    children_a[id] = node;
-                    self.parents.insert(node, parent_node);
+                    children_a[*id] = *node;
+                    self.parents.insert(*node, *parent_node);
                 }
                 [Change::Updated] => {
-                    children_a[id] = node;
+                    children_a[*id] = *node;
                 }
                 [Change::Deleted] => {
-                    self.parents.remove(&node);
+                    self.parents.remove(node);
                 }
                 _ => {}
             }
+        }
+
+        for (child_id, children_of_child_changes) in changes.child_changes {
+            self.merge(
+                other,
+                changes.changes[child_id].1,
+                children_of_child_changes,
+            );
         }
     }
 }
@@ -358,6 +557,29 @@ impl<'a> Hierarchy<'a> for Tree {
         }
 
         false
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct WidgetTree {
+    tree: Arc<RwLock<Tree>>,
+}
+
+impl WidgetTree {
+    pub fn new() -> Self {
+        Self {
+            tree: Arc::new(RwLock::new(Tree::default())),
+        }
+    }
+
+    pub fn add(&self, index: Index, parent: Option<Index>) {
+        if let Ok(mut tree) = self.tree.write() {
+            tree.add(index, parent);
+        }
+    }
+
+    pub fn take(self) -> Tree {
+        Arc::try_unwrap(self.tree).unwrap().into_inner().unwrap()
     }
 }
 

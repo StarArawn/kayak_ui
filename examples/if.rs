@@ -13,7 +13,7 @@ use kayak_ui::core::{
 use kayak_widgets::{App, Button, If, Text, Window};
 
 #[widget]
-fn Counter(context: &mut KayakContext) {
+fn Removal(context: &mut KayakContext) {
     let text_styles = Style {
         bottom: StyleProp::Value(Units::Stretch(1.0)),
         left: StyleProp::Value(Units::Stretch(0.1)),
@@ -39,7 +39,6 @@ fn Counter(context: &mut KayakContext) {
     let on_event = OnEvent::new(move |_, event| match event.event_type {
         EventType::Click => {
             cloned_is_visible.set(!cloned_is_visible.get());
-            dbg!(cloned_is_visible.get());
         }
         _ => {}
     });
@@ -79,10 +78,11 @@ fn startup(
         // Hack to trick the proc macro for right now..
         let parent_id: Option<Index> = None;
         let children: Option<kayak_ui::core::Children> = None;
+        let tree = kayak_ui::core::WidgetTree::new();
 
         rsx! {
             <App styles={Some(styles.clone())}>
-                <Counter />
+                <Removal />
             </App>
         }
     });

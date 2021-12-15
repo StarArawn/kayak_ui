@@ -113,7 +113,7 @@ impl WidgetManager {
         //     self.dirty_nodes.remove(index);
         // }
 
-        self.tree.add(0, widget_id, parent);
+        self.tree.add(widget_id, parent);
         self.layout_cache.add(widget_id);
 
         (true, widget_id)

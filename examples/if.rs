@@ -1,0 +1,105 @@
+use bevy::{
+    math::Vec2,
+    prelude::{App as BevyApp, AssetServer, Commands, Res, ResMut},
+    window::{WindowDescriptor, Windows},
+    DefaultPlugins,
+};
+use kayak_ui::bevy::{BevyContext, BevyKayakUIPlugin, FontMapping, UICameraBundle};
+use kayak_ui::core::{
+    rsx,
+    styles::{Style, StyleProp, Units},
+    widget, Bound, EventType, Index, MutableBound, OnEvent,
+};
+use kayak_widgets::{App, Button, If, Text, Window};
+
+#[widget]
+fn Counter(context: &mut KayakContext) {
+    let text_styles = Style {
+        bottom: StyleProp::Value(Units::Stretch(1.0)),
+        left: StyleProp::Value(Units::Stretch(0.1)),
+        right: StyleProp::Value(Units::Stretch(0.1)),
+        top: StyleProp::Value(Units::Stretch(1.0)),
+        width: StyleProp::Value(Units::Stretch(1.0)),
+        height: StyleProp::Value(Units::Pixels(28.0)),
+        ..Default::default()
+    };
+
+    let button_text_styles = Style {
+        bottom: StyleProp::Value(Units::Stretch(1.0)),
+        left: StyleProp::Value(Units::Stretch(1.0)),
+        right: StyleProp::Value(Units::Stretch(1.0)),
+        top: StyleProp::Value(Units::Stretch(1.0)),
+        width: StyleProp::Value(Units::Pixels(67.0)),
+        height: StyleProp::Value(Units::Pixels(39.0)),
+        ..Default::default()
+    };
+
+    let is_visible = context.create_state(true).unwrap();
+    let cloned_is_visible = is_visible.clone();
+    let on_event = OnEvent::new(move |_, event| match event.event_type {
+        EventType::Click => {
+            cloned_is_visible.set(!cloned_is_visible.get());
+            dbg!(cloned_is_visible.get());
+        }
+        _ => {}
+    });
+
+    let is_visible = is_visible.get();
+    rsx! {
+        <>
+            <Window position={(50.0, 50.0)} size={(300.0, 300.0)} title={"If Example".to_string()}>
+                <If condition={is_visible}>
+                    <Text styles={Some(text_styles)} size={32.0} content={"Hello!".to_string()} />
+                </If>
+                <Button on_event={Some(on_event)}>
+                    <Text styles={Some(button_text_styles)} size={24.0} content={"Swap!".to_string()} />
+                </Button>
+            </Window>
+        </>
+    }
+}
+
+fn startup(
+    mut commands: Commands,
+    windows: Res<Windows>,
+    mut font_mapping: ResMut<FontMapping>,
+    asset_server: Res<AssetServer>,
+) {
+    commands.spawn_bundle(UICameraBundle::new());
+
+    font_mapping.add(asset_server.load("roboto.kayak_font"));
+
+    let window_size = if let Some(window) = windows.get_primary() {
+        Vec2::new(window.width(), window.height())
+    } else {
+        panic!("Couldn't find primary window!");
+    };
+
+    let context = BevyContext::new(window_size.x, window_size.y, |styles, context| {
+        // Hack to trick the proc macro for right now..
+        let parent_id: Option<Index> = None;
+        let children: Option<kayak_ui::core::Children> = None;
+
+        rsx! {
+            <App styles={Some(styles.clone())}>
+                <Counter />
+            </App>
+        }
+    });
+
+    commands.insert_resource(context);
+}
+
+fn main() {
+    BevyApp::new()
+        .insert_resource(WindowDescriptor {
+            width: 1270.0,
+            height: 720.0,
+            title: String::from("UI Example"),
+            ..Default::default()
+        })
+        .add_plugins(DefaultPlugins)
+        .add_plugin(BevyKayakUIPlugin)
+        .add_startup_system(startup)
+        .run();
+}

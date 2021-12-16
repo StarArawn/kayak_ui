@@ -10,7 +10,7 @@ use kayak_ui::core::{rsx, widget};
 use kayak_widgets::{App, Window};
 
 #[widget]
-fn TestState() {
+fn CustomWidget() {
     rsx! {
         <>
             <Window position={(50.0, 50.0)} size={(300.0, 300.0)} title={"Window 1".to_string()}>
@@ -46,12 +46,7 @@ fn startup(
 
         rsx! {
             <App styles={Some(styles.clone())}>
-                <Window position={(50.0, 50.0)} size={(300.0, 300.0)} title={"Window 1".to_string()}>
-                    {}
-                </Window>
-                <Window position={(800.0, 50.0)} size={(200.0, 200.0)} title={"Window 2".to_string()}>
-                    {}
-                </Window>
+                <CustomWidget/>
             </App>
         }
     });

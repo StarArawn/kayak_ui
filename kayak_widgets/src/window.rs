@@ -68,7 +68,7 @@ pub fn Window(
         <Fragment>
             <Clip styles={Some(clip_styles)}>
                 <Background styles={Some(title_background_styles)}>
-                    <Text styles={Some(title_text_styles)} size={16.0} content={title}>{}</Text>
+                    <Text styles={Some(title_text_styles)} size={16.0} content={title} />
                 </Background>
                 <Element styles={Some(content_styles)}>
                     {children}

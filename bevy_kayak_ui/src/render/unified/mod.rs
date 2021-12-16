@@ -96,7 +96,6 @@ pub fn extract(
                 extracted_quads.extend(nine_patch_quads);
             }
             RenderPrimitive::Clip { layout } => {
-                // dbg!(&layout);
                 extracted_quads.push(ExtractQuadBundle {
                     extracted_quad: ExtractedQuad {
                         rect: Rect {

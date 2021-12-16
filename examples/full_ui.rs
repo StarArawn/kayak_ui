@@ -103,6 +103,7 @@ fn startup(
     let context = BevyContext::new(window_size.x, window_size.y, |styles, context| {
         // Hack to trick the proc macro for right now..
         let parent_id: Option<Index> = None;
+        let children: Option<kayak_ui::core::Children> = None;
 
         let nine_patch_styles = Style {
             layout_type: StyleProp::Value(LayoutType::Column),

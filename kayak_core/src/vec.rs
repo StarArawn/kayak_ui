@@ -26,6 +26,15 @@ impl<T> VecTracker<T> {
     }
 }
 
+impl<T, I> From<I> for VecTracker<T>
+where
+    I: Iterator<Item = T>,
+{
+    fn from(iter: I) -> Self {
+        Self::new(iter.collect())
+    }
+}
+
 impl<T> Widget for VecTracker<T>
 where
     T: Widget + PartialEq + std::fmt::Debug + Clone,

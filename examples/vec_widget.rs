@@ -6,8 +6,8 @@ use bevy::{
 };
 use kayak_core::constructor;
 use kayak_ui::bevy::{BevyContext, BevyKayakUIPlugin, FontMapping, UICameraBundle};
-use kayak_ui::core::{render, widget, Index, VecTracker};
-use kayak_widgets::{App, Text, Window};
+use kayak_ui::core::{render, Index, VecTracker};
+use kayak_widgets::{App, Text};
 
 fn startup(
     mut commands: Commands,
@@ -27,14 +27,13 @@ fn startup(
 
     let context = BevyContext::new(window_size.x, window_size.y, |styles, context| {
         let data = vec!["Text1", "Text2", "Text3", "Text4"];
-
         render! {
             <App styles={Some(styles.clone())}>
-                {VecTracker::new(
-                    data.iter().map(|data| constructor! {
+                {VecTracker::from(data.iter().map(|data| {
+                    constructor! {
                         <Text content={data.clone().to_string()} size={16.0} />
-                    }).collect::<Vec<_>>()
-                )}
+                    }
+                }))}
             </App>
         }
     });

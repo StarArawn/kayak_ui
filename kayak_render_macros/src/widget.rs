@@ -15,6 +15,19 @@ pub struct Widget {
     declaration: TokenStream,
 }
 
+#[derive(Debug, Clone)]
+pub struct ConstructedWidget {
+    pub widget: Widget,
+}
+
+impl Parse for ConstructedWidget {
+    fn parse(input: ParseStream) -> Result<Self> {
+        Ok(Self {
+            widget: Widget::custom_parse(input, true, true).unwrap(),
+        })
+    }
+}
+
 impl Parse for Widget {
     fn parse(input: ParseStream) -> Result<Self> {
         Self::custom_parse(input, false, true)
@@ -49,21 +62,6 @@ impl Widget {
         let declaration = if Self::is_custom_element(&name) {
             let attrs = &open_tag.attributes.for_custom_element(&children);
             let attrs = attrs.to_token_stream();
-            // let builder = quote! {
-            //     let built_widget = #name #attrs;
-            //     let (should_rerender, child_id) =
-            //         context
-            //             .widget_manager
-            //             .create_widget(0, built_widget, Some(parent_id));
-            //     if should_rerender {
-            //         let mut child_widget = context.widget_manager.take(child_id);
-            //         child_widget.render(context);
-            //         context.widget_manager.repossess(child_widget);
-            //     }
-            // };
-            // quote! {
-            //     #builder
-            // }
             if !as_prop {
                 let attrs = quote! { #name #attrs };
                 let widget_block =

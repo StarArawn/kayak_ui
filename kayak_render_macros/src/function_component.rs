@@ -130,7 +130,7 @@ pub fn create_function_widget(f: syn::ItemFn) -> TokenStream {
         use #kayak_core::derivative::*;
 
         #[derive(Derivative)]
-        #[derivative(Debug, PartialEq)]
+        #[derivative(Debug, PartialEq, Clone)]
         #vis struct #struct_name #impl_generics {
             pub id: #kayak_core::Index,
             #inputs_block

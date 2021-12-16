@@ -1,7 +1,6 @@
 use bevy::{
-    math::Vec2,
     prelude::{App as BevyApp, AssetServer, Commands, Handle, Res, ResMut},
-    window::{WindowDescriptor, Windows},
+    window::WindowDescriptor,
     DefaultPlugins,
 };
 use kayak_ui::bevy::{BevyContext, BevyKayakUIPlugin, ImageManager, UICameraBundle};
@@ -14,22 +13,15 @@ use kayak_widgets::{App, Image};
 
 fn startup(
     mut commands: Commands,
-    windows: Res<Windows>,
     asset_server: Res<AssetServer>,
     mut image_manager: ResMut<ImageManager>,
 ) {
     commands.spawn_bundle(UICameraBundle::new());
 
-    let window_size = if let Some(window) = windows.get_primary() {
-        Vec2::new(window.width(), window.height())
-    } else {
-        panic!("Couldn't find primary window!");
-    };
-
     let handle: Handle<bevy::render::texture::Image> = asset_server.load("generic-rpg-vendor.png");
     let ui_image_handle = image_manager.get(&handle);
 
-    let context = BevyContext::new(window_size.x, window_size.y, |styles, context| {
+    let context = BevyContext::new(|context| {
         let image_styles = Style {
             width: StyleProp::Value(Units::Pixels(200.0)),
             height: StyleProp::Value(Units::Pixels(182.0)),
@@ -37,7 +29,7 @@ fn startup(
         };
 
         render! {
-            <App styles={Some(styles.clone())}>
+            <App>
                 <Image styles={Some(image_styles)} handle={ui_image_handle} />
             </App>
         }

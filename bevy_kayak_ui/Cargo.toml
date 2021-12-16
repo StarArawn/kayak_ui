@@ -7,7 +7,6 @@ edition = "2021"
 bytemuck = "1.7.2"
 bevy = { git = "https://github.com/StarArawn/bevy", rev = "bcca341d696c66d0173d8b0ac7a1b23b4b9e775c" }
 kayak_core = { path = "../kayak_core" }
-kayak_render_macros = { path = "../kayak_render_macros" }
 kayak_font = { path = "../kayak_font" }
 #kayak_font = { path = "../kayak_font" }
 crevice = { git = "https://github.com/StarArawn/bevy", rev = "bcca341d696c66d0173d8b0ac7a1b23b4b9e775c" }

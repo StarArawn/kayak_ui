@@ -3,7 +3,7 @@ use bevy::{
     math::Vec2,
     prelude::{EventReader, IntoExclusiveSystem, MouseButton, Plugin, Res, World},
     render::color::Color,
-    window::{CursorMoved, Windows},
+    window::{CursorMoved, WindowCreated, WindowResized, Windows},
 };
 
 mod bevy_context;
@@ -12,7 +12,7 @@ mod render;
 
 pub use bevy_context::BevyContext;
 pub use camera::*;
-use kayak_core::InputEvent;
+use kayak_core::{bind, Binding, InputEvent, MutableBound};
 pub use render::unified::font::FontMapping;
 pub use render::unified::image::ImageManager;
 
@@ -21,8 +21,10 @@ pub struct BevyKayakUIPlugin;
 
 impl Plugin for BevyKayakUIPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
-        app.add_plugin(render::BevyKayakUIRenderPlugin)
+        app.insert_resource(bind(WindowSize::default()))
+            .add_plugin(render::BevyKayakUIRenderPlugin)
             .add_plugin(camera::KayakUICameraPlugin)
+            .add_system(update_window_size)
             .add_system(process_events)
             .add_system(update.exclusive_system());
     }
@@ -77,5 +79,45 @@ pub fn process_events(
         }
 
         context.process_events(input_events);
+    }
+}
+
+/// Tracks the bevy window size.
+#[derive(Default, Debug, Clone, Copy, PartialEq)]
+pub struct WindowSize(pub f32, pub f32);
+
+fn update_window_size(
+    mut window_resized_events: EventReader<WindowResized>,
+    mut window_created_events: EventReader<WindowCreated>,
+    windows: Res<Windows>,
+    window_size: Res<Binding<WindowSize>>,
+) {
+    let mut changed_window_ids = Vec::new();
+    // handle resize events. latest events are handled first because we only want to resize each
+    // window once
+    for event in window_resized_events.iter().rev() {
+        if changed_window_ids.contains(&event.id) {
+            continue;
+        }
+
+        changed_window_ids.push(event.id);
+    }
+
+    // handle resize events. latest events are handled first because we only want to resize each
+    // window once
+    for event in window_created_events.iter().rev() {
+        if changed_window_ids.contains(&event.id) {
+            continue;
+        }
+
+        changed_window_ids.push(event.id);
+    }
+
+    for window_id in changed_window_ids {
+        if let Some(window) = windows.get(window_id) {
+            let width = window.width();
+            let height = window.height();
+            window_size.set(WindowSize(width, height));
+        }
     }
 }

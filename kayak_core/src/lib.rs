@@ -11,6 +11,7 @@ pub mod render_command;
 pub mod render_primitive;
 pub mod styles;
 pub mod tree;
+mod vec;
 pub mod widget;
 pub mod widget_manager;
 
@@ -22,13 +23,15 @@ pub use event::*;
 pub use fragment::Fragment;
 pub use generational_arena::{Arena, Index};
 pub use input_event::*;
-pub use kayak_render_macros::{render, rsx, widget};
+pub use kayak_render_macros::{constructor, render, rsx, widget};
+pub use resources::Resources;
+pub use tree::{Tree, WidgetTree};
+pub use vec::VecTracker;
 pub use widget::Widget;
 
-pub use resources::Resources;
-
-pub type Children =
-    Option<Arc<dyn Fn(Option<crate::Index>, &mut crate::context::KayakContext) + Send + Sync>>;
+pub type Children = Option<
+    Arc<dyn Fn(WidgetTree, Option<crate::Index>, &mut crate::context::KayakContext) + Send + Sync>,
+>;
 
 #[derive(Clone)]
 pub struct OnEvent(

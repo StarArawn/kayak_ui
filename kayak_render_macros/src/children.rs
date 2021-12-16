@@ -86,10 +86,11 @@ impl Children {
                             quote! { #(#children_quotes),* },
                             true,
                             0,
+                            true,
                         );
 
                         quote! {
-                            Some(std::sync::Arc::new(move |parent_id: Option<#kayak_core::Index>, context: &mut #kayak_core::context::KayakContext| {
+                            Some(std::sync::Arc::new(move |tree: #kayak_core::WidgetTree, parent_id: Option<#kayak_core::Index>, context: &mut #kayak_core::context::KayakContext| {
                                 #cloned_attrs
                                 #children_builder
                             }))
@@ -137,67 +138,21 @@ impl Children {
                 for i in 0..children_quotes.len() {
                     output.push(quote! { #base_clones_inner });
                     let name: proc_macro2::TokenStream = format!("child{}", i).parse().unwrap();
-                    let child =
-                        build_arc_function(quote! { #name }, children_quotes[i].clone(), true, i);
+                    let child = build_arc_function(
+                        quote! { #name },
+                        children_quotes[i].clone(),
+                        true,
+                        i,
+                        true,
+                    );
                     output.push(quote! { #child });
                 }
 
-                // let first = iter.next().unwrap();
-                // let second = iter.next().unwrap();
-
-                // let first = build_arc_function(quote! { child1 }, first.clone(), true, 0);
-                // let second = build_arc_function(quote! { child2 }, second.clone(), true, 1);
-
-                // let children_attributes0: Vec<_> = self.get_clonable_attributes(0);
-                // let children_attributes1: Vec<_> = self.get_clonable_attributes(1);
-                // let (children_attributes0, children_attributes1, matching) =
-                //     handle_tuple_attributes(&children_attributes0, &children_attributes1);
-
-                // let base_matching: Vec<proc_macro2::TokenStream> = matching
-                //     .iter()
-                //     .map(|a| {
-                //         format!("base_{}", a.to_string())
-                //             .to_string()
-                //             .parse()
-                //             .unwrap()
-                //     })
-                //     .collect();
-
-                // let base_clone = quote! {
-                //     #(let #base_matching = #matching.clone();)*
-                // };
-
-                // let base_clones_inner = quote! {
-                //     #(let #matching = #base_matching.clone();)*
-                // };
-
-                // let cloned_attrs0 = quote! {
-                //     #(let #children_attributes0 = #children_attributes0.clone();)*
-                // };
-                // let cloned_attrs1 = quote! {
-                //     #(let #children_attributes1 = #children_attributes1.clone();)*
-                // };
-
-                // let tuple_of_tuples = iter.fold(
-                //     quote! {
-                //         #base_clone
-                //         #cloned_attrs0
-                //         #base_clones_inner
-                //         #first
-                //         #base_clones_inner
-                //         #cloned_attrs1
-                //         #second
-                //     },
-                //     |renderable, current| quote!((#renderable, #current)),
-                // );
-
                 quote! {
-                    Some(std::sync::Arc::new(move |parent_id: Option<#kayak_core::Index>, context: &mut #kayak_core::context::KayakContext| {
+                    Some(std::sync::Arc::new(move |tree: #kayak_core::WidgetTree, parent_id: Option<#kayak_core::Index>, context: &mut #kayak_core::context::KayakContext| {
                         #(#output)*
                     }))
                 }
-
-                // quote! {}
             }
         }
     }
@@ -221,44 +176,3 @@ impl ToTokens for Children {
         self.as_option_of_tuples_tokens().to_tokens(tokens);
     }
 }
-
-// Takes two incoming attribute streams like: "styles foo bar" and "styles" and resolves
-// them into three separate lists like: "foo bar", "", and "styles"
-// fn handle_tuple_attributes(
-//     a: &Vec<proc_macro2::TokenStream>,
-//     b: &Vec<proc_macro2::TokenStream>,
-// ) -> (
-//     Vec<proc_macro2::TokenStream>,
-//     Vec<proc_macro2::TokenStream>,
-//     Vec<proc_macro2::TokenStream>,
-// ) {
-//     let mut stream1: Vec<String> = a.iter().map(|a| a.to_string()).collect();
-//     let mut stream2: Vec<String> = b.iter().map(|b| b.to_string()).collect();
-//     let matching1: Vec<&String> = stream1
-//         .iter()
-//         .filter(|a| stream2.iter().any(|b| *a == b))
-//         .collect();
-//     let matching2: Vec<&String> = stream2
-//         .iter()
-//         .filter(|a| stream1.iter().any(|b| *a == b))
-//         .collect();
-//     let mut matching: Vec<String> = Vec::new();
-//     matching.extend(matching1.iter().map(|x| (*x).clone()).collect::<Vec<_>>());
-//     matching.extend(matching2.iter().map(|x| (*x).clone()).collect::<Vec<_>>());
-//     matching.sort_unstable();
-//     matching.dedup_by(|a, b| a.eq(&b));
-
-//     stream1 = stream1
-//         .into_iter()
-//         .filter(|a| !matching.iter().any(|b| a == b))
-//         .collect();
-//     stream2 = stream2
-//         .into_iter()
-//         .filter(|a| !matching.iter().any(|b| a == b))
-//         .collect();
-
-//     let matching = matching.iter().map(|m| m.parse().unwrap()).collect();
-//     let stream1 = stream1.iter().map(|m| m.parse().unwrap()).collect();
-//     let stream2 = stream2.iter().map(|m| m.parse().unwrap()).collect();
-//     (stream1, stream2, matching)
-// }

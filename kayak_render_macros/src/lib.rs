@@ -15,29 +15,28 @@ use partial_eq::impl_dyn_partial_eq;
 use proc_macro::TokenStream;
 use proc_macro_error::proc_macro_error;
 use quote::quote;
-use syn::{parse_macro_input, parse_quote, token::Comma};
+use syn::{parse_macro_input, parse_quote};
+use widget::ConstructedWidget;
 
 use crate::widget::Widget;
-
-// use crate::prebuilt::element::Element;
 
 #[proc_macro]
 #[proc_macro_error]
 pub fn render(input: TokenStream) -> TokenStream {
-    let mut input = input.into_iter();
-    let context = proc_macro2::TokenStream::from(TokenStream::from(input.next().unwrap()));
-    let comma_input = TokenStream::from(input.next().unwrap());
-    let _ = parse_macro_input!(comma_input as Comma);
-    let rsx_data = proc_macro2::TokenStream::from_iter(
-        input.map(|token_tree| proc_macro2::TokenStream::from(TokenStream::from(token_tree))),
-    );
-    let el = proc_macro2::TokenStream::from(rsx(TokenStream::from(rsx_data)));
+    let widget = parse_macro_input!(input as Widget);
+
     #[cfg(feature = "internal")]
     let kayak_core = quote! { kayak_core };
     #[cfg(not(feature = "internal"))]
     let kayak_core = quote! { kayak_ui::core };
 
-    let result = quote! { #kayak_core::Render::render_into(&#el, #context, None) };
+    let result = quote! {
+        let parent_id: Option<Index> = None;
+        let children: Option<#kayak_core::Children> = None;
+        let tree = #kayak_core::WidgetTree::new();
+        #widget
+    };
+
     TokenStream::from(result)
 }
 
@@ -45,8 +44,17 @@ pub fn render(input: TokenStream) -> TokenStream {
 #[proc_macro]
 #[proc_macro_error]
 pub fn rsx(input: TokenStream) -> TokenStream {
-    let el = parse_macro_input!(input as Widget);
-    let result = quote! { #el };
+    let widget = parse_macro_input!(input as Widget);
+    let result = quote! { #widget };
+    TokenStream::from(result)
+}
+
+#[proc_macro]
+#[proc_macro_error]
+pub fn constructor(input: TokenStream) -> TokenStream {
+    let el = parse_macro_input!(input as ConstructedWidget);
+    let widget = el.widget;
+    let result = quote! { #widget };
     TokenStream::from(result)
 }
 

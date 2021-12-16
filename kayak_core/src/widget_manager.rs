@@ -5,7 +5,7 @@ use std::{
 
 use crate::{
     layout_cache::LayoutCache,
-    node::{Node, NodeBuilder, NodeIndex},
+    node::{Node, NodeBuilder},
     render_command::RenderCommand,
     render_primitive::RenderPrimitive,
     styles::Style,
@@ -46,7 +46,7 @@ impl WidgetManager {
     pub fn dirty(&mut self, force: bool) {
         // Force tree to re-render from root.
         if let Ok(mut dirty_nodes) = self.dirty_nodes.lock() {
-            dirty_nodes.insert(self.tree.root_node);
+            dirty_nodes.insert(self.tree.root_node.unwrap());
 
             if force {
                 for (node_index, _) in self.current_widgets.iter() {
@@ -113,8 +113,8 @@ impl WidgetManager {
         //     self.dirty_nodes.remove(index);
         // }
 
-        self.tree.add(0, widget_id, parent);
-        self.layout_cache.add(NodeIndex(widget_id));
+        self.tree.add(widget_id, parent);
+        self.layout_cache.add(widget_id);
 
         (true, widget_id)
     }
@@ -262,7 +262,7 @@ impl WidgetManager {
         let mut render_primitives = Vec::new();
 
         if let Some(node) = nodes.get(current_node).unwrap() {
-            if let Some(layout) = layout_cache.rect.get(&NodeIndex(current_node)) {
+            if let Some(layout) = layout_cache.rect.get(&current_node) {
                 let mut render_primitive: RenderPrimitive = (&node.styles).into();
                 let mut layout = *layout;
                 let new_z_index = if matches!(render_primitive, RenderPrimitive::Clip { .. }) {
@@ -310,7 +310,7 @@ impl WidgetManager {
             &self.node_tree,
             &self.layout_cache,
             &self.nodes,
-            self.node_tree.root_node,
+            self.node_tree.root_node.unwrap(),
             0.0,
         )
     }
@@ -318,9 +318,11 @@ impl WidgetManager {
     fn build_nodes_tree(&self) -> Tree {
         let mut tree = Tree::default();
         let (root_node_id, _) = self.current_widgets.iter().next().unwrap();
-        tree.root_node = root_node_id;
-        tree.children
-            .insert(tree.root_node, self.get_valid_node_children(tree.root_node));
+        tree.root_node = Some(root_node_id);
+        tree.children.insert(
+            tree.root_node.unwrap(),
+            self.get_valid_node_children(tree.root_node.unwrap()),
+        );
         for (widget_id, widget) in self.current_widgets.iter().skip(1) {
             let widget_styles = widget.as_ref().unwrap().get_styles();
             if let Some(widget_styles) = widget_styles {

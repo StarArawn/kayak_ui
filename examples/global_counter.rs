@@ -5,7 +5,7 @@ use bevy::{
     DefaultPlugins,
 };
 use kayak_ui::bevy::{BevyContext, BevyKayakUIPlugin, FontMapping, UICameraBundle};
-use kayak_ui::core::{bind, rsx, widget, Binding, Bound, Index, MutableBound};
+use kayak_ui::core::{bind, render, rsx, widget, Binding, Bound, Index, MutableBound};
 use kayak_widgets::{App, Text, Window};
 
 #[derive(Clone, PartialEq)]
@@ -57,10 +57,7 @@ fn startup(
     commands.insert_resource(bind(GlobalCount(0)));
 
     let context = BevyContext::new(window_size.x, window_size.y, |styles, context| {
-        // Hack to trick the proc macro for right now..
-        let parent_id: Option<Index> = None;
-        let children: Option<kayak_ui::core::Children> = None;
-        rsx! {
+        render! {
             <App styles={Some(styles.clone())}>
                 <Counter />
             </App>

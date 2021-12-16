@@ -7,7 +7,7 @@ use bevy::{
 use kayak_ui::bevy::{BevyContext, BevyKayakUIPlugin, FontMapping, ImageManager, UICameraBundle};
 use kayak_ui::core::{
     layout_cache::Space,
-    rsx,
+    render,
     styles::{Style, StyleProp, Units},
     Index,
 };
@@ -34,10 +34,6 @@ fn startup(
     let panel_brown_handle = image_manager.get(&handle);
 
     let context = BevyContext::new(window_size.x, window_size.y, |styles, context| {
-        // Hack to trick the proc macro for right now..
-        let parent_id: Option<Index> = None;
-        let children: Option<kayak_ui::core::Children> = None;
-
         let nine_patch_styles = Style {
             width: StyleProp::Value(Units::Pixels(512.0)),
             height: StyleProp::Value(Units::Pixels(512.0)),
@@ -72,7 +68,7 @@ Vivamus pulvinar dui et elit volutpat hendrerit. Praesent luctus dolor ut rutrum
 Vestibulum rutrum imperdiet nisl, et consequat massa porttitor vel. Ut velit justo, vehicula a nulla eu, auctor eleifend metus. Ut egestas malesuada metus, sit amet pretium nunc commodo ac. Pellentesque gravida, nisl in faucibus volutpat, libero turpis mattis orci, vitae tincidunt ligula ligula ut tortor. Maecenas vehicula lobortis odio in molestie. Curabitur dictum elit sed arcu dictum, ut semper nunc cursus. Donec semper felis non nisl tincidunt elementum.
         "#.to_string();
 
-        rsx! {
+        render! {
             <App styles={Some(styles.clone())}>
                 <NinePatch
                     styles={Some(nine_patch_styles)}

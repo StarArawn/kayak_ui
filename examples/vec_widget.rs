@@ -4,24 +4,10 @@ use bevy::{
     window::{WindowDescriptor, Windows},
     DefaultPlugins,
 };
+use kayak_core::constructor;
 use kayak_ui::bevy::{BevyContext, BevyKayakUIPlugin, FontMapping, UICameraBundle};
-use kayak_ui::core::Index;
-use kayak_ui::core::{render, rsx, widget};
-use kayak_widgets::{App, Window};
-
-#[widget]
-fn TestState() {
-    rsx! {
-        <>
-            <Window position={(50.0, 50.0)} size={(300.0, 300.0)} title={"Window 1".to_string()}>
-                {}
-            </Window>
-            <Window position={(550.0, 50.0)} size={(200.0, 200.0)} title={"Window 2".to_string()}>
-                {}
-            </Window>
-        </>
-    }
-}
+use kayak_ui::core::{render, Index, VecTracker};
+use kayak_widgets::{App, Text};
 
 fn startup(
     mut commands: Commands,
@@ -40,14 +26,14 @@ fn startup(
     };
 
     let context = BevyContext::new(window_size.x, window_size.y, |styles, context| {
+        let data = vec!["Text1", "Text2", "Text3", "Text4"];
         render! {
             <App styles={Some(styles.clone())}>
-                <Window position={(50.0, 50.0)} size={(300.0, 300.0)} title={"Window 1".to_string()}>
-                    {}
-                </Window>
-                <Window position={(800.0, 50.0)} size={(200.0, 200.0)} title={"Window 2".to_string()}>
-                    {}
-                </Window>
+                {VecTracker::from(data.iter().map(|data| {
+                    constructor! {
+                        <Text content={data.clone().to_string()} size={16.0} />
+                    }
+                }))}
             </App>
         }
     });

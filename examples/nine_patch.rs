@@ -7,7 +7,7 @@ use bevy::{
 use kayak_ui::bevy::{BevyContext, BevyKayakUIPlugin, ImageManager, UICameraBundle};
 use kayak_ui::core::{
     layout_cache::Space,
-    rsx,
+    render,
     styles::{Style, StyleProp, Units},
     Index,
 };
@@ -31,10 +31,6 @@ fn startup(
     let ui_image_handle = image_manager.get(&handle);
 
     let context = BevyContext::new(window_size.x, window_size.y, |styles, context| {
-        // Hack to trick the proc macro for right now..
-        let parent_id: Option<Index> = None;
-        let children: Option<kayak_ui::core::Children> = None;
-
         // The border prop splits up the image into 9 quadrants like so:
         // 1----2----3
         // |         |
@@ -64,7 +60,7 @@ fn startup(
             ..Style::default()
         };
 
-        rsx! {
+        render! {
             <App styles={Some(styles.clone())}>
                 <NinePatch
                     styles={Some(nine_patch_styles)}

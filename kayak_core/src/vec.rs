@@ -4,16 +4,41 @@ use crate::{context::KayakContext, styles::Style, Index, Widget};
 
 #[derive(Derivative)]
 #[derivative(Debug, PartialEq)]
-pub struct Fragment {
+pub struct VecTracker<T> {
     pub id: Index,
     pub styles: Option<Style>,
     #[derivative(Debug = "ignore", PartialEq = "ignore")]
     pub children: crate::Children,
     #[derivative(Debug = "ignore", PartialEq = "ignore")]
     pub on_event: Option<crate::OnEvent>,
+    pub data: Vec<T>,
 }
 
-impl Widget for Fragment {
+impl<T> VecTracker<T> {
+    pub fn new(data: Vec<T>) -> Self {
+        Self {
+            data,
+            id: Index::default(),
+            styles: None,
+            children: None,
+            on_event: None,
+        }
+    }
+}
+
+impl<T, I> From<I> for VecTracker<T>
+where
+    I: Iterator<Item = T>,
+{
+    fn from(iter: I) -> Self {
+        Self::new(iter.collect())
+    }
+}
+
+impl<T> Widget for VecTracker<T>
+where
+    T: Widget + PartialEq + std::fmt::Debug + Clone,
+{
     fn get_id(&self) -> Index {
         self.id
     }
@@ -37,8 +62,17 @@ impl Widget for Fragment {
     fn render(&mut self, context: &mut KayakContext) {
         let tree = crate::WidgetTree::new();
 
-        if let Some(children) = self.children.take() {
-            children(tree.clone(), Some(self.get_id()), context);
+        for (index, item) in self.data.iter().enumerate() {
+            let (should_rerender, child_id) =
+                context
+                    .widget_manager
+                    .create_widget(index, item.clone(), Some(self.get_id()));
+            tree.add(child_id, Some(self.get_id()));
+            if should_rerender {
+                let mut child_widget = context.widget_manager.take(child_id);
+                child_widget.render(context);
+                context.widget_manager.repossess(child_widget);
+            }
         }
 
         // Consume the widget tree taking the inner value

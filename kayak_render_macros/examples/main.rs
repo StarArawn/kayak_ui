@@ -49,6 +49,7 @@ fn main() {
         let test_styles = Style::default();
         let parent_id: Option<Index> = None;
         let children: Option<kayak_core::Children> = None;
+        let tree = kayak_core::WidgetTree::new();
         rsx! {
             <Fragment>
                 <Test foo={10}>
@@ -68,6 +69,8 @@ fn main() {
 
         let parent_id: Option<Index> = None;
         let children: Option<kayak_core::Children> = None;
+        let tree = kayak_core::WidgetTree::new();
+
         rsx! {
             <Fragment>
                 <Test foo={foo} styles={Some(test_styles)}>

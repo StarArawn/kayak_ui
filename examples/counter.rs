@@ -1,7 +1,6 @@
 use bevy::{
-    math::Vec2,
     prelude::{App as BevyApp, AssetServer, Commands, Res, ResMut},
-    window::{WindowDescriptor, Windows},
+    window::WindowDescriptor,
     DefaultPlugins,
 };
 use kayak_ui::bevy::{BevyContext, BevyKayakUIPlugin, FontMapping, UICameraBundle};
@@ -58,7 +57,6 @@ fn Counter(context: &mut KayakContext) {
 
 fn startup(
     mut commands: Commands,
-    windows: Res<Windows>,
     mut font_mapping: ResMut<FontMapping>,
     asset_server: Res<AssetServer>,
 ) {
@@ -66,15 +64,9 @@ fn startup(
 
     font_mapping.add(asset_server.load("roboto.kayak_font"));
 
-    let window_size = if let Some(window) = windows.get_primary() {
-        Vec2::new(window.width(), window.height())
-    } else {
-        panic!("Couldn't find primary window!");
-    };
-
-    let context = BevyContext::new(window_size.x, window_size.y, |styles, context| {
+    let context = BevyContext::new(|context| {
         render! {
-            <App styles={Some(styles.clone())}>
+            <App>
                 <Counter />
             </App>
         }

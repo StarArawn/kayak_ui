@@ -1,7 +1,6 @@
 use bevy::{
-    math::Vec2,
     prelude::{App as BevyApp, AssetServer, Commands, Handle, Res, ResMut},
-    window::{WindowDescriptor, Windows},
+    window::WindowDescriptor,
     DefaultPlugins,
 };
 use kayak_ui::bevy::{BevyContext, BevyKayakUIPlugin, FontMapping, ImageManager, UICameraBundle};
@@ -15,25 +14,18 @@ use kayak_widgets::{App, Clip, NinePatch, Text};
 
 fn startup(
     mut commands: Commands,
-    windows: Res<Windows>,
     asset_server: Res<AssetServer>,
     mut image_manager: ResMut<ImageManager>,
     mut font_mapping: ResMut<FontMapping>,
 ) {
     commands.spawn_bundle(UICameraBundle::new());
 
-    let window_size = if let Some(window) = windows.get_primary() {
-        Vec2::new(window.width(), window.height())
-    } else {
-        panic!("Couldn't find primary window!");
-    };
-
     font_mapping.add(asset_server.load("roboto.kayak_font"));
 
     let handle: Handle<bevy::render::texture::Image> = asset_server.load("kenny/panel_brown.png");
     let panel_brown_handle = image_manager.get(&handle);
 
-    let context = BevyContext::new(window_size.x, window_size.y, |styles, context| {
+    let context = BevyContext::new(|context| {
         let nine_patch_styles = Style {
             width: StyleProp::Value(Units::Pixels(512.0)),
             height: StyleProp::Value(Units::Pixels(512.0)),
@@ -69,7 +61,7 @@ Vestibulum rutrum imperdiet nisl, et consequat massa porttitor vel. Ut velit jus
         "#.to_string();
 
         render! {
-            <App styles={Some(styles.clone())}>
+            <App>
                 <NinePatch
                     styles={Some(nine_patch_styles)}
                     border={Space {

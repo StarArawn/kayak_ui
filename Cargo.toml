@@ -26,4 +26,4 @@ kayak_render_macros = { path = "kayak_render_macros" }
 
 [dev-dependencies]
 bevy = { git = "https://github.com/StarArawn/bevy", rev = "bcca341d696c66d0173d8b0ac7a1b23b4b9e775c" }
-kayak_widgets = { path = "kayak_widgets" }
+kayak_widgets = { path = "kayak_widgets", features = ["bevy_renderer"] }

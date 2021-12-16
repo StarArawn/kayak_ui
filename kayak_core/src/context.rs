@@ -209,16 +209,10 @@ impl KayakContext {
                 panic!("Couldn't get lock on dirty nodes!")
             };
         for node_index in dirty_nodes {
-            // if self
-            //     .widget_manager
-            //     .dirty_nodes
-            //     .iter()
-            //     .any(|dirty_index| node_index == *dirty_index)
-            // {
             let mut widget = self.widget_manager.take(node_index);
             widget.render(self);
             self.widget_manager.repossess(widget);
-            // }
+            self.widget_manager.dirty_render_nodes.insert(node_index);
         }
 
         // self.widget_manager.dirty_nodes.clear();

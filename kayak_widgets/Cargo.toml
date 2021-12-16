@@ -4,5 +4,10 @@ version = "0.1.0"
 edition = "2021"
 resolver = "2"
 
+[features]
+default = []
+bevy_renderer = ["bevy", "kayak_ui/bevy_renderer"]
+
 [dependencies]
 kayak_ui = { path = "../", version = "0.1.0" }
+bevy = { git = "https://github.com/StarArawn/bevy", rev = "bcca341d696c66d0173d8b0ac7a1b23b4b9e775c", optional = true }

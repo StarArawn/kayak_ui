@@ -8,7 +8,7 @@ use bevy::{
     },
     sprite::Rect,
 };
-use kayak_core::render_primitive::RenderPrimitive;
+use kayak_core::{render_primitive::RenderPrimitive, Binding, Bound};
 use kayak_font::KayakFont;
 
 use crate::{
@@ -16,7 +16,7 @@ use crate::{
         ui_pass::TransparentUI,
         unified::pipeline::{DrawUI, QuadMeta, UnifiedPipeline},
     },
-    BevyContext, FontMapping, ImageManager,
+    BevyContext, FontMapping, ImageManager, WindowSize,
 };
 
 use self::pipeline::{ExtractQuadBundle, ExtractedQuad, ImageBindGroups, UIQuadType};
@@ -68,12 +68,15 @@ pub fn extract(
     font_mapping: Res<FontMapping>,
     image_manager: Res<ImageManager>,
     images: Res<Assets<Image>>,
+    window_size: Res<Binding<WindowSize>>,
 ) {
     let render_primitives = if let Ok(context) = context.kayak_context.read() {
         context.widget_manager.build_render_primitives()
     } else {
         vec![]
     };
+
+    // dbg!(&render_primitives);
 
     let mut extracted_quads = Vec::new();
     for render_primitive in render_primitives {
@@ -120,5 +123,6 @@ pub fn extract(
         }
     }
 
+    commands.insert_resource(window_size.get());
     commands.spawn_batch(extracted_quads);
 }

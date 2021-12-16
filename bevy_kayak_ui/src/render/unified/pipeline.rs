@@ -34,7 +34,7 @@ use crevice::std140::AsStd140;
 use kayak_font::{FontRenderingPipeline, FontTextureCache, KayakFont};
 
 use super::UNIFIED_SHADER_HANDLE;
-use crate::render::ui_pass::TransparentUI;
+use crate::{render::ui_pass::TransparentUI, WindowSize};
 
 pub struct UnifiedPipeline {
     view_layout: BindGroupLayout,
@@ -547,6 +547,7 @@ pub struct DrawUI {
         SRes<RenderPipelineCache>,
         SRes<FontTextureCache>,
         SRes<ImageBindGroups>,
+        SRes<WindowSize>,
         SQuery<Read<ViewUniformOffset>>,
         SQuery<Read<ExtractedQuad>>,
     )>,
@@ -574,6 +575,7 @@ impl Draw<TransparentUI> for DrawUI {
             pipelines,
             font_texture_cache,
             image_bind_groups,
+            window_size,
             views,
             quads,
         ) = self.params.get(world);
@@ -585,8 +587,13 @@ impl Draw<TransparentUI> for DrawUI {
         if extracted_quad.quad_type == UIQuadType::Clip {
             let x = extracted_quad.rect.min.x as u32;
             let y = extracted_quad.rect.min.y as u32;
-            let width = extracted_quad.rect.width() as u32;
-            let height = extracted_quad.rect.height() as u32;
+            let mut width = extracted_quad.rect.width() as u32;
+            let mut height = extracted_quad.rect.height() as u32;
+            width = width.min(window_size.0 as u32);
+            height = height.min(window_size.1 as u32);
+            if width == 0 || height == 0 {
+                return;
+            }
             pass.set_scissor_rect(x, y, width, height);
             return;
         }

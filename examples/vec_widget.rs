@@ -1,7 +1,6 @@
 use bevy::{
-    math::Vec2,
     prelude::{App as BevyApp, AssetServer, Commands, Res, ResMut},
-    window::{WindowDescriptor, Windows},
+    window::WindowDescriptor,
     DefaultPlugins,
 };
 use kayak_core::constructor;
@@ -11,7 +10,6 @@ use kayak_widgets::{App, Text};
 
 fn startup(
     mut commands: Commands,
-    windows: Res<Windows>,
     mut font_mapping: ResMut<FontMapping>,
     asset_server: Res<AssetServer>,
 ) {
@@ -19,16 +17,10 @@ fn startup(
 
     font_mapping.add(asset_server.load("roboto.kayak_font"));
 
-    let window_size = if let Some(window) = windows.get_primary() {
-        Vec2::new(window.width(), window.height())
-    } else {
-        panic!("Couldn't find primary window!");
-    };
-
-    let context = BevyContext::new(window_size.x, window_size.y, |styles, context| {
+    let context = BevyContext::new(|context| {
         let data = vec!["Text1", "Text2", "Text3", "Text4"];
         render! {
-            <App styles={Some(styles.clone())}>
+            <App>
                 {VecTracker::from(data.iter().map(|data| {
                     constructor! {
                         <Text content={data.clone().to_string()} size={16.0} />

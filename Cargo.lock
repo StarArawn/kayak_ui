@@ -421,7 +421,6 @@ dependencies = [
  "crevice",
  "kayak_core",
  "kayak_font",
- "kayak_render_macros",
  "serde",
  "serde_json",
  "serde_path_to_error",
@@ -1923,6 +1922,7 @@ dependencies = [
 name = "kayak_widgets"
 version = "0.1.0"
 dependencies = [
+ "bevy",
  "kayak_ui",
 ]
 

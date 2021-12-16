@@ -17,7 +17,7 @@ use crate::{
 #[derive(Debug)]
 pub struct WidgetManager {
     pub(crate) current_widgets: Arena<Option<Box<dyn Widget>>>,
-    pub(crate) dirty_render_nodes: Vec<Index>,
+    pub(crate) dirty_render_nodes: HashSet<Index>,
     pub(crate) dirty_nodes: Arc<Mutex<HashSet<Index>>>,
     pub(crate) nodes: Arena<Option<Node>>,
     pub tree: Tree,
@@ -30,7 +30,7 @@ impl WidgetManager {
     pub fn new() -> Self {
         Self {
             current_widgets: Arena::new(),
-            dirty_render_nodes: Vec::new(),
+            dirty_render_nodes: HashSet::new(),
             dirty_nodes: Arc::new(Mutex::new(HashSet::new())),
             nodes: Arena::new(),
             tree: Tree::default(),
@@ -51,7 +51,7 @@ impl WidgetManager {
             if force {
                 for (node_index, _) in self.current_widgets.iter() {
                     dirty_nodes.insert(node_index);
-                    self.dirty_render_nodes.push(node_index);
+                    self.dirty_render_nodes.insert(node_index);
                 }
             }
         }
@@ -86,7 +86,7 @@ impl WidgetManager {
                     let boxed_widget: Box<dyn Widget> = Box::new(widget);
                     *self.current_widgets[*widget_id].as_mut().unwrap() = boxed_widget;
                     // Tell renderer that the nodes changed.
-                    self.dirty_render_nodes.push(*widget_id);
+                    self.dirty_render_nodes.insert(*widget_id);
                     return (true, *widget_id);
                     // } else {
                     //     return (false, *widget_id);
@@ -106,7 +106,7 @@ impl WidgetManager {
             .set_id(widget_id);
 
         // Tell renderer that the nodes changed.
-        self.dirty_render_nodes.push(widget_id);
+        self.dirty_render_nodes.insert(widget_id);
 
         // Remove from the dirty nodes lists.
         // if let Some(index) = self.dirty_nodes.iter().position(|id| widget_id == *id) {
@@ -148,7 +148,7 @@ impl WidgetManager {
             width: crate::styles::StyleProp::Default,
             ..Style::default()
         };
-        for dirty_node_index in self.dirty_render_nodes.drain(..) {
+        for dirty_node_index in self.dirty_render_nodes.drain() {
             let dirty_widget = self.current_widgets[dirty_node_index].as_ref().unwrap();
             let parent_styles =
                 if let Some(parent_widget_id) = self.tree.parents.get(&dirty_node_index) {
@@ -198,6 +198,7 @@ impl WidgetManager {
                 .cloned()
                 .unwrap_or(vec![]);
             let styles = styles.unwrap_or(default_styles.clone());
+
             if matches!(styles.render_command.resolve(), RenderCommand::Empty) {
                 continue;
             }

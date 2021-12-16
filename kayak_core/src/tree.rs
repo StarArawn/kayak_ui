@@ -30,6 +30,15 @@ pub struct ChildChanges {
     pub child_changes: Vec<(usize, ChildChanges)>,
 }
 
+impl ChildChanges {
+    pub fn has_changes(&self) -> bool {
+        !self
+            .changes
+            .iter()
+            .all(|change| change.3.iter().all(|c| *c == Change::Unchanged))
+    }
+}
+
 impl From<Vec<(usize, Index, Index, Vec<Change>)>> for ChildChanges {
     fn from(changes: Vec<(usize, Index, Index, Vec<Change>)>) -> Self {
         Self {
@@ -295,7 +304,6 @@ impl Tree {
             })
             .collect::<Vec<_>>();
         changes.extend(deleted_nodes);
-        dbg!(&changes);
 
         let inserted_and_changed = tree2
             .iter()
@@ -325,7 +333,6 @@ impl Tree {
             })
             .collect::<Vec<_>>();
         changes.extend(inserted_and_changed);
-        dbg!(&changes);
 
         let flat_tree_diff_nodes = changes
             .iter()
@@ -343,7 +350,6 @@ impl Tree {
                     return (child_id, *node, *parent_node, change.clone());
                 }
 
-                dbg!(id, node, parent_node, change);
                 let parent_a = self.parent(tree1.get(*id).unwrap().1);
                 let parent_b = self.parent(*node);
                 let definitely_moved = if parent_a.is_some() && parent_b.is_some() {
@@ -378,6 +384,7 @@ impl Tree {
     }
 
     pub fn merge(&mut self, other: &Tree, root_node: Index, changes: ChildChanges) {
+        let has_changes = changes.has_changes();
         let children_a = self.children.get_mut(&root_node);
         let children_b = other.children.get(&root_node);
         if children_a.is_none() && children_b.is_none() {
@@ -389,11 +396,13 @@ impl Tree {
             return;
         } else if children_a.is_some() && children_b.is_none() {
             // Case for erasing all
-            let children_a = children_a.unwrap();
-            for child in children_a.iter() {
-                self.parents.remove(&*child);
+            if has_changes {
+                let children_a = children_a.unwrap();
+                for child in children_a.iter() {
+                    self.parents.remove(&*child);
+                }
+                self.children.remove(&root_node);
             }
-            self.children.remove(&root_node);
             return;
         }
         let children_a = children_a.unwrap();
@@ -419,13 +428,13 @@ impl Tree {
             }
         }
 
-        for (child_id, children_of_child_changes) in changes.child_changes {
-            self.merge(
-                other,
-                changes.changes[child_id].1,
-                children_of_child_changes,
-            );
-        }
+        // for (child_id, children_of_child_changes) in changes.child_changes {
+        //     self.merge(
+        //         other,
+        //         changes.changes[child_id].1,
+        //         children_of_child_changes,
+        //     );
+        // }
     }
 }
 

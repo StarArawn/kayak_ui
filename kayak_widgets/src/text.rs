@@ -1,6 +1,5 @@
 use kayak_ui::core::{
     render_command::RenderCommand,
-    rsx,
     styles::{Style, StyleProp},
     widget,
 };
@@ -16,9 +15,9 @@ pub fn Text(size: f32, content: String, styles: Option<Style>) {
         render_command: StyleProp::Value(render_command),
         ..styles.clone().unwrap_or_default()
     });
-    rsx! {
-        <>
-            {}
-        </>
-    }
+    // rsx! {
+    //     <>
+    //         {}
+    //     </>
+    // }
 }

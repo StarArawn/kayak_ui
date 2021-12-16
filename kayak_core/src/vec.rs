@@ -83,7 +83,6 @@ where
             .widget_manager
             .tree
             .diff_children(&tree, self.get_id());
-        // dbg!(&changes);
         context
             .widget_manager
             .tree

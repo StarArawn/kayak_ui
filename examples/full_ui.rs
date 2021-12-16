@@ -7,7 +7,7 @@ use bevy::{
 use kayak_ui::bevy::{BevyContext, BevyKayakUIPlugin, FontMapping, ImageManager, UICameraBundle};
 use kayak_ui::core::{
     layout_cache::Space,
-    rsx,
+    render, rsx,
     styles::{LayoutType, Style, StyleProp, Units},
     widget, Bound, Children, EventType, Index, MutableBound, OnEvent,
 };
@@ -101,9 +101,6 @@ fn startup(
     let panel_brown_handle = image_manager.get(&handle);
 
     let context = BevyContext::new(window_size.x, window_size.y, |styles, context| {
-        // Hack to trick the proc macro for right now..
-        let parent_id: Option<Index> = None;
-
         let nine_patch_styles = Style {
             layout_type: StyleProp::Value(LayoutType::Column),
             width: StyleProp::Value(Units::Pixels(512.0)),
@@ -147,7 +144,7 @@ fn startup(
             ..Style::default()
         };
 
-        rsx! {
+        render! {
             <App styles={Some(app_styles)}>
                 <NinePatch
                     styles={Some(nine_patch_styles)}

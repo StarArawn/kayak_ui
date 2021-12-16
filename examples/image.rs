@@ -5,7 +5,7 @@ use bevy::{
     DefaultPlugins,
 };
 use kayak_ui::bevy::{BevyContext, BevyKayakUIPlugin, ImageManager, UICameraBundle};
-use kayak_ui::core::{rsx, Index};
+use kayak_ui::core::{render, Index};
 use kayak_widgets::{App, Image};
 
 fn startup(
@@ -26,10 +26,7 @@ fn startup(
     let ui_image_handle = image_manager.get(&handle);
 
     let context = BevyContext::new(window_size.x, window_size.y, |styles, context| {
-        // Hack to trick the proc macro for right now..
-        let parent_id: Option<Index> = None;
-        let children: Option<kayak_ui::core::Children> = None;
-        rsx! {
+        render! {
             <App styles={Some(styles.clone())}>
                 <Image handle={ui_image_handle} />
             </App>

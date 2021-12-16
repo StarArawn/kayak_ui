@@ -6,7 +6,7 @@ use bevy::{
 };
 use kayak_ui::bevy::{BevyContext, BevyKayakUIPlugin, FontMapping, UICameraBundle};
 use kayak_ui::core::{
-    rsx,
+    render, rsx,
     styles::{Style, StyleProp, Units},
     widget, Bound, EventType, Index, MutableBound, OnEvent,
 };
@@ -75,12 +75,7 @@ fn startup(
     };
 
     let context = BevyContext::new(window_size.x, window_size.y, |styles, context| {
-        // Hack to trick the proc macro for right now..
-        let parent_id: Option<Index> = None;
-        let children: Option<kayak_ui::core::Children> = None;
-        let tree = kayak_ui::core::WidgetTree::new();
-
-        rsx! {
+        render! {
             <App styles={Some(styles.clone())}>
                 <Removal />
             </App>

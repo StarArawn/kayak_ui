@@ -6,7 +6,7 @@ use bevy::{
 };
 use kayak_ui::bevy::{BevyContext, BevyKayakUIPlugin, FontMapping, UICameraBundle};
 use kayak_ui::core::Index;
-use kayak_ui::core::{rsx, widget};
+use kayak_ui::core::{render, rsx, widget};
 use kayak_widgets::{App, Window};
 
 #[widget]
@@ -40,11 +40,7 @@ fn startup(
     };
 
     let context = BevyContext::new(window_size.x, window_size.y, |styles, context| {
-        // Hack to trick the proc macro for right now..
-        let parent_id: Option<Index> = None;
-        let children: Option<kayak_ui::core::Children> = None;
-
-        rsx! {
+        render! {
             <App styles={Some(styles.clone())}>
                 <Window position={(50.0, 50.0)} size={(300.0, 300.0)} title={"Window 1".to_string()}>
                     {}

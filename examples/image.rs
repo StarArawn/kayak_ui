@@ -5,7 +5,11 @@ use bevy::{
     DefaultPlugins,
 };
 use kayak_ui::bevy::{BevyContext, BevyKayakUIPlugin, ImageManager, UICameraBundle};
-use kayak_ui::core::{render, Index};
+use kayak_ui::core::{
+    render,
+    styles::{Style, StyleProp, Units},
+    Index,
+};
 use kayak_widgets::{App, Image};
 
 fn startup(
@@ -22,13 +26,19 @@ fn startup(
         panic!("Couldn't find primary window!");
     };
 
-    let handle: Handle<bevy::render::texture::Image> = asset_server.load("panel.png");
+    let handle: Handle<bevy::render::texture::Image> = asset_server.load("generic-rpg-vendor.png");
     let ui_image_handle = image_manager.get(&handle);
 
     let context = BevyContext::new(window_size.x, window_size.y, |styles, context| {
+        let image_styles = Style {
+            width: StyleProp::Value(Units::Pixels(200.0)),
+            height: StyleProp::Value(Units::Pixels(182.0)),
+            ..Style::default()
+        };
+
         render! {
             <App styles={Some(styles.clone())}>
-                <Image handle={ui_image_handle} />
+                <Image styles={Some(image_styles)} handle={ui_image_handle} />
             </App>
         }
     });

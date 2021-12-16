@@ -99,7 +99,7 @@ fn fragment(in: VertexOutput) -> [[location(0)]] vec4<f32> {
         return vec4<f32>(in.color.rgb, a);
     }
     if (quad_type.t == 2) {
-        var color = textureSample(image_texture, image_sampler, vec2<f32>(in.uv.x, in.uv.y));
+        var color = textureSample(image_texture, image_sampler, vec2<f32>(in.uv.x, 1.0 - in.uv.y));
         return vec4<f32>(color.rgb * in.color.rgb, color.a * in.color.a);
     }
     return in.color;

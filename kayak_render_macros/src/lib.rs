@@ -15,7 +15,7 @@ use partial_eq::impl_dyn_partial_eq;
 use proc_macro::TokenStream;
 use proc_macro_error::proc_macro_error;
 use quote::quote;
-use syn::{parse_macro_input, parse_quote};
+use syn::{Expr, parse_macro_input, parse_quote};
 use widget::ConstructedWidget;
 
 use crate::widget::Widget;
@@ -94,4 +94,53 @@ pub fn dyn_partial_eq(_: TokenStream, input: TokenStream) -> TokenStream {
       }
     })
     .into()
+}
+
+
+/// Create a state and its setter
+///
+/// # Arguments
+///
+/// * `initial_state`: The expression
+///
+/// returns: (state, set_state)
+///
+/// # Examples
+///
+/// ```
+/// # use kayak_core::{EventType, OnEvent};
+/// use kayak_render_macros::use_state;
+///
+/// let (count, set_count) = use_state!(0);
+///
+/// let on_event = OnEvent::new(move |_, event| match event.event_type {
+///         EventType::Click => {
+///             set_count(foo + 1);
+///         }
+///         _ => {}
+/// });
+///
+/// rsx! {
+///         <>
+///             <Button on_event={Some(on_event)}>
+///                 <Text size={16.0} content={format!("Count: {}", count)}>{}</Text>
+///             </Button>
+///         </>
+///     }
+/// ```
+#[proc_macro]
+pub fn use_state(initial_state: TokenStream) -> TokenStream {
+    let initial_state = parse_macro_input!(initial_state as Expr);
+    let result = quote! {{
+        let state = context.create_state(#initial_state).unwrap();
+        let cloned_state = state.clone();
+        let set_state = move |value| {
+            cloned_state.set(value);
+        };
+
+        let state_value = state.get();
+
+        (state.get(), set_state)
+    }};
+    TokenStream::from(result)
 }

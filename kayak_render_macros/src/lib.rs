@@ -15,7 +15,7 @@ use partial_eq::impl_dyn_partial_eq;
 use proc_macro::TokenStream;
 use proc_macro_error::proc_macro_error;
 use quote::quote;
-use syn::{Expr, parse_macro_input, parse_quote};
+use syn::{parse_macro_input, parse_quote};
 use widget::ConstructedWidget;
 
 use crate::widget::Widget;
@@ -130,7 +130,7 @@ pub fn dyn_partial_eq(_: TokenStream, input: TokenStream) -> TokenStream {
 /// ```
 #[proc_macro]
 pub fn use_state(initial_state: TokenStream) -> TokenStream {
-    let initial_state = parse_macro_input!(initial_state as Expr);
+    let initial_state = parse_macro_input!(initial_state as syn::Expr);
     let result = quote! {{
         let state = context.create_state(#initial_state).unwrap();
         let cloned_state = state.clone();

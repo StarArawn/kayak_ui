@@ -11,6 +11,7 @@ pub struct KayakContext {
     current_id: Index,
     pub widget_manager: WidgetManager,
     last_mouse_position: (f32, f32),
+    is_mouse_pressed: bool,
     pub global_state: resources::Resources,
     previous_events: HashMap<Index, HashSet<EventType>>,
 }
@@ -33,6 +34,7 @@ impl KayakContext {
             current_id: crate::Index::default(),
             widget_manager: WidgetManager::new(),
             last_mouse_position: (0.0, 0.0),
+            is_mouse_pressed: false,
             global_state: resources::Resources::default(),
             previous_events: HashMap::new(),
         }
@@ -278,6 +280,9 @@ impl KayakContext {
                             self.last_mouse_position = *point;
                         }
                         InputEvent::MouseLeftPress => {
+                            // Reset global mouse pressed
+                            self.is_mouse_pressed = true;
+
                             if layout.contains(&self.last_mouse_position) {
                                 let mouse_down_event = Event {
                                     target: index,
@@ -290,11 +295,19 @@ impl KayakContext {
                                     &index,
                                     EventType::MouseDown,
                                 );
-                                Self::remove_event(&mut self.previous_events, &index, &EventType::MouseUp);
-                                Self::remove_event(&mut self.previous_events, &index, &EventType::Click);
+
+                                // Start mouse pressed event
+                                Self::insert_event(
+                                    &mut self.previous_events,
+                                    &index,
+                                    EventType::MousePressed,
+                                );
                             }
                         }
                         InputEvent::MouseLeftRelease => {
+                            // Reset global mouse pressed
+                            self.is_mouse_pressed = false;
+
                             if layout.contains(&self.last_mouse_position) {
                                 let mouse_up_event = Event {
                                     target: index,
@@ -308,7 +321,7 @@ impl KayakContext {
                                     EventType::MouseUp,
                                 );
 
-                                if Self::contains_event(&self.previous_events, &index, &EventType::MouseDown) {
+                                if Self::contains_event(&self.previous_events, &index, &EventType::MousePressed) {
                                     let click_event = Event {
                                         target: index,
                                         event_type: EventType::Click,
@@ -316,11 +329,21 @@ impl KayakContext {
                                     };
                                     events_stream.push(click_event);
                                 }
-
-                                Self::remove_event(&mut self.previous_events, &index, &EventType::MouseDown);
                             }
                         }
                     }
+                }
+
+                // Mouse is currently pressed for this node
+                if self.is_mouse_pressed && Self::contains_event(&self.previous_events, &index, &EventType::MousePressed) {
+                    let mouse_pressed_event = Event {
+                        target: index,
+                        event_type: EventType::MousePressed,
+                        ..Event::default()
+                    };
+                    events_stream.push(mouse_pressed_event);
+                } else {
+                    Self::remove_event(&mut self.previous_events, &index, &EventType::MousePressed);
                 }
             }
         }

@@ -225,6 +225,7 @@ impl KayakContext {
     pub fn process_events(&mut self, input_events: Vec<InputEvent>) {
         let mut events_stream = Vec::new();
         let mut next_events = HashMap::default();
+
         for (index, _) in self.widget_manager.nodes.iter() {
             if let Some(layout) = self.widget_manager.layout_cache.rect.get(&index) {
                 for input_event in input_events.iter() {
@@ -245,13 +246,13 @@ impl KayakContext {
                                         EventType::MouseIn,
                                     );
                                 }
+
                                 let hover_event = Event {
                                     target: index,
                                     event_type: EventType::Hover,
                                     ..Event::default()
                                 };
                                 events_stream.push(hover_event);
-
                                 Self::insert_event(
                                     &mut next_events,
                                     &index,
@@ -293,7 +294,7 @@ impl KayakContext {
                                     EventType::MouseDown,
                                 );
 
-                                // Start mouse pressed event
+                                // Start mouse pressed event as well
                                 Self::insert_event(
                                     &mut next_events,
                                     &index,
@@ -325,6 +326,11 @@ impl KayakContext {
                                         ..Event::default()
                                     };
                                     events_stream.push(click_event);
+                                    Self::insert_event(
+                                        &mut next_events,
+                                        &index,
+                                        EventType::Click,
+                                    );
                                 }
                             }
                         }
@@ -339,6 +345,8 @@ impl KayakContext {
                         ..Event::default()
                     };
                     events_stream.push(mouse_pressed_event);
+
+                    // Make sure this event isn't removed while mouse is still held down
                     Self::insert_event(
                         &mut next_events,
                         &index,
@@ -348,6 +356,7 @@ impl KayakContext {
             }
         }
 
+        // Replace the previous events with the next set
         self.previous_events = next_events;
 
         // Propagate Events
@@ -370,15 +379,17 @@ impl KayakContext {
         }
     }
 
+    /// Insert an event for a widget in the given event map
     fn insert_event(
-        previous_events: &mut HashMap<Index, HashSet<EventType>>,
+        events: &mut HashMap<Index, HashSet<EventType>>,
         widget_id: &Index,
         event_type: EventType,
     ) -> bool {
-        let mut entry = previous_events.entry(*widget_id).or_insert(HashSet::default());
+        let mut entry = events.entry(*widget_id).or_insert(HashSet::default());
         entry.insert(event_type)
     }
 
+    /// Remove an event from a widget in the given event map
     fn remove_event(
         events: &mut HashMap<Index, HashSet<EventType>>,
         widget_id: &Index,
@@ -388,14 +399,7 @@ impl KayakContext {
         entry.remove(event_type)
     }
 
-    fn reset_events(
-        events: &mut HashMap<Index, HashSet<EventType>>,
-        widget_id: &Index,
-    ) {
-        let mut entry = events.entry(*widget_id).or_insert(HashSet::default());
-        entry.clear();
-    }
-
+    /// Checks if the given event map contains a specific event for the given widget
     fn contains_event(
         events: &HashMap<Index, HashSet<EventType>>,
         widget_id: &Index,
@@ -408,6 +412,7 @@ impl KayakContext {
         }
     }
 
+    /// Checks if the given event map contains any events for the given widget
     fn has_any_event(
         events: &HashMap<Index, HashSet<EventType>>,
         widget_id: &Index,

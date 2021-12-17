@@ -224,6 +224,7 @@ impl KayakContext {
 
     pub fn process_events(&mut self, input_events: Vec<InputEvent>) {
         let mut events_stream = Vec::new();
+        let mut next_events = HashMap::default();
         for (index, _) in self.widget_manager.nodes.iter() {
             if let Some(layout) = self.widget_manager.layout_cache.rect.get(&index) {
                 for input_event in input_events.iter() {
@@ -239,7 +240,7 @@ impl KayakContext {
                                     };
                                     events_stream.push(mouse_in_event);
                                     Self::insert_event(
-                                        &mut self.previous_events,
+                                        &mut next_events,
                                         &index,
                                         EventType::MouseIn,
                                     );
@@ -252,7 +253,7 @@ impl KayakContext {
                                 events_stream.push(hover_event);
 
                                 Self::insert_event(
-                                    &mut self.previous_events,
+                                    &mut next_events,
                                     &index,
                                     EventType::Hover,
                                 );
@@ -267,14 +268,10 @@ impl KayakContext {
                                     };
                                     events_stream.push(mouse_out_event);
                                     Self::insert_event(
-                                        &mut self.previous_events,
+                                        &mut next_events,
                                         &index,
                                         EventType::MouseOut,
                                     );
-                                    Self::remove_event(&mut self.previous_events, &index, &EventType::MouseIn);
-                                    Self::remove_event(&mut self.previous_events, &index, &EventType::Hover);
-                                } else {
-                                    Self::remove_event(&mut self.previous_events, &index, &EventType::MouseOut);
                                 }
                             }
                             self.last_mouse_position = *point;
@@ -291,14 +288,14 @@ impl KayakContext {
                                 };
                                 events_stream.push(mouse_down_event);
                                 Self::insert_event(
-                                    &mut self.previous_events,
+                                    &mut next_events,
                                     &index,
                                     EventType::MouseDown,
                                 );
 
                                 // Start mouse pressed event
                                 Self::insert_event(
-                                    &mut self.previous_events,
+                                    &mut next_events,
                                     &index,
                                     EventType::MousePressed,
                                 );
@@ -316,7 +313,7 @@ impl KayakContext {
                                 };
                                 events_stream.push(mouse_up_event);
                                 Self::insert_event(
-                                    &mut self.previous_events,
+                                    &mut next_events,
                                     &index,
                                     EventType::MouseUp,
                                 );
@@ -342,11 +339,16 @@ impl KayakContext {
                         ..Event::default()
                     };
                     events_stream.push(mouse_pressed_event);
-                } else {
-                    Self::remove_event(&mut self.previous_events, &index, &EventType::MousePressed);
+                    Self::insert_event(
+                        &mut next_events,
+                        &index,
+                        EventType::MousePressed,
+                    );
                 }
             }
         }
+
+        self.previous_events = next_events;
 
         // Propagate Events
         for event in events_stream.iter_mut() {
@@ -378,28 +380,28 @@ impl KayakContext {
     }
 
     fn remove_event(
-        previous_events: &mut HashMap<Index, HashSet<EventType>>,
+        events: &mut HashMap<Index, HashSet<EventType>>,
         widget_id: &Index,
         event_type: &EventType,
     ) -> bool {
-        let mut entry = previous_events.entry(*widget_id).or_insert(HashSet::default());
+        let mut entry = events.entry(*widget_id).or_insert(HashSet::default());
         entry.remove(event_type)
     }
 
     fn reset_events(
-        previous_events: &mut HashMap<Index, HashSet<EventType>>,
+        events: &mut HashMap<Index, HashSet<EventType>>,
         widget_id: &Index,
     ) {
-        let mut entry = previous_events.entry(*widget_id).or_insert(HashSet::default());
+        let mut entry = events.entry(*widget_id).or_insert(HashSet::default());
         entry.clear();
     }
 
     fn contains_event(
-        previous_events: &HashMap<Index, HashSet<EventType>>,
+        events: &HashMap<Index, HashSet<EventType>>,
         widget_id: &Index,
         event_type: &EventType,
     ) -> bool {
-        if let Some(entry) = previous_events.get(widget_id) {
+        if let Some(entry) = events.get(widget_id) {
             entry.contains(event_type)
         } else {
             false
@@ -407,10 +409,10 @@ impl KayakContext {
     }
 
     fn has_any_event(
-        previous_events: &HashMap<Index, HashSet<EventType>>,
+        events: &HashMap<Index, HashSet<EventType>>,
         widget_id: &Index,
     ) -> bool {
-        if let Some(entry) = previous_events.get(widget_id) {
+        if let Some(entry) = events.get(widget_id) {
             entry.len() > 0
         } else {
             false

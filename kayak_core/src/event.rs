@@ -17,10 +17,12 @@ impl Default for Event {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum EventType {
     Click,
     Hover,
     MouseIn,
     MouseOut,
+    MouseDown,
+    MouseUp
 }

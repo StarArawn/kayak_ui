@@ -1,5 +1,5 @@
 use flo_binding::Changeable;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use crate::{widget_manager::WidgetManager, Event, EventType, Index, InputEvent};
 
@@ -7,12 +7,12 @@ pub struct KayakContext {
     widget_states: HashMap<crate::Index, resources::Resources>,
     global_bindings: HashMap<crate::Index, Vec<flo_binding::Uuid>>,
     widget_state_lifetimes:
-        HashMap<crate::Index, HashMap<flo_binding::Uuid, Box<dyn crate::Releasable>>>,
+    HashMap<crate::Index, HashMap<flo_binding::Uuid, Box<dyn crate::Releasable>>>,
     current_id: Index,
     pub widget_manager: WidgetManager,
     last_mouse_position: (f32, f32),
     pub global_state: resources::Resources,
-    previous_events: HashMap<Index, Option<EventType>>,
+    previous_events: HashMap<Index, HashSet<EventType>>,
 }
 
 impl std::fmt::Debug for KayakContext {
@@ -229,17 +229,17 @@ impl KayakContext {
                         InputEvent::MouseMoved(point) => {
                             // Hover event.
                             if layout.contains(point) {
-                                if Self::get_last_event(&self.previous_events, &index).is_none() {
+                                if !Self::contains_event(&self.previous_events, &index, &EventType::MouseIn) {
                                     let mouse_in_event = Event {
                                         target: index,
                                         event_type: EventType::MouseIn,
                                         ..Event::default()
                                     };
                                     events_stream.push(mouse_in_event);
-                                    Self::set_last_event(
+                                    Self::insert_event(
                                         &mut self.previous_events,
                                         &index,
-                                        Some(EventType::MouseIn),
+                                        EventType::MouseIn,
                                     );
                                 }
                                 let hover_event = Event {
@@ -248,43 +248,76 @@ impl KayakContext {
                                     ..Event::default()
                                 };
                                 events_stream.push(hover_event);
-                                Self::set_last_event(
+
+                                Self::insert_event(
                                     &mut self.previous_events,
                                     &index,
-                                    Some(EventType::Hover),
+                                    EventType::Hover,
                                 );
                             } else {
-                                if let Some(event) =
-                                    Self::get_last_event(&self.previous_events, &index)
+                                if Self::contains_event(&self.previous_events, &index, &EventType::Hover) ||
+                                    Self::contains_event(&self.previous_events, &index, &EventType::MouseIn)
                                 {
-                                    if matches!(event, EventType::Hover)
-                                        | matches!(event, EventType::MouseIn)
-                                    {
-                                        let mouse_out_event = Event {
-                                            target: index,
-                                            event_type: EventType::MouseOut,
-                                            ..Event::default()
-                                        };
-                                        events_stream.push(mouse_out_event);
-                                        Self::set_last_event(
-                                            &mut self.previous_events,
-                                            &index,
-                                            Some(EventType::MouseOut),
-                                        );
-                                    }
+                                    let mouse_out_event = Event {
+                                        target: index,
+                                        event_type: EventType::MouseOut,
+                                        ..Event::default()
+                                    };
+                                    events_stream.push(mouse_out_event);
+                                    Self::insert_event(
+                                        &mut self.previous_events,
+                                        &index,
+                                        EventType::MouseOut,
+                                    );
+                                    Self::remove_event(&mut self.previous_events, &index, &EventType::MouseIn);
+                                    Self::remove_event(&mut self.previous_events, &index, &EventType::Hover);
+                                } else {
+                                    Self::remove_event(&mut self.previous_events, &index, &EventType::MouseOut);
                                 }
-                                Self::set_last_event(&mut self.previous_events, &index, None);
                             }
                             self.last_mouse_position = *point;
                         }
-                        InputEvent::MouseLeftClick => {
+                        InputEvent::MouseLeftPress => {
                             if layout.contains(&self.last_mouse_position) {
-                                let click_event = Event {
+                                let mouse_down_event = Event {
                                     target: index,
-                                    event_type: EventType::Click,
+                                    event_type: EventType::MouseDown,
                                     ..Event::default()
                                 };
-                                events_stream.push(click_event);
+                                events_stream.push(mouse_down_event);
+                                Self::insert_event(
+                                    &mut self.previous_events,
+                                    &index,
+                                    EventType::MouseDown,
+                                );
+                                Self::remove_event(&mut self.previous_events, &index, &EventType::MouseUp);
+                                Self::remove_event(&mut self.previous_events, &index, &EventType::Click);
+                            }
+                        }
+                        InputEvent::MouseLeftRelease => {
+                            if layout.contains(&self.last_mouse_position) {
+                                let mouse_up_event = Event {
+                                    target: index,
+                                    event_type: EventType::MouseUp,
+                                    ..Event::default()
+                                };
+                                events_stream.push(mouse_up_event);
+                                Self::insert_event(
+                                    &mut self.previous_events,
+                                    &index,
+                                    EventType::MouseUp,
+                                );
+
+                                if Self::contains_event(&self.previous_events, &index, &EventType::MouseDown) {
+                                    let click_event = Event {
+                                        target: index,
+                                        event_type: EventType::Click,
+                                        ..Event::default()
+                                    };
+                                    events_stream.push(click_event);
+                                }
+
+                                Self::remove_event(&mut self.previous_events, &index, &EventType::MouseDown);
                             }
                         }
                     }
@@ -312,24 +345,55 @@ impl KayakContext {
         }
     }
 
-    fn get_last_event(
-        previous_events: &HashMap<Index, Option<EventType>>,
+    fn insert_event(
+        previous_events: &mut HashMap<Index, HashSet<EventType>>,
         widget_id: &Index,
-    ) -> Option<EventType> {
-        if previous_events.contains_key(widget_id) {
-            previous_events.get(widget_id).and_then(|e| *e)
+        event_type: EventType,
+    ) -> bool {
+        let mut entry = previous_events.entry(*widget_id).or_insert(HashSet::default());
+        entry.insert(event_type)
+    }
+
+    fn remove_event(
+        previous_events: &mut HashMap<Index, HashSet<EventType>>,
+        widget_id: &Index,
+        event_type: &EventType,
+    ) -> bool {
+        let mut entry = previous_events.entry(*widget_id).or_insert(HashSet::default());
+        entry.remove(event_type)
+    }
+
+    fn reset_events(
+        previous_events: &mut HashMap<Index, HashSet<EventType>>,
+        widget_id: &Index,
+    ) {
+        let mut entry = previous_events.entry(*widget_id).or_insert(HashSet::default());
+        entry.clear();
+    }
+
+    fn contains_event(
+        previous_events: &HashMap<Index, HashSet<EventType>>,
+        widget_id: &Index,
+        event_type: &EventType,
+    ) -> bool {
+        if let Some(entry) = previous_events.get(widget_id) {
+            entry.contains(event_type)
         } else {
-            None
+            false
         }
     }
 
-    fn set_last_event(
-        previous_events: &mut HashMap<Index, Option<EventType>>,
+    fn has_any_event(
+        previous_events: &HashMap<Index, HashSet<EventType>>,
         widget_id: &Index,
-        event_type: Option<EventType>,
-    ) {
-        previous_events.insert(*widget_id, event_type);
+    ) -> bool {
+        if let Some(entry) = previous_events.get(widget_id) {
+            entry.len() > 0
+        } else {
+            false
+        }
     }
+
 
     fn get_all_parents(&self, current: Index, parents: &mut Vec<Index>) {
         if let Some(parent) = self.widget_manager.tree.parents.get(&current) {

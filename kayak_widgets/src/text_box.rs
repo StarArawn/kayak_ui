@@ -80,14 +80,8 @@ pub fn TextBox(value: String, on_change: Option<OnChange>) {
             }
             internal_value.set(current_value);
         }
-        EventType::Focus => {
-            dbg!("Has focus!");
-            cloned_has_focus.set(Focus(true))
-        }
-        EventType::Blur => {
-            dbg!("Lost focus!");
-            cloned_has_focus.set(Focus(false))
-        }
+        EventType::Focus => cloned_has_focus.set(Focus(true)),
+        EventType::Blur => cloned_has_focus.set(Focus(false)),
         _ => {}
     }));
 

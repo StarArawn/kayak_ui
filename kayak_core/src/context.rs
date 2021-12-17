@@ -340,12 +340,6 @@ impl KayakContext {
                                 {
                                     if widget.focusable() {
                                         was_focus_event = true;
-                                        if let Some(widget) =
-                                            self.widget_manager.current_widgets.get(index).unwrap()
-                                        {
-                                            dbg!(index);
-                                            dbg!(widget.get_name());
-                                        }
                                         let focus_event = Event {
                                             target: index,
                                             event_type: EventType::Focus,

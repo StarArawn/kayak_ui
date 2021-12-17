@@ -202,6 +202,7 @@ impl WidgetManager {
             if matches!(styles.render_command.resolve(), RenderCommand::Empty) {
                 continue;
             }
+
             let mut node = NodeBuilder::empty()
                 .with_id(dirty_node_index)
                 .with_styles(styles)

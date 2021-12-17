@@ -1,13 +1,14 @@
 use bevy::{
-    input::{mouse::MouseButtonInput, ElementState},
+    input::{keyboard::KeyboardInput, mouse::MouseButtonInput, ElementState},
     math::Vec2,
     prelude::{EventReader, IntoExclusiveSystem, MouseButton, Plugin, Res, World},
     render::color::Color,
-    window::{CursorMoved, WindowCreated, WindowResized, Windows},
+    window::{CursorMoved, ReceivedCharacter, WindowCreated, WindowResized, Windows},
 };
 
 mod bevy_context;
 mod camera;
+mod key;
 mod render;
 
 pub use bevy_context::BevyContext;
@@ -50,6 +51,8 @@ pub fn process_events(
     windows: Res<Windows>,
     mut cursor_moved_events: EventReader<CursorMoved>,
     mut mouse_button_input_events: EventReader<MouseButtonInput>,
+    mut char_input_events: EventReader<ReceivedCharacter>,
+    mut keyboard_input_events: EventReader<KeyboardInput>,
 ) {
     let window_size = if let Some(window) = windows.get_primary() {
         Vec2::new(window.width(), window.height())
@@ -75,6 +78,19 @@ pub fn process_events(
                     }
                 }
                 _ => {}
+            }
+        }
+
+        for event in char_input_events.iter() {
+            input_events.push(InputEvent::CharEvent { c: event.char });
+        }
+
+        for event in keyboard_input_events.iter() {
+            if let Some(key_code) = event.key_code {
+                let kayak_key_code = key::convert_virtual_key_code(key_code);
+                input_events.push(InputEvent::Keyboard {
+                    key: kayak_key_code,
+                });
             }
         }
 

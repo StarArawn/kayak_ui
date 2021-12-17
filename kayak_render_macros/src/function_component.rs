@@ -53,8 +53,13 @@ pub fn create_function_widget(f: syn::ItemFn) -> TokenStream {
         let input_string = (quote! { #input }).to_string();
         if input_string.contains("children : Children") {
             *input = quote! {
-                 #[derivative(Debug = "ignore", PartialEq = "ignore")]
-                 pub children: Children
+                #[derivative(Debug = "ignore", PartialEq = "ignore")]
+                pub children: Children
+            };
+        } else if input_string.contains("on_event : Option < OnEvent >") {
+            *input = quote! {
+                #[derivative(Debug = "ignore", PartialEq = "ignore")]
+                pub on_event: Option<#kayak_core::OnEvent>
             };
         } else {
             *input = quote! {
@@ -67,7 +72,7 @@ pub fn create_function_widget(f: syn::ItemFn) -> TokenStream {
         (
             vec![
                 "styles : Option < Style >",
-                "styles : Option< kayak_core :: styles :: Style >",
+                "styles : Option< kayak_ui :: core :: styles :: Style >",
             ],
             quote! {
                 pub styles: Option<#kayak_core::styles::Style>
@@ -82,8 +87,9 @@ pub fn create_function_widget(f: syn::ItemFn) -> TokenStream {
         ),
         (
             vec![
-                "on_event: Option<OnEvent>",
-                "on_event : Option<kayak_core::OnEvent>",
+                "on_event : Option < OnEvent >",
+                "on_event : Option < kayak_ui :: core :: OnEvent >",
+                "on_event : Option <\nkayak_ui :: core :: OnEvent >",
             ],
             quote! {
                 #[derivative(Debug = "ignore", PartialEq = "ignore")]

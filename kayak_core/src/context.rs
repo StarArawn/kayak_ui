@@ -287,6 +287,16 @@ impl KayakContext {
                                 events_stream.push(click_event);
                             }
                         }
+                        InputEvent::CharEvent { c } => events_stream.push(Event {
+                            target: index,
+                            event_type: EventType::CharInput { c: *c },
+                            ..Event::default()
+                        }),
+                        InputEvent::Keyboard { key } => events_stream.push(Event {
+                            target: index,
+                            event_type: EventType::KeyboardInput { key: *key },
+                            ..Event::default()
+                        }),
                     }
                 }
             }
@@ -302,13 +312,14 @@ impl KayakContext {
             target_widget.on_event(self, event);
             self.widget_manager.repossess(target_widget);
 
-            for parent in parents {
-                if event.should_propagate {
-                    let mut parent_widget = self.widget_manager.take(parent);
-                    parent_widget.on_event(self, event);
-                    self.widget_manager.repossess(parent_widget);
-                }
-            }
+            // TODO: Restore propagation.
+            // for parent in parents {
+            //     if event.should_propagate {
+            //         let mut parent_widget = self.widget_manager.take(parent);
+            //         parent_widget.on_event(self, event);
+            //         self.widget_manager.repossess(parent_widget);
+            //     }
+            // }
         }
     }
 

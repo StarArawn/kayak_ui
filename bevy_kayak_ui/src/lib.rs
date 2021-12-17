@@ -71,10 +71,8 @@ pub fn process_events(
             match event.button {
                 MouseButton::Left => {
                     if event.state == ElementState::Pressed {
-                        println!("Press");
                         input_events.push(InputEvent::MouseLeftPress);
                     } else if event.state == ElementState::Released {
-                        println!("Release");
                         input_events.push(InputEvent::MouseLeftRelease);
                     }
                 }

@@ -15,6 +15,7 @@ pub mod tree;
 mod vec;
 pub mod widget;
 pub mod widget_manager;
+mod multi_state;
 
 use std::sync::{Arc, RwLock};
 

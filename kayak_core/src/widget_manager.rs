@@ -199,10 +199,6 @@ impl WidgetManager {
                 .unwrap_or(vec![]);
             let styles = styles.unwrap_or(default_styles.clone());
 
-            if matches!(styles.render_command.resolve(), RenderCommand::Empty) {
-                continue;
-            }
-
             let mut node = NodeBuilder::empty()
                 .with_id(dirty_node_index)
                 .with_styles(styles)

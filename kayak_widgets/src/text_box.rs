@@ -1,4 +1,5 @@
 use kayak_ui::core::{
+    render_command::RenderCommand,
     rsx,
     styles::{Style, StyleProp, Units},
     widget, Bound, Color, EventType, MutableBound, OnEvent,
@@ -33,8 +34,16 @@ impl std::fmt::Debug for OnChange {
     }
 }
 
-#[widget]
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Focus(pub bool);
+
+#[widget(focusable)]
 pub fn TextBox(value: String, on_change: Option<OnChange>) {
+    *styles = Some(Style {
+        render_command: StyleProp::Value(RenderCommand::Layout),
+        ..styles.clone().unwrap_or_default()
+    });
+
     let background_styles = Style {
         background_color: StyleProp::Value(Color::new(0.176, 0.196, 0.215, 1.0)),
         border_radius: StyleProp::Value((5.0, 5.0, 5.0, 5.0)),
@@ -45,10 +54,15 @@ pub fn TextBox(value: String, on_change: Option<OnChange>) {
     };
 
     let internal_value = context.create_state("".to_string()).unwrap();
+    let has_focus = context.create_state(Focus(false)).unwrap();
 
     let cloned_on_change = on_change.clone();
+    let cloned_has_focus = has_focus.clone();
     self.on_event = Some(OnEvent::new(move |_, event| match event.event_type {
         EventType::CharInput { c } => {
+            if !cloned_has_focus.get().0 {
+                return;
+            }
             let mut current_value = internal_value.get();
             if c == '\u{8}' {
                 if current_value.len() > 0 {
@@ -66,8 +80,25 @@ pub fn TextBox(value: String, on_change: Option<OnChange>) {
             }
             internal_value.set(current_value);
         }
+        EventType::Focus => {
+            dbg!("Has focus!");
+            cloned_has_focus.set(Focus(true))
+        }
+        EventType::Blur => {
+            dbg!("Lost focus!");
+            cloned_has_focus.set(Focus(false))
+        }
         _ => {}
     }));
+
+    // let cloned_has_focus = has_focus.clone();
+    // let on_event = Some(OnEvent::new(move |_, event| match event.event_type {
+    //     EventType::Focus => {
+    //         dbg!("Has focus!");
+    //         cloned_has_focus.set(Focus(true))
+    //     }
+    //     _ => {}
+    // }));
 
     let value = value.clone();
     rsx! {

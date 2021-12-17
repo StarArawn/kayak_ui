@@ -1,18 +1,25 @@
 use flo_binding::Changeable;
+use morphorm::Hierarchy;
 use std::collections::HashMap;
 
-use crate::{widget_manager::WidgetManager, Event, EventType, Index, InputEvent};
+use crate::{
+    multi_state::MultiState, widget_manager::WidgetManager, Event, EventType, Index, InputEvent,
+};
 
 pub struct KayakContext {
     widget_states: HashMap<crate::Index, resources::Resources>,
     global_bindings: HashMap<crate::Index, Vec<flo_binding::Uuid>>,
     widget_state_lifetimes:
         HashMap<crate::Index, HashMap<flo_binding::Uuid, Box<dyn crate::Releasable>>>,
-    current_id: Index,
+    pub current_id: Index,
     pub widget_manager: WidgetManager,
     last_mouse_position: (f32, f32),
     pub global_state: resources::Resources,
     previous_events: HashMap<Index, Option<EventType>>,
+    current_focus: Index,
+    last_focus: Index,
+    last_state_type_id: Option<std::any::TypeId>,
+    current_state_index: usize,
 }
 
 impl std::fmt::Debug for KayakContext {
@@ -35,6 +42,10 @@ impl KayakContext {
             last_mouse_position: (0.0, 0.0),
             global_state: resources::Resources::default(),
             previous_events: HashMap::new(),
+            current_focus: Index::default(),
+            last_focus: Index::default(),
+            last_state_type_id: None,
+            current_state_index: 0,
         }
     }
 
@@ -90,15 +101,24 @@ impl KayakContext {
 
     pub fn set_current_id(&mut self, id: crate::Index) {
         self.current_id = id;
+        self.current_state_index = 0;
+        self.last_state_type_id = None;
     }
 
     pub fn create_state<T: resources::Resource + Clone + PartialEq>(
         &mut self,
         initial_state: T,
     ) -> Option<crate::Binding<T>> {
+        let state_type_id = initial_state.type_id();
+        if let Some(last_state_type_id) = self.last_state_type_id {
+            if state_type_id != last_state_type_id {
+                self.current_state_index = 0;
+            }
+        }
+
         if self.widget_states.contains_key(&self.current_id) {
             let states = self.widget_states.get_mut(&self.current_id).unwrap();
-            if !states.contains::<crate::Binding<T>>() {
+            if !states.contains::<MultiState<crate::Binding<T>>>() {
                 let state = crate::bind(initial_state);
                 let dirty_nodes = self.widget_manager.dirty_nodes.clone();
                 let cloned_id = self.current_id;
@@ -113,7 +133,29 @@ impl KayakContext {
                     state.id,
                     lifetime,
                 );
-                states.insert(state);
+                states.insert(MultiState::new(state));
+                self.last_state_type_id = Some(state_type_id);
+                self.current_state_index += 1;
+            } else {
+                // Add new value to the multi-state.
+                let state = crate::bind(initial_state);
+                let dirty_nodes = self.widget_manager.dirty_nodes.clone();
+                let cloned_id = self.current_id;
+                let lifetime = state.when_changed(crate::notify(move || {
+                    if let Ok(mut dirty_nodes) = dirty_nodes.lock() {
+                        dirty_nodes.insert(cloned_id);
+                    }
+                }));
+                Self::insert_state_lifetime(
+                    &mut self.widget_state_lifetimes,
+                    self.current_id,
+                    state.id,
+                    lifetime,
+                );
+                let mut multi_state = states.remove::<MultiState<crate::Binding<T>>>().unwrap();
+                multi_state.get_or_add(state, &mut self.current_state_index);
+                states.insert(multi_state);
+                self.last_state_type_id = Some(state_type_id);
             }
         } else {
             let mut states = resources::Resources::default();
@@ -131,10 +173,22 @@ impl KayakContext {
                 state.id,
                 lifetime,
             );
-            states.insert(state);
+            states.insert(MultiState::new(state));
             self.widget_states.insert(self.current_id, states);
+            self.current_state_index += 1;
+            self.last_state_type_id = Some(state_type_id);
         }
         return self.get_state();
+    }
+
+    fn get_state<T: resources::Resource + Clone + PartialEq>(&self) -> Option<T> {
+        if self.widget_states.contains_key(&self.current_id) {
+            let states = self.widget_states.get(&self.current_id).unwrap();
+            if let Ok(state) = states.get::<MultiState<T>>() {
+                return Some(state.get(self.current_state_index - 1).clone());
+            }
+        }
+        return None;
     }
 
     fn insert_state_lifetime(
@@ -177,16 +231,6 @@ impl KayakContext {
         }
     }
 
-    fn get_state<T: resources::Resource + Clone + PartialEq>(&self) -> Option<T> {
-        if self.widget_states.contains_key(&self.current_id) {
-            let states = self.widget_states.get(&self.current_id).unwrap();
-            if let Ok(state) = states.get::<T>() {
-                return Some(state.clone());
-            }
-        }
-        return None;
-    }
-
     pub fn set_global_state<T: resources::Resource>(&mut self, state: T) {
         self.global_state.insert(state);
     }
@@ -222,7 +266,11 @@ impl KayakContext {
 
     pub fn process_events(&mut self, input_events: Vec<InputEvent>) {
         let mut events_stream = Vec::new();
-        for (index, _) in self.widget_manager.nodes.iter() {
+
+        let mut was_click_event = false;
+        let mut was_focus_event = false;
+
+        for index in self.widget_manager.node_tree.down_iter() {
             if let Some(layout) = self.widget_manager.layout_cache.rect.get(&index) {
                 for input_event in input_events.iter() {
                     match input_event {
@@ -278,6 +326,7 @@ impl KayakContext {
                             self.last_mouse_position = *point;
                         }
                         InputEvent::MouseLeftClick => {
+                            was_click_event = true;
                             if layout.contains(&self.last_mouse_position) {
                                 let click_event = Event {
                                     target: index,
@@ -285,6 +334,28 @@ impl KayakContext {
                                     ..Event::default()
                                 };
                                 events_stream.push(click_event);
+
+                                if let Some(widget) =
+                                    self.widget_manager.current_widgets.get(index).unwrap()
+                                {
+                                    if widget.focusable() {
+                                        was_focus_event = true;
+                                        if let Some(widget) =
+                                            self.widget_manager.current_widgets.get(index).unwrap()
+                                        {
+                                            dbg!(index);
+                                            dbg!(widget.get_name());
+                                        }
+                                        let focus_event = Event {
+                                            target: index,
+                                            event_type: EventType::Focus,
+                                            ..Event::default()
+                                        };
+                                        events_stream.push(focus_event);
+                                        self.last_focus = self.current_focus;
+                                        self.current_focus = index;
+                                    }
+                                }
                             }
                         }
                         InputEvent::CharEvent { c } => events_stream.push(Event {
@@ -302,6 +373,25 @@ impl KayakContext {
             }
         }
 
+        if was_click_event && !was_focus_event && self.current_focus != Index::default() {
+            let focus_event = Event {
+                target: self.current_focus,
+                event_type: EventType::Blur,
+                ..Event::default()
+            };
+            events_stream.push(focus_event);
+            self.current_focus = Index::default();
+        }
+
+        if was_click_event && was_focus_event && self.current_focus != self.last_focus {
+            let focus_event = Event {
+                target: self.last_focus,
+                event_type: EventType::Blur,
+                ..Event::default()
+            };
+            events_stream.push(focus_event);
+        }
+
         // Propagate Events
         for event in events_stream.iter_mut() {
             let mut parents: Vec<Index> = Vec::new();
@@ -311,6 +401,14 @@ impl KayakContext {
             let mut target_widget = self.widget_manager.take(event.target);
             target_widget.on_event(self, event);
             self.widget_manager.repossess(target_widget);
+
+            // Event debugging
+            // if matches!(event.event_type, EventType::Click) {
+            //     dbg!("Click event!");
+            //     let widget = self.widget_manager.take(event.target);
+            //     dbg!(widget.get_name());
+            //     self.widget_manager.repossess(widget);
+            // }
 
             // TODO: Restore propagation.
             // for parent in parents {

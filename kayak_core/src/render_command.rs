@@ -4,6 +4,8 @@ use crate::layout_cache::Space;
 pub enum RenderCommand {
     Empty,
     Window,
+    /// Represents a node that has no renderable object but contributes to the layout.
+    Layout,
     Clip,
     Quad,
     Text {

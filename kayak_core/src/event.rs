@@ -23,6 +23,8 @@ pub enum EventType {
     Hover,
     MouseIn,
     MouseOut,
+    Focus,
+    Blur,
     CharInput { c: char },
     KeyboardInput { key: KeyCode },
 }

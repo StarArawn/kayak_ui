@@ -53,9 +53,9 @@ pub fn TextBox(value: String, on_change: Option<OnChange>) {
         ..styles.clone().unwrap_or_default()
     };
 
-    let internal_value = context.create_state("".to_string()).unwrap();
     let has_focus = context.create_state(Focus(false)).unwrap();
 
+    let mut current_value = value.clone();
     let cloned_on_change = on_change.clone();
     let cloned_has_focus = has_focus.clone();
     self.on_event = Some(OnEvent::new(move |_, event| match event.event_type {
@@ -63,7 +63,6 @@ pub fn TextBox(value: String, on_change: Option<OnChange>) {
             if !cloned_has_focus.get().0 {
                 return;
             }
-            let mut current_value = internal_value.get();
             if c == '\u{8}' {
                 if current_value.len() > 0 {
                     current_value.truncate(current_value.len() - 1);
@@ -78,21 +77,11 @@ pub fn TextBox(value: String, on_change: Option<OnChange>) {
                     });
                 }
             }
-            internal_value.set(current_value);
         }
         EventType::Focus => cloned_has_focus.set(Focus(true)),
         EventType::Blur => cloned_has_focus.set(Focus(false)),
         _ => {}
     }));
-
-    // let cloned_has_focus = has_focus.clone();
-    // let on_event = Some(OnEvent::new(move |_, event| match event.event_type {
-    //     EventType::Focus => {
-    //         dbg!("Has focus!");
-    //         cloned_has_focus.set(Focus(true))
-    //     }
-    //     _ => {}
-    // }));
 
     let value = value.clone();
     rsx! {

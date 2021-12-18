@@ -13,7 +13,9 @@ use kayak_widgets::{App, OnChange, TextBox, Window};
 
 #[widget]
 fn TextBoxExample(context: &mut KayakContext) {
-    let value = context.create_state("".to_string()).unwrap();
+    let value = context
+        .create_state("I started with a value!".to_string())
+        .unwrap();
     let value2 = context.create_state("".to_string()).unwrap();
 
     let input_styles = Style {

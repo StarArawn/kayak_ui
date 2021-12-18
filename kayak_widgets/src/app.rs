@@ -12,7 +12,7 @@ use crate::Clip;
 #[widget]
 pub fn App(children: Children) {
     *styles = Some(Style {
-        render_command: StyleProp::Value(RenderCommand::Window),
+        render_command: StyleProp::Value(RenderCommand::Layout),
         ..styles.clone().unwrap_or_default()
     });
 

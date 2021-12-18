@@ -58,7 +58,6 @@ impl From<&Style> for RenderPrimitive {
         };
 
         match render_command {
-            RenderCommand::Window => Self::Empty,
             RenderCommand::Empty => Self::Empty,
             RenderCommand::Layout => Self::Empty,
             RenderCommand::Clip => Self::Clip {

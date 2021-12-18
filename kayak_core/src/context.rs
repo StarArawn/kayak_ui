@@ -11,10 +11,11 @@ pub struct KayakContext {
     global_bindings: HashMap<crate::Index, Vec<flo_binding::Uuid>>,
     widget_state_lifetimes:
         HashMap<crate::Index, HashMap<flo_binding::Uuid, Box<dyn crate::Releasable>>>,
-    pub current_id: Index,
+    current_id: Index,
+    // TODO: Make widget_manager private.
     pub widget_manager: WidgetManager,
     last_mouse_position: (f32, f32),
-    pub global_state: resources::Resources,
+    global_state: resources::Resources,
     previous_events: HashMap<Index, Option<EventType>>,
     current_focus: Index,
     last_focus: Index,

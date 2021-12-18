@@ -7,6 +7,7 @@ pub(crate) mod generational_arena;
 mod input_event;
 mod keys;
 pub mod layout_cache;
+mod multi_state;
 pub mod node;
 pub mod render_command;
 pub mod render_primitive;
@@ -15,7 +16,6 @@ pub mod tree;
 mod vec;
 pub mod widget;
 pub mod widget_manager;
-mod multi_state;
 
 use std::sync::{Arc, RwLock};
 
@@ -51,21 +51,6 @@ impl OnEvent {
         OnEvent(Arc::new(RwLock::new(f)))
     }
 }
-
-// impl std::ops::Deref for OnEvent {
-//     type Target =
-//         Arc<RwLock<dyn FnMut(&mut crate::context::KayakContext, &mut Event) + Send + Sync>>;
-
-//     fn deref(&self) -> &Self::Target {
-//         &self.0
-//     }
-// }
-
-// impl std::ops::DerefMut for OnEvent {
-//     fn deref_mut(&mut self) -> &mut Self::Target {
-//         &mut self.0
-//     }
-// }
 
 pub mod derivative {
     pub use derivative::*;

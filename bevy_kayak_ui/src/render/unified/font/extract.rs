@@ -17,6 +17,7 @@ pub fn extract_texts(
     render_primitive: &RenderPrimitive,
     fonts: &Res<Assets<KayakFont>>,
     font_mapping: &Res<FontMapping>,
+    _dpi: f32,
 ) -> Vec<ExtractQuadBundle> {
     let mut extracted_texts = Vec::new();
     let (background_color, layout, font_size, content, font) = match render_primitive {

@@ -1,4 +1,4 @@
-use crate::Index;
+use crate::{Index, KeyCode};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Event {
@@ -25,5 +25,9 @@ pub enum EventType {
     MouseOut,
     MouseDown,
     MouseUp,
-    MousePressed
+    MousePressed,
+    Focus,
+    Blur,
+    CharInput { c: char },
+    KeyboardInput { key: KeyCode },
 }

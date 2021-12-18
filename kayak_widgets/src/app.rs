@@ -1,10 +1,9 @@
-use kayak_ui::bevy::WindowSize;
 use kayak_ui::core::derivative::*;
 use kayak_ui::core::{
     render_command::RenderCommand,
     rsx,
-    styles::{Style, StyleProp, Units},
-    widget, Binding, Bound, Children,
+    styles::{Style, StyleProp},
+    widget, Children,
 };
 
 use crate::Clip;
@@ -12,12 +11,15 @@ use crate::Clip;
 #[widget]
 pub fn App(children: Children) {
     *styles = Some(Style {
-        render_command: StyleProp::Value(RenderCommand::Window),
+        render_command: StyleProp::Value(RenderCommand::Layout),
         ..styles.clone().unwrap_or_default()
     });
 
     #[cfg(feature = "bevy_renderer")]
     {
+        use kayak_ui::bevy::WindowSize;
+        use kayak_ui::core::styles::Units;
+        use kayak_ui::core::{Binding, Bound};
         let window_size = if let Ok(world) = context.get_global_state::<bevy::prelude::World>() {
             if let Some(window_size) = world.get_resource::<Binding<WindowSize>>() {
                 window_size.clone()

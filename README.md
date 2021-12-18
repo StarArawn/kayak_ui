@@ -47,10 +47,10 @@ Because bevy's new renderer is not released yet there is no crate on crates.io y
 ```rust
 kayak_ui = { git="https://github.com/StarArawn/kayak_ui", rev="{INSERT_COMMIT_SHA_HERE}" }
 kayak_widgets = { git="https://github.com/StarArawn/kayak_ui", rev="{INSERT_COMMIT_SHA_HERE}" }
-bevy = { git="https://github.com/StarArawn/bevy", rev="{INSERT_COMMIT_SHA_HERE}" }
+bevy = { git="https://github.com/bevyengine/bevy", rev="{INSERT_COMMIT_SHA_HERE}" }
 ```
 
-It's also worth mentioning that you will need to use the same bevy revision that this library uses which is currently: `bcca341d696c66d0173d8b0ac7a1b23b4b9e775c`.
+It's also worth mentioning that you will need to use the same bevy revision that this library uses which is currently: `9a16a4d01830297987db40b45f03382ed3acad62`.
 
 This is temporary and will change when bevy 0.6 is released.
 

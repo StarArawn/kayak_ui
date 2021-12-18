@@ -10,4 +10,4 @@ bevy_renderer = ["bevy", "kayak_ui/bevy_renderer"]
 
 [dependencies]
 kayak_ui = { path = "../", version = "0.1.0" }
-bevy = { git = "https://github.com/StarArawn/bevy", rev = "bcca341d696c66d0173d8b0ac7a1b23b4b9e775c", optional = true }
+bevy = { git = "https://github.com/bevyengine/bevy", rev = "9a16a4d01830297987db40b45f03382ed3acad62", optional = true }

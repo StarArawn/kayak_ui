@@ -7,6 +7,7 @@ use bevy::{
         RenderApp, RenderStage,
     },
     sprite::Rect,
+    window::Windows,
 };
 use kayak_core::{render_primitive::RenderPrimitive, Binding, Bound};
 use kayak_font::KayakFont;
@@ -68,6 +69,7 @@ pub fn extract(
     font_mapping: Res<FontMapping>,
     image_manager: Res<ImageManager>,
     images: Res<Assets<Image>>,
+    windows: Res<Windows>,
     window_size: Res<Binding<WindowSize>>,
 ) {
     let render_primitives = if let Ok(context) = context.kayak_context.read() {
@@ -76,26 +78,32 @@ pub fn extract(
         vec![]
     };
 
+    let dpi = if let Some(window) = windows.get_primary() {
+        window.scale_factor() as f32
+    } else {
+        1.0
+    };
+
     // dbg!(&render_primitives);
 
     let mut extracted_quads = Vec::new();
     for render_primitive in render_primitives {
         match render_primitive {
             RenderPrimitive::Text { .. } => {
-                let text_quads = font::extract_texts(&render_primitive, &fonts, &font_mapping);
+                let text_quads = font::extract_texts(&render_primitive, &fonts, &font_mapping, dpi);
                 extracted_quads.extend(text_quads);
             }
             RenderPrimitive::Image { .. } => {
-                let image_quads = image::extract_images(&render_primitive, &image_manager);
+                let image_quads = image::extract_images(&render_primitive, &image_manager, dpi);
                 extracted_quads.extend(image_quads);
             }
             RenderPrimitive::Quad { .. } => {
-                let quad_quads = quad::extract_quads(&render_primitive);
+                let quad_quads = quad::extract_quads(&render_primitive, dpi);
                 extracted_quads.extend(quad_quads);
             }
             RenderPrimitive::NinePatch { .. } => {
                 let nine_patch_quads =
-                    nine_patch::extract_nine_patch(&render_primitive, &image_manager, &images);
+                    nine_patch::extract_nine_patch(&render_primitive, &image_manager, &images, dpi);
                 extracted_quads.extend(nine_patch_quads);
             }
             RenderPrimitive::Clip { layout } => {
@@ -103,7 +111,8 @@ pub fn extract(
                     extracted_quad: ExtractedQuad {
                         rect: Rect {
                             min: Vec2::new(layout.posx, layout.posy),
-                            max: Vec2::new(layout.posx + layout.width, layout.posy + layout.height),
+                            max: Vec2::new(layout.posx + layout.width, layout.posy + layout.height)
+                                * dpi,
                         },
                         color: Color::default(),
                         vertex_index: 0,

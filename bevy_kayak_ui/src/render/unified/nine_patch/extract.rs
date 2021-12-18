@@ -15,6 +15,7 @@ pub fn extract_nine_patch(
     render_primitive: &RenderPrimitive,
     image_manager: &Res<ImageManager>,
     images: &Res<Assets<Image>>,
+    dpi: f32,
 ) -> Vec<ExtractQuadBundle> {
     let mut extracted_quads = Vec::new();
 
@@ -44,7 +45,8 @@ pub fn extract_nine_patch(
                 i.texture_descriptor.size.height as f32,
             ))
         })
-        .unwrap();
+        .unwrap()
+        * dpi;
 
     let extracted_quad_template = ExtractedQuad {
         rect: Rect {

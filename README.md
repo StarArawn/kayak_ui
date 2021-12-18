@@ -18,11 +18,13 @@ Kayak UI is in the very early stages of development. Important features are miss
 ## Features
 - Easy to use declarative syntax using a custom proc macro
 - Basic widget and global state management
-- Input events
+- Input events (Mouse, Keyboard, Char)
 - Fast and accurate layouts using morphorm: https://github.com/geom3trik/morphorm
 - A few default widgets check out [kayak_widgets](./kayak_widgets)!
 - Style system built to kind of mimic CSS styles.
 - Image and Nine patch rendering.
+- Vec widgets see vec_widget example!
+- Removal of widgets.
 
 ## Bevy Renderer Features
 - Image and NinePatch renderer
@@ -30,13 +32,12 @@ Kayak UI is in the very early stages of development. Important features are miss
 - Quad renderer with rounded corners.
 - Custom UI node to ensure UI renders on top of 3D and 2D entities.
 - Fully integrated into bevy to capture input events, use bevy assets(images, etc).
+- Dpi Scaling
 
 ## Missing features
-- Widget diffing see issue: https://github.com/StarArawn/kayak_ui/issues/1
-- Removal of widgets.
+- Widget prop diffing see issue: https://github.com/StarArawn/kayak_ui/issues/1
 - More default widgets.
-- More events(keyboard events, etc)
-- Vec widgets IE: `{some_vec.map(|my_string| <Text content={my_string} />)}`
+- More events
 
 ## Example Screenshot
 <img src="images/screen1.png" alt="Kayak UI" width="600" />

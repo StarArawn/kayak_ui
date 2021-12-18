@@ -11,6 +11,7 @@ mod partial_eq;
 mod widget;
 mod widget_attributes;
 
+use function_component::WidgetArguments;
 use partial_eq::impl_dyn_partial_eq;
 use proc_macro::TokenStream;
 use proc_macro_error::proc_macro_error;
@@ -60,9 +61,16 @@ pub fn constructor(input: TokenStream) -> TokenStream {
 
 #[proc_macro_attribute]
 #[proc_macro_error]
-pub fn widget(_attr: TokenStream, item: TokenStream) -> TokenStream {
+pub fn widget(args: TokenStream, item: TokenStream) -> TokenStream {
+    let mut widget_args = WidgetArguments::default();
+    if !args.is_empty() {
+        // Parse stuff..
+        let parsed = args.to_string();
+        widget_args.focusable = parsed.contains("focusable");
+    }
+
     let f = parse_macro_input!(item as syn::ItemFn);
-    function_component::create_function_widget(f)
+    function_component::create_function_widget(f, widget_args)
 }
 
 #[proc_macro_derive(DynPartialEq)]

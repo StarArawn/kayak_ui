@@ -9,6 +9,7 @@ use crate::{
 pub fn extract_images(
     render_command: &RenderPrimitive,
     image_manager: &Res<ImageManager>,
+    dpi: f32,
 ) -> Vec<ExtractQuadBundle> {
     let (layout, handle) = match render_command {
         RenderPrimitive::Image { layout, handle } => (layout, handle),
@@ -19,7 +20,7 @@ pub fn extract_images(
         extracted_quad: ExtractedQuad {
             rect: Rect {
                 min: Vec2::new(layout.posx, layout.posy),
-                max: Vec2::new(layout.posx + layout.width, layout.posy + layout.height),
+                max: Vec2::new(layout.posx + layout.width, layout.posy + layout.height) * dpi,
             },
             color: Color::WHITE,
             vertex_index: 0,

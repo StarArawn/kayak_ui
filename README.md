@@ -88,18 +88,13 @@ Widget's can create their own state and will re-render when that state changes.
 ```rust
 #[widget]
 fn Counter(context: &mut KayakContext) {
-    let count = context.create_state(0i32).unwrap();
-    // Since we move the variable into the closure we need to clone here.
-    // Similar cost to cloning an Arc
-    let cloned_count = count.clone();
-    let on_event = OnEvent::new(move |context, event| match event.event_type {
-        EventType::Click => {
-            cloned_count.set(cloned_count.get() + 1);
-        }
+    let (count, set_count) = use_state!(0i32);
+    let on_event = OnEvent::new(move |_, event| match event.event_type {
+        EventType::Click => set_count(count + 1),
         _ => {}
     });
 
-    let count_text = format!("Current Count: {}", count.get());
+    let count_text = format!("Current Count: {}", count);
     rsx! {
         <>
             <Window position={(50.0, 50.0)} size={(300.0, 300.0)} title={"Counter Example".to_string()}>

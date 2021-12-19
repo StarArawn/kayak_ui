@@ -116,11 +116,29 @@ impl<'a> morphorm::Node<'a> for Index {
         return Some(morphorm::Units::Stretch(1.0));
     }
 
-    fn min_width(&self, _store: &'_ Self::Data) -> Option<morphorm::Units> {
+    fn min_width(&self, store: &'_ Self::Data) -> Option<morphorm::Units> {
+        if let Some(node) = store.get(*self) {
+            if let Some(node) = node {
+                return match node.styles.min_width {
+                    StyleProp::Default => Some(morphorm::Units::Stretch(1.0)),
+                    StyleProp::Value(prop) => Some(prop),
+                    _ => Some(morphorm::Units::Auto),
+                };
+            }
+        }
         Some(morphorm::Units::Auto)
     }
 
-    fn min_height(&self, _store: &'_ Self::Data) -> Option<morphorm::Units> {
+    fn min_height(&self, store: &'_ Self::Data) -> Option<morphorm::Units> {
+        if let Some(node) = store.get(*self) {
+            if let Some(node) = node {
+                return match node.styles.min_height {
+                    StyleProp::Default => Some(morphorm::Units::Stretch(1.0)),
+                    StyleProp::Value(prop) => Some(prop),
+                    _ => Some(morphorm::Units::Auto),
+                };
+            }
+        }
         Some(morphorm::Units::Auto)
     }
 

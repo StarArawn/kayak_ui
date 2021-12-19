@@ -27,3 +27,7 @@ kayak_render_macros = { path = "kayak_render_macros" }
 [dev-dependencies]
 bevy = { git = "https://github.com/bevyengine/bevy", rev = "9a16a4d01830297987db40b45f03382ed3acad62" }
 kayak_widgets = { path = "kayak_widgets", features = ["bevy_renderer"] }
+
+[[example]]
+name = "todo"
+path = "examples/todo/todo.rs"

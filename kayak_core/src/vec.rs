@@ -3,7 +3,7 @@ use derivative::*;
 use crate::{context::KayakContext, styles::Style, Index, Widget};
 
 #[derive(Derivative)]
-#[derivative(Debug, PartialEq)]
+#[derivative(Debug, PartialEq, Clone)]
 pub struct VecTracker<T> {
     pub id: Index,
     pub styles: Option<Style>,

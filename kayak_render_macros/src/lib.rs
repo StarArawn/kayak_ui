@@ -104,7 +104,6 @@ pub fn dyn_partial_eq(_: TokenStream, input: TokenStream) -> TokenStream {
     .into()
 }
 
-
 /// Create a state and its setter
 ///
 /// # Arguments

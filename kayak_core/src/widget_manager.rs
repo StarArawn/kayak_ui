@@ -256,6 +256,7 @@ impl WidgetManager {
         nodes: &Arena<Option<Node>>,
         current_node: Index,
         mut main_z_index: f32,
+        mut prev_clip: RenderPrimitive,
     ) -> Vec<RenderPrimitive> {
         let mut render_primitives = Vec::new();
 
@@ -272,6 +273,14 @@ impl WidgetManager {
                 render_primitive.set_layout(layout);
                 render_primitives.push(render_primitive.clone());
 
+                let new_prev_clip = if matches!(render_primitive, RenderPrimitive::Clip { .. }) {
+                    render_primitive.clone()
+                } else {
+                    prev_clip
+                };
+
+                prev_clip = new_prev_clip.clone();
+
                 if node_tree.children.contains_key(&current_node) {
                     for child in node_tree.children.get(&current_node).unwrap() {
                         main_z_index += 1.0;
@@ -281,22 +290,36 @@ impl WidgetManager {
                             nodes,
                             *child,
                             main_z_index,
+                            new_prev_clip.clone(),
                         ));
 
                         main_z_index = layout.z_index;
                         // Between each child node we need to reset the clip.
-                        if matches!(render_primitive, RenderPrimitive::Clip { .. }) {
-                            main_z_index = new_z_index;
-                            match &mut render_primitive {
+                        if matches!(prev_clip, RenderPrimitive::Clip { .. }) {
+                            // main_z_index = new_z_index;
+                            match &mut prev_clip {
                                 RenderPrimitive::Clip { layout } => {
                                     layout.z_index = main_z_index + 0.1;
                                 }
                                 _ => {}
                             };
-                            render_primitives.push(render_primitive.clone());
+                            render_primitives.push(prev_clip.clone());
                         }
                     }
                 }
+
+                // if matches!(render_primitive, RenderPrimitive::Clip { .. })
+                //     && matches!(prev_clip, RenderPrimitive::Clip { .. })
+                // {
+                //     // main_z_index = new_z_index;
+                //     match &mut prev_clip {
+                //         RenderPrimitive::Clip { layout } => {
+                //             layout.z_index = main_z_index + 0.1;
+                //         }
+                //         _ => {}
+                //     };
+                //     render_primitives.push(render_primitive.clone());
+                // }
             }
         }
 
@@ -310,6 +333,7 @@ impl WidgetManager {
             &self.nodes,
             self.node_tree.root_node.unwrap(),
             0.0,
+            RenderPrimitive::Empty,
         )
     }
 

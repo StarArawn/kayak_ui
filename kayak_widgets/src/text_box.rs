@@ -63,7 +63,7 @@ pub fn TextBox(value: String, on_change: Option<OnChange>) {
             if !cloned_has_focus.get().0 {
                 return;
             }
-            if c == '\u{8}' {
+            if is_backspace(c) {
                 if current_value.len() > 0 {
                     current_value.truncate(current_value.len() - 1);
                 }
@@ -91,4 +91,11 @@ pub fn TextBox(value: String, on_change: Option<OnChange>) {
             </Clip>
         </Background>
     }
+}
+
+/// Checks if the given character contains the "Backspace" sequence
+///
+/// Context: [Wikipedia](https://en.wikipedia.org/wiki/Backspace#Common_use)
+fn is_backspace(c: char) -> bool {
+    c == '\u{8}' || c == '\u{7f}'
 }

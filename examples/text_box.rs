@@ -3,13 +3,14 @@ use bevy::{
     window::WindowDescriptor,
     DefaultPlugins,
 };
+use kayak_core::OnChange;
 use kayak_ui::bevy::{BevyContext, BevyKayakUIPlugin, FontMapping, UICameraBundle};
 use kayak_ui::core::{
     render, rsx,
     styles::{Style, StyleProp, Units},
     widget, Bound, Index, MutableBound,
 };
-use kayak_widgets::{App, OnChange, TextBox, Window};
+use kayak_widgets::{App, TextBox, Window};
 
 #[widget]
 fn TextBoxExample(context: &mut KayakContext) {

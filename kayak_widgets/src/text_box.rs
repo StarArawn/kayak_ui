@@ -1,44 +1,20 @@
+use std::sync::{Arc, RwLock};
+
 use kayak_ui::core::{
+    Bound, ChangeEvent, Color, EventType, MutableBound, OnChange, OnEvent,
     render_command::RenderCommand,
     rsx,
     styles::{Style, StyleProp, Units},
-    widget, Bound, Color, EventType, MutableBound, OnEvent,
+    widget
 };
-use std::sync::{Arc, RwLock};
 
 use crate::{Background, Clip, Text};
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct ChangeEvent {
-    pub value: String,
-}
-
-#[derive(Clone)]
-pub struct OnChange(pub Arc<RwLock<dyn FnMut(ChangeEvent) + Send + Sync + 'static>>);
-
-impl OnChange {
-    pub fn new<F: FnMut(ChangeEvent) + Send + Sync + 'static>(f: F) -> OnChange {
-        OnChange(Arc::new(RwLock::new(f)))
-    }
-}
-
-impl PartialEq for OnChange {
-    fn eq(&self, _other: &Self) -> bool {
-        true
-    }
-}
-
-impl std::fmt::Debug for OnChange {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_tuple("OnChange").finish()
-    }
-}
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Focus(pub bool);
 
 #[widget(focusable)]
-pub fn TextBox(value: String, on_change: Option<OnChange>) {
+pub fn TextBox(value: String, on_change: Option<OnChange<String>>) {
     *styles = Some(Style {
         render_command: StyleProp::Value(RenderCommand::Layout),
         ..styles.clone().unwrap_or_default()

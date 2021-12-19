@@ -307,19 +307,6 @@ impl WidgetManager {
                         }
                     }
                 }
-
-                // if matches!(render_primitive, RenderPrimitive::Clip { .. })
-                //     && matches!(prev_clip, RenderPrimitive::Clip { .. })
-                // {
-                //     // main_z_index = new_z_index;
-                //     match &mut prev_clip {
-                //         RenderPrimitive::Clip { layout } => {
-                //             layout.z_index = main_z_index + 0.1;
-                //         }
-                //         _ => {}
-                //     };
-                //     render_primitives.push(render_primitive.clone());
-                // }
             }
         }
 

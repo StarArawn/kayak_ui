@@ -25,12 +25,12 @@ fn TextBoxExample(context: &mut KayakContext) {
     };
 
     let cloned_value = value.clone();
-    let on_change = OnChange::new(move |event| {
+    let on_change = OnChange::new_handler(move |event| {
         cloned_value.set(event.value);
     });
 
     let cloned_value2 = value2.clone();
-    let on_change2 = OnChange::new(move |event| {
+    let on_change2 = OnChange::new_handler(move |event| {
         cloned_value2.set(event.value);
     });
 

@@ -47,11 +47,9 @@ pub fn TextBox(value: String, on_change: Option<OnChange<String>>) {
                 current_value.push(c);
             }
             if let Some(on_change) = cloned_on_change.as_ref() {
-                if let Ok(mut on_change) = on_change.0.write() {
-                    on_change(ChangeEvent {
-                        value: current_value.clone(),
-                    });
-                }
+                on_change.send(ChangeEvent {
+                    value: current_value.clone(),
+                });
             }
         }
         EventType::Focus => cloned_has_focus.set(Focus(true)),

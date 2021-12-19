@@ -49,8 +49,16 @@ pub struct ChangeEvent<T> {
 pub struct OnChange<T>(pub Arc<RwLock<dyn FnMut(ChangeEvent<T>) + Send + Sync + 'static>>);
 
 impl<T> OnChange<T> {
+    /// Create a new handler for a [ChangeEvent]
     pub fn new<F: FnMut(ChangeEvent<T>) + Send + Sync + 'static>(f: F) -> Self {
         Self(Arc::new(RwLock::new(f)))
+    }
+
+    /// Send the given event to be handled by the current handler
+    pub fn send(&self, event: ChangeEvent<T>) {
+        if let Ok(mut on_change) = self.0.write() {
+            on_change(event);
+        }
     }
 }
 

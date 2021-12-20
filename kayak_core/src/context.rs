@@ -10,7 +10,7 @@ pub struct KayakContext {
     widget_states: HashMap<crate::Index, resources::Resources>,
     global_bindings: HashMap<crate::Index, Vec<flo_binding::Uuid>>,
     widget_state_lifetimes:
-    HashMap<crate::Index, HashMap<flo_binding::Uuid, Box<dyn crate::Releasable>>>,
+        HashMap<crate::Index, HashMap<flo_binding::Uuid, Box<dyn crate::Releasable>>>,
     current_id: Index,
     // TODO: Make widget_manager private.
     pub widget_manager: WidgetManager,
@@ -281,7 +281,11 @@ impl KayakContext {
                         InputEvent::MouseMoved(point) => {
                             // Hover event.
                             if layout.contains(point) {
-                                if !Self::contains_event(&self.previous_events, &index, &EventType::MouseIn) {
+                                if !Self::contains_event(
+                                    &self.previous_events,
+                                    &index,
+                                    &EventType::MouseIn,
+                                ) {
                                     let mouse_in_event = Event {
                                         target: index,
                                         event_type: EventType::MouseIn,
@@ -301,15 +305,17 @@ impl KayakContext {
                                     ..Event::default()
                                 };
                                 events_stream.push(hover_event);
-                                Self::insert_event(
-                                    &mut next_events,
-                                    &index,
-                                    EventType::Hover,
-                                );
+                                Self::insert_event(&mut next_events, &index, EventType::Hover);
                             } else {
-                                if Self::contains_event(&self.previous_events, &index, &EventType::Hover) ||
-                                    Self::contains_event(&self.previous_events, &index, &EventType::MouseIn)
-                                {
+                                if Self::contains_event(
+                                    &self.previous_events,
+                                    &index,
+                                    &EventType::Hover,
+                                ) || Self::contains_event(
+                                    &self.previous_events,
+                                    &index,
+                                    &EventType::MouseIn,
+                                ) {
                                     let mouse_out_event = Event {
                                         target: index,
                                         event_type: EventType::MouseOut,
@@ -337,11 +343,7 @@ impl KayakContext {
                                     ..Event::default()
                                 };
                                 events_stream.push(mouse_down_event);
-                                Self::insert_event(
-                                    &mut next_events,
-                                    &index,
-                                    EventType::MouseDown,
-                                );
+                                Self::insert_event(&mut next_events, &index, EventType::MouseDown);
 
                                 // Start mouse pressed event as well
                                 Self::insert_event(
@@ -351,7 +353,7 @@ impl KayakContext {
                                 );
 
                                 if let Some(widget) =
-                                self.widget_manager.current_widgets.get(index).unwrap()
+                                    self.widget_manager.current_widgets.get(index).unwrap()
                                 {
                                     if widget.focusable() {
                                         was_focus_event = true;
@@ -378,24 +380,20 @@ impl KayakContext {
                                     ..Event::default()
                                 };
                                 events_stream.push(mouse_up_event);
-                                Self::insert_event(
-                                    &mut next_events,
-                                    &index,
-                                    EventType::MouseUp,
-                                );
+                                Self::insert_event(&mut next_events, &index, EventType::MouseUp);
 
-                                if Self::contains_event(&self.previous_events, &index, &EventType::MousePressed) {
+                                if Self::contains_event(
+                                    &self.previous_events,
+                                    &index,
+                                    &EventType::MousePressed,
+                                ) {
                                     let click_event = Event {
                                         target: index,
                                         event_type: EventType::Click,
                                         ..Event::default()
                                     };
                                     events_stream.push(click_event);
-                                    Self::insert_event(
-                                        &mut next_events,
-                                        &index,
-                                        EventType::Click,
-                                    );
+                                    Self::insert_event(&mut next_events, &index, EventType::Click);
                                 }
                             }
                         }
@@ -413,7 +411,9 @@ impl KayakContext {
                 }
 
                 // Mouse is currently pressed for this node
-                if self.is_mouse_pressed && Self::contains_event(&self.previous_events, &index, &EventType::MousePressed) {
+                if self.is_mouse_pressed
+                    && Self::contains_event(&self.previous_events, &index, &EventType::MousePressed)
+                {
                     let mouse_pressed_event = Event {
                         target: index,
                         event_type: EventType::MousePressed,
@@ -422,11 +422,7 @@ impl KayakContext {
                     events_stream.push(mouse_pressed_event);
 
                     // Make sure this event isn't removed while mouse is still held down
-                    Self::insert_event(
-                        &mut next_events,
-                        &index,
-                        EventType::MousePressed,
-                    );
+                    Self::insert_event(&mut next_events, &index, EventType::MousePressed);
                 }
             }
         }
@@ -488,17 +484,18 @@ impl KayakContext {
         widget_id: &Index,
         event_type: EventType,
     ) -> bool {
-        let mut entry = events.entry(*widget_id).or_insert(HashSet::default());
+        let entry = events.entry(*widget_id).or_insert(HashSet::default());
         entry.insert(event_type)
     }
 
     /// Remove an event from a widget in the given event map
+    #[allow(dead_code)]
     fn remove_event(
         events: &mut HashMap<Index, HashSet<EventType>>,
         widget_id: &Index,
         event_type: &EventType,
     ) -> bool {
-        let mut entry = events.entry(*widget_id).or_insert(HashSet::default());
+        let entry = events.entry(*widget_id).or_insert(HashSet::default());
         entry.remove(event_type)
     }
 
@@ -516,17 +513,14 @@ impl KayakContext {
     }
 
     /// Checks if the given event map contains any events for the given widget
-    fn has_any_event(
-        events: &HashMap<Index, HashSet<EventType>>,
-        widget_id: &Index,
-    ) -> bool {
+    #[allow(dead_code)]
+    fn has_any_event(events: &HashMap<Index, HashSet<EventType>>, widget_id: &Index) -> bool {
         if let Some(entry) = events.get(widget_id) {
             entry.len() > 0
         } else {
             false
         }
     }
-
 
     fn get_all_parents(&self, current: Index, parents: &mut Vec<Index>) {
         if let Some(parent) = self.widget_manager.tree.parents.get(&current) {

@@ -5,9 +5,6 @@ use super::{card::Card, Todo};
 
 #[widget]
 pub fn Cards(cards: Vec<Todo>, on_delete: Handler<usize>) {
-    let cards = cards.clone();
-
-    let on_delete = on_delete.clone();
     rsx! {
         <Element>
             {VecTracker::from(

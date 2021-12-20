@@ -79,11 +79,15 @@ fn TodoApp() {
         cloned_set_todos(todos_cloned.clone());
     });
 
-    let placeholder = Some("Type here to add a new todo!".to_string());
     rsx! {
         <Window position={(415.0, 50.0)} size={(450.0, 600.0)} title={"Todo!".to_string()}>
             <Element styles={Some(top_area_styles)}>
-                <TextBox styles={Some(text_box_styles)} value={new_todo_value} placeholder={placeholder} on_change={Some(on_change)} />
+                <TextBox
+                    styles={Some(text_box_styles)}
+                    value={new_todo_value}
+                    placeholder={Some("Type here to add a new todo!".to_string())}
+                    on_change={Some(on_change)}
+                />
                 <AddButton on_event={Some(add_events)} />
             </Element>
             <Cards cards={todos} on_delete={handle_delete} />

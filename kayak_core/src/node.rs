@@ -120,7 +120,7 @@ impl<'a> morphorm::Node<'a> for Index {
         if let Some(node) = store.get(*self) {
             if let Some(node) = node {
                 return match node.styles.min_width {
-                    StyleProp::Default => Some(morphorm::Units::Stretch(1.0)),
+                    StyleProp::Default => Some(morphorm::Units::Pixels(0.0)),
                     StyleProp::Value(prop) => Some(prop),
                     _ => Some(morphorm::Units::Auto),
                 };
@@ -133,7 +133,7 @@ impl<'a> morphorm::Node<'a> for Index {
         if let Some(node) = store.get(*self) {
             if let Some(node) = node {
                 return match node.styles.min_height {
-                    StyleProp::Default => Some(morphorm::Units::Stretch(1.0)),
+                    StyleProp::Default => Some(morphorm::Units::Pixels(0.0)),
                     StyleProp::Value(prop) => Some(prop),
                     _ => Some(morphorm::Units::Auto),
                 };

@@ -2147,7 +2147,7 @@ dependencies = [
 [[package]]
 name = "morphorm"
 version = "0.2.0"
-source = "git+https://github.com/geom3trik/morphorm#357bf5f0bd708bad1f4d8d4b76f02ebad9992dc3"
+source = "git+https://github.com/geom3trik/morphorm?rev=1243152d4cebea46fd3e5098df26402c73acae91#1243152d4cebea46fd3e5098df26402c73acae91"
 dependencies = [
  "bitflags",
  "smallvec",

@@ -16,5 +16,5 @@ derivative = "2.2"
 flo_binding = { git = "https://github.com/StarArawn/flo_binding.git", rev = "c78431a56df5ec082b7e1c271871e6c0ac75e81e" }
 fontdue = "0.6"
 kayak_render_macros = { path = "../kayak_render_macros" }
-morphorm = { git = "https://github.com/geom3trik/morphorm" }
+morphorm = { git = "https://github.com/geom3trik/morphorm", rev = "1243152d4cebea46fd3e5098df26402c73acae91" }
 resources = "1.1"

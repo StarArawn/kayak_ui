@@ -9,7 +9,6 @@ use super::delete_button::DeleteButton;
 
 #[widget]
 pub fn Card(card_id: usize, name: String, on_delete: Handler<usize>) {
-    let name = name.clone();
     let background_styles = Style {
         layout_type: StyleProp::Value(LayoutType::Row),
         background_color: StyleProp::Value(Color::new(0.176, 0.196, 0.215, 1.0)),
@@ -23,7 +22,6 @@ pub fn Card(card_id: usize, name: String, on_delete: Handler<usize>) {
     };
 
     let on_delete = on_delete.clone();
-    let card_id = *card_id;
     let on_event = OnEvent::new(move |_, event| match event.event_type {
         EventType::Click => {
             on_delete.call(card_id);

@@ -39,12 +39,21 @@ pub struct Focus(pub bool);
 
 #[widget(focusable)]
 pub fn TextBox(value: String, on_change: Option<OnChange>, placeholder: Option<String>) {
+    let current_styles = styles.clone().unwrap_or_default();
     *styles = Some(Style {
         render_command: StyleProp::Value(RenderCommand::Layout),
         height: StyleProp::Value(Units::Pixels(26.0)),
-        top: StyleProp::Value(Units::Pixels(0.0)),
-        bottom: StyleProp::Value(Units::Pixels(0.0)),
-        ..styles.clone().unwrap_or_default()
+        top: if matches!(current_styles.top, StyleProp::Value { .. }) {
+            current_styles.top.clone()
+        } else {
+            StyleProp::Value(Units::Pixels(0.0))
+        },
+        bottom: if matches!(current_styles.bottom, StyleProp::Value { .. }) {
+            current_styles.top.clone()
+        } else {
+            StyleProp::Value(Units::Pixels(0.0))
+        },
+        ..current_styles
     });
 
     let background_styles = Style {

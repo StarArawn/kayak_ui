@@ -594,6 +594,12 @@ impl Draw<TransparentUI> for DrawUI {
             if width == 0 || height == 0 {
                 return;
             }
+            if x + width > window_size.0 as u32 {
+                width = window_size.0 as u32 - x;
+            }
+            if y + height > window_size.1 as u32 {
+                height = window_size.1 as u32 - y;
+            }
             pass.set_scissor_rect(x, y, width, height);
             return;
         }

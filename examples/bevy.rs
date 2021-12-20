@@ -9,7 +9,7 @@ use kayak_ui::core::{render, rsx, widget};
 use kayak_widgets::{App, Window};
 
 #[widget]
-fn CustomWidget(some_number: Option<i32>) {
+fn CustomWidget() {
     rsx! {
         <>
             <Window position={(50.0, 50.0)} size={(300.0, 300.0)} title={"Window 1".to_string()}>
@@ -34,7 +34,7 @@ fn startup(
     let context = BevyContext::new(|context| {
         render! {
             <App>
-                <CustomWidget some_number={Some(0)} />
+                <CustomWidget />
             </App>
         }
     });

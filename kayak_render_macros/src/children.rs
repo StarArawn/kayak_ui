@@ -6,10 +6,7 @@ use crate::{
     child::{walk_block_to_variable, Child},
 };
 use quote::{quote, ToTokens};
-use syn::{
-    parse::{Parse, ParseStream, Result},
-    parse_macro_input,
-};
+use syn::parse::{Parse, ParseStream, Result};
 
 #[derive(Debug, Clone)]
 pub struct Children {

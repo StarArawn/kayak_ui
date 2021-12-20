@@ -56,10 +56,10 @@ pub fn Window(
     };
 
     let content_styles = Style {
-        padding_left: StyleProp::Value(Units::Stretch(1.0)),
-        padding_right: StyleProp::Value(Units::Stretch(1.0)),
-        padding_top: StyleProp::Value(Units::Stretch(1.0)),
-        padding_bottom: StyleProp::Value(Units::Stretch(1.0)),
+        padding_left: StyleProp::Value(Units::Pixels(10.0)),
+        padding_right: StyleProp::Value(Units::Pixels(10.0)),
+        padding_top: StyleProp::Value(Units::Pixels(10.0)),
+        padding_bottom: StyleProp::Value(Units::Pixels(10.0)),
         ..Style::default()
     };
 

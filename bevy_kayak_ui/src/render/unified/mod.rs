@@ -78,6 +78,8 @@ pub fn extract(
         vec![]
     };
 
+    // dbg!(&render_primitives);
+
     let dpi = if let Some(window) = windows.get_primary() {
         window.scale_factor() as f32
     } else {

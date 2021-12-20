@@ -38,9 +38,12 @@ impl std::fmt::Debug for OnChange {
 pub struct Focus(pub bool);
 
 #[widget(focusable)]
-pub fn TextBox(value: String, on_change: Option<OnChange>) {
+pub fn TextBox(value: String, on_change: Option<OnChange>, placeholder: Option<String>) {
     *styles = Some(Style {
         render_command: StyleProp::Value(RenderCommand::Layout),
+        height: StyleProp::Value(Units::Pixels(26.0)),
+        top: StyleProp::Value(Units::Pixels(0.0)),
+        bottom: StyleProp::Value(Units::Pixels(0.0)),
         ..styles.clone().unwrap_or_default()
     });
 
@@ -83,7 +86,11 @@ pub fn TextBox(value: String, on_change: Option<OnChange>) {
         _ => {}
     }));
 
-    let value = value.clone();
+    let value = if value.is_empty() {
+        placeholder.clone().unwrap_or(value.clone())
+    } else {
+        value.clone()
+    };
     rsx! {
         <Background styles={Some(background_styles)}>
             <Clip>

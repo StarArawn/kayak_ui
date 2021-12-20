@@ -25,6 +25,8 @@ pub fn Window(
         top: StyleProp::Value(Units::Pixels(position.1)),
         width: StyleProp::Value(Units::Pixels(size.0)),
         height: StyleProp::Value(Units::Pixels(size.1)),
+        max_width: StyleProp::Value(Units::Pixels(size.0)),
+        max_height: StyleProp::Value(Units::Pixels(size.1)),
         ..styles.clone().unwrap_or_default()
     });
 

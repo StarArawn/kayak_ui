@@ -142,11 +142,29 @@ impl<'a> morphorm::Node<'a> for Index {
         Some(morphorm::Units::Auto)
     }
 
-    fn max_width(&self, _store: &'_ Self::Data) -> Option<morphorm::Units> {
+    fn max_width(&self, store: &'_ Self::Data) -> Option<morphorm::Units> {
+        if let Some(node) = store.get(*self) {
+            if let Some(node) = node {
+                return match node.styles.max_width {
+                    StyleProp::Default => Some(morphorm::Units::Auto),
+                    StyleProp::Value(prop) => Some(prop),
+                    _ => Some(morphorm::Units::Auto),
+                };
+            }
+        }
         Some(morphorm::Units::Auto)
     }
 
-    fn max_height(&self, _store: &'_ Self::Data) -> Option<morphorm::Units> {
+    fn max_height(&self, store: &'_ Self::Data) -> Option<morphorm::Units> {
+        if let Some(node) = store.get(*self) {
+            if let Some(node) = node {
+                return match node.styles.max_height {
+                    StyleProp::Default => Some(morphorm::Units::Auto),
+                    StyleProp::Value(prop) => Some(prop),
+                    _ => Some(morphorm::Units::Auto),
+                };
+            }
+        }
         Some(morphorm::Units::Auto)
     }
 

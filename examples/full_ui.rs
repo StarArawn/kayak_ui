@@ -52,7 +52,7 @@ fn BlueButton(context: KayakContext, children: Children, styles: Option<Style>) 
     };
 
     let cloned_current_button_handle = current_button_handle.clone();
-    let on_event = OnEvent::new(move |_context, event| match event.event_type {
+    let on_event = OnEvent::new(move |_, event| match event.event_type {
         EventType::MouseIn => {
             cloned_current_button_handle.set(blue_button_hover_handle);
         }

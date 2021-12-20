@@ -141,6 +141,7 @@ pub fn create_function_widget(f: syn::ItemFn, widget_arguments: WidgetArguments)
     } else {
         quote!(
             let #struct_name { #(#input_names),*, styles, .. } = self;
+            #(let #input_names = #input_names.clone();)*
         )
     };
 

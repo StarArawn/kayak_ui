@@ -58,6 +58,12 @@ impl OnEvent {
 #[derive(Clone)]
 pub struct Handler<T>(pub Arc<RwLock<dyn FnMut(T) + Send + Sync + 'static>>);
 
+impl<T> Default for Handler<T> {
+    fn default() -> Self {
+        Self(Arc::new(RwLock::new(|_| {})))
+    }
+}
+
 impl<T> Handler<T> {
     pub fn new<F: FnMut(T) + Send + Sync + 'static>(f: F) -> Handler<T> {
         Handler(Arc::new(RwLock::new(f)))

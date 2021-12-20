@@ -87,13 +87,14 @@ pub fn create_function_widget(f: syn::ItemFn, widget_arguments: WidgetArguments)
                 "styles : Option< kayak_ui :: core :: styles :: Style >",
             ],
             quote! {
+                #[derivative(Default(value="None"))]
                 pub styles: Option<#kayak_core::styles::Style>
             },
         ),
         (
             vec!["children : Children"],
             quote! {
-                #[derivative(Debug = "ignore", PartialEq = "ignore")]
+                #[derivative(Default(value="None"), Debug = "ignore", PartialEq = "ignore")]
                 pub children: #kayak_core::Children
             },
         ),
@@ -104,7 +105,7 @@ pub fn create_function_widget(f: syn::ItemFn, widget_arguments: WidgetArguments)
                 "on_event : Option <\nkayak_ui :: core :: OnEvent >",
             ],
             quote! {
-                #[derivative(Debug = "ignore", PartialEq = "ignore")]
+                #[derivative(Default(value="None"), Debug = "ignore", PartialEq = "ignore")]
                 pub on_event: Option<#kayak_core::OnEvent>
             },
         ),
@@ -149,7 +150,7 @@ pub fn create_function_widget(f: syn::ItemFn, widget_arguments: WidgetArguments)
         use #kayak_core::derivative::*;
 
         #[derive(Derivative)]
-        #[derivative(Debug, PartialEq, Clone)]
+        #[derivative(Default, Debug, PartialEq, Clone)]
         #vis struct #struct_name #impl_generics {
             pub id: #kayak_core::Index,
             #inputs_block

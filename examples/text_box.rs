@@ -38,8 +38,8 @@ fn TextBoxExample(context: &mut KayakContext) {
     rsx! {
         <>
             <Window position={(50.0, 50.0)} size={(300.0, 300.0)} title={"TextBox Example".to_string()}>
-                <TextBox styles={Some(input_styles)} value={current_value} on_change={Some(on_change)} placeholder={None as Option<String>} />
-                <TextBox styles={Some(input_styles)} value={current_value2} on_change={Some(on_change2)} placeholder={None as Option<String>} />
+                <TextBox styles={Some(input_styles)} value={current_value} on_change={Some(on_change)} />
+                <TextBox styles={Some(input_styles)} value={current_value2} on_change={Some(on_change2)} />
             </Window>
         </>
     }

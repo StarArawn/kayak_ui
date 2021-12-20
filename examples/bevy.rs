@@ -34,7 +34,7 @@ fn startup(
     let context = BevyContext::new(|context| {
         render! {
             <App>
-                <CustomWidget/>
+                <CustomWidget />
             </App>
         }
     });

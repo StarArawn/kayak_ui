@@ -73,8 +73,14 @@ impl Children {
                 } else {
                     let children_attributes: Vec<_> = self.get_clonable_attributes(0);
 
+                    // I think this is correct.. It needs more testing though..
+                    let clonable_children = children_attributes
+                        .iter()
+                        .filter(|ts| syn::parse_str::<syn::Path>(&ts.to_string()).is_ok())
+                        .collect::<Vec<_>>();
+
                     let cloned_attrs = quote! {
-                        #(let #children_attributes = #children_attributes.clone();)*;
+                        #(let #clonable_children = #clonable_children.clone();)*;
                     };
                     if children_quotes[0].to_string() == "children" {
                         quote! {
@@ -105,7 +111,15 @@ impl Children {
                 // First get shared and non-shared attributes..
                 let mut child_attributes_list = Vec::new();
                 for i in 0..children_quotes.len() {
-                    child_attributes_list.push(self.get_clonable_attributes(i));
+                    let ts_vec = self.get_clonable_attributes(i);
+
+                    // I think this is correct.. It needs more testing though..
+                    let clonable_children = ts_vec
+                        .into_iter()
+                        .filter(|ts| syn::parse_str::<syn::Path>(&ts.to_string()).is_ok())
+                        .collect::<Vec<_>>();
+
+                    child_attributes_list.push(clonable_children);
                 }
 
                 let mut all_attributes = HashSet::new();

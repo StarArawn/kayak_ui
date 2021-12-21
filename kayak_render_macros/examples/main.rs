@@ -1,8 +1,5 @@
 use kayak_core::{context::KayakContext, styles::Style, Children, Index};
-use kayak_core::{
-    derivative::{self, *},
-    Fragment, Widget,
-};
+use kayak_core::{derivative::*, Fragment, Widget};
 use kayak_render_macros::rsx;
 
 #[derive(Derivative)]

@@ -1,5 +1,5 @@
 use bevy::{
-    prelude::{App as BevyApp, AssetServer, Commands, Res, ResMut, World},
+    prelude::{App as BevyApp, AssetServer, Commands, Res, ResMut},
     window::WindowDescriptor,
     DefaultPlugins,
 };

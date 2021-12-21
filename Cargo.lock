@@ -1841,6 +1841,7 @@ name = "kayak_core"
 version = "0.1.0"
 dependencies = [
  "as-any",
+ "bevy",
  "derivative",
  "flo_binding",
  "kayak_render_macros",

@@ -528,4 +528,20 @@ impl KayakContext {
             self.get_all_parents(*parent, parents);
         }
     }
+
+    #[cfg(feature = "bevy_renderer")]
+    pub fn query_world<T: bevy::ecs::system::SystemParam, F, R>(&mut self, mut f: F) -> R
+    where
+        F: FnMut(<T::Fetch as bevy::ecs::system::SystemParamFetch<'_, '_>>::Item) -> R,
+    {
+        let mut world = self.get_global_state::<bevy::prelude::World>().unwrap();
+        let mut system_state = bevy::ecs::system::SystemState::<T>::new(&mut world);
+        let r = {
+            let test = system_state.get_mut(&mut world);
+            f(test)
+        };
+        system_state.apply(&mut world);
+
+        r
+    }
 }

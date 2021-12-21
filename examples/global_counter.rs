@@ -12,17 +12,8 @@ struct GlobalCount(pub u32);
 
 #[widget]
 fn Counter(context: &mut KayakContext) {
-    let global_count = {
-        if let Ok(world) = context.get_global_state::<World>() {
-            if let Some(global_count) = world.get_resource::<Binding<GlobalCount>>() {
-                global_count.clone()
-            } else {
-                return;
-            }
-        } else {
-            return;
-        }
-    };
+    let global_count = context
+        .query_world::<Res<Binding<GlobalCount>>, _, _>(move |global_count| global_count.clone());
 
     context.bind(&global_count);
 

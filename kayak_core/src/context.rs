@@ -424,6 +424,13 @@ impl KayakContext {
                     // Make sure this event isn't removed while mouse is still held down
                     Self::insert_event(&mut next_events, &index, EventType::MousePressed);
                 }
+
+                // Mouse is currently hovering this node
+                if Self::contains_event(&self.previous_events, &index, &EventType::Hover)
+                    && !Self::contains_event(&next_events, &index, &EventType::MouseOut) {
+                    // Make sure this event isn't removed while mouse is still over node
+                    Self::insert_event(&mut next_events, &index, EventType::Hover);
+                }
             }
         }
 

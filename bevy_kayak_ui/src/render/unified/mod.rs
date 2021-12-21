@@ -86,8 +86,6 @@ pub fn extract(
         1.0
     };
 
-    // dbg!(&render_primitives);
-
     let mut extracted_quads = Vec::new();
     for render_primitive in render_primitives {
         match render_primitive {

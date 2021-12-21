@@ -26,7 +26,6 @@ pub use event::*;
 pub use fragment::Fragment;
 pub use generational_arena::{Arena, Index};
 pub use input_event::*;
-pub use kayak_render_macros::{constructor, render, rsx, use_state, widget};
 pub use keys::KeyCode;
 pub use resources::Resources;
 pub use tree::{Tree, WidgetTree};

@@ -1,4 +1,4 @@
-use kayak_ui::core::{
+use crate::core::{
     color::Color,
     render_command::RenderCommand,
     rsx,
@@ -6,7 +6,7 @@ use kayak_ui::core::{
     widget, Children,
 };
 
-use crate::{Background, Clip, Element, Text};
+use crate::widgets::{Background, Clip, Element, Text};
 
 #[widget]
 pub fn Window(

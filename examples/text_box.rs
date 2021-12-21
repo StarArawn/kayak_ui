@@ -9,7 +9,7 @@ use kayak_ui::core::{
     styles::{Style, StyleProp, Units},
     widget, Bound, Index, MutableBound,
 };
-use kayak_widgets::{App, OnChange, TextBox, Window};
+use kayak_ui::widgets::{App, OnChange, TextBox, Window};
 
 #[widget]
 fn TextBoxExample(context: &mut KayakContext) {

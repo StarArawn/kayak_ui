@@ -6,7 +6,7 @@ use kayak_ui::core::{
     use_state, widget, Bound, Children, EventType, MutableBound, OnEvent,
 };
 
-use kayak_widgets::{Background, Text};
+use kayak_ui::widgets::{Background, Text};
 
 #[widget]
 pub fn DeleteButton(children: Children, styles: Option<Style>) {

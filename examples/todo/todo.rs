@@ -9,7 +9,7 @@ use kayak_ui::core::{
     styles::{LayoutType, Style, StyleProp, Units},
     use_state, widget, Bound, EventType, Handler, Index, MutableBound, OnEvent,
 };
-use kayak_widgets::{App, Element, OnChange, TextBox, Window};
+use kayak_ui::widgets::{App, Element, OnChange, TextBox, Window};
 
 mod add_button;
 mod card;

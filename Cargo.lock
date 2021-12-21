@@ -1253,27 +1253,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "diff-struct"
-version = "0.3.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f30a0f0aafc8da0d598388b1897310646f45f47f17e31d581b4390f9dd88e826"
-dependencies = [
- "diff_derive",
- "serde",
-]
-
-[[package]]
-name = "diff_derive"
-version = "0.1.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "56f9c37d395456d9c1785499421c6288931b6e3dbc2500acb95b8adaa0e69db3"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn",
-]
-
-[[package]]
 name = "difference"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1380,16 +1359,6 @@ name = "fnv"
 version = "1.0.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3f9eec918d3f24069decb9af1554cad7c880e2da24a9afd88aca000531ab82c1"
-
-[[package]]
-name = "fontdue"
-version = "0.6.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8669141fd879e023ac6fcfe1d90dfe3f83ca7e322781ddf3f5be59147e4b8113"
-dependencies = [
- "hashbrown",
- "ttf-parser 0.12.3",
-]
 
 [[package]]
 name = "foreign-types"
@@ -1873,9 +1842,7 @@ version = "0.1.0"
 dependencies = [
  "as-any",
  "derivative",
- "diff-struct",
  "flo_binding",
- "fontdue",
  "kayak_render_macros",
  "morphorm",
  "resources",
@@ -1900,6 +1867,7 @@ version = "0.1.0"
 dependencies = [
  "kayak_core",
  "pretty_assertions",
+ "proc-macro-crate 1.1.0",
  "proc-macro-error",
  "proc-macro2",
  "quote",
@@ -1915,15 +1883,6 @@ dependencies = [
  "kayak_core",
  "kayak_font",
  "kayak_render_macros",
- "kayak_widgets",
-]
-
-[[package]]
-name = "kayak_widgets"
-version = "0.1.0"
-dependencies = [
- "bevy",
- "kayak_ui",
 ]
 
 [[package]]
@@ -2473,7 +2432,7 @@ version = "0.13.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "65ee3f72636e6f164cc41c9f9057f4e58c4e13507699ea7f5e5242b64b8198ee"
 dependencies = [
- "ttf-parser 0.13.4",
+ "ttf-parser",
 ]
 
 [[package]]
@@ -3184,12 +3143,6 @@ dependencies = [
  "tracing-subscriber",
  "wasm-bindgen",
 ]
-
-[[package]]
-name = "ttf-parser"
-version = "0.12.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7ae2f58a822f08abdaf668897e96a5656fe72f5a9ce66422423e8849384872e6"
 
 [[package]]
 name = "ttf-parser"

@@ -1,9 +1,9 @@
-use kayak_core::{
+use kayak_ui::core::{
     rsx,
     styles::{LayoutType, Style, StyleProp, Units},
     widget, Color, EventType, Handler, OnEvent,
 };
-use kayak_widgets::{Background, Text};
+use kayak_ui::widgets::{Background, Text};
 
 use super::delete_button::DeleteButton;
 

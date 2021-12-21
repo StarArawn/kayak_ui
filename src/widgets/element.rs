@@ -1,5 +1,4 @@
-use kayak_ui::core::{
-    layout_cache::Space,
+use crate::core::{
     render_command::RenderCommand,
     rsx,
     styles::{Style, StyleProp},
@@ -7,9 +6,9 @@ use kayak_ui::core::{
 };
 
 #[widget]
-pub fn NinePatch(handle: u16, border: Space, children: Children) {
+pub fn Element(children: Children) {
     *styles = Some(Style {
-        render_command: StyleProp::Value(RenderCommand::NinePatch { handle, border }),
+        render_command: StyleProp::Value(RenderCommand::Layout),
         ..styles.clone().unwrap_or_default()
     });
 

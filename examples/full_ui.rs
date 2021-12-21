@@ -10,7 +10,7 @@ use kayak_ui::core::{
     styles::{LayoutType, Style, StyleProp, Units},
     widget, Bound, Children, EventType, Index, MutableBound, OnEvent,
 };
-use kayak_widgets::{App, NinePatch, Text};
+use kayak_ui::widgets::{App, NinePatch, Text};
 
 #[widget]
 fn BlueButton(context: KayakContext, children: Children, styles: Option<Style>) {

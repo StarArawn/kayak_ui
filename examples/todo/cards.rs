@@ -1,5 +1,5 @@
-use kayak_core::{constructor, rsx, widget, Handler, VecTracker};
-use kayak_widgets::Element;
+use kayak_ui::core::{constructor, rsx, widget, Handler, VecTracker};
+use kayak_ui::widgets::Element;
 
 use super::{card::Card, Todo};
 

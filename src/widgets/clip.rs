@@ -1,4 +1,4 @@
-use kayak_ui::core::{
+use crate::core::{
     render_command::RenderCommand,
     rsx,
     styles::{Style, StyleProp, Units},

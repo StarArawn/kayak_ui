@@ -1,12 +1,12 @@
-use kayak_ui::core::derivative::*;
-use kayak_ui::core::{
+use crate::core::derivative::*;
+use crate::core::{
     render_command::RenderCommand,
     rsx,
     styles::{Style, StyleProp},
     widget, Children,
 };
 
-use crate::Clip;
+use crate::widgets::Clip;
 
 #[widget]
 pub fn App(children: Children) {
@@ -17,9 +17,9 @@ pub fn App(children: Children) {
 
     #[cfg(feature = "bevy_renderer")]
     {
-        use kayak_ui::bevy::WindowSize;
-        use kayak_ui::core::styles::Units;
-        use kayak_ui::core::{Binding, Bound};
+        use crate::bevy::WindowSize;
+        use crate::core::styles::Units;
+        use crate::core::{Binding, Bound};
         let window_size = if let Ok(world) = context.get_global_state::<bevy::prelude::World>() {
             if let Some(window_size) = world.get_resource::<Binding<WindowSize>>() {
                 window_size.clone()

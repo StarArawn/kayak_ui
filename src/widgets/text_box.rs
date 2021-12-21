@@ -1,4 +1,4 @@
-use kayak_ui::core::{
+use crate::core::{
     render_command::RenderCommand,
     rsx,
     styles::{Style, StyleProp, Units},
@@ -6,7 +6,7 @@ use kayak_ui::core::{
 };
 use std::sync::{Arc, RwLock};
 
-use crate::{Background, Clip, Text};
+use crate::widgets::{Background, Clip, Text};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct ChangeEvent {

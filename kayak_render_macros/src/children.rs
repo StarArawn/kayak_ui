@@ -52,10 +52,14 @@ impl Children {
     }
 
     pub fn as_option_of_tuples_tokens(&self) -> proc_macro2::TokenStream {
-        #[cfg(feature = "internal")]
-        let kayak_core = quote! { kayak_core };
-        #[cfg(not(feature = "internal"))]
-        let kayak_core = quote! { kayak_ui::core };
+        let found_crate = proc_macro_crate::crate_name("kayak_core").unwrap();
+        let kayak_core = match found_crate {
+            proc_macro_crate::FoundCrate::Itself => quote! { crate },
+            proc_macro_crate::FoundCrate::Name(name) => {
+                let ident = syn::Ident::new(&name, proc_macro2::Span::call_site());
+                quote!(#ident)
+            }
+        };
 
         let children_quotes: Vec<_> = self
             .nodes

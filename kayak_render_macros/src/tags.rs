@@ -12,10 +12,14 @@ pub struct OpenTag {
 }
 
 fn name_or_fragment(maybe_name: Result<syn::Path>) -> syn::Path {
-    #[cfg(feature = "internal")]
-    let kayak_core = "kayak_core";
-    #[cfg(not(feature = "internal"))]
-    let kayak_core = "kayak_ui::core";
+    let found_crate = proc_macro_crate::crate_name("kayak_core").unwrap();
+    let kayak_core = match found_crate {
+        proc_macro_crate::FoundCrate::Itself => quote! { crate },
+        proc_macro_crate::FoundCrate::Name(name) => {
+            let ident = syn::Ident::new(&name, proc_macro2::Span::call_site());
+            quote!(#ident)
+        }
+    };
 
     maybe_name.unwrap_or_else(|_| {
         syn::parse_str::<syn::Path>(&format!("::{}::Fragment", kayak_core)).unwrap()

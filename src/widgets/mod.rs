@@ -9,6 +9,7 @@ mod text_box;
 mod nine_patch;
 mod text;
 mod window;
+mod tooltip;
 
 pub use app::*;
 pub use background::*;
@@ -20,4 +21,5 @@ pub use image::*;
 pub use text_box::*;
 pub use nine_patch::*;
 pub use text::*;
+pub use tooltip::*;
 pub use window::*;

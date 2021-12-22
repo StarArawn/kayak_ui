@@ -1,4 +1,4 @@
-use flo_binding::{Binding, Changeable, MutableBound};
+use flo_binding::{Binding, Changeable};
 use morphorm::Hierarchy;
 use std::collections::{HashMap, HashSet};
 
@@ -333,7 +333,7 @@ impl KayakContext {
                                 if !Self::contains_event(
                                     &self.previous_events,
                                     &index,
-                                    &EventType::MouseIn,
+                                    &EventType::Hover,
                                 ) {
                                     let mouse_in_event = Event {
                                         target: index,

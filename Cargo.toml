@@ -25,6 +25,7 @@ kayak_render_macros = { path = "kayak_render_macros" }
 
 [dev-dependencies]
 bevy = { git = "https://github.com/bevyengine/bevy", rev = "9a16a4d01830297987db40b45f03382ed3acad62" }
+fastrand = "1.6"
 
 [[example]]
 name = "todo"

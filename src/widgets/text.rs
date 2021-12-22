@@ -8,6 +8,9 @@ use crate::core::{
 pub fn Text(size: f32, content: String, styles: Option<Style>, font: Option<u16>) {
     let px_size = {
         let mut px_size = (0.0, 0.0);
+        // TODO: This is super gross! I think we should pass in fonts to the context and let it keep track of fonts on its own for text measuring.
+        // That's a bit hard to do though since when we create the context we don't have the font loaded in yet.
+        // So we'll have to edit the context later to add the font when it loads. Do we prevent rendering in the case it's not loaded?
         #[cfg(feature = "bevy_renderer")]
         {
             let font = context.query_world::<(

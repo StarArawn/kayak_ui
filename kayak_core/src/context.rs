@@ -427,7 +427,8 @@ impl KayakContext {
 
                 // Mouse is currently hovering this node
                 if Self::contains_event(&self.previous_events, &index, &EventType::Hover)
-                    && !Self::contains_event(&next_events, &index, &EventType::MouseOut) {
+                    && !Self::contains_event(&next_events, &index, &EventType::MouseOut)
+                {
                     // Make sure this event isn't removed while mouse is still over node
                     Self::insert_event(&mut next_events, &index, EventType::Hover);
                 }
@@ -550,5 +551,17 @@ impl KayakContext {
         system_state.apply(&mut world);
 
         r
+    }
+
+    pub fn measure_string(
+        &self,
+        font: &kayak_font::KayakFont,
+        content: &String,
+        font_size: f32,
+    ) -> (f32, f32) {
+        let width = font.get_word_width(content, font_size);
+        let height = font_size * 1.2;
+
+        (width, height)
     }
 }

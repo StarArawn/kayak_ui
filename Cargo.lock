@@ -1844,6 +1844,7 @@ dependencies = [
  "bevy",
  "derivative",
  "flo_binding",
+ "kayak_font",
  "kayak_render_macros",
  "morphorm",
  "resources",

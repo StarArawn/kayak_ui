@@ -1,4 +1,5 @@
 use bevy::{
+    math::Vec2,
     prelude::{Assets, Commands, Handle, Query, Res},
     sprite::Rect,
 };
@@ -21,20 +22,22 @@ pub fn extract(
             let layouts = font.get_layout(
                 CoordinateSystem::PositiveYUp,
                 text.horz_alignment,
-                text.position,
-                text.size,
+                (text.position.x, text.position.y),
+                (text.size.x, text.size.y),
                 &text.content,
                 text.line_height,
                 text.font_size,
             );
 
             for layout in layouts {
+                let position = Vec2::new(layout.position.0, layout.position.1);
+                let size = Vec2::new(layout.size.0, layout.size.1);
                 extracted_texts.push(ExtractCharBundle {
                     extracted_quad: ExtractedChar {
                         font_handle: Some(font_handle.clone()),
                         rect: Rect {
-                            min: layout.position,
-                            max: layout.position + layout.size,
+                            min: position,
+                            max: position + size,
                         },
                         color: text.color,
                         vertex_index: 0,

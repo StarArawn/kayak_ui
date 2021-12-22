@@ -5,11 +5,15 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[features]
+default = ["bevy_renderer"]
+bevy_renderer = ["bevy", "crevice"]
+
 [dependencies]
 anyhow = { version = "1.0" }
-bevy = { git = "https://github.com/bevyengine/bevy", rev = "9a16a4d01830297987db40b45f03382ed3acad62" }
+bevy = { git = "https://github.com/bevyengine/bevy", rev = "9a16a4d01830297987db40b45f03382ed3acad62", optional = true }
 bytemuck = "1.7.2"
-crevice = { git = "https://github.com/bevyengine/bevy", rev = "9a16a4d01830297987db40b45f03382ed3acad62" }
+crevice = { git = "https://github.com/bevyengine/bevy", rev = "9a16a4d01830297987db40b45f03382ed3acad62", optional = true }
 serde = "1.0"
 serde_json = "1.0"
 serde_path_to_error = "0.1"

@@ -2,10 +2,14 @@ mod atlas;
 mod font;
 mod glyph;
 mod metrics;
+
+#[cfg(feature = "bevy_renderer")]
 mod renderer;
 mod sdf;
 
 pub use atlas::*;
+
+#[cfg(feature = "bevy_renderer")]
 use bevy::{
     prelude::{
         AddAsset, AssetEvent, Assets, Commands, EventReader, Handle, Local, Plugin, Res, ResMut,
@@ -17,15 +21,19 @@ use bevy::{
     },
     utils::HashSet,
 };
+
 pub use font::*;
 pub use glyph::*;
 pub use metrics::*;
 pub use sdf::*;
 
+#[cfg(feature = "bevy_renderer")]
 pub use renderer::*;
 
+#[cfg(feature = "bevy_renderer")]
 pub struct KayakFontPlugin;
 
+#[cfg(feature = "bevy_renderer")]
 impl Plugin for KayakFontPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
         app.add_asset::<KayakFont>()
@@ -41,6 +49,7 @@ impl Plugin for KayakFontPlugin {
     }
 }
 
+#[cfg(feature = "bevy_renderer")]
 pub fn init_font_texture(
     mut not_processed: Local<Vec<Handle<KayakFont>>>,
     mut font_events: EventReader<AssetEvent<KayakFont>>,
@@ -75,11 +84,13 @@ pub fn init_font_texture(
     }
 }
 
+#[cfg(feature = "bevy_renderer")]
 #[derive(Default)]
 pub struct ExtractedFonts {
     pub fonts: Vec<(Handle<KayakFont>, KayakFont)>,
 }
 
+#[cfg(feature = "bevy_renderer")]
 fn extract_fonts(
     mut not_processed: Local<Vec<Handle<KayakFont>>>,
     mut commands: Commands,
@@ -133,6 +144,7 @@ fn extract_fonts(
     commands.insert_resource(extracted_fonts);
 }
 
+#[cfg(feature = "bevy_renderer")]
 fn prepare_fonts(
     mut extracted_fonts: ResMut<ExtractedFonts>,
     mut font_texture_cache: ResMut<FontTextureCache>,

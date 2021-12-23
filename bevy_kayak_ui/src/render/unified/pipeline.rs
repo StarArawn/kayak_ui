@@ -28,7 +28,6 @@ use bevy::{
     },
     sprite::Rect,
     utils::HashMap,
-    window::Windows,
 };
 use bytemuck::{Pod, Zeroable};
 use crevice::std140::AsStd140;

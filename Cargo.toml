@@ -17,14 +17,14 @@ bevy_renderer = [
 ]
 
 [dependencies]
-bevy = { git = "https://github.com/bevyengine/bevy", rev = "9a16a4d01830297987db40b45f03382ed3acad62", optional = true }
+bevy = { git = "https://github.com/bevyengine/bevy", rev = "081350916c39fc1c7c9d659ccb6d86413832b465", optional = true }
 kayak_core = { path = "kayak_core" }
 bevy_kayak_ui = { path = "bevy_kayak_ui", optional = true }
 kayak_font = { path = "kayak_font", optional = true }
 kayak_render_macros = { path = "kayak_render_macros" }
 
 [dev-dependencies]
-bevy = { git = "https://github.com/bevyengine/bevy", rev = "9a16a4d01830297987db40b45f03382ed3acad62" }
+bevy = { git = "https://github.com/bevyengine/bevy", rev = "081350916c39fc1c7c9d659ccb6d86413832b465" }
 
 [[example]]
 name = "todo"

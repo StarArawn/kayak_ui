@@ -143,7 +143,20 @@ impl KayakContext {
             return None;
         };
 
-        let mut index = Some(self.current_id);
+        if let Some(providers) = self.widget_providers.get(&type_id) {
+            let mut index = Some(self.current_id);
+            while index.is_some() {
+                // Traverse the parents to find the one with the given state data
+                index = self.widget_manager.tree.get_parent(index.unwrap());
+    
+                let key = index.unwrap();
+                if let Some(provider) = providers.get(&key) {
+                    if let Ok(state) = provider.get::<Binding<T>>() {
+                        return Some(state.clone());
+                    }
+                }
+            }
+        }
         while index.is_some() {
             // Traverse the parents to find the one with the given state data
             index = self.widget_manager.tree.get_parent(index.unwrap());

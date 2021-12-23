@@ -10,11 +10,7 @@ use crate::widgets::{Background, Clip, Element, If, Text};
 #[derive(Clone, PartialEq, Debug, Default)]
 pub struct TooltipData {
     /// The anchor coordinates in pixels (x, y)
-    ///
-    /// If `None`, defaults to cursor position
-    pub anchor: Option<(f32, f32)>,
-    /// Used to force an update
-    ticker: u8,
+    pub anchor: (f32, f32),
     /// The size of the tooltip in pixels (width, height)
     pub size: Option<(f32, f32)>,
     /// The text to display
@@ -23,16 +19,8 @@ pub struct TooltipData {
     pub visible: bool,
 }
 
-impl TooltipData {
-    /// Force the tooltip to re-render
-    pub fn mark_dirty(&mut self) {
-        // Hack for forcing the Binding to re-render
-        self.ticker = self.ticker.wrapping_add(1);
-    }
-}
 
-
-/// A provider for managing a tooltip.
+/// A provider for managing a tooltip context.
 ///
 /// This widget creates a single tooltip that can be controlled by any descendant [TooltipConsumer].
 ///
@@ -76,7 +64,6 @@ pub fn TooltipProvider(
 
     let tooltip = context.create_provider(TooltipData::default());
     let TooltipData { anchor, size: tooltip_size, text, visible, .. } = tooltip.get();
-    let anchor = anchor.unwrap_or(context.last_mouse_position());
     let tooltip_size = tooltip_size.unwrap_or((WIDTH, HEIGHT));
 
 
@@ -179,9 +166,7 @@ pub fn TooltipConsumer(
     let data = context.create_consumer::<TooltipData>().expect("TooltipConsumer requires TooltipProvider as an ancestor");
 
     let text = Arc::new(text);
-    let anchor = anchor.unwrap_or(context.last_mouse_position());
-
-    self.on_event = Some(OnEvent::new(move |_, event| match event.event_type {
+    self.on_event = Some(OnEvent::new(move |ctx, event| match event.event_type {
         EventType::MouseIn => {
             let mut state = data.get();
             state.visible = true;
@@ -191,8 +176,7 @@ pub fn TooltipConsumer(
         }
         EventType::Hover => {
             let mut state = data.get();
-            state.mark_dirty();
-            state.anchor = Some(anchor);
+            state.anchor = anchor.unwrap_or(ctx.last_mouse_position());
             data.set(state);
         }
         EventType::MouseOut => {

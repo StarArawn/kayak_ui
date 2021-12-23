@@ -1,4 +1,4 @@
-use flo_binding::{Binding, Changeable};
+use crate::{Binding, Changeable};
 use morphorm::Hierarchy;
 use std::collections::{HashMap, HashSet};
 
@@ -99,7 +99,7 @@ impl KayakContext {
         }
     }
 
-    /// Creates a provider with the given state data
+    /// Creates a provider context with the given state data
     ///
     /// This works much like [create_state](Self::create_state), except that the state is also made available to any children. They can
     /// access this provider's state by calling [create_consumer](Self::create_consumer).
@@ -136,13 +136,6 @@ impl KayakContext {
     pub fn create_consumer<T: resources::Resource + Clone + PartialEq>(&mut self) -> Option<Binding<T>> {
         let type_id = std::any::TypeId::of::<T>();
 
-        let providers = if let Some(providers) = self.widget_providers.get(&type_id) {
-            providers
-        } else {
-            // Early escape
-            return None;
-        };
-
         if let Some(providers) = self.widget_providers.get(&type_id) {
             let mut index = Some(self.current_id);
             while index.is_some() {
@@ -154,17 +147,6 @@ impl KayakContext {
                     if let Ok(state) = provider.get::<Binding<T>>() {
                         return Some(state.clone());
                     }
-                }
-            }
-        }
-        while index.is_some() {
-            // Traverse the parents to find the one with the given state data
-            index = self.widget_manager.tree.get_parent(index.unwrap());
-
-            let key = index.unwrap();
-            if let Some(provider) = providers.get(&key) {
-                if let Ok(state) = provider.get::<Binding<T>>() {
-                    return Some(state.clone());
                 }
             }
         }

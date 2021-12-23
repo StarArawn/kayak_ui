@@ -51,7 +51,7 @@ kayak_widgets = { git="https://github.com/StarArawn/kayak_ui", rev="{INSERT_COMM
 bevy = { git="https://github.com/bevyengine/bevy", rev="{INSERT_COMMIT_SHA_HERE}" }
 ```
 
-It's also worth mentioning that you will need to use the same bevy revision that this library uses which is currently: `9a16a4d01830297987db40b45f03382ed3acad62`.
+It's also worth mentioning that you will need to use the same bevy revision that this library uses which is currently: `081350916c39fc1c7c9d659ccb6d86413832b465`.
 
 This is temporary and will change when bevy 0.6 is released.
 

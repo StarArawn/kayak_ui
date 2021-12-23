@@ -47,14 +47,13 @@ pub fn Fold(label: String, children: Children, open: Option<bool>, on_change: Op
         set_is_open(open);
     }
 
-    let on_change_clone = on_change.clone();
     let handler = OnEvent::new(move |ctx, event| match event.event_type {
         EventType::Click => {
             if open.is_none() {
                 // This is an internally-managed state
                 set_is_open(!is_open);
             }
-            if let Some(ref callback) = on_change_clone {
+            if let Some(ref callback) = on_change {
                 callback.call(!is_open);
             }
         }
@@ -88,7 +87,6 @@ pub fn Fold(label: String, children: Children, open: Option<bool>, on_change: Op
     };
 
     // === Render === //
-    let label = label.clone();
     rsx! {
         <Background styles={Some(background_styles)}>
             <Clip styles={Some(container_style)}>

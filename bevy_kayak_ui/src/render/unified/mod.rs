@@ -62,6 +62,8 @@ impl Plugin for UnifiedRenderPlugin {
     }
 }
 
+pub struct Dpi(f32);
+
 pub fn extract(
     mut commands: Commands,
     context: Res<BevyContext>,
@@ -110,7 +112,7 @@ pub fn extract(
                 extracted_quads.push(ExtractQuadBundle {
                     extracted_quad: ExtractedQuad {
                         rect: Rect {
-                            min: Vec2::new(layout.posx, layout.posy),
+                            min: Vec2::new(layout.posx, layout.posy) * dpi,
                             max: Vec2::new(layout.posx + layout.width, layout.posy + layout.height)
                                 * dpi,
                         },
@@ -133,5 +135,6 @@ pub fn extract(
     }
 
     commands.insert_resource(window_size.get());
+    commands.insert_resource(Dpi(dpi));
     commands.spawn_batch(extracted_quads);
 }

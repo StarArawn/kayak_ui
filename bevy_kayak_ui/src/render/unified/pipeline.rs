@@ -28,12 +28,13 @@ use bevy::{
     },
     sprite::Rect,
     utils::HashMap,
+    window::Windows,
 };
 use bytemuck::{Pod, Zeroable};
 use crevice::std140::AsStd140;
 use kayak_font::{FontRenderingPipeline, FontTextureCache, KayakFont};
 
-use super::UNIFIED_SHADER_HANDLE;
+use super::{Dpi, UNIFIED_SHADER_HANDLE};
 use crate::{render::ui_pass::TransparentUI, WindowSize};
 
 pub struct UnifiedPipeline {
@@ -542,6 +543,7 @@ pub struct DrawUI {
         SRes<FontTextureCache>,
         SRes<ImageBindGroups>,
         SRes<WindowSize>,
+        SRes<Dpi>,
         SQuery<Read<ViewUniformOffset>>,
         SQuery<Read<ExtractedQuad>>,
     )>,
@@ -570,6 +572,7 @@ impl Draw<TransparentUI> for DrawUI {
             font_texture_cache,
             image_bind_groups,
             window_size,
+            dpi,
             views,
             quads,
         ) = self.params.get(world);
@@ -579,6 +582,7 @@ impl Draw<TransparentUI> for DrawUI {
         let extracted_quad = quads.get(item.entity).unwrap();
 
         if extracted_quad.quad_type == UIQuadType::Clip {
+            let window_size = (window_size.0 * dpi.0, window_size.1 * dpi.0);
             let x = extracted_quad.rect.min.x as u32;
             let y = extracted_quad.rect.min.y as u32;
             let mut width = extracted_quad.rect.width() as u32;

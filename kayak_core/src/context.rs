@@ -130,7 +130,7 @@ impl KayakContext {
         state
     }
 
-    /// Creates a consumer for the given type, [T]
+    /// Creates a context consumer for the given type, [T]
     ///
     /// This allows direct access to a parent's state data made with [create_provider](Self::create_provider).
     pub fn create_consumer<T: resources::Resource + Clone + PartialEq>(&mut self) -> Option<Binding<T>> {

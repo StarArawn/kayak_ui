@@ -12,13 +12,17 @@ pub struct OpenTag {
 }
 
 fn name_or_fragment(maybe_name: Result<syn::Path>) -> syn::Path {
-    let found_crate = proc_macro_crate::crate_name("kayak_core").unwrap();
-    let kayak_core = match found_crate {
-        proc_macro_crate::FoundCrate::Itself => quote! { crate },
-        proc_macro_crate::FoundCrate::Name(name) => {
-            let ident = syn::Ident::new(&name, proc_macro2::Span::call_site());
-            quote!(#ident)
+    let found_crate = proc_macro_crate::crate_name("kayak_core");
+    let kayak_core = if let Ok(found_crate) = found_crate {
+        match found_crate {
+            proc_macro_crate::FoundCrate::Itself => quote! { crate },
+            proc_macro_crate::FoundCrate::Name(name) => {
+                let ident = syn::Ident::new(&name, proc_macro2::Span::call_site());
+                quote!(#ident)
+            }
         }
+    } else {
+        quote!(kayak_ui::core)
     };
 
     maybe_name.unwrap_or_else(|_| {

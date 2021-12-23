@@ -26,12 +26,14 @@ pub use event::*;
 pub use fragment::Fragment;
 pub use generational_arena::{Arena, Index};
 pub use input_event::*;
-pub use kayak_render_macros::{constructor, render, rsx, use_state, widget};
 pub use keys::KeyCode;
 pub use resources::Resources;
 pub use tree::{Tree, WidgetTree};
 pub use vec::VecTracker;
 pub use widget::Widget;
+pub mod derivative {
+    pub use derivative::*;
+}
 
 pub type Children = Option<
     Arc<dyn Fn(WidgetTree, Option<crate::Index>, &mut crate::context::KayakContext) + Send + Sync>,
@@ -52,6 +54,35 @@ impl OnEvent {
     }
 }
 
-pub mod derivative {
-    pub use derivative::*;
+#[derive(Clone)]
+pub struct Handler<T>(pub Arc<RwLock<dyn FnMut(T) + Send + Sync + 'static>>);
+
+impl<T> Default for Handler<T> {
+    fn default() -> Self {
+        Self(Arc::new(RwLock::new(|_| {})))
+    }
+}
+
+impl<T> Handler<T> {
+    pub fn new<F: FnMut(T) + Send + Sync + 'static>(f: F) -> Handler<T> {
+        Handler(Arc::new(RwLock::new(f)))
+    }
+
+    pub fn call(&self, data: T) {
+        if let Ok(mut handler) = self.0.write() {
+            handler(data);
+        }
+    }
+}
+
+impl<T> PartialEq for Handler<T> {
+    fn eq(&self, _other: &Self) -> bool {
+        true
+    }
+}
+
+impl<T> std::fmt::Debug for Handler<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_tuple("Handler").finish()
+    }
 }

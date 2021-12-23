@@ -3,10 +3,9 @@ use bevy::{
     window::WindowDescriptor,
     DefaultPlugins,
 };
-use kayak_core::constructor;
 use kayak_ui::bevy::{BevyContext, BevyKayakUIPlugin, FontMapping, UICameraBundle};
-use kayak_ui::core::{render, Index, VecTracker};
-use kayak_widgets::{App, Text};
+use kayak_ui::core::{constructor, render, Index, VecTracker};
+use kayak_ui::widgets::{App, Text};
 
 fn startup(
     mut commands: Commands,

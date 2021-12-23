@@ -42,6 +42,7 @@ impl Plugin for KayakFontPlugin {
 }
 
 pub fn init_font_texture(
+    mut not_processed: Local<Vec<Handle<KayakFont>>>,
     mut font_events: EventReader<AssetEvent<KayakFont>>,
     mut images: ResMut<Assets<Image>>,
     fonts: Res<Assets<KayakFont>>,
@@ -50,19 +51,26 @@ pub fn init_font_texture(
     for event in font_events.iter() {
         match event {
             AssetEvent::Created { handle } => {
-                if let Some(font) = fonts.get(handle) {
-                    if let Some(mut texture) = images.get_mut(&font.atlas_image) {
-                        texture.texture_descriptor.format = TextureFormat::Rgba8Unorm;
-                        texture.sampler_descriptor.min_filter = FilterMode::Linear;
-                        texture.sampler_descriptor.mipmap_filter = FilterMode::Linear;
-                        texture.sampler_descriptor.mag_filter = FilterMode::Linear;
-                        texture.texture_descriptor.usage = TextureUsages::TEXTURE_BINDING
-                            | TextureUsages::COPY_DST
-                            | TextureUsages::COPY_SRC;
-                    }
-                }
+                not_processed.push(handle.clone_weak());
             }
             _ => (),
+        }
+    }
+
+    let not_processed_fonts = not_processed.drain(..).collect::<Vec<_>>();
+    for font_handle in not_processed_fonts {
+        if let Some(font) = fonts.get(&font_handle) {
+            if let Some(mut texture) = images.get_mut(&font.atlas_image) {
+                texture.texture_descriptor.format = TextureFormat::Rgba8Unorm;
+                texture.sampler_descriptor.min_filter = FilterMode::Linear;
+                texture.sampler_descriptor.mipmap_filter = FilterMode::Linear;
+                texture.sampler_descriptor.mag_filter = FilterMode::Linear;
+                texture.texture_descriptor.usage = TextureUsages::TEXTURE_BINDING
+                    | TextureUsages::COPY_DST
+                    | TextureUsages::COPY_SRC;
+            } else {
+                not_processed.push(font_handle.clone_weak());
+            }
         }
     }
 }

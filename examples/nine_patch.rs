@@ -10,7 +10,7 @@ use kayak_ui::core::{
     styles::{Style, StyleProp, Units},
     Index,
 };
-use kayak_widgets::{App, NinePatch};
+use kayak_ui::widgets::{App, NinePatch};
 
 fn startup(
     mut commands: Commands,

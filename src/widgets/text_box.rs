@@ -1,23 +1,59 @@
-use std::sync::{Arc, RwLock};
-
-use kayak_ui::core::{
-    Bound, ChangeEvent, Color, EventType, MutableBound, OnChange, OnEvent,
+use crate::core::{
     render_command::RenderCommand,
     rsx,
     styles::{Style, StyleProp, Units},
-    widget
+    widget, Bound, Color, EventType, MutableBound, OnEvent,
 };
+use std::sync::{Arc, RwLock};
 
-use crate::{Background, Clip, Text};
+use crate::widgets::{Background, Clip, Text};
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct ChangeEvent {
+    pub value: String,
+}
+
+#[derive(Clone)]
+pub struct OnChange(pub Arc<RwLock<dyn FnMut(ChangeEvent) + Send + Sync + 'static>>);
+
+impl OnChange {
+    pub fn new<F: FnMut(ChangeEvent) + Send + Sync + 'static>(f: F) -> OnChange {
+        OnChange(Arc::new(RwLock::new(f)))
+    }
+}
+
+impl PartialEq for OnChange {
+    fn eq(&self, _other: &Self) -> bool {
+        true
+    }
+}
+
+impl std::fmt::Debug for OnChange {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_tuple("OnChange").finish()
+    }
+}
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Focus(pub bool);
 
 #[widget(focusable)]
-pub fn TextBox(value: String, on_change: Option<OnChange<String>>) {
+pub fn TextBox(value: String, on_change: Option<OnChange>, placeholder: Option<String>) {
+    let current_styles = styles.clone().unwrap_or_default();
     *styles = Some(Style {
         render_command: StyleProp::Value(RenderCommand::Layout),
-        ..styles.clone().unwrap_or_default()
+        height: StyleProp::Value(Units::Pixels(26.0)),
+        top: if matches!(current_styles.top, StyleProp::Value { .. }) {
+            current_styles.top.clone()
+        } else {
+            StyleProp::Value(Units::Pixels(0.0))
+        },
+        bottom: if matches!(current_styles.bottom, StyleProp::Value { .. }) {
+            current_styles.top.clone()
+        } else {
+            StyleProp::Value(Units::Pixels(0.0))
+        },
+        ..current_styles
     });
 
     let background_styles = Style {
@@ -47,9 +83,11 @@ pub fn TextBox(value: String, on_change: Option<OnChange<String>>) {
                 current_value.push(c);
             }
             if let Some(on_change) = cloned_on_change.as_ref() {
-                on_change.send(ChangeEvent {
-                    value: current_value.clone(),
-                });
+                if let Ok(mut on_change) = on_change.0.write() {
+                    on_change(ChangeEvent {
+                        value: current_value.clone(),
+                    });
+                }
             }
         }
         EventType::Focus => cloned_has_focus.set(Focus(true)),
@@ -57,7 +95,11 @@ pub fn TextBox(value: String, on_change: Option<OnChange<String>>) {
         _ => {}
     }));
 
-    let value = value.clone();
+    let value = if value.is_empty() {
+        placeholder.clone().unwrap_or(value.clone())
+    } else {
+        value.clone()
+    };
     rsx! {
         <Background styles={Some(background_styles)}>
             <Clip>

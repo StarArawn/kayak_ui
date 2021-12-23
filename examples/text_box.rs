@@ -3,14 +3,13 @@ use bevy::{
     window::WindowDescriptor,
     DefaultPlugins,
 };
-use kayak_core::OnChange;
 use kayak_ui::bevy::{BevyContext, BevyKayakUIPlugin, FontMapping, UICameraBundle};
 use kayak_ui::core::{
     render, rsx,
     styles::{Style, StyleProp, Units},
     widget, Bound, Index, MutableBound,
 };
-use kayak_widgets::{App, TextBox, Window};
+use kayak_ui::widgets::{App, OnChange, TextBox, Window};
 
 #[widget]
 fn TextBoxExample(context: &mut KayakContext) {
@@ -25,12 +24,12 @@ fn TextBoxExample(context: &mut KayakContext) {
     };
 
     let cloned_value = value.clone();
-    let on_change = OnChange::new_handler(move |event| {
+    let on_change = OnChange::new(move |event| {
         cloned_value.set(event.value);
     });
 
     let cloned_value2 = value2.clone();
-    let on_change2 = OnChange::new_handler(move |event| {
+    let on_change2 = OnChange::new(move |event| {
         cloned_value2.set(event.value);
     });
 

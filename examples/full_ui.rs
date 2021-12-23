@@ -10,7 +10,7 @@ use kayak_ui::core::{
     styles::{LayoutType, Style, StyleProp, Units},
     widget, Bound, Children, EventType, Index, MutableBound, OnEvent,
 };
-use kayak_widgets::{App, NinePatch, Text};
+use kayak_ui::widgets::{App, NinePatch, Text};
 
 #[widget]
 fn BlueButton(context: KayakContext, children: Children, styles: Option<Style>) {
@@ -25,9 +25,9 @@ fn BlueButton(context: KayakContext, children: Children, styles: Option<Style>) 
         let (handle1, handle2) = {
             let asset_server = world.get_resource::<AssetServer>().unwrap();
             let handle1: Handle<bevy::render::texture::Image> =
-                asset_server.load("../assets/kenny/buttonSquare_blue.png");
-            let handle2: Handle<bevy::render::texture::Image> =
                 asset_server.load("../assets/kenny/buttonSquare_blue_pressed.png");
+            let handle2: Handle<bevy::render::texture::Image> =
+                asset_server.load("../assets/kenny/buttonSquare_blue.png");
 
             (handle1, handle2)
         };
@@ -52,7 +52,7 @@ fn BlueButton(context: KayakContext, children: Children, styles: Option<Style>) 
     };
 
     let cloned_current_button_handle = current_button_handle.clone();
-    let on_event = OnEvent::new(move |_context, event| match event.event_type {
+    let on_event = OnEvent::new(move |_, event| match event.event_type {
         EventType::MouseIn => {
             cloned_current_button_handle.set(blue_button_hover_handle);
         }
@@ -88,6 +88,8 @@ fn startup(
     commands.spawn_bundle(UICameraBundle::new());
 
     font_mapping.add(asset_server.load("roboto.kayak_font"));
+    let main_font = asset_server.load("antiquity.kayak_font");
+    font_mapping.add(main_font.clone());
 
     let handle: Handle<bevy::render::texture::Image> = asset_server.load("kenny/panel_brown.png");
     let panel_brown_handle = image_manager.get(&handle);
@@ -97,6 +99,7 @@ fn startup(
             layout_type: StyleProp::Value(LayoutType::Column),
             width: StyleProp::Value(Units::Pixels(512.0)),
             height: StyleProp::Value(Units::Pixels(512.0)),
+            min_height: StyleProp::Value(Units::Pixels(0.0)),
             padding_left: StyleProp::Value(Units::Stretch(1.0)),
             padding_right: StyleProp::Value(Units::Stretch(1.0)),
             padding_top: StyleProp::Value(Units::Stretch(1.0)),
@@ -113,21 +116,21 @@ fn startup(
         };
 
         let header_styles = Style {
-            width: StyleProp::Value(Units::Pixels(432.0)),
-            height: StyleProp::Value(Units::Pixels(64.0)),
+            width: StyleProp::Value(Units::Pixels(408.0)),
+            height: StyleProp::Value(Units::Pixels(42.0)),
             bottom: StyleProp::Value(Units::Stretch(1.0)),
             ..Style::default()
         };
 
-        let play_button_styles = Style {
-            width: StyleProp::Value(Units::Pixels(54.0)),
-            height: StyleProp::Value(Units::Pixels(45.0)),
+        let text_styles = Style {
+            width: StyleProp::Value(Units::Pixels(56.0)),
+            height: StyleProp::Value(Units::Pixels(24.0)),
             ..Style::default()
         };
 
         let options_button_text_styles = Style {
-            width: StyleProp::Value(Units::Pixels(102.0)),
-            height: StyleProp::Value(Units::Pixels(45.0)),
+            width: StyleProp::Value(Units::Pixels(94.0)),
+            height: StyleProp::Value(Units::Pixels(24.0)),
             ..Style::default()
         };
 
@@ -135,6 +138,8 @@ fn startup(
             top: StyleProp::Value(Units::Pixels(15.0)),
             ..Style::default()
         };
+
+        let main_font_id = font_mapping.get(&main_font);
 
         render! {
             <App styles={Some(app_styles)}>
@@ -150,17 +155,18 @@ fn startup(
                 >
                     <Text
                         styles={Some(header_styles)}
-                        size={50.0}
+                        size={35.0}
                         content={"Name My Game Plz".to_string()}
+                        font={main_font_id}
                     />
                     <BlueButton>
-                        <Text styles={Some(play_button_styles)} size={30.0} content={"Play".to_string()} />
+                        <Text styles={Some(text_styles)} size={20.0} content={"Play".to_string()} font={main_font_id} />
                     </BlueButton>
                     <BlueButton styles={Some(options_button_styles)}>
-                        <Text styles={Some(options_button_text_styles)} size={30.0} content={"Options".to_string()} />
+                        <Text styles={Some(options_button_text_styles)} size={20.0} content={"Options".to_string()} font={main_font_id} />
                     </BlueButton>
                     <BlueButton styles={Some(options_button_styles)}>
-                        <Text styles={Some(play_button_styles)} size={30.0} content={"Quit".to_string()} />
+                        <Text styles={Some(text_styles)} size={20.0} content={"Quit".to_string()} font={main_font_id} />
                     </BlueButton>
                 </NinePatch>
             </App>

@@ -8,13 +8,13 @@ proc-macro = true
 
 [features]
 default = []
-internal = []
 
 [dependencies]
 syn = { version = "1.0", features = ["full"] }
 quote = "1.0"
 proc-macro2 = "1.0"
 proc-macro-error = "1.0"
+proc-macro-crate = "1.1"
 
 [dev-dependencies]
 kayak_core = { path = "../kayak_core", version = "0.1.0" }

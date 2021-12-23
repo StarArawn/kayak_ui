@@ -1,8 +1,8 @@
-use kayak_ui::core::{rsx, widget, Children};
+use crate::core::{rsx, widget, Children};
 
 #[widget]
 pub fn If(children: Children, condition: bool) {
-    if *condition {
+    if condition {
         rsx! {
             <>
                 {children}

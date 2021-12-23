@@ -3,15 +3,16 @@ use kayak_core::{derivative::*, Fragment, Widget};
 use kayak_render_macros::rsx;
 
 #[derive(Derivative)]
-#[derivative(Debug, PartialEq)]
+#[derivative(Default, Debug, PartialEq)]
 #[allow(dead_code)]
 struct Test {
     id: Index,
+    #[derivative(Default(value = "None"))]
     styles: Option<Style>,
     foo: u32,
-    #[derivative(Debug = "ignore", PartialEq = "ignore")]
+    #[derivative(Debug = "ignore", PartialEq = "ignore", Default(value = "None"))]
     children: Children,
-    #[derivative(Debug = "ignore", PartialEq = "ignore")]
+    #[derivative(Debug = "ignore", PartialEq = "ignore", Default(value = "None"))]
     pub on_event: Option<kayak_core::OnEvent>,
 }
 

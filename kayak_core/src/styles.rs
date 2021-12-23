@@ -53,6 +53,10 @@ pub struct Style {
     pub margin_right: StyleProp<Units>,
     pub margin_top: StyleProp<Units>,
     pub margin_bottom: StyleProp<Units>,
+    pub min_width: StyleProp<Units>,
+    pub min_height: StyleProp<Units>,
+    pub max_width: StyleProp<Units>,
+    pub max_height: StyleProp<Units>,
 }
 
 impl Default for Style {
@@ -78,6 +82,10 @@ impl Default for Style {
             margin_right: StyleProp::Default,
             margin_top: StyleProp::Default,
             margin_bottom: StyleProp::Default,
+            min_width: StyleProp::Default,
+            min_height: StyleProp::Default,
+            max_width: StyleProp::Default,
+            max_height: StyleProp::Default,
         }
     }
 }

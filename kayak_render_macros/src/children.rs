@@ -52,10 +52,14 @@ impl Children {
     }
 
     pub fn as_option_of_tuples_tokens(&self) -> proc_macro2::TokenStream {
-        #[cfg(feature = "internal")]
-        let kayak_core = quote! { kayak_core };
-        #[cfg(not(feature = "internal"))]
-        let kayak_core = quote! { kayak_ui::core };
+        let found_crate = proc_macro_crate::crate_name("kayak_core").unwrap();
+        let kayak_core = match found_crate {
+            proc_macro_crate::FoundCrate::Itself => quote! { crate },
+            proc_macro_crate::FoundCrate::Name(name) => {
+                let ident = syn::Ident::new(&name, proc_macro2::Span::call_site());
+                quote!(#ident)
+            }
+        };
 
         let children_quotes: Vec<_> = self
             .nodes
@@ -73,8 +77,14 @@ impl Children {
                 } else {
                     let children_attributes: Vec<_> = self.get_clonable_attributes(0);
 
+                    // I think this is correct.. It needs more testing though..
+                    let clonable_children = children_attributes
+                        .iter()
+                        .filter(|ts| syn::parse_str::<syn::Path>(&ts.to_string()).is_ok())
+                        .collect::<Vec<_>>();
+
                     let cloned_attrs = quote! {
-                        #(let #children_attributes = #children_attributes.clone();)*;
+                        #(let #clonable_children = #clonable_children.clone();)*;
                     };
                     if children_quotes[0].to_string() == "children" {
                         quote! {
@@ -105,7 +115,15 @@ impl Children {
                 // First get shared and non-shared attributes..
                 let mut child_attributes_list = Vec::new();
                 for i in 0..children_quotes.len() {
-                    child_attributes_list.push(self.get_clonable_attributes(i));
+                    let ts_vec = self.get_clonable_attributes(i);
+
+                    // I think this is correct.. It needs more testing though..
+                    let clonable_children = ts_vec
+                        .into_iter()
+                        .filter(|ts| syn::parse_str::<syn::Path>(&ts.to_string()).is_ok())
+                        .collect::<Vec<_>>();
+
+                    child_attributes_list.push(clonable_children);
                 }
 
                 let mut all_attributes = HashSet::new();

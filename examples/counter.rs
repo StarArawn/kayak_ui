@@ -9,7 +9,7 @@ use kayak_ui::core::{
     styles::{Style, StyleProp, Units},
     use_state, widget, Bound, EventType, Index, MutableBound, OnEvent,
 };
-use kayak_widgets::{App, Button, Text, Window};
+use kayak_ui::widgets::{App, Button, Text, Window};
 
 #[widget]
 fn Counter(context: &mut KayakContext) {

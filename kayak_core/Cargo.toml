@@ -7,14 +7,13 @@ edition = "2021"
 
 [features]
 default = []
-internal = ["kayak_render_macros/internal"]
+bevy_renderer = ["bevy"]
 
 [dependencies]
 as-any = "0.2"
-diff-struct = "0.3"
 derivative = "2.2"
+bevy = { git = "https://github.com/bevyengine/bevy", rev = "9a16a4d01830297987db40b45f03382ed3acad62", optional = true }
 flo_binding = { git = "https://github.com/StarArawn/flo_binding.git", rev = "c78431a56df5ec082b7e1c271871e6c0ac75e81e" }
-fontdue = "0.6"
 kayak_render_macros = { path = "../kayak_render_macros" }
-morphorm = { git = "https://github.com/geom3trik/morphorm" }
+morphorm = { git = "https://github.com/geom3trik/morphorm", rev = "1243152d4cebea46fd3e5098df26402c73acae91" }
 resources = "1.1"

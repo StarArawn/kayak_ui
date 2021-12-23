@@ -1,12 +1,12 @@
-use kayak_ui::core::{
+use crate::core::{
     color::Color,
     render_command::RenderCommand,
     rsx,
     styles::{PositionType, Style, StyleProp, Units},
-    widget, Children, Fragment,
+    widget, Children,
 };
 
-use crate::{Background, Clip, Element, Text};
+use crate::widgets::{Background, Clip, Element, Text};
 
 #[widget]
 pub fn Window(
@@ -25,6 +25,8 @@ pub fn Window(
         top: StyleProp::Value(Units::Pixels(position.1)),
         width: StyleProp::Value(Units::Pixels(size.0)),
         height: StyleProp::Value(Units::Pixels(size.1)),
+        max_width: StyleProp::Value(Units::Pixels(size.0)),
+        max_height: StyleProp::Value(Units::Pixels(size.1)),
         ..styles.clone().unwrap_or_default()
     });
 
@@ -33,6 +35,10 @@ pub fn Window(
         padding_right: StyleProp::Value(Units::Pixels(5.0)),
         padding_top: StyleProp::Value(Units::Pixels(5.0)),
         padding_bottom: StyleProp::Value(Units::Pixels(5.0)),
+        width: StyleProp::Value(Units::Pixels(size.0)),
+        height: StyleProp::Value(Units::Pixels(size.1)),
+        max_width: StyleProp::Value(Units::Pixels(size.0)),
+        max_height: StyleProp::Value(Units::Pixels(size.1)),
         ..Style::default()
     };
 
@@ -56,24 +62,22 @@ pub fn Window(
     };
 
     let content_styles = Style {
-        padding_left: StyleProp::Value(Units::Stretch(1.0)),
-        padding_right: StyleProp::Value(Units::Stretch(1.0)),
-        padding_top: StyleProp::Value(Units::Stretch(1.0)),
-        padding_bottom: StyleProp::Value(Units::Stretch(1.0)),
+        padding_left: StyleProp::Value(Units::Pixels(10.0)),
+        padding_right: StyleProp::Value(Units::Pixels(10.0)),
+        padding_top: StyleProp::Value(Units::Pixels(10.0)),
+        padding_bottom: StyleProp::Value(Units::Pixels(10.0)),
         ..Style::default()
     };
 
     let title = title.clone();
     rsx! {
-        <Fragment>
-            <Clip styles={Some(clip_styles)}>
-                <Background styles={Some(title_background_styles)}>
-                    <Text styles={Some(title_text_styles)} size={16.0} content={title} />
-                </Background>
-                <Element styles={Some(content_styles)}>
-                    {children}
-                </Element>
-            </Clip>
-        </Fragment>
+        <Clip styles={Some(clip_styles)}>
+            <Background styles={Some(title_background_styles)}>
+                <Text styles={Some(title_text_styles)} size={16.0} content={title} />
+            </Background>
+            <Element styles={Some(content_styles)}>
+                {children}
+            </Element>
+        </Clip>
     }
 }

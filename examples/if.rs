@@ -9,7 +9,7 @@ use kayak_ui::core::{
     styles::{Style, StyleProp, Units},
     widget, Bound, EventType, Index, MutableBound, OnEvent,
 };
-use kayak_widgets::{App, Button, If, Text, Window};
+use kayak_ui::widgets::{App, Button, If, Text, Window};
 
 #[widget]
 fn Removal(context: &mut KayakContext) {

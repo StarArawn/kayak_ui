@@ -78,13 +78,13 @@ pub fn extract(
         vec![]
     };
 
+    // dbg!(&render_primitives);
+
     let dpi = if let Some(window) = windows.get_primary() {
         window.scale_factor() as f32
     } else {
         1.0
     };
-
-    // dbg!(&render_primitives);
 
     let mut extracted_quads = Vec::new();
     for render_primitive in render_primitives {

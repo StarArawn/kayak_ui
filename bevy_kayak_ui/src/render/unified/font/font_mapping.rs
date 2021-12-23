@@ -36,4 +36,8 @@ impl FontMapping {
             .get(&id)
             .and_then(|item| Some(item.clone()))
     }
+
+    pub fn get(&self, font: &Handle<KayakFont>) -> Option<u16> {
+        self.font_ids.get(font).and_then(|font_id| Some(*font_id))
+    }
 }

@@ -107,22 +107,22 @@ impl<'a, 'c> ToTokens for CustomWidgetAttributes<'a, 'c> {
             }
         }
 
-        #[cfg(feature = "internal")]
-        let kayak_core = quote! { kayak_core };
-        #[cfg(not(feature = "internal"))]
-        let kayak_core = quote! { kayak_ui::core };
+        // #[cfg(feature = "internal")]
+        // let kayak_core = quote! { kayak_core };
+        // #[cfg(not(feature = "internal"))]
+        // let kayak_core = quote! { kayak_ui::core };
 
         let quoted = if attrs.len() == 0 {
-            quote!({ id: #kayak_core::Index::default(), styles: None, children: None, on_event: None, })
+            quote!({ ..Default::default() })
         } else {
             if !self
                 .attributes
                 .iter()
                 .any(|attribute| attribute.ident().to_token_stream().to_string() == "styles")
             {
-                quote!({ #(#attrs),*, id: #kayak_core::Index::default() })
+                quote!({ #(#attrs),*, ..Default::default() })
             } else {
-                quote!({ #(#attrs),*, id: #kayak_core::Index::default() })
+                quote!({ #(#attrs),*, ..Default::default()  })
             }
         };
 

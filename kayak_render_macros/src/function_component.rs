@@ -20,10 +20,14 @@ pub fn create_function_widget(f: syn::ItemFn, widget_arguments: WidgetArguments)
     let block = f.block;
     let vis = f.vis;
 
-    #[cfg(feature = "internal")]
-    let kayak_core = quote! { kayak_core };
-    #[cfg(not(feature = "internal"))]
-    let kayak_core = quote! { kayak_ui::core };
+    let found_crate = proc_macro_crate::crate_name("kayak_core").unwrap();
+    let kayak_core = match found_crate {
+        proc_macro_crate::FoundCrate::Itself => quote! { crate },
+        proc_macro_crate::FoundCrate::Name(name) => {
+            let ident = syn::Ident::new(&name, proc_macro2::Span::call_site());
+            quote!(#ident)
+        }
+    };
 
     let focusable = widget_arguments.focusable;
 
@@ -87,13 +91,14 @@ pub fn create_function_widget(f: syn::ItemFn, widget_arguments: WidgetArguments)
                 "styles : Option< kayak_ui :: core :: styles :: Style >",
             ],
             quote! {
+                #[derivative(Default(value="None"))]
                 pub styles: Option<#kayak_core::styles::Style>
             },
         ),
         (
             vec!["children : Children"],
             quote! {
-                #[derivative(Debug = "ignore", PartialEq = "ignore")]
+                #[derivative(Default(value="None"), Debug = "ignore", PartialEq = "ignore")]
                 pub children: #kayak_core::Children
             },
         ),
@@ -104,7 +109,7 @@ pub fn create_function_widget(f: syn::ItemFn, widget_arguments: WidgetArguments)
                 "on_event : Option <\nkayak_ui :: core :: OnEvent >",
             ],
             quote! {
-                #[derivative(Debug = "ignore", PartialEq = "ignore")]
+                #[derivative(Default(value="None"), Debug = "ignore", PartialEq = "ignore")]
                 pub on_event: Option<#kayak_core::OnEvent>
             },
         ),
@@ -141,6 +146,7 @@ pub fn create_function_widget(f: syn::ItemFn, widget_arguments: WidgetArguments)
     } else {
         quote!(
             let #struct_name { #(#input_names),*, styles, .. } = self;
+            #(let #input_names = #input_names.clone();)*
         )
     };
 
@@ -148,7 +154,7 @@ pub fn create_function_widget(f: syn::ItemFn, widget_arguments: WidgetArguments)
         use #kayak_core::derivative::*;
 
         #[derive(Derivative)]
-        #[derivative(Debug, PartialEq, Clone)]
+        #[derivative(Default, Debug, PartialEq, Clone)]
         #vis struct #struct_name #impl_generics {
             pub id: #kayak_core::Index,
             #inputs_block

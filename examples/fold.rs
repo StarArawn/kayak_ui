@@ -3,14 +3,16 @@ use bevy::{
     window::WindowDescriptor,
     DefaultPlugins,
 };
-use kayak_core::{Color, OnChange};
-use kayak_ui::bevy::{BevyContext, BevyKayakUIPlugin, FontMapping, UICameraBundle};
-use kayak_ui::core::{
-    render, rsx,
-    styles::{Style, StyleProp, Units},
-    use_state, widget, Bound, EventType, Index, MutableBound, OnEvent,
+
+use kayak_ui::{
+    bevy::{BevyContext, BevyKayakUIPlugin, FontMapping, UICameraBundle},
+    core::{
+        styles::{Style, StyleProp, Units},
+        Color, OnChange, render, rsx, use_state, widget, Bound, EventType,
+        Index, MutableBound, OnEvent,
+    },
+    widgets::{App, Background, Button, Fold, If, Text, Window}
 };
-use kayak_widgets::{App, Background, Button, Fold, If, Text, Window};
 
 #[widget]
 fn FolderTree(context: &mut KayakContext) {

@@ -1,6 +1,6 @@
-use kayak_ui::core::{render_command::RenderCommand, styles::{Style, StyleProp, Units}, Children, EventType, rsx, widget, use_state, OnEvent, Bound, MutableBound, OnChange, ChangeEvent};
+use crate::core::{render_command::RenderCommand, styles::{Style, StyleProp, Units}, Children, EventType, rsx, widget, use_state, OnEvent, Bound, MutableBound, OnChange, ChangeEvent};
 
-use crate::{Background, Clip, If, Text};
+use crate::widgets::{Background, Clip, If, Text};
 
 /// A widget container that toggles its content between visible and hidden when clicked
 ///

@@ -1,28 +1,33 @@
-use crate::core::{render_command::RenderCommand, styles::{Style, StyleProp, Units}, Children, EventType, rsx, widget, use_state, OnEvent, Bound, MutableBound, OnChange, ChangeEvent};
+use crate::core::{
+    render_command::RenderCommand,
+    styles::{Style, StyleProp, Units},
+    Children, EventType, Handler, rsx, widget, use_state, OnEvent, Bound, MutableBound
+};
 
-use crate::widgets::{Background, Clip, If, Text};
+use crate::widgets::{Background, Clip, Element, If, Text};
 
 /// A widget container that toggles its content between visible and hidden when clicked
 ///
-/// If `on_change` is set to `None`, then the toggle state will be automatically handled by
+/// If `open` is set to `None`, then the toggle state will be automatically handled by
 /// the widget. This is useful for if you don't need or care to manage the toggling yourself.
 ///
 /// # Arguments
 ///
-/// * `label`: The fold's label
-/// * `children`: The fold's content
-/// * `open`: If true, renders the children
-/// * `on_change`: Called when the user clicks on the Fold's label. Contains the next desired
-///                toggle state of the Fold (which may be used to change the `open` prop)
+/// * `label`: The Fold's label
+/// * `children`: The Fold's content
+/// * `open`: If true, renders the content. If `None`, the widget will manage its own open/close state.
+/// * `on_change`: Called when the user clicks on the Fold's label. Contains the next desired toggle state.
+/// * `default_open`: Set the initial open state of this widget
 ///
 /// # Examples
 ///
 /// ```
-/// # use crate::{rsx, use_state};
+/// # use kayak_ui::core::{Handler, rsx, use_state};
+/// # use kayak_ui::widgets::{Text};
 ///
 /// let (open, set_open) = use_state!(false);
-/// let on_change = OnChange::new(move |event| {
-///     set_open(event.value);
+/// let on_change = Handler::new(move |value| {
+///     set_open(value);
 /// });
 ///
 /// rsx! {
@@ -32,33 +37,29 @@ use crate::widgets::{Background, Clip, If, Text};
 /// }
 /// ```
 #[widget]
-pub fn Fold(label: String, children: Children, open: bool, on_change: Option<OnChange<bool>>) {
+pub fn Fold(label: String, children: Children, open: Option<bool>, on_change: Option<Handler<bool>>, default_open: bool) {
 
     // === State === //
-    let open_clone = open.clone();
-    let (is_open, handler) = if let Some(ref on_change) = on_change {
+    let initial = default_open || open.unwrap_or_default();
+    let (is_open, set_is_open) = use_state!(initial);
+    if let Some(open) = open {
         // This is a controlled state
-        let on_change_clone = on_change.clone();
-        let handler = OnEvent::new(move |_, event| match event.event_type {
-            EventType::Click => {
-                on_change_clone.send(ChangeEvent {
-                    value: !open_clone
-                });
-            }
-            _ => {}
-        });
-        (open.clone(), handler)
-    } else {
-        // This is an internally-managed state
-        let (is_open, set_is_open) = use_state!(open_clone);
-        let handler = OnEvent::new(move |_, event| match event.event_type {
-            EventType::Click => {
+        set_is_open(open);
+    }
+
+    let on_change_clone = on_change.clone();
+    let handler = OnEvent::new(move |ctx, event| match event.event_type {
+        EventType::Click => {
+            if open.is_none() {
+                // This is an internally-managed state
                 set_is_open(!is_open);
             }
-            _ => {}
-        });
-        (is_open, handler)
-    };
+            if let Some(ref callback) = on_change_clone {
+                callback.call(!is_open);
+            }
+        }
+        _ => {}
+    });
 
     // === Styles === //
     *styles = Some(Style {
@@ -76,17 +77,13 @@ pub fn Fold(label: String, children: Children, open: bool, on_change: Option<OnC
 
     let container_style = Style {
         width: StyleProp::Value(Units::Stretch(1.0)),
-        height: StyleProp::Value(Units::Auto),
+        // height: StyleProp::Value(Units::Auto),
+        height: StyleProp::Value(Units::Pixels(20.0)),
         ..Default::default()
     };
 
     let text_styles = Style {
         height: StyleProp::Value(Units::Pixels(26.0)),
-        ..Default::default()
-    };
-
-    let content_styles = Style {
-        height: StyleProp::Value(Units::Stretch(1.0)),
         ..Default::default()
     };
 
@@ -97,7 +94,7 @@ pub fn Fold(label: String, children: Children, open: bool, on_change: Option<OnC
             <Clip styles={Some(container_style)}>
                 <Text content={label} on_event={Some(handler)} size={14.0} styles={Some(text_styles)} />
                 <If condition={is_open}>
-                    <Clip styles={Some(content_styles)}>
+                    <Clip>
                         {children}
                     </Clip>
                 </If>

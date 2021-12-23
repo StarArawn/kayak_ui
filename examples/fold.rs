@@ -8,7 +8,7 @@ use kayak_ui::{
     bevy::{BevyContext, BevyKayakUIPlugin, FontMapping, UICameraBundle},
     core::{
         styles::{Style, StyleProp, Units},
-        Color, OnChange, render, rsx, use_state, widget, Bound, EventType,
+        Color, Handler, render, rsx, use_state, widget, Bound, EventType,
         Index, MutableBound, OnEvent,
     },
     widgets::{App, Background, Button, Fold, If, Text, Window}
@@ -37,6 +37,8 @@ fn FolderTree(context: &mut KayakContext) {
 
     let fold_child_base_styles = Style {
         left: StyleProp::Value(Units::Pixels(5.0)),
+        // Children need to be sized
+        height: StyleProp::Value(Units::Auto),
         ..Default::default()
     };
 
@@ -54,12 +56,6 @@ fn FolderTree(context: &mut KayakContext) {
         background_color: StyleProp::Value(Color::new(0.12941,  0.12941,  0.09412, 1.0)),
         ..fold_a_child_styles.clone()
     };
-
-    let (is_a_open, set_a_open) = use_state!(false);
-    let on_toggle_a = Some(OnChange::new(move |event| {
-        set_a_open(event.value);
-    }));
-    let child_toggle = None;
 
     // === Folder B === //
     let fold_b_styles = Style {
@@ -82,9 +78,6 @@ fn FolderTree(context: &mut KayakContext) {
         EventType::Click => set_open_b(true),
         _ => {}
     }));
-    let on_toggle_b = Some(OnChange::new(move |_| {
-        // Do nothing -> keep Fold in its current state
-    }));
 
     // === Folder C === //
     let fold_c_styles = Some(Style {
@@ -101,8 +94,7 @@ fn FolderTree(context: &mut KayakContext) {
     };
 
     let (tried, set_tried) = use_state!(false);
-    let on_toggle_c = Some(OnChange::new(move |_| {
-        // Do nothing -> keep Fold in its current state
+    let on_toggle_c = Some(Handler::new(move |_| {
         set_tried(true);
     }));
 
@@ -110,21 +102,22 @@ fn FolderTree(context: &mut KayakContext) {
         <>
             <Window position={(50.0, 50.0)} size={(300.0, 300.0)} title={"Fold Example".to_string()}>
                 // === Folder A === //
-                <Fold label={"Folder A".to_string()} open={is_a_open} on_change={on_toggle_a} styles={fold_a_styles}>
-                    <Fold label={"Folder A1".to_string()} open={false} on_change={child_toggle} styles={Some(fold_a_child_styles)}>
+                <Fold label={"Folder A".to_string()} styles={fold_a_styles}>
+                    <Fold label={"Folder A1".to_string()} default_open={true} styles={Some(fold_a_child_styles)}>
                         <Background styles={Some(fold_a_child_child_styles)}>
-                            <Text styles={Some(text_styles)} size={12.0} content={"Foo".to_string()}>{}</Text>
+                            <Text styles={Some(text_styles)} size={12.0} content={"I default open".to_string()}>{}</Text>
                         </Background>
                     </Fold>
-                    <Fold label={"Folder A2".to_string()} open={false} on_change={child_toggle} styles={Some(fold_a_child_styles)}>
+                    <Fold label={"Folder A2".to_string()} styles={Some(fold_a_child_styles)}>
                         <Background styles={Some(fold_a_child_child_styles)}>
-                            <Text styles={Some(text_styles)} size={12.0} content={"Bar".to_string()}>{}</Text>
+                            <Text styles={Some(text_styles)} size={12.0} content={"I default closed".to_string()}>{}</Text>
                         </Background>
                     </Fold>
                 </Fold>
                 // === Folder B === //
-                <Fold label={"Folder B".to_string()} open={is_b_open} on_change={on_toggle_b} styles={Some(fold_b_styles)}>
+                <Fold label={"Folder B".to_string()} open={Some(is_b_open)} styles={Some(fold_b_styles)}>
                     <Background styles={Some(fold_b_child_styles)}>
+                        <Text styles={Some(text_styles)} size={12.0} content={"The open/close state is manually controlled.".to_string()}>{}</Text>
                         <Text styles={Some(text_styles)} size={12.0} content={"Click the button to close:".to_string()}>{}</Text>
                         <Button on_event={close_b} styles={Some(button_styles)}>
                             <Text styles={Some(button_text_styles)} size={14.0} content={"Close B".to_string()}>{}</Text>
@@ -132,7 +125,7 @@ fn FolderTree(context: &mut KayakContext) {
                     </Background>
                 </Fold>
                 // === Folder C === //
-                <Fold label={"Folder C".to_string()} open={true} on_change={on_toggle_c} styles={fold_c_styles}>
+                <Fold label={"Folder C".to_string()} open={Some(true)} on_change={on_toggle_c} styles={fold_c_styles}>
                     <Background styles={Some(fold_c_child_styles)}>
                         <Text styles={Some(text_styles)} size={12.0} content={"Can't close me!".to_string()}>{}</Text>
                         <If condition={tried}>

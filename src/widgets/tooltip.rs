@@ -29,6 +29,11 @@ pub struct TooltipData {
 /// * `position`: The position of the containing rect (used to layout the tooltip).
 /// * `size`: The size of the containing rect (used to layout the tooltip).
 ///
+/// # Styles
+///
+/// This widget accepts all styles and affects the actual tooltip container. The `background_color`
+/// and `color` styles, however, apply directly to the tooltip itself.
+///
 /// # Examples
 ///
 /// ```
@@ -75,9 +80,14 @@ pub fn TooltipProvider(
         ..styles.clone().unwrap_or_default()
     });
 
+    let base_styles = styles.clone().unwrap();
     let mut tooltip_styles = Style {
         position_type: StyleProp::Value(PositionType::SelfDirected),
-        background_color: StyleProp::Value(Color::new(0.13, 0.15, 0.17, 0.85)),
+        background_color: if matches!(base_styles.background_color, StyleProp::Default) {
+            StyleProp::Value(Color::new(0.13, 0.15, 0.17, 0.85))
+        } else {
+            base_styles.background_color
+        },
         width: StyleProp::Value(Units::Pixels(tooltip_size.0)),
         height: StyleProp::Value(Units::Pixels(tooltip_size.1)),
         ..Style::default()
@@ -100,6 +110,11 @@ pub fn TooltipProvider(
     let text_styles = Style {
         width: StyleProp::Value(Units::Pixels(tooltip_size.0)),
         height: StyleProp::Value(Units::Pixels(tooltip_size.1)),
+        color: if matches!(base_styles.color, StyleProp::Default) {
+            StyleProp::Value(Color::WHITE)
+        } else {
+            base_styles.color
+        },
         ..Style::default()
     };
 

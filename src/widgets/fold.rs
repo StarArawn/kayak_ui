@@ -4,7 +4,7 @@ use crate::core::{
     Children, EventType, Handler, rsx, widget, use_state, OnEvent, Bound, MutableBound
 };
 
-use crate::widgets::{Background, Clip, Element, If, Text};
+use crate::widgets::{Background, Clip, If, Text};
 
 /// A widget container that toggles its content between visible and hidden when clicked
 ///
@@ -47,7 +47,7 @@ pub fn Fold(label: String, children: Children, open: Option<bool>, on_change: Op
         set_is_open(open);
     }
 
-    let handler = OnEvent::new(move |ctx, event| match event.event_type {
+    let handler = OnEvent::new(move |_, event| match event.event_type {
         EventType::Click => {
             if open.is_none() {
                 // This is an internally-managed state

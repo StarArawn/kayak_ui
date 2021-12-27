@@ -17,6 +17,7 @@ mod vec;
 pub mod widget;
 pub mod widget_manager;
 mod cursor;
+mod event_dispatcher;
 
 use std::sync::{Arc, RwLock};
 

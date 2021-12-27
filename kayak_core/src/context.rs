@@ -1,10 +1,8 @@
 use flo_binding::Changeable;
-use morphorm::Hierarchy;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
-use crate::{
-    multi_state::MultiState, widget_manager::WidgetManager, Event, EventType, Index, InputEvent, InputEventCategory,
-};
+use crate::{multi_state::MultiState, widget_manager::WidgetManager, Index, InputEvent};
+use crate::event_dispatcher::EventDispatcher;
 
 pub struct KayakContext {
     widget_states: HashMap<crate::Index, resources::Resources>,
@@ -14,14 +12,10 @@ pub struct KayakContext {
     current_id: Index,
     // TODO: Make widget_manager private.
     pub widget_manager: WidgetManager,
-    last_mouse_position: (f32, f32),
-    is_mouse_pressed: bool,
-    previous_events: HashMap<Index, HashSet<EventType>>,
+    event_dispatcher: EventDispatcher,
     global_state: resources::Resources,
-    current_focus: Index,
     last_state_type_id: Option<std::any::TypeId>,
     current_state_index: usize,
-    previously_hovered_nodes: Vec<Index>,
 }
 
 impl std::fmt::Debug for KayakContext {
@@ -41,14 +35,10 @@ impl KayakContext {
             widget_state_lifetimes: HashMap::new(),
             current_id: crate::Index::default(),
             widget_manager: WidgetManager::new(),
-            last_mouse_position: (0.0, 0.0),
-            is_mouse_pressed: false,
+            event_dispatcher: EventDispatcher::default(),
             global_state: resources::Resources::default(),
-            previous_events: HashMap::new(),
-            current_focus: Index::default(),
             last_state_type_id: None,
             current_state_index: 0,
-            previously_hovered_nodes: Vec::new(),
         }
     }
 
@@ -288,223 +278,9 @@ impl KayakContext {
     ///   [`event.stop_propagation()`](Event::stop_propagation). Not every event can be propagated, in which case,
     ///   they will only fire for their specified target.
     pub fn process_events(&mut self, input_events: Vec<InputEvent>) {
-        let mut event_stream = Vec::<Event>::new();
-
-        // === Find Event Targets === //
-        for input_event in input_events.iter() {
-            match input_event.category() {
-                InputEventCategory::Mouse => {
-                    event_stream.extend(self.process_pointer_events(input_event));
-                }
-                InputEventCategory::Keyboard => {
-                    event_stream.extend(self.process_keyboard_events(input_event));
-                }
-            }
-        }
-
-        // === Process Events === //
-        let mut next_events = HashMap::default();
-        for event in event_stream {
-            let mut current_target: Option<Index> = Some(event.target);
-            while let Some(index) = current_target {
-                // Create a copy of the event, specific for this node
-                // This is to make sure unauthorized changes to the event are not propagated
-                // (e.g., changing the event type, removing the target, etc.)
-                let mut node_event = Event {
-                    current_target: index,
-                    ..event
-                };
-
-                // --- Update State --- //
-                Self::insert_event(
-                    &mut next_events,
-                    &index,
-                    node_event.event_type,
-                );
-
-                // --- Call Event --- //
-                let mut target_widget = self.widget_manager.take(index);
-                target_widget.on_event(self, &mut node_event);
-                self.widget_manager.repossess(target_widget);
-
-                // --- Propagate Event --- //
-                if node_event.should_propagate {
-                    current_target = self.widget_manager.node_tree.get_parent(index);
-                } else {
-                    current_target = None;
-                }
-            }
-        }
-
-        // === Maintain Events === //
-        // Events that need to be maintained without re-firing between event updates should be managed here
-        for (index, events) in &self.previous_events {
-            // Mouse is currently pressed for this node
-            if self.is_mouse_pressed && events.contains(&EventType::MouseDown) {
-                // Make sure this event isn't removed while mouse is still held down
-                Self::insert_event(&mut next_events, index, EventType::MouseDown);
-            }
-
-            // Mouse is currently within this node
-            if events.contains(&EventType::MouseIn)
-                && !Self::contains_event(&next_events, index, &EventType::MouseOut) {
-                // Make sure this event isn't removed while mouse is still within node
-                Self::insert_event(&mut next_events, index, EventType::MouseIn);
-            }
-        }
-
-        // Replace the previous events with the next set
-        self.previous_events = next_events;
-    }
-
-    fn process_pointer_events(&mut self, input_event: &InputEvent) -> Vec<Event> {
-        let mut event_stream = Vec::new();
-
-        match input_event {
-            InputEvent::MouseMoved(point) => {
-
-                // Mouse Out - Applies to all matching nodes
-                for prev in &self.previously_hovered_nodes {
-                    if let Some(rect) = self.widget_manager.layout_cache.rect.get(&prev) {
-                        if !rect.contains(point) {
-                            event_stream.push(Event::new(*prev, EventType::MouseOut));
-                        }
-                    }
-                }
-
-                if let Some((next, next_nodes)) = self.widget_manager.get_nodes_under(*point, None, true) {
-                    event_stream.push(Event::new(next, EventType::Hover));
-
-                    // Mouse In - Applies to all matching nodes
-                    for next in next_nodes.iter() {
-                        if let Some(rect) = self.widget_manager.layout_cache.rect.get(&next) {
-                            if !rect.contains(&self.last_mouse_position) {
-                                event_stream.push(Event::new(*next, EventType::MouseIn));
-                            }
-                        }
-                    }
-
-                    self.previously_hovered_nodes = next_nodes;
-                }
-
-                // Reset global mouse position
-                self.last_mouse_position = *point;
-            }
-            InputEvent::MouseLeftPress => {
-                // Reset global mouse pressed
-                self.is_mouse_pressed = true;
-
-                if let Some((prev, ..)) = self.widget_manager.get_nodes_under(self.last_mouse_position, None, true) {
-                    event_stream.push(Event::new(prev, EventType::MouseDown));
-
-                    // Find a focusable widget in the hierarchy
-                    let mut next_focus: Option<Index> = None;
-                    let mut index: Option<Index> = Some(prev);
-                    while let Some(idx) = index {
-                        index = None;
-                        if let Some(widget) = self.widget_manager.current_widgets.get(idx).unwrap() {
-                            if widget.focusable() {
-                                next_focus = Some(idx);
-                                event_stream.push(Event::new(idx, EventType::Focus));
-                            } else {
-                                index = self.widget_manager.node_tree.parent(idx);
-                            }
-                        }
-                    }
-
-                    if let Some(index) = next_focus {
-                        // Was a focus event
-                        if self.current_focus != index {
-                            // New focus
-                            event_stream.push(Event::new(self.current_focus, EventType::Blur));
-                        }
-                        // Update focus
-                        self.current_focus = index;
-                    } else if self.current_focus != Index::default() {
-                        // Was a blur event
-                        event_stream.push(Event::new(self.current_focus, EventType::Blur));
-                    }
-                }
-            }
-            InputEvent::MouseLeftRelease => {
-                // Reset global mouse pressed
-                self.is_mouse_pressed = false;
-
-                if let Some((prev, ..)) = self.widget_manager.get_nodes_under(self.last_mouse_position, None, true) {
-                    event_stream.push(Event::new(prev, EventType::MouseUp));
-
-                    if Self::contains_event(
-                        &self.previous_events,
-                        &prev,
-                        &EventType::MouseDown,
-                    ) {
-                        event_stream.push(Event::new(prev, EventType::Click));
-                    }
-                }
-            }
-            _ => {}
-        }
-
-        event_stream
-    }
-
-    fn process_keyboard_events(&mut self, input_event: &InputEvent) -> Vec<Event> {
-        let mut event_stream = Vec::new();
-        match input_event {
-            InputEvent::CharEvent { c } => event_stream.push(
-                Event::new(self.current_focus, EventType::CharInput { c: *c })
-            ),
-            InputEvent::Keyboard { key } => event_stream.push(
-                Event::new(self.current_focus, EventType::KeyboardInput { key: *key })
-            ),
-            _ => {}
-        }
-
-        event_stream
-    }
-
-    /// Insert an event for a widget in the given event map
-    fn insert_event(
-        events: &mut HashMap<Index, HashSet<EventType>>,
-        widget_id: &Index,
-        event_type: EventType,
-    ) -> bool {
-        let entry = events.entry(*widget_id).or_insert(HashSet::default());
-        entry.insert(event_type)
-    }
-
-    /// Remove an event from a widget in the given event map
-    #[allow(dead_code)]
-    fn remove_event(
-        events: &mut HashMap<Index, HashSet<EventType>>,
-        widget_id: &Index,
-        event_type: &EventType,
-    ) -> bool {
-        let entry = events.entry(*widget_id).or_insert(HashSet::default());
-        entry.remove(event_type)
-    }
-
-    /// Checks if the given event map contains a specific event for the given widget
-    fn contains_event(
-        events: &HashMap<Index, HashSet<EventType>>,
-        widget_id: &Index,
-        event_type: &EventType,
-    ) -> bool {
-        if let Some(entry) = events.get(widget_id) {
-            entry.contains(event_type)
-        } else {
-            false
-        }
-    }
-
-    /// Checks if the given event map contains any events for the given widget
-    #[allow(dead_code)]
-    fn has_any_event(events: &HashMap<Index, HashSet<EventType>>, widget_id: &Index) -> bool {
-        if let Some(entry) = events.get(widget_id) {
-            entry.len() > 0
-        } else {
-            false
-        }
+        let mut dispatcher = self.event_dispatcher.to_owned();
+        dispatcher.process_events(input_events, self);
+        self.event_dispatcher = dispatcher;
     }
 
     #[allow(dead_code)]

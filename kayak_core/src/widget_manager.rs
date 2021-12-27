@@ -12,7 +12,7 @@ use crate::{
     tree::Tree,
     Arena, Index, Widget,
 };
-use crate::cursor::PointerEvents;
+use crate::layout_cache::Rect;
 // use as_any::Downcast;
 
 #[derive(Debug)]
@@ -127,6 +127,10 @@ impl WidgetManager {
     pub fn repossess(&mut self, widget: Box<dyn Widget>) {
         let widget_id = widget.get_id();
         self.current_widgets[widget_id] = Some(widget);
+    }
+
+    pub fn get_layout(&self, id: &Index) -> Option<&Rect> {
+        self.layout_cache.rect.get(id)
     }
 
     pub fn render(&mut self) {
@@ -384,98 +388,5 @@ impl WidgetManager {
             }
         }
         None
-    }
-
-    /// Get the nodes under the given position
-    ///
-    /// The first element in the returned tuple is the node deemed as the "best match". A node is a best match when
-    /// it is the deepest matching node in the hierarchy or it has a higher z-index than the other matches.
-    ///
-    /// # Arguments
-    ///
-    /// * `position`: The 2D point to check under
-    /// * `parent`: The parent to start at (or `None` for the root element)
-    /// * `respect_pointer_events`: Whether a widget's `pointer_events` style should be respected
-    ///
-    pub fn get_nodes_under(&self, position: (f32, f32), parent: Option<Index>, respect_pointer_events: bool) -> Option<(Index, Vec<Index>)> {
-
-        // TODO: Find a more efficient way of finding a node at a given point
-        // The main issue with recursively checking if a node contains the point is that we cannot be sure
-        // that a child of a node will actually contain the point despite the point being contained within
-        // the parent (this is due to things like self-directed positioning).
-        // If we could transform a point into a widget's local space, then we could maybe go with the
-        // iterator approach and just transform the position/node at each point. However, we don't currently
-        // store the node's transform, making it both difficult and tedious to perform the conversion. We
-        // would have to track the current transformation offset at every level of recursion.
-        // Even still, we would need to check every child anyways since a node further down the tree might
-        // actually be positioned in the spot we're looking for. That kind of iteration skips a node like
-        // that completely.
-        // So for now, we'll just check every single node in the tree to find the matching one.
-
-        let mut nodes = Vec::default();
-        let mut z_index = f32::NEG_INFINITY;
-        let mut best_match: Option<Index> = None;
-        let mut best_nest_level = 0;
-
-        let parent = if let Some(parent) = parent {
-            parent
-        } else {
-            self.node_tree.root_node?
-        };
-
-        let mut stack = vec![(parent, 0)];
-        while stack.len() > 0 {
-            let (parent, nest_level) = stack.pop().unwrap();
-            let mut pointer_events = PointerEvents::default();
-            if respect_pointer_events {
-                if let Some(widget) = self.current_widgets.get(parent).unwrap() {
-                    if let Some(styles) = widget.get_styles() {
-                        pointer_events = styles.pointer_events.resolve();
-                    }
-                }
-            }
-
-            if matches!(pointer_events, PointerEvents::None) {
-                continue;
-            }
-
-            if !matches!(pointer_events, PointerEvents::SelfOnly) {
-                if let Some(children) = self.node_tree.children.get(&parent) {
-                    for child in children {
-                        stack.push((*child, nest_level + 1));
-                    }
-                }
-                if matches!(pointer_events, PointerEvents::ChildrenOnly) {
-                    continue;
-                }
-            }
-
-            if let Some(rect) = self.layout_cache.rect.get(&parent) {
-                if rect.contains(&position) {
-                    nodes.push(parent);
-
-                    if nest_level >= best_nest_level || rect.z_index > z_index {
-                        best_match = Some(parent);
-                        z_index = rect.z_index;
-
-                        if nest_level > best_nest_level {
-                            best_nest_level = nest_level;
-                        }
-                    }
-                }
-            }
-        }
-
-        if let Some(best_match) = best_match {
-            Some((best_match, nodes))
-        } else {
-            None
-        }
-    }
-
-    /// Get the "best match" node at the given position
-    #[allow(dead_code)]
-    pub fn get_node_at(&self, position: (f32, f32), parent: Option<Index>, respect_pointer_events: bool) -> Option<Index> {
-        Some(self.get_nodes_under(position, parent, respect_pointer_events)?.0)
     }
 }

@@ -16,10 +16,12 @@ pub mod tree;
 mod vec;
 pub mod widget;
 pub mod widget_manager;
+mod cursor;
 
 use std::sync::{Arc, RwLock};
 
 pub use binding::*;
+pub use cursor::PointerEvents;
 pub use color::Color;
 pub use context::*;
 pub use event::*;

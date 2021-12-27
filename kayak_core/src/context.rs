@@ -3,14 +3,14 @@ use morphorm::Hierarchy;
 use std::collections::{HashMap, HashSet};
 
 use crate::{
-    multi_state::MultiState, widget_manager::WidgetManager, Event, EventType, Index, InputEvent,
+    multi_state::MultiState, widget_manager::WidgetManager, Event, EventType, Index, InputEvent, InputEventCategory,
 };
 
 pub struct KayakContext {
     widget_states: HashMap<crate::Index, resources::Resources>,
     global_bindings: HashMap<crate::Index, Vec<flo_binding::Uuid>>,
     widget_state_lifetimes:
-        HashMap<crate::Index, HashMap<flo_binding::Uuid, Box<dyn crate::Releasable>>>,
+    HashMap<crate::Index, HashMap<flo_binding::Uuid, Box<dyn crate::Releasable>>>,
     current_id: Index,
     // TODO: Make widget_manager private.
     pub widget_manager: WidgetManager,
@@ -19,7 +19,6 @@ pub struct KayakContext {
     previous_events: HashMap<Index, HashSet<EventType>>,
     global_state: resources::Resources,
     current_focus: Index,
-    last_focus: Index,
     last_state_type_id: Option<std::any::TypeId>,
     current_state_index: usize,
 }
@@ -46,7 +45,6 @@ impl KayakContext {
             global_state: resources::Resources::default(),
             previous_events: HashMap::new(),
             current_focus: Index::default(),
-            last_focus: Index::default(),
             last_state_type_id: None,
             current_state_index: 0,
         }
@@ -267,222 +265,199 @@ impl KayakContext {
         self.widget_manager.calculate_layout();
     }
 
+    /// Processes the given input events
+    ///
+    /// Events are processed in three phases: Capture, Target, Propagate. These phases are based on their
+    /// associated [W3 specifications](https://www.w3.org/TR/uievents/#dom-event-architecture).
+    ///
+    /// ## Capture:
+    /// Currently, we do not support the Capture Phase. This is because the current event handling system is
+    ///   made to handle events as a single enum. To achieve proper capturing, widgets would need to be able to
+    ///   register separate event handlers so that specific ones could be captured while others would not. It
+    ///   should generally be okay to skip this as it's not a common use-case.
+    ///
+    /// ## Target:
+    ///   The Target Phase simply identifies the target for an event so that we can generate the propagation path
+    ///   for it.
+    ///
+    /// ## Propagate:
+    ///   The Propagate Phase (also known as the Bubble Phase) is where we bubble up the tree from the target node,
+    ///   firing the bubbled event along the way. At any point, the bubbling can be stopped by calling
+    ///   [`event.stop_propagation()`](Event::stop_propagation). Not every event can be propagated, in which case,
+    ///   they will only fire for their specified target.
     pub fn process_events(&mut self, input_events: Vec<InputEvent>) {
-        let mut events_stream = Vec::new();
-        let mut next_events = HashMap::default();
+        let mut event_stream = Vec::<Event>::new();
 
-        let mut was_mouse_down_event = false;
-        let mut was_focus_event = false;
-
-        for index in self.widget_manager.node_tree.down_iter() {
-            if let Some(layout) = self.widget_manager.layout_cache.rect.get(&index) {
-                for input_event in input_events.iter() {
-                    match input_event {
-                        InputEvent::MouseMoved(point) => {
-                            // Hover event.
-                            if layout.contains(point) {
-                                if !Self::contains_event(
-                                    &self.previous_events,
-                                    &index,
-                                    &EventType::MouseIn,
-                                ) {
-                                    let mouse_in_event = Event {
-                                        target: index,
-                                        event_type: EventType::MouseIn,
-                                        ..Event::default()
-                                    };
-                                    events_stream.push(mouse_in_event);
-                                    Self::insert_event(
-                                        &mut next_events,
-                                        &index,
-                                        EventType::MouseIn,
-                                    );
-                                }
-
-                                let hover_event = Event {
-                                    target: index,
-                                    event_type: EventType::Hover,
-                                    ..Event::default()
-                                };
-                                events_stream.push(hover_event);
-                                Self::insert_event(&mut next_events, &index, EventType::Hover);
-                            } else {
-                                if Self::contains_event(
-                                    &self.previous_events,
-                                    &index,
-                                    &EventType::Hover,
-                                ) || Self::contains_event(
-                                    &self.previous_events,
-                                    &index,
-                                    &EventType::MouseIn,
-                                ) {
-                                    let mouse_out_event = Event {
-                                        target: index,
-                                        event_type: EventType::MouseOut,
-                                        ..Event::default()
-                                    };
-                                    events_stream.push(mouse_out_event);
-                                    Self::insert_event(
-                                        &mut next_events,
-                                        &index,
-                                        EventType::MouseOut,
-                                    );
-                                }
-                            }
-                            self.last_mouse_position = *point;
-                        }
-                        InputEvent::MouseLeftPress => {
-                            // Reset global mouse pressed
-                            self.is_mouse_pressed = true;
-                            was_mouse_down_event = true;
-
-                            if layout.contains(&self.last_mouse_position) {
-                                let mouse_down_event = Event {
-                                    target: index,
-                                    event_type: EventType::MouseDown,
-                                    ..Event::default()
-                                };
-                                events_stream.push(mouse_down_event);
-                                Self::insert_event(&mut next_events, &index, EventType::MouseDown);
-
-                                // Start mouse pressed event as well
-                                Self::insert_event(
-                                    &mut next_events,
-                                    &index,
-                                    EventType::MousePressed,
-                                );
-
-                                if let Some(widget) =
-                                    self.widget_manager.current_widgets.get(index).unwrap()
-                                {
-                                    if widget.focusable() {
-                                        was_focus_event = true;
-                                        let focus_event = Event {
-                                            target: index,
-                                            event_type: EventType::Focus,
-                                            ..Event::default()
-                                        };
-                                        events_stream.push(focus_event);
-                                        self.last_focus = self.current_focus;
-                                        self.current_focus = index;
-                                    }
-                                }
-                            }
-                        }
-                        InputEvent::MouseLeftRelease => {
-                            // Reset global mouse pressed
-                            self.is_mouse_pressed = false;
-
-                            if layout.contains(&self.last_mouse_position) {
-                                let mouse_up_event = Event {
-                                    target: index,
-                                    event_type: EventType::MouseUp,
-                                    ..Event::default()
-                                };
-                                events_stream.push(mouse_up_event);
-                                Self::insert_event(&mut next_events, &index, EventType::MouseUp);
-
-                                if Self::contains_event(
-                                    &self.previous_events,
-                                    &index,
-                                    &EventType::MousePressed,
-                                ) {
-                                    let click_event = Event {
-                                        target: index,
-                                        event_type: EventType::Click,
-                                        ..Event::default()
-                                    };
-                                    events_stream.push(click_event);
-                                    Self::insert_event(&mut next_events, &index, EventType::Click);
-                                }
-                            }
-                        }
-                        InputEvent::CharEvent { c } => events_stream.push(Event {
-                            target: index,
-                            event_type: EventType::CharInput { c: *c },
-                            ..Event::default()
-                        }),
-                        InputEvent::Keyboard { key } => events_stream.push(Event {
-                            target: index,
-                            event_type: EventType::KeyboardInput { key: *key },
-                            ..Event::default()
-                        }),
-                    }
+        // === Find Event Targets === //
+        for input_event in input_events.iter() {
+            match input_event.category() {
+                InputEventCategory::Mouse => {
+                    event_stream.extend(self.process_pointer_events(input_event));
                 }
-
-                // Mouse is currently pressed for this node
-                if self.is_mouse_pressed
-                    && Self::contains_event(&self.previous_events, &index, &EventType::MousePressed)
-                {
-                    let mouse_pressed_event = Event {
-                        target: index,
-                        event_type: EventType::MousePressed,
-                        ..Event::default()
-                    };
-                    events_stream.push(mouse_pressed_event);
-
-                    // Make sure this event isn't removed while mouse is still held down
-                    Self::insert_event(&mut next_events, &index, EventType::MousePressed);
-                }
-
-                // Mouse is currently hovering this node
-                if Self::contains_event(&self.previous_events, &index, &EventType::Hover)
-                    && !Self::contains_event(&next_events, &index, &EventType::MouseOut) {
-                    // Make sure this event isn't removed while mouse is still over node
-                    Self::insert_event(&mut next_events, &index, EventType::Hover);
+                InputEventCategory::Keyboard => {
+                    event_stream.extend(self.process_keyboard_events(input_event));
                 }
             }
         }
 
-        if was_mouse_down_event && !was_focus_event && self.current_focus != Index::default() {
-            let focus_event = Event {
-                target: self.current_focus,
-                event_type: EventType::Blur,
-                ..Event::default()
-            };
-            events_stream.push(focus_event);
-            self.current_focus = Index::default();
+        // === Process Events === //
+        let mut next_events = HashMap::default();
+        for event in event_stream {
+            let mut current_target: Option<Index> = Some(event.target);
+            while let Some(index) = current_target {
+                // Create a copy of the event, specific for this node
+                // This is to make sure unauthorized changes to the event are not propagated
+                // (e.g., changing the event type, removing the target, etc.)
+                let mut node_event = Event {
+                    current_target: index,
+                    ..event
+                };
+
+                // --- Update State --- //
+                Self::insert_event(
+                    &mut next_events,
+                    &index,
+                    node_event.event_type,
+                );
+
+                // --- Call Event --- //
+                let mut target_widget = self.widget_manager.take(index);
+                target_widget.on_event(self, &mut node_event);
+                self.widget_manager.repossess(target_widget);
+
+                // --- Propagate Event --- //
+                if node_event.should_propagate {
+                    current_target = self.widget_manager.node_tree.get_parent(index);
+                } else {
+                    current_target = None;
+                }
+            }
         }
 
-        if was_mouse_down_event && was_focus_event && self.current_focus != self.last_focus {
-            let focus_event = Event {
-                target: self.last_focus,
-                event_type: EventType::Blur,
-                ..Event::default()
-            };
-            events_stream.push(focus_event);
+        // === Maintain Events === //
+        // Events that need to be maintained without re-firing between event updates should be managed here
+        for (index, events) in &self.previous_events {
+            // Mouse is currently pressed for this node
+            if self.is_mouse_pressed && events.contains(&EventType::MouseDown) {
+                // Make sure this event isn't removed while mouse is still held down
+                Self::insert_event(&mut next_events, index, EventType::MouseDown);
+            }
+
+            // Mouse is currently within this node
+            if events.contains(&EventType::MouseIn)
+                && !Self::contains_event(&next_events, index, &EventType::MouseOut) {
+                // Make sure this event isn't removed while mouse is still within node
+                Self::insert_event(&mut next_events, index, EventType::MouseIn);
+            }
         }
 
         // Replace the previous events with the next set
         self.previous_events = next_events;
+    }
 
-        // Propagate Events
-        for event in events_stream.iter_mut() {
-            let mut parents: Vec<Index> = Vec::new();
-            self.get_all_parents(event.target, &mut parents);
+    fn process_pointer_events(&mut self, input_event: &InputEvent) -> Vec<Event> {
+        let mut event_stream = Vec::new();
 
-            // First call target
-            let mut target_widget = self.widget_manager.take(event.target);
-            target_widget.on_event(self, event);
-            self.widget_manager.repossess(target_widget);
+        match input_event {
+            InputEvent::MouseMoved(point) => {
+                if let Some((next, next_nodes)) = self.widget_manager.get_nodes_under(*point, None) {
+                    event_stream.push(Event::new(next, EventType::Hover));
 
-            // Event debugging
-            // if matches!(event.event_type, EventType::Click) {
-            //     dbg!("Click event!");
-            //     let widget = self.widget_manager.take(event.target);
-            //     dbg!(widget.get_name());
-            //     self.widget_manager.repossess(widget);
-            // }
+                    // Mouse In - Applies to all matching nodes
+                    for next in next_nodes {
+                        if let Some(rect) = self.widget_manager.layout_cache.rect.get(&next) {
+                            if !rect.contains(&self.last_mouse_position) {
+                                event_stream.push(Event::new(next, EventType::MouseIn));
+                            }
+                        }
+                    }
+                }
 
-            // TODO: Restore propagation.
-            // for parent in parents {
-            //     if event.should_propagate {
-            //         let mut parent_widget = self.widget_manager.take(parent);
-            //         parent_widget.on_event(self, event);
-            //         self.widget_manager.repossess(parent_widget);
-            //     }
-            // }
+                if let Some((.., prev_nodes)) = self.widget_manager.get_nodes_under(self.last_mouse_position, None) {
+                    // Mouse Out - Applies to all matching nodes
+                    for prev in prev_nodes {
+                        if let Some(rect) = self.widget_manager.layout_cache.rect.get(&prev) {
+                            if !rect.contains(point) {
+                                event_stream.push(Event::new(prev, EventType::MouseOut));
+                            }
+                        }
+                    }
+                }
+
+                // Reset global mouse position
+                self.last_mouse_position = *point;
+            }
+            InputEvent::MouseLeftPress => {
+                // Reset global mouse pressed
+                self.is_mouse_pressed = true;
+
+                if let Some((prev, ..)) = self.widget_manager.get_nodes_under(self.last_mouse_position, None) {
+                    event_stream.push(Event::new(prev, EventType::MouseDown));
+
+                    // Find a focusable widget in the hierarchy
+                    let mut next_focus: Option<Index> = None;
+                    let mut index: Option<Index> = Some(prev);
+                    while let Some(idx) = index {
+                        index = None;
+                        if let Some(widget) = self.widget_manager.current_widgets.get(idx).unwrap() {
+                            if widget.focusable() {
+                                next_focus = Some(idx);
+                                event_stream.push(Event::new(idx, EventType::Focus));
+                            } else {
+                                index = self.widget_manager.node_tree.parent(idx);
+                            }
+                        }
+                    }
+
+                    if let Some(index) = next_focus {
+                        // Was a focus event
+                        if self.current_focus != index {
+                            // New focus
+                            event_stream.push(Event::new(self.current_focus, EventType::Blur));
+                        }
+                        // Update focus
+                        self.current_focus = index;
+                    } else if self.current_focus != Index::default() {
+                        // Was a blur event
+                        event_stream.push(Event::new(self.current_focus, EventType::Blur));
+                    }
+                }
+            }
+            InputEvent::MouseLeftRelease => {
+                // Reset global mouse pressed
+                self.is_mouse_pressed = false;
+
+                if let Some((prev, ..)) = self.widget_manager.get_nodes_under(self.last_mouse_position, None) {
+                    event_stream.push(Event::new(prev, EventType::MouseUp));
+
+                    if Self::contains_event(
+                        &self.previous_events,
+                        &prev,
+                        &EventType::MouseDown,
+                    ) {
+                        event_stream.push(Event::new(prev, EventType::Click));
+                    }
+                }
+            }
+            _ => {}
         }
+
+        event_stream
+    }
+
+    fn process_keyboard_events(&mut self, input_event: &InputEvent) -> Vec<Event> {
+        let mut event_stream = Vec::new();
+        match input_event {
+            InputEvent::CharEvent { c } => event_stream.push(
+                Event::new(self.current_focus, EventType::CharInput { c: *c })
+            ),
+            InputEvent::Keyboard { key } => event_stream.push(
+                Event::new(self.current_focus, EventType::KeyboardInput { key: *key })
+            ),
+            _ => {}
+        }
+
+        event_stream
     }
 
     /// Insert an event for a widget in the given event map
@@ -529,6 +504,7 @@ impl KayakContext {
         }
     }
 
+    #[allow(dead_code)]
     fn get_all_parents(&self, current: Index, parents: &mut Vec<Index>) {
         if let Some(parent) = self.widget_manager.tree.parents.get(&current) {
             parents.push(*parent);
@@ -538,8 +514,8 @@ impl KayakContext {
 
     #[cfg(feature = "bevy_renderer")]
     pub fn query_world<T: bevy::ecs::system::SystemParam, F, R>(&mut self, mut f: F) -> R
-    where
-        F: FnMut(<T::Fetch as bevy::ecs::system::SystemParamFetch<'_, '_>>::Item) -> R,
+        where
+            F: FnMut(<T::Fetch as bevy::ecs::system::SystemParamFetch<'_, '_>>::Item) -> R,
     {
         let mut world = self.get_global_state::<bevy::prelude::World>().unwrap();
         let mut system_state = bevy::ecs::system::SystemState::<T>::new(&mut world);

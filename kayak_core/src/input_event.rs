@@ -1,6 +1,6 @@
 use crate::KeyCode;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum InputEvent {
     MouseMoved((f32, f32)),
     MouseLeftPress,

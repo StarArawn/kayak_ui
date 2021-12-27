@@ -30,14 +30,31 @@ impl Default for EventState {
 
 #[derive(Debug, Default, Clone)]
 pub(crate) struct EventDispatcher {
-    pub is_mouse_pressed: bool,
-    pub current_focus: Option<Index>,
-    pub current_mouse_position: (f32, f32),
+    is_mouse_pressed: bool,
+    current_focus: Option<Index>,
+    current_mouse_position: (f32, f32),
     next_mouse_position: (f32, f32),
     previous_events: EventMap,
 }
 
 impl EventDispatcher {
+    /// Returns whether the mouse is currently pressed or not
+    #[allow(dead_code)]
+    pub fn is_mouse_pressed(&self) -> bool {
+        self.is_mouse_pressed
+    }
+
+    /// Gets the currently focused widget
+    #[allow(dead_code)]
+    pub fn current_focus(&self) -> Option<Index> {
+        self.current_focus
+    }
+
+    /// Gets the current mouse position (since last mouse event)
+    #[allow(dead_code)]
+    pub fn current_mouse_position(&self) -> (f32, f32) {
+        self.current_mouse_position
+    }
 
     /// Process and dispatch an [InputEvent](crate::InputEvent)
     #[allow(dead_code)]
@@ -118,6 +135,7 @@ impl EventDispatcher {
     /// Generates a stream of [Events](crate::Event) from a set of [InputEvents](crate::InputEvent)
     fn build_event_stream(&mut self, input_events: &[InputEvent], widget_manager: &WidgetManager) -> Vec<Event> {
         let mut event_stream = Vec::<Event>::new();
+        let mut states: HashMap<EventType, EventState> = HashMap::new();
 
         let root = if let Some(root) = widget_manager.node_tree.root_node {
             root
@@ -125,83 +143,85 @@ impl EventDispatcher {
             return event_stream;
         };
 
-        // === Identify Events === //
-        for input_event in input_events {
-            let mut states: HashMap<EventType, EventState> = HashMap::new();
-            let mut stack: Vec<TreeNode> = vec![(root, 0)];
-            while stack.len() > 0 {
-                let (current, depth) = stack.pop().unwrap();
+        // === Mouse Events === //
+        let mut stack: Vec<TreeNode> = vec![(root, 0)];
+        while stack.len() > 0 {
+            let (current, depth) = stack.pop().unwrap();
+            for input_event in input_events {
                 // --- Process Event --- //
-                match input_event.category() {
-                    InputEventCategory::Mouse => {
-                        // A widget's PointerEvents style will determine how it and its children are processed
-                        let mut pointer_events = PointerEvents::default();
-                        if let Some(widget) = widget_manager.current_widgets.get(current).unwrap() {
-                            if let Some(styles) = widget.get_styles() {
-                                pointer_events = styles.pointer_events.resolve();
+                if matches!(input_event.category(), InputEventCategory::Mouse) {
+                    // A widget's PointerEvents style will determine how it and its children are processed
+                    let mut pointer_events = PointerEvents::default();
+                    if let Some(widget) = widget_manager.current_widgets.get(current).unwrap() {
+                        if let Some(styles) = widget.get_styles() {
+                            pointer_events = styles.pointer_events.resolve();
+                        }
+                    }
+
+                    match pointer_events {
+                        PointerEvents::All | PointerEvents::SelfOnly => {
+                            let events = self.process_pointer_events(input_event, (current, depth), &mut states, widget_manager);
+                            event_stream.extend(events);
+
+                            if matches!(pointer_events, PointerEvents::SelfOnly) {
+                                continue;
                             }
                         }
+                        PointerEvents::None => continue,
+                        PointerEvents::ChildrenOnly => {}
+                    }
+                }
+            }
 
-                        match pointer_events {
-                            PointerEvents::All | PointerEvents::SelfOnly => {
-                                let events = self.process_pointer_events(input_event, (current, depth), &mut states, widget_manager);
-                                event_stream.extend(events);
+            // --- Push Children to Stack --- //
+            if let Some(children) = widget_manager.node_tree.children.get(&current) {
+                for child in children {
+                    stack.push((*child, depth + 1));
+                }
+            }
+        }
 
-                                if matches!(pointer_events, PointerEvents::SelfOnly) {
-                                    continue;
-                                }
+        // === Keyboard Events === //
+        for input_event in input_events {
+            // Keyboard events only care about the currently focused widget so we don't need to run this over every node in the tree
+            let events = self.process_keyboard_events(input_event, &mut states, widget_manager);
+            event_stream.extend(events);
+        }
+
+        // === Additional Events === //
+        let mut had_focus_event = false;
+
+        // These events are ones that require a specific target and need the tree to be evaluated before selecting the best match
+        for (event_type, state) in states {
+            if let Some(node) = state.best_match {
+                event_stream.push(Event::new(node, event_type));
+
+                match event_type {
+                    EventType::Focus => {
+                        had_focus_event = true;
+                        if let Some(current_focus) = self.current_focus {
+                            if current_focus != node {
+                                event_stream.push(Event::new(current_focus, EventType::Blur));
                             }
-                            PointerEvents::None => continue,
-                            PointerEvents::ChildrenOnly => {}
                         }
+                        self.current_focus = Some(node);
                     }
                     _ => {}
                 }
-
-                // --- Push Children to Stack --- //
-                if let Some(children) = widget_manager.node_tree.children.get(&current) {
-                    for child in children {
-                        stack.push((*child, depth + 1));
-                    }
-                }
             }
-
-            // Keyboard events only care about the currently focused widget so we don't need to run this over every node in the tree
-            let events = self.process_keyboard_events(input_event, widget_manager);
-            event_stream.extend(events);
-
-            // === Identify Best Targets === //
-            let mut had_focus_event = false;
-            for (event_type, state) in states {
-                if let Some(node) = state.best_match {
-                    event_stream.push(Event::new(node, event_type));
-
-                    match event_type {
-                        EventType::Focus => {
-                            had_focus_event = true;
-                            if let Some(current_focus) = self.current_focus {
-                                if current_focus != node {
-                                    event_stream.push(Event::new(current_focus, EventType::Blur));
-                                }
-                            }
-                            self.current_focus = Some(node);
-                        }
-                        _ => {}
-                    }
-                }
-            }
-
-            if !had_focus_event && matches!(input_event, InputEvent::MouseLeftPress) {
-                // A mouse press didn't contain a focus event -> blur
-                if let Some(current_focus) = self.current_focus {
-                    event_stream.push(Event::new(current_focus, EventType::Blur));
-                    self.current_focus = None;
-                }
-            }
-
-            self.current_mouse_position = self.next_mouse_position;
         }
 
+        // --- Blur Event --- //
+        if !had_focus_event && input_events.contains(&InputEvent::MouseLeftPress) {
+            // A mouse press didn't contain a focus event -> blur
+            if let Some(current_focus) = self.current_focus {
+                event_stream.push(Event::new(current_focus, EventType::Blur));
+                self.current_focus = None;
+            }
+        }
+
+        // Apply changes
+        self.current_mouse_position = self.next_mouse_position;
 
         event_stream
     }
@@ -272,7 +292,7 @@ impl EventDispatcher {
         event_stream
     }
 
-    fn process_keyboard_events(&mut self, input_event: &InputEvent, _widget_manager: &WidgetManager) -> Vec<Event> {
+    fn process_keyboard_events(&mut self, input_event: &InputEvent, _states: &mut HashMap<EventType, EventState>, _widget_manager: &WidgetManager) -> Vec<Event> {
         let mut event_stream = Vec::new();
         if let Some(current_focus) = self.current_focus {
             match input_event {

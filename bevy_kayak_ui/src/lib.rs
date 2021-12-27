@@ -63,7 +63,8 @@ pub fn process_events(
     if let Ok(mut context) = bevy_context.kayak_context.write() {
         let mut input_events = Vec::new();
 
-        for event in cursor_moved_events.iter() {
+        if let Some(event) = cursor_moved_events.iter().last() {
+            // Currently, we can only handle a single MouseMoved event at a time so everything but the last needs to be skipped
             input_events.push(InputEvent::MouseMoved((
                 event.position.x as f32,
                 window_size.y - event.position.y as f32,

@@ -147,6 +147,8 @@ impl EventDispatcher {
         let mut stack: Vec<TreeNode> = vec![(root, 0)];
         while stack.len() > 0 {
             let (current, depth) = stack.pop().unwrap();
+            let mut enter_children = true;
+
             for input_event in input_events {
                 // --- Process Event --- //
                 if matches!(input_event.category(), InputEventCategory::Mouse) {
@@ -164,19 +166,21 @@ impl EventDispatcher {
                             event_stream.extend(events);
 
                             if matches!(pointer_events, PointerEvents::SelfOnly) {
-                                continue;
+                                enter_children = false;
                             }
                         }
-                        PointerEvents::None => continue,
+                        PointerEvents::None => enter_children = false,
                         PointerEvents::ChildrenOnly => {}
                     }
                 }
             }
 
             // --- Push Children to Stack --- //
-            if let Some(children) = widget_manager.node_tree.children.get(&current) {
-                for child in children {
-                    stack.push((*child, depth + 1));
+            if enter_children {
+                if let Some(children) = widget_manager.node_tree.children.get(&current) {
+                    for child in children {
+                        stack.push((*child, depth + 1));
+                    }
                 }
             }
         }

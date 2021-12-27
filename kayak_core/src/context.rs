@@ -21,6 +21,7 @@ pub struct KayakContext {
     current_focus: Index,
     last_state_type_id: Option<std::any::TypeId>,
     current_state_index: usize,
+    previously_hovered_nodes: Vec<Index>,
 }
 
 impl std::fmt::Debug for KayakContext {
@@ -47,6 +48,7 @@ impl KayakContext {
             current_focus: Index::default(),
             last_state_type_id: None,
             current_state_index: 0,
+            previously_hovered_nodes: Vec::new(),
         }
     }
 
@@ -360,28 +362,29 @@ impl KayakContext {
 
         match input_event {
             InputEvent::MouseMoved(point) => {
-                if let Some((next, next_nodes)) = self.widget_manager.get_nodes_under(*point, None, true) {
-                    event_stream.push(Event::new(next, EventType::Hover));
 
-                    // Mouse In - Applies to all matching nodes
-                    for next in next_nodes {
-                        if let Some(rect) = self.widget_manager.layout_cache.rect.get(&next) {
-                            if !rect.contains(&self.last_mouse_position) {
-                                event_stream.push(Event::new(next, EventType::MouseIn));
-                            }
+                // Mouse Out - Applies to all matching nodes
+                for prev in &self.previously_hovered_nodes {
+                    if let Some(rect) = self.widget_manager.layout_cache.rect.get(&prev) {
+                        if !rect.contains(point) {
+                            event_stream.push(Event::new(*prev, EventType::MouseOut));
                         }
                     }
                 }
 
-                if let Some((.., prev_nodes)) = self.widget_manager.get_nodes_under(self.last_mouse_position, None, true) {
-                    // Mouse Out - Applies to all matching nodes
-                    for prev in prev_nodes {
-                        if let Some(rect) = self.widget_manager.layout_cache.rect.get(&prev) {
-                            if !rect.contains(point) {
-                                event_stream.push(Event::new(prev, EventType::MouseOut));
+                if let Some((next, next_nodes)) = self.widget_manager.get_nodes_under(*point, None, true) {
+                    event_stream.push(Event::new(next, EventType::Hover));
+
+                    // Mouse In - Applies to all matching nodes
+                    for next in next_nodes.iter() {
+                        if let Some(rect) = self.widget_manager.layout_cache.rect.get(&next) {
+                            if !rect.contains(&self.last_mouse_position) {
+                                event_stream.push(Event::new(*next, EventType::MouseIn));
                             }
                         }
                     }
+
+                    self.previously_hovered_nodes = next_nodes;
                 }
 
                 // Reset global mouse position

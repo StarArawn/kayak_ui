@@ -12,6 +12,7 @@ use crate::{
     tree::Tree,
     Arena, Index, Widget,
 };
+use crate::layout_cache::Rect;
 // use as_any::Downcast;
 
 #[derive(Debug)]
@@ -126,6 +127,10 @@ impl WidgetManager {
     pub fn repossess(&mut self, widget: Box<dyn Widget>) {
         let widget_id = widget.get_id();
         self.current_widgets[widget_id] = Some(widget);
+    }
+
+    pub fn get_layout(&self, id: &Index) -> Option<&Rect> {
+        self.layout_cache.rect.get(id)
     }
 
     pub fn render(&mut self) {

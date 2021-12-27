@@ -360,7 +360,7 @@ impl KayakContext {
 
         match input_event {
             InputEvent::MouseMoved(point) => {
-                if let Some((next, next_nodes)) = self.widget_manager.get_nodes_under(*point, None) {
+                if let Some((next, next_nodes)) = self.widget_manager.get_nodes_under(*point, None, true) {
                     event_stream.push(Event::new(next, EventType::Hover));
 
                     // Mouse In - Applies to all matching nodes
@@ -373,7 +373,7 @@ impl KayakContext {
                     }
                 }
 
-                if let Some((.., prev_nodes)) = self.widget_manager.get_nodes_under(self.last_mouse_position, None) {
+                if let Some((.., prev_nodes)) = self.widget_manager.get_nodes_under(self.last_mouse_position, None, true) {
                     // Mouse Out - Applies to all matching nodes
                     for prev in prev_nodes {
                         if let Some(rect) = self.widget_manager.layout_cache.rect.get(&prev) {
@@ -391,7 +391,7 @@ impl KayakContext {
                 // Reset global mouse pressed
                 self.is_mouse_pressed = true;
 
-                if let Some((prev, ..)) = self.widget_manager.get_nodes_under(self.last_mouse_position, None) {
+                if let Some((prev, ..)) = self.widget_manager.get_nodes_under(self.last_mouse_position, None, true) {
                     event_stream.push(Event::new(prev, EventType::MouseDown));
 
                     // Find a focusable widget in the hierarchy
@@ -427,7 +427,7 @@ impl KayakContext {
                 // Reset global mouse pressed
                 self.is_mouse_pressed = false;
 
-                if let Some((prev, ..)) = self.widget_manager.get_nodes_under(self.last_mouse_position, None) {
+                if let Some((prev, ..)) = self.widget_manager.get_nodes_under(self.last_mouse_position, None, true) {
                     event_stream.push(Event::new(prev, EventType::MouseUp));
 
                     if Self::contains_event(

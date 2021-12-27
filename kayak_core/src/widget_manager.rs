@@ -395,8 +395,9 @@ impl WidgetManager {
     ///
     /// * `position`: The 2D point to check under
     /// * `parent`: The parent to start at (or `None` for the root element)
+    /// * `respect_pointer_events`: Whether a widget's `pointer_events` style should be respected
     ///
-    pub fn get_nodes_under(&self, position: (f32, f32), parent: Option<Index>) -> Option<(Index, Vec<Index>)> {
+    pub fn get_nodes_under(&self, position: (f32, f32), parent: Option<Index>, respect_pointer_events: bool) -> Option<(Index, Vec<Index>)> {
 
         // TODO: Find a more efficient way of finding a node at a given point
         // The main issue with recursively checking if a node contains the point is that we cannot be sure
@@ -426,9 +427,11 @@ impl WidgetManager {
         while stack.len() > 0 {
             let (parent, nest_level) = stack.pop().unwrap();
             let mut pointer_events = PointerEvents::default();
-            if let Some(widget) = self.current_widgets.get(parent).unwrap() {
-                if let Some(styles) = widget.get_styles() {
-                    pointer_events = styles.pointer_events.resolve();
+            if respect_pointer_events {
+                if let Some(widget) = self.current_widgets.get(parent).unwrap() {
+                    if let Some(styles) = widget.get_styles() {
+                        pointer_events = styles.pointer_events.resolve();
+                    }
                 }
             }
 
@@ -472,7 +475,7 @@ impl WidgetManager {
 
     /// Get the "best match" node at the given position
     #[allow(dead_code)]
-    pub fn get_node_at(&self, position: (f32, f32), parent: Option<Index>) -> Option<Index> {
-        Some(self.get_nodes_under(position, parent)?.0)
+    pub fn get_node_at(&self, position: (f32, f32), parent: Option<Index>, respect_pointer_events: bool) -> Option<Index> {
+        Some(self.get_nodes_under(position, parent, respect_pointer_events)?.0)
     }
 }

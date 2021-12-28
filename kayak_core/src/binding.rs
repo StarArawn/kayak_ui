@@ -1,6 +1,6 @@
 use std::time::Instant;
 
-pub use flo_binding::{bind, notify, Binding, Bound, Changeable, MutableBound, Releasable};
+pub use flo_binding::{bind, computed, notify, Binding, Bound, Changeable, ComputedBinding, MutableBound, Releasable};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Debouncer {

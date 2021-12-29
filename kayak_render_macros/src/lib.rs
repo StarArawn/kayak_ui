@@ -10,6 +10,7 @@ mod children;
 mod partial_eq;
 mod widget;
 mod widget_attributes;
+mod use_effect;
 
 use function_component::WidgetArguments;
 use partial_eq::impl_dyn_partial_eq;
@@ -18,6 +19,7 @@ use proc_macro_error::proc_macro_error;
 use quote::quote;
 use syn::{parse_macro_input, parse_quote};
 use widget::ConstructedWidget;
+use use_effect::UseEffect;
 
 use crate::widget::Widget;
 
@@ -112,21 +114,27 @@ pub fn dyn_partial_eq(_: TokenStream, input: TokenStream) -> TokenStream {
     .into()
 }
 
-/// Create a state and its setter
+/// Register some state data with an initial value.
+///
+/// Once the state is created, this macro returns the current value, a closure for updating the current value, and
+/// the raw Binding in a tuple.
+///
+/// For more details, check out [React's documentation](https://reactjs.org/docs/hooks-state.html),
+/// upon which this macro is based.
 ///
 /// # Arguments
 ///
-/// * `initial_state`: The expression
+/// * `initial_state`: The initial value for the state
 ///
-/// returns: (state, set_state)
+/// returns: (state, set_state, state_binding)
 ///
 /// # Examples
 ///
 /// ```
 /// # use kayak_core::{EventType, OnEvent};
-/// use kayak_render_macros::use_state;
+/// # use kayak_render_macros::use_state;
 ///
-/// let (count, set_count) = use_state!(0);
+/// let (count, set_count, ..) = use_state!(0);
 ///
 /// let on_event = OnEvent::new(move |_, event| match event.event_type {
 ///         EventType::Click => {
@@ -147,6 +155,7 @@ pub fn dyn_partial_eq(_: TokenStream, input: TokenStream) -> TokenStream {
 pub fn use_state(initial_state: TokenStream) -> TokenStream {
     let initial_state = parse_macro_input!(initial_state as syn::Expr);
     let result = quote! {{
+        use kayak_core::{Bound, MutableBound};
         let state = context.create_state(#initial_state).unwrap();
         let cloned_state = state.clone();
         let set_state = move |value| {
@@ -155,7 +164,60 @@ pub fn use_state(initial_state: TokenStream) -> TokenStream {
 
         let state_value = state.get();
 
-        (state.get(), set_state)
+        (state.get(), set_state, state)
     }};
     TokenStream::from(result)
+}
+
+/// Registers a side-effect callback for a given set of dependencies.
+///
+/// This macro takes on the form: `use_effect!(callback, dependencies)`. The callback is
+/// the closure that's ran whenever one of the Bindings in the dependencies array is changed.
+///
+/// Dependencies are automatically cloned when added to the dependency array. This allows the
+/// original bindings to be used within the callback without having to clone them manually first.
+/// This can be seen in the example below where `count_state` is used within the callback and in
+/// the dependency array.
+///
+/// For more details, check out [React's documentation](https://reactjs.org/docs/hooks-effect.html),
+/// upon which this macro is based.
+///
+/// # Arguments
+///
+/// * `callback`: The side-effect closure
+/// * `dependencies`: The dependency array (in the form `[dep_1, dep_2, ...]`)
+///
+/// returns: ()
+///
+/// # Examples
+///
+/// ```
+/// # use kayak_core::{EventType, OnEvent};
+/// # use kayak_render_macros::{use_effect, use_state};
+///
+/// let (count, set_count, count_state) = use_state!(0);
+///
+/// use_effect!(move || {
+///     println!("Count: {}", count_state.get());
+/// }, [count_state]);
+///
+/// let on_event = OnEvent::new(move |_, event| match event.event_type {
+///         EventType::Click => {
+///             set_count(foo + 1);
+///         }
+///         _ => {}
+/// });
+///
+/// rsx! {
+///         <>
+///             <Button on_event={Some(on_event)}>
+///                 <Text size={16.0} content={format!("Count: {}", count)} />
+///             </Button>
+///         </>
+///     }
+/// ```
+#[proc_macro]
+pub fn use_effect(input: TokenStream) -> TokenStream {
+    let effect = parse_macro_input!(input as UseEffect);
+    effect.build()
 }

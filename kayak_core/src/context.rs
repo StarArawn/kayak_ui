@@ -1,11 +1,12 @@
 use crate::{Binding, Changeable};
 use std::collections::HashMap;
 
-use crate::{multi_state::MultiState, widget_manager::WidgetManager, Index, InputEvent, Releasable};
+use crate::{multi_state::MultiState, widget_manager::WidgetManager, Index, InputEvent, MutableBound, Releasable};
 use crate::event_dispatcher::EventDispatcher;
 
 pub struct KayakContext {
     widget_states: HashMap<crate::Index, resources::Resources>,
+    widget_effects: HashMap<crate::Index, resources::Resources>,
     /// Contains provider state data to be accessed by consumers.
     ///
     /// Maps the type of the data to a mapping of the provider node's ID to the state data
@@ -20,6 +21,7 @@ pub struct KayakContext {
     global_state: resources::Resources,
     last_state_type_id: Option<std::any::TypeId>,
     current_state_index: usize,
+    current_effect_index: usize,
 }
 
 impl std::fmt::Debug for KayakContext {
@@ -35,6 +37,7 @@ impl KayakContext {
     pub fn new() -> Self {
         Self {
             widget_states: HashMap::new(),
+            widget_effects: HashMap::new(),
             widget_providers: HashMap::new(),
             global_bindings: HashMap::new(),
             widget_state_lifetimes: HashMap::new(),
@@ -44,6 +47,7 @@ impl KayakContext {
             global_state: resources::Resources::default(),
             last_state_type_id: None,
             current_state_index: 0,
+            current_effect_index: 0,
         }
     }
 
@@ -149,6 +153,7 @@ impl KayakContext {
     pub fn set_current_id(&mut self, id: crate::Index) {
         self.current_id = id;
         self.current_state_index = 0;
+        self.current_effect_index = 0;
         self.last_state_type_id = None;
     }
 
@@ -208,6 +213,70 @@ impl KayakContext {
             self.last_state_type_id = Some(state_type_id);
         }
         return self.get_state();
+    }
+
+    /// Creates a callback that runs as a side-effect of its dependencies, running only when one of them is updated.
+    ///
+    /// All dependencies must be implement the [Changeable](crate::Changeable) trait, which means it will generally
+    /// work best with [Binding](crate::Binding) values.
+    ///
+    /// For more details, check out [React's documentation](https://reactjs.org/docs/hooks-effect.html),
+    /// upon which this method is based.
+    ///
+    /// # Arguments
+    ///
+    /// * `effect`: The side-effect function
+    /// * `dependencies`: The dependencies the effect relies on
+    ///
+    /// returns: ()
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use kayak_core::{bind, Binding, Bound, KayakContext};
+    /// # let mut context = KayakContext::new();
+    ///
+    /// let my_state: Binding<i32> = bind(0i32);
+    /// let my_state_clone = my_state.clone();
+    /// context.create_effect(move || {
+    ///     println!("Value: {}", my_state_clone.get());
+    /// }, &[&my_state]);
+    /// ```
+    pub fn create_effect<'a, F: Fn() + Send + Sync + 'static>(&'a mut self, effect: F, dependencies: &[&'a dyn Changeable]) {
+        // === Bind to Dependencies === //
+        let notification = crate::notify(effect);
+        let mut lifetimes = Vec::default();
+        for dependency in dependencies {
+            let lifetime = dependency.when_changed(notification.clone());
+            lifetimes.push(lifetime);
+        }
+
+        // === Create Invoking Function === //
+        // Create a temporary Binding to allow us to invoke the effect if needed
+        let notify_clone = notification.clone();
+        let invoke_effect = move || {
+            let control = crate::bind(false);
+            let mut control_life = control.when_changed(notify_clone.clone());
+            control.set(true);
+            control_life.done();
+        };
+
+        // === Insert Effect === //
+        let effects = self.widget_effects.entry(self.current_id).or_insert(resources::Resources::default());
+        if effects.contains::<MultiState<Vec<Box<dyn Releasable>>>>() {
+            let mut state = effects.get_mut::<MultiState<Vec<Box<dyn Releasable>>>>().unwrap();
+            let old_size = state.data.len();
+            state.get_or_add(lifetimes, &mut self.current_effect_index);
+            if old_size != state.data.len() {
+                // Just added -> invoke effect
+                invoke_effect();
+            }
+        } else {
+            let state = MultiState::new(lifetimes);
+            effects.insert(state);
+            invoke_effect();
+            self.current_effect_index += 1;
+        }
     }
 
     fn get_state<T: resources::Resource + Clone + PartialEq>(&self) -> Option<T> {

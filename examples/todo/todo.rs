@@ -25,7 +25,7 @@ pub struct Todo {
 
 #[widget]
 fn TodoApp() {
-    let (todos, set_todos) = use_state!(vec![
+    let (todos, set_todos, ..) = use_state!(vec![
         Todo {
             name: "Use bevy to make a game!".to_string(),
         },
@@ -37,7 +37,7 @@ fn TodoApp() {
         },
     ]);
 
-    let (new_todo_value, set_new_todo_value) = use_state!("".to_string());
+    let (new_todo_value, set_new_todo_value, ..) = use_state!("".to_string());
 
     let text_box_styles = Style {
         right: StyleProp::Value(Units::Pixels(10.0)),

@@ -107,11 +107,6 @@ impl<'a, 'c> ToTokens for CustomWidgetAttributes<'a, 'c> {
             }
         }
 
-        // #[cfg(feature = "internal")]
-        // let kayak_core = quote! { kayak_core };
-        // #[cfg(not(feature = "internal"))]
-        // let kayak_core = quote! { kayak_ui::core };
-
         let quoted = if attrs.len() == 0 {
             quote!({ ..Default::default() })
         } else {

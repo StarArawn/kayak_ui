@@ -1,6 +1,5 @@
 use crate::{Binding, Changeable};
-use morphorm::Hierarchy;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
 use crate::{multi_state::MultiState, widget_manager::WidgetManager, Index, InputEvent, Releasable};
 use crate::event_dispatcher::EventDispatcher;
@@ -342,7 +341,7 @@ impl KayakContext {
     ///
     /// Calling this from a widget will return the last mouse position at the time the widget was rendered.
     pub fn last_mouse_position(&self) -> (f32, f32) {
-        self.last_mouse_position
+        self.event_dispatcher.current_mouse_position()
     }
 
     #[cfg(feature = "bevy_renderer")]

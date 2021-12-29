@@ -10,7 +10,7 @@ use kayak_ui::widgets::{Background, Text};
 
 #[widget]
 pub fn AddButton(children: Children, styles: Option<Style>) {
-    let (color, set_color) = use_state!(Color::new(0.0781, 0.0898, 0.101, 1.0));
+    let (color, set_color, ..) = use_state!(Color::new(0.0781, 0.0898, 0.101, 1.0));
 
     let base_styles = styles.clone().unwrap_or_default();
     *styles = Some(Style {

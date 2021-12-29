@@ -114,24 +114,27 @@ pub fn dyn_partial_eq(_: TokenStream, input: TokenStream) -> TokenStream {
     .into()
 }
 
-/// Create a state and its setter
+/// Register some state data with an initial value.
+///
+/// Once the state is created, this macro returns the current value, a closure for updating the current value, and
+/// the raw Binding in a tuple.
 ///
 /// For more details, check out [React's documentation](https://reactjs.org/docs/hooks-state.html),
 /// upon which this macro is based.
 ///
 /// # Arguments
 ///
-/// * `initial_state`: The expression
+/// * `initial_state`: The initial value for the state
 ///
-/// returns: (state, set_state)
+/// returns: (state, set_state, state_binding)
 ///
 /// # Examples
 ///
 /// ```
 /// # use kayak_core::{EventType, OnEvent};
-/// use kayak_render_macros::use_state;
+/// # use kayak_render_macros::use_state;
 ///
-/// let (count, set_count) = use_state!(0);
+/// let (count, set_count, ..) = use_state!(0);
 ///
 /// let on_event = OnEvent::new(move |_, event| match event.event_type {
 ///         EventType::Click => {
@@ -150,20 +153,6 @@ pub fn dyn_partial_eq(_: TokenStream, input: TokenStream) -> TokenStream {
 /// ```
 #[proc_macro]
 pub fn use_state(initial_state: TokenStream) -> TokenStream {
-    let state: proc_macro2::TokenStream = use_raw_state(initial_state).into();
-    let result = quote! {{
-        let (state, set_state, ..) = #state;
-        (state, set_state)
-    }};
-    TokenStream::from(result)
-}
-
-/// This macro works exactly like its [use_state] counterpart, except that it also returns
-/// the raw state Binding as the third field in the tuple.
-///
-/// returns: (state, set_state, state_binding)
-#[proc_macro]
-pub fn use_raw_state(initial_state: TokenStream) -> TokenStream {
     let initial_state = parse_macro_input!(initial_state as syn::Expr);
     let result = quote! {{
         use kayak_core::{Bound, MutableBound};
@@ -204,9 +193,9 @@ pub fn use_raw_state(initial_state: TokenStream) -> TokenStream {
 ///
 /// ```
 /// # use kayak_core::{EventType, OnEvent};
-/// use kayak_render_macros::{use_effect, use_raw_state};
+/// # use kayak_render_macros::{use_effect, use_state};
 ///
-/// let (count, set_count, count_state) = use_raw_state!(0);
+/// let (count, set_count, count_state) = use_state!(0);
 ///
 /// use_effect!(move || {
 ///     println!("Count: {}", count_state.get());

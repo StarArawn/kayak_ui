@@ -16,7 +16,7 @@ use bevy::{
 };
 use kayak_ui::{
     bevy::{BevyContext, BevyKayakUIPlugin, FontMapping, UICameraBundle},
-    core::{EventType, Index, OnEvent, render, rsx, use_effect, use_raw_state, use_state, widget},
+    core::{EventType, Index, OnEvent, render, rsx, use_effect, use_state, widget},
     widgets::{App, Button, Text, Window},
 };
 
@@ -32,7 +32,7 @@ fn StateCounter() {
 
     // Here, we create a state with an initial value of 0. Right now the value of `count` is 0. If we call `set_count(10)`,
     // then the new value of `count` will be 10.
-    let (count, set_count) = use_state!(0);
+    let (count, set_count, ..) = use_state!(0);
 
     // We can create an event callback that uodates the state using the state variables defined above.
     // Keep the borrow checker in mind! We can pass both `count` and `set_count` to this closure because they
@@ -61,15 +61,15 @@ fn EffectCounter() {
     // In our case, we want to create a side-effect that updates a counter when another state is updated.
 
     // In order to create this side-effect, we need access to the raw state binding. This is easily done by using
-    // the `use_raw_state` macro in place of the regular `use_state` one.
-    let (count, set_count, raw_count) = use_raw_state!(0);
+    // the third field in the tuple returned from the `use_state` macro.
+    let (count, set_count, raw_count) = use_state!(0);
     let on_event = OnEvent::new(move |_, event| match event.event_type {
         EventType::Click => set_count(count + 1),
         _ => {}
     });
 
     // This is the state our side-effect will update in response to changes on `raw_count`.
-    let (effect_count, set_effect_count) = use_state!(0);
+    let (effect_count, set_effect_count, ..) = use_state!(0);
 
     // This hook defines a side-effect that calls a function only when one of its dependencies is updated.
     // They will also always run upon first render (i.e., when the widget is first added to the layout).

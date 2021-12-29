@@ -17,10 +17,10 @@ use bevy::{
             BufferUsages, BufferVec, CachedPipelineId, ColorTargetState, ColorWrites,
             DynamicUniformVec, Extent3d, FragmentState, FrontFace, MultisampleState, PolygonMode,
             PrimitiveState, PrimitiveTopology, RenderPipelineCache, RenderPipelineDescriptor,
-            SamplerDescriptor, Shader, ShaderStages, TextureDescriptor, TextureDimension,
-            TextureFormat, TextureSampleType, TextureUsages, TextureViewDescriptor,
-            TextureViewDimension, VertexAttribute, VertexBufferLayout, VertexFormat, VertexState,
-            VertexStepMode,
+            SamplerBindingType, SamplerDescriptor, Shader, ShaderStages, TextureDescriptor,
+            TextureDimension, TextureFormat, TextureSampleType, TextureUsages,
+            TextureViewDescriptor, TextureViewDimension, VertexAttribute, VertexBufferLayout,
+            VertexFormat, VertexState, VertexStepMode,
         },
         renderer::{RenderDevice, RenderQueue},
         texture::{BevyDefault, GpuImage, Image},
@@ -33,7 +33,7 @@ use bytemuck::{Pod, Zeroable};
 use crevice::std140::AsStd140;
 use kayak_font::{FontRenderingPipeline, FontTextureCache, KayakFont};
 
-use super::UNIFIED_SHADER_HANDLE;
+use super::{Dpi, UNIFIED_SHADER_HANDLE};
 use crate::{render::ui_pass::TransparentUI, WindowSize};
 
 pub struct UnifiedPipeline {
@@ -116,10 +116,7 @@ impl FromWorld for UnifiedPipeline {
                     BindGroupLayoutEntry {
                         binding: 1,
                         visibility: ShaderStages::FRAGMENT,
-                        ty: BindingType::Sampler {
-                            comparison: false,
-                            filtering: true,
-                        },
+                        ty: BindingType::Sampler(SamplerBindingType::Filtering),
                         count: None,
                     },
                 ],
@@ -141,10 +138,7 @@ impl FromWorld for UnifiedPipeline {
                 BindGroupLayoutEntry {
                     binding: 1,
                     visibility: ShaderStages::FRAGMENT,
-                    ty: BindingType::Sampler {
-                        comparison: false,
-                        filtering: true,
-                    },
+                    ty: BindingType::Sampler(SamplerBindingType::Filtering),
                     count: None,
                 },
             ],
@@ -218,10 +212,10 @@ impl FromWorld for UnifiedPipeline {
                 front_face: FrontFace::Ccw,
                 cull_mode: None,
                 polygon_mode: PolygonMode::Fill,
-                clamp_depth: false,
                 conservative: false,
                 topology: PrimitiveTopology::TriangleList,
                 strip_index_format: None,
+                unclipped_depth: false,
             },
             depth_stencil: None,
             multisample: MultisampleState {
@@ -548,6 +542,7 @@ pub struct DrawUI {
         SRes<FontTextureCache>,
         SRes<ImageBindGroups>,
         SRes<WindowSize>,
+        SRes<Dpi>,
         SQuery<Read<ViewUniformOffset>>,
         SQuery<Read<ExtractedQuad>>,
     )>,
@@ -576,6 +571,7 @@ impl Draw<TransparentUI> for DrawUI {
             font_texture_cache,
             image_bind_groups,
             window_size,
+            dpi,
             views,
             quads,
         ) = self.params.get(world);
@@ -585,6 +581,7 @@ impl Draw<TransparentUI> for DrawUI {
         let extracted_quad = quads.get(item.entity).unwrap();
 
         if extracted_quad.quad_type == UIQuadType::Clip {
+            let window_size = (window_size.0 * dpi.0, window_size.1 * dpi.0);
             let x = extracted_quad.rect.min.x as u32;
             let y = extracted_quad.rect.min.y as u32;
             let mut width = extracted_quad.rect.width() as u32;

@@ -26,10 +26,18 @@ use crate::widget::Widget;
 pub fn render(input: TokenStream) -> TokenStream {
     let widget = parse_macro_input!(input as Widget);
 
-    #[cfg(feature = "internal")]
-    let kayak_core = quote! { kayak_core };
-    #[cfg(not(feature = "internal"))]
-    let kayak_core = quote! { kayak_ui::core };
+    let found_crate = proc_macro_crate::crate_name("kayak_core");
+    let kayak_core = if let Ok(found_crate) = found_crate {
+        match found_crate {
+            proc_macro_crate::FoundCrate::Itself => quote! { crate },
+            proc_macro_crate::FoundCrate::Name(name) => {
+                let ident = syn::Ident::new(&name, proc_macro2::Span::call_site());
+                quote!(#ident)
+            }
+        }
+    } else {
+        quote!(kayak_ui::core)
+    };
 
     let result = quote! {
         let parent_id: Option<Index> = None;

@@ -8,8 +8,8 @@ use kayak_ui::{
     bevy::{BevyContext, BevyKayakUIPlugin, FontMapping, UICameraBundle},
     core::{
         styles::{Style, StyleProp, Units},
-        Color, Handler, render, rsx, use_state, widget, Bound, EventType,
-        Index, MutableBound, OnEvent,
+        Color, Handler, render, rsx, use_state, widget, EventType,
+        Index, OnEvent,
     },
     widgets::{App, Background, Button, Fold, If, Text, Window}
 };
@@ -67,7 +67,7 @@ fn FolderTree(context: &mut KayakContext) {
         ..fold_child_base_styles.clone()
     };
 
-    let (is_b_open, set_b_open) = use_state!(false);
+    let (is_b_open, set_b_open, ..) = use_state!(false);
     let set_close_b = set_b_open.clone();
     let close_b = Some(OnEvent::new(move |_, event| match event.event_type {
         EventType::Click => set_close_b(false),
@@ -93,7 +93,7 @@ fn FolderTree(context: &mut KayakContext) {
         ..text_styles.clone()
     };
 
-    let (tried, set_tried) = use_state!(false);
+    let (tried, set_tried, ..) = use_state!(false);
     let on_toggle_c = Some(Handler::new(move |_| {
         set_tried(true);
     }));

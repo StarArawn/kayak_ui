@@ -1,7 +1,7 @@
 use crate::core::{
     render_command::RenderCommand,
     styles::{Style, StyleProp, Units},
-    Children, EventType, Handler, rsx, widget, use_state, OnEvent, Bound, MutableBound
+    Children, EventType, Handler, rsx, widget, use_state, OnEvent
 };
 
 use crate::widgets::{Background, Clip, If, Text};
@@ -41,7 +41,7 @@ pub fn Fold(label: String, children: Children, open: Option<bool>, on_change: Op
 
     // === State === //
     let initial = default_open || open.unwrap_or_default();
-    let (is_open, set_is_open) = use_state!(initial);
+    let (is_open, set_is_open, ..) = use_state!(initial);
     if let Some(open) = open {
         // This is a controlled state
         set_is_open(open);

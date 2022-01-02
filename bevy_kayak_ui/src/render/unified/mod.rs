@@ -42,7 +42,7 @@ impl Plugin for UnifiedRenderPlugin {
         app.add_plugin(font::TextRendererPlugin)
             .add_plugin(image::ImageRendererPlugin);
 
-        let render_app = app.sub_app(RenderApp);
+        let render_app = app.sub_app_mut(RenderApp);
         render_app
             .init_resource::<ImageBindGroups>()
             .init_resource::<UnifiedPipeline>()

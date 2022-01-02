@@ -41,7 +41,7 @@ pub struct BevyKayakUIRenderPlugin;
 
 impl Plugin for BevyKayakUIRenderPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
-        let render_app = app.sub_app(RenderApp);
+        let render_app = app.sub_app_mut(RenderApp);
         render_app
             .init_resource::<DrawFunctions<TransparentUI>>()
             .add_system_to_stage(RenderStage::Extract, extract_core_pipeline_camera_phases);

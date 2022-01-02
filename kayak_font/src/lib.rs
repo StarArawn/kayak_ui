@@ -32,7 +32,7 @@ impl Plugin for KayakFontPlugin {
             .add_asset_loader(KayakFontLoader)
             .add_system(init_font_texture);
 
-        let render_app = app.sub_app(RenderApp);
+        let render_app = app.sub_app_mut(RenderApp);
         render_app
             .init_resource::<FontTextureCache>()
             .init_resource::<ExtractedFonts>()

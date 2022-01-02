@@ -26,8 +26,8 @@ use bevy::{
     },
     sprite::Rect,
 };
+use bevy_crevice::std140::AsStd140;
 use bytemuck::{Pod, Zeroable};
-use crevice::std140::AsStd140;
 use kayak_font::{FontRenderingPipeline, FontTextureCache, KayakFont};
 
 use super::FONT_SHADER_HANDLE;

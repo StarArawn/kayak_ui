@@ -8,9 +8,9 @@ mod attribute;
 mod child;
 mod children;
 mod partial_eq;
+mod use_effect;
 mod widget;
 mod widget_attributes;
-mod use_effect;
 
 use function_component::WidgetArguments;
 use partial_eq::impl_dyn_partial_eq;
@@ -18,8 +18,8 @@ use proc_macro::TokenStream;
 use proc_macro_error::proc_macro_error;
 use quote::quote;
 use syn::{parse_macro_input, parse_quote};
-use widget::ConstructedWidget;
 use use_effect::UseEffect;
+use widget::ConstructedWidget;
 
 use crate::widget::Widget;
 
@@ -154,8 +154,21 @@ pub fn dyn_partial_eq(_: TokenStream, input: TokenStream) -> TokenStream {
 #[proc_macro]
 pub fn use_state(initial_state: TokenStream) -> TokenStream {
     let initial_state = parse_macro_input!(initial_state as syn::Expr);
+    let found_crate = proc_macro_crate::crate_name("kayak_core");
+    let kayak_core = if let Ok(found_crate) = found_crate {
+        match found_crate {
+            proc_macro_crate::FoundCrate::Itself => quote! { crate },
+            proc_macro_crate::FoundCrate::Name(name) => {
+                let ident = syn::Ident::new(&name, proc_macro2::Span::call_site());
+                quote!(#ident)
+            }
+        }
+    } else {
+        quote!(kayak_ui::core)
+    };
+
     let result = quote! {{
-        use kayak_core::{Bound, MutableBound};
+        use #kayak_core::{Bound, MutableBound};
         let state = context.create_state(#initial_state).unwrap();
         let cloned_state = state.clone();
         let set_state = move |value| {

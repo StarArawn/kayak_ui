@@ -32,7 +32,7 @@ impl Plugin for FontRenderPlugin {
         let unified_shader = Shader::from_wgsl(include_str!("shader.wgsl"));
         shaders.set_untracked(FONT_SHADER_HANDLE, unified_shader);
 
-        let render_app = app.sub_app(RenderApp);
+        let render_app = app.sub_app_mut(RenderApp);
         render_app
             .init_resource::<QuadMeta>()
             .init_resource::<FontPipeline>()

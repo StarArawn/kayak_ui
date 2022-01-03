@@ -1,3 +1,4 @@
+use bevy::render::render_resource::std140::AsStd140;
 use bevy::{
     core::FloatOrd,
     ecs::system::{
@@ -29,7 +30,6 @@ use bevy::{
     sprite::Rect,
     utils::HashMap,
 };
-use bevy_crevice::std140::AsStd140;
 use bytemuck::{Pod, Zeroable};
 use kayak_font::{FontRenderingPipeline, FontTextureCache, KayakFont};
 

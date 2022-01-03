@@ -12,7 +12,7 @@ bevy_renderer = ["bevy"]
 [dependencies]
 as-any = "0.2"
 derivative = "2.2"
-bevy = { git = "https://github.com/bevyengine/bevy", rev = "50b3f27a767e3b538694d5e7b3ccfdffca647f1b", optional = true }
+bevy = { git = "https://github.com/bevyengine/bevy", optional = true }
 flo_binding = { git = "https://github.com/StarArawn/flo_binding.git", rev = "c78431a56df5ec082b7e1c271871e6c0ac75e81e" }
 kayak_render_macros = { path = "../kayak_render_macros" }
 morphorm = { git = "https://github.com/geom3trik/morphorm", rev = "1243152d4cebea46fd3e5098df26402c73acae91" }

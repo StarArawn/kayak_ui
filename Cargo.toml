@@ -17,14 +17,17 @@ bevy_renderer = [
 ]
 
 [dependencies]
-bevy = { git = "https://github.com/bevyengine/bevy", rev = "50b3f27a767e3b538694d5e7b3ccfdffca647f1b", optional = true }
+bevy = { git = "https://github.com/bevyengine/bevy", optional = true }
 kayak_core = { path = "kayak_core" }
 bevy_kayak_ui = { path = "bevy_kayak_ui", optional = true }
 kayak_font = { path = "kayak_font", optional = true }
 kayak_render_macros = { path = "kayak_render_macros" }
 
 [dev-dependencies]
-bevy = { git = "https://github.com/bevyengine/bevy", rev = "50b3f27a767e3b538694d5e7b3ccfdffca647f1b" }
+bevy = { git = "https://github.com/bevyengine/bevy" }
+
+[patch."https://github.com/bevyengine/bevy"] # < Fails here because you can't patch using the same URL :(
+bevy = { git = "https://github.com/bevyengine//bevy", rev = "50b3f27a767e3b538694d5e7b3ccfdffca647f1b" }
 
 [[example]]
 name = "todo"

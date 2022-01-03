@@ -1,3 +1,4 @@
+use bevy::render::render_resource::std140::AsStd140;
 use bevy::{
     core::FloatOrd,
     core_pipeline::Transparent2d,
@@ -26,7 +27,6 @@ use bevy::{
     },
     sprite::Rect,
 };
-use bevy_crevice::std140::AsStd140;
 use bytemuck::{Pod, Zeroable};
 use kayak_font::{FontRenderingPipeline, FontTextureCache, KayakFont};
 

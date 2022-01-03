@@ -9,6 +9,7 @@ mod text_box;
 mod nine_patch;
 mod text;
 mod window;
+mod fold;
 mod tooltip;
 
 pub use app::*;
@@ -16,6 +17,7 @@ pub use background::*;
 pub use button::*;
 pub use clip::*;
 pub use element::*;
+pub use fold::*;
 pub use if_element::*;
 pub use image::*;
 pub use text_box::*;

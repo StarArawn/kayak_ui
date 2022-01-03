@@ -26,7 +26,7 @@ kayak_render_macros = { path = "kayak_render_macros" }
 [dev-dependencies]
 bevy = { git = "https://github.com/bevyengine/bevy" }
 
-[patch."https://github.com/bevyengine/bevy"] # < Fails here because you can't patch using the same URL :(
+[patch."https://github.com/bevyengine/bevy"]
 bevy = { git = "https://github.com/bevyengine//bevy", rev = "50b3f27a767e3b538694d5e7b3ccfdffca647f1b" }
 
 [[example]]

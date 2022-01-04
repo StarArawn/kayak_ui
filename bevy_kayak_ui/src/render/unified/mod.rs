@@ -66,7 +66,7 @@ pub struct Dpi(f32);
 
 pub fn extract(
     mut commands: Commands,
-    context: Res<BevyContext>,
+    context: Option<Res<BevyContext>>,
     fonts: Res<Assets<KayakFont>>,
     font_mapping: Res<FontMapping>,
     image_manager: Res<ImageManager>,
@@ -74,67 +74,76 @@ pub fn extract(
     windows: Res<Windows>,
     window_size: Res<Binding<WindowSize>>,
 ) {
-    let render_primitives = if let Ok(context) = context.kayak_context.read() {
-        context.widget_manager.build_render_primitives()
-    } else {
-        vec![]
-    };
+    if let Some(context) = context {
+        let render_primitives = if let Ok(context) = context.kayak_context.read() {
+            context.widget_manager.build_render_primitives()
+        } else {
+            vec![]
+        };
 
-    // dbg!(&render_primitives);
+        // dbg!(&render_primitives);
 
-    let dpi = if let Some(window) = windows.get_primary() {
-        window.scale_factor() as f32
-    } else {
-        1.0
-    };
+        let dpi = if let Some(window) = windows.get_primary() {
+            window.scale_factor() as f32
+        } else {
+            1.0
+        };
 
-    let mut extracted_quads = Vec::new();
-    for render_primitive in render_primitives {
-        match render_primitive {
-            RenderPrimitive::Text { .. } => {
-                let text_quads = font::extract_texts(&render_primitive, &fonts, &font_mapping, dpi);
-                extracted_quads.extend(text_quads);
-            }
-            RenderPrimitive::Image { .. } => {
-                let image_quads = image::extract_images(&render_primitive, &image_manager, dpi);
-                extracted_quads.extend(image_quads);
-            }
-            RenderPrimitive::Quad { .. } => {
-                let quad_quads = quad::extract_quads(&render_primitive, dpi);
-                extracted_quads.extend(quad_quads);
-            }
-            RenderPrimitive::NinePatch { .. } => {
-                let nine_patch_quads =
-                    nine_patch::extract_nine_patch(&render_primitive, &image_manager, &images, dpi);
-                extracted_quads.extend(nine_patch_quads);
-            }
-            RenderPrimitive::Clip { layout } => {
-                extracted_quads.push(ExtractQuadBundle {
-                    extracted_quad: ExtractedQuad {
-                        rect: Rect {
-                            min: Vec2::new(layout.posx, layout.posy) * dpi,
-                            max: Vec2::new(layout.posx + layout.width, layout.posy + layout.height)
-                                * dpi,
+        let mut extracted_quads = Vec::new();
+        for render_primitive in render_primitives {
+            match render_primitive {
+                RenderPrimitive::Text { .. } => {
+                    let text_quads =
+                        font::extract_texts(&render_primitive, &fonts, &font_mapping, dpi);
+                    extracted_quads.extend(text_quads);
+                }
+                RenderPrimitive::Image { .. } => {
+                    let image_quads = image::extract_images(&render_primitive, &image_manager, dpi);
+                    extracted_quads.extend(image_quads);
+                }
+                RenderPrimitive::Quad { .. } => {
+                    let quad_quads = quad::extract_quads(&render_primitive, dpi);
+                    extracted_quads.extend(quad_quads);
+                }
+                RenderPrimitive::NinePatch { .. } => {
+                    let nine_patch_quads = nine_patch::extract_nine_patch(
+                        &render_primitive,
+                        &image_manager,
+                        &images,
+                        dpi,
+                    );
+                    extracted_quads.extend(nine_patch_quads);
+                }
+                RenderPrimitive::Clip { layout } => {
+                    extracted_quads.push(ExtractQuadBundle {
+                        extracted_quad: ExtractedQuad {
+                            rect: Rect {
+                                min: Vec2::new(layout.posx, layout.posy) * dpi,
+                                max: Vec2::new(
+                                    layout.posx + layout.width,
+                                    layout.posy + layout.height,
+                                ) * dpi,
+                            },
+                            color: Color::default(),
+                            vertex_index: 0,
+                            char_id: 0,
+                            z_index: layout.z_index,
+                            font_handle: None,
+                            quad_type: UIQuadType::Clip,
+                            type_index: 0,
+                            border_radius: (0.0, 0.0, 0.0, 0.0),
+                            image: None,
+                            uv_min: None,
+                            uv_max: None,
                         },
-                        color: Color::default(),
-                        vertex_index: 0,
-                        char_id: 0,
-                        z_index: layout.z_index,
-                        font_handle: None,
-                        quad_type: UIQuadType::Clip,
-                        type_index: 0,
-                        border_radius: (0.0, 0.0, 0.0, 0.0),
-                        image: None,
-                        uv_min: None,
-                        uv_max: None,
-                    },
-                });
+                    });
+                }
+                _ => {}
             }
-            _ => {}
         }
-    }
 
-    commands.insert_resource(window_size.get());
-    commands.insert_resource(Dpi(dpi));
-    commands.spawn_batch(extracted_quads);
+        commands.insert_resource(window_size.get());
+        commands.insert_resource(Dpi(dpi));
+        commands.spawn_batch(extracted_quads);
+    }
 }

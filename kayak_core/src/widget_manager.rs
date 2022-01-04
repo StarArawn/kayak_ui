@@ -3,6 +3,7 @@ use std::{
     sync::{Arc, Mutex},
 };
 
+use crate::layout_cache::Rect;
 use crate::{
     layout_cache::LayoutCache,
     node::{Node, NodeBuilder},
@@ -12,7 +13,6 @@ use crate::{
     tree::Tree,
     Arena, Index, Widget,
 };
-use crate::layout_cache::Rect;
 // use as_any::Downcast;
 
 #[derive(Debug)]
@@ -323,7 +323,9 @@ impl WidgetManager {
             &self.node_tree,
             &self.layout_cache,
             &self.nodes,
-            self.node_tree.root_node.unwrap(),
+            self.node_tree
+                .root_node
+                .expect("A node_tree should have a root node"),
             0.0,
             RenderPrimitive::Empty,
         )

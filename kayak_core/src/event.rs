@@ -10,6 +10,8 @@ pub struct Event {
     pub event_type: EventType,
     /// Indicates whether this event should propagate or not
     pub(crate) should_propagate: bool,
+    /// Indicates whether the default action of this event (if any) has been prevented
+    pub(crate) default_prevented: bool,
 }
 
 impl Default for Event {
@@ -19,6 +21,7 @@ impl Default for Event {
             current_target: Default::default(),
             event_type: EventType::Click,
             should_propagate: true,
+            default_prevented: false,
         }
     }
 }
@@ -34,6 +37,7 @@ impl Event {
             current_target: target,
             event_type,
             should_propagate: event_type.propagates(),
+            default_prevented: false,
         }
     }
 
@@ -45,6 +49,16 @@ impl Event {
     /// If called, prevents this event from propagating up the hierarchy
     pub fn stop_propagation(&mut self) {
         self.should_propagate = false;
+    }
+
+    /// Returns whether this event's default action has been prevented or not
+    pub fn is_default_prevented(&self) -> bool {
+        self.default_prevented
+    }
+
+    /// Prevents this event's default action (if any) from being executed
+    pub fn prevent_default(&mut self) {
+        self.default_prevented = true;
     }
 }
 

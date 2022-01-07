@@ -18,6 +18,7 @@ pub mod widget;
 pub mod widget_manager;
 mod cursor;
 mod event_dispatcher;
+mod focus_tree;
 
 use std::sync::{Arc, RwLock};
 
@@ -27,6 +28,7 @@ pub use color::Color;
 pub use context::*;
 pub use event::*;
 pub use fragment::Fragment;
+pub use focus_tree::FocusTree;
 pub use generational_arena::{Arena, Index};
 pub use input_event::*;
 pub use keys::KeyCode;

@@ -62,6 +62,26 @@ impl Tree {
         }
     }
 
+    pub fn remove(&mut self, index: Index) {
+        let parent = self.parents.remove(&index);
+        if let Some(parent) = parent {
+            if let Some(children) = self.children.remove(&index) {
+                for child in children {
+                    self.remove(child);
+                }
+            }
+            if let Some(siblings) = self.children.get_mut(&parent) {
+                siblings.retain(|node| *node != index);
+            }
+        } else {
+            // Is root node
+            self.root_node = None;
+            self.parents.clear();
+            self.children.clear();
+        }
+    }
+
+
     pub fn flatten(&self) -> Vec<Index> {
         if self.root_node.is_none() {
             return Vec::new();
@@ -102,8 +122,12 @@ impl Tree {
         })
     }
 
-    pub fn get_last_child(&self, _index: Index) -> Option<Index> {
-        todo!()
+    pub fn get_last_child(&self, index: Index) -> Option<Index> {
+        self.children.get(&index).map_or(None, |children| {
+            children
+                .last()
+                .map_or(None, |last_child| Some(*last_child))
+        })
     }
 
     pub fn get_next_sibling(&self, index: Index) -> Option<Index> {
@@ -124,16 +148,25 @@ impl Tree {
     }
 
     pub fn get_prev_sibling(&self, index: Index) -> Option<Index> {
-        self.children.get(&index).map_or(None, |children| {
-            children
-                .iter()
-                .position(|child| *child == index)
-                .map_or(None, |child_index| {
-                    children
-                        .get(child_index - 1)
-                        .map_or(None, |next_child| Some(*next_child))
-                })
-        })
+        if let Some(parent_index) = self.get_parent(index) {
+            self.children.get(&parent_index).map_or(None, |children| {
+                children
+                    .iter()
+                    .position(|child| *child == index)
+                    .map_or(None, |child_index| {
+                        if child_index > 0 {
+                            children
+                                .get(child_index - 1)
+                                .map_or(None, |prev_child| Some(*prev_child))
+                        }
+                        else {
+                            None
+                        }
+                    })
+            })
+        } else {
+            None
+        }
     }
 
     pub fn diff_children(&self, other_tree: &Tree, root_node: Index) -> ChildChanges {
@@ -235,8 +268,8 @@ impl Tree {
                     let parent_b = parent_b.unwrap();
                     parent_a != parent_b
                         || (parent_a == parent_b
-                            && *node != children_a.get(*id).unwrap().1
-                            && children_a.iter().any(|(_, node_b)| node == node_b))
+                        && *node != children_a.get(*id).unwrap().1
+                        && children_a.iter().any(|(_, node_b)| node == node_b))
                 } else {
                     false
                 };
@@ -357,8 +390,8 @@ impl Tree {
                     let parent_b = parent_b.unwrap();
                     parent_a != parent_b
                         || (parent_a == parent_b
-                            && *node != tree1.get(*id).unwrap().1
-                            && tree1.iter().any(|(_, node_b)| node == node_b))
+                        && *node != tree1.get(*id).unwrap().1
+                        && tree1.iter().any(|(_, node_b)| node == node_b))
                 } else {
                     false
                 };
@@ -466,7 +499,7 @@ impl<'a> Iterator for DownwardIterator<'a> {
                 while current_parent.is_some() {
                     if let Some(current_parent) = current_parent {
                         if let Some(next_parent_sibling) =
-                            self.tree.get_next_sibling(current_parent)
+                        self.tree.get_next_sibling(current_parent)
                         {
                             self.current_node = Some(next_parent_sibling);
                             return Some(next_parent_sibling);

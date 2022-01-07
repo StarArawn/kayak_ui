@@ -1,5 +1,5 @@
 use std::collections::{HashMap, HashSet};
-use crate::{Event, EventType, Index, InputEvent, InputEventCategory, KayakContext, PointerEvents};
+use crate::{Event, EventType, Index, InputEvent, InputEventCategory, KayakContext, KeyCode, PointerEvents};
 use crate::layout_cache::Rect;
 use crate::widget_manager::WidgetManager;
 
@@ -59,13 +59,13 @@ impl EventDispatcher {
     /// Process and dispatch an [InputEvent](crate::InputEvent)
     #[allow(dead_code)]
     pub fn process_event(&mut self, input_event: InputEvent, context: &mut KayakContext) {
-        let events = self.build_event_stream(&[input_event], &context.widget_manager);
+        let events = self.build_event_stream(&[input_event], &mut context.widget_manager);
         self.dispatch_events(events, context);
     }
 
     /// Process and dispatch a set of [InputEvents](crate::InputEvent)
     pub fn process_events(&mut self, input_events: Vec<InputEvent>, context: &mut KayakContext) {
-        let events = self.build_event_stream(&input_events, &context.widget_manager);
+        let events = self.build_event_stream(&input_events, &mut context.widget_manager);
         self.dispatch_events(events, context);
     }
 
@@ -79,7 +79,7 @@ impl EventDispatcher {
     pub fn dispatch_events(&mut self, events: Vec<Event>, context: &mut KayakContext) {
         // === Dispatch Events === //
         let mut next_events = HashMap::default();
-        for event in events {
+        for mut event in events {
             let mut current_target: Option<Index> = Some(event.target);
             while let Some(index) = current_target {
                 // Create a copy of the event, specific for this node
@@ -102,12 +102,18 @@ impl EventDispatcher {
                 target_widget.on_event(context, &mut node_event);
                 context.widget_manager.repossess(target_widget);
 
+                event.default_prevented |= node_event.default_prevented;
+
                 // --- Propagate Event --- //
                 if node_event.should_propagate {
                     current_target = context.widget_manager.node_tree.get_parent(index);
                 } else {
                     current_target = None;
                 }
+            }
+
+            if !event.default_prevented {
+                self.execute_default(event, context);
             }
         }
 
@@ -133,7 +139,7 @@ impl EventDispatcher {
     }
 
     /// Generates a stream of [Events](crate::Event) from a set of [InputEvents](crate::InputEvent)
-    fn build_event_stream(&mut self, input_events: &[InputEvent], widget_manager: &WidgetManager) -> Vec<Event> {
+    fn build_event_stream(&mut self, input_events: &[InputEvent], widget_manager: &mut WidgetManager) -> Vec<Event> {
         let mut event_stream = Vec::<Event>::new();
         let mut states: HashMap<EventType, EventState> = HashMap::new();
 
@@ -208,6 +214,7 @@ impl EventDispatcher {
                                 event_stream.push(Event::new(current_focus, EventType::Blur));
                             }
                         }
+                        widget_manager.focus_tree.focus(node);
                         self.current_focus = Some(node);
                     }
                     _ => {}
@@ -220,6 +227,7 @@ impl EventDispatcher {
             // A mouse press didn't contain a focus event -> blur
             if let Some(current_focus) = self.current_focus {
                 event_stream.push(Event::new(current_focus, EventType::Blur));
+                widget_manager.focus_tree.blur();
                 self.current_focus = None;
             }
         }
@@ -343,5 +351,26 @@ impl EventDispatcher {
     fn insert_event(events: &mut EventMap, widget_id: &Index, event_type: EventType) -> bool {
         let entry = events.entry(*widget_id).or_insert(HashSet::default());
         entry.insert(event_type)
+    }
+
+    /// Executes default actions for events
+    fn execute_default(&mut self, event: Event, context: &mut KayakContext) {
+        match event.event_type {
+            EventType::KeyboardInput { key } => {
+                match key {
+                    KeyCode::Tab => {
+                        if let Some(index) = context.widget_manager.focus_tree.next() {
+                            let mut events = vec![Event::new(index, EventType::Focus)];
+                            if let Some(current_focus) = self.current_focus {
+                                events.push(Event::new(current_focus, EventType::Blur));
+                            }
+                            self.dispatch_events(events, context);
+                        }
+                    }
+                    _ => {}
+                }
+            }
+            _ => {}
+        }
     }
 }

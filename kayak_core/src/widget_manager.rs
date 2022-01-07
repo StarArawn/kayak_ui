@@ -10,6 +10,7 @@ use crate::{
     render_primitive::RenderPrimitive,
     styles::Style,
     tree::Tree,
+    focus_tree::FocusTree,
     Arena, Index, Widget,
 };
 use crate::layout_cache::Rect;
@@ -24,6 +25,7 @@ pub struct WidgetManager {
     pub tree: Tree,
     pub node_tree: Tree,
     pub layout_cache: LayoutCache,
+    pub focus_tree: FocusTree,
     current_z: f32,
 }
 
@@ -37,6 +39,7 @@ impl WidgetManager {
             tree: Tree::default(),
             node_tree: Tree::default(),
             layout_cache: LayoutCache::default(),
+            focus_tree: FocusTree::default(),
             current_z: 0.0,
         }
     }
@@ -73,6 +76,10 @@ impl WidgetManager {
                     // if let Some(index) = self.dirty_nodes.iter().position(|id| *widget_id == *id) {
                     //     self.dirty_nodes.remove(index);
                     // }
+
+                    if widget.focusable() {
+                        self.focus_tree.add(*widget_id, Some(parent));
+                    }
 
                     // TODO: Figure a good way of diffing props passed to children of a widget
                     // that wont naturally-rerender it's children because of a lack of changes
@@ -116,6 +123,8 @@ impl WidgetManager {
 
         self.tree.add(widget_id, parent);
         self.layout_cache.add(widget_id);
+
+        self.focus_tree.add(widget_id, None);
 
         (true, widget_id)
     }

@@ -3,45 +3,55 @@ use bevy::{
     window::WindowDescriptor,
     DefaultPlugins,
 };
+use kayak_core::Color;
+use kayak_render_macros::use_state;
 use kayak_ui::bevy::{BevyContext, BevyKayakUIPlugin, FontMapping, UICameraBundle};
 use kayak_ui::core::{
     render, rsx,
     styles::{Style, StyleProp, Units},
-    widget, Bound, Index, MutableBound,
+    widget, Index,
 };
 use kayak_ui::widgets::{App, OnChange, TextBox, Window};
 
 #[widget]
 fn TextBoxExample(context: &mut KayakContext) {
-    let value = context
-        .create_state("I started with a value!".to_string())
-        .unwrap();
-    let value2 = context.create_state("".to_string()).unwrap();
+    let (value, set_value, _) = use_state!("I started with a value!".to_string());
+    let (empty_value, set_empty_value, _) = use_state!("".to_string());
+    let (red_value, set_red_value, _) = use_state!("This text is red".to_string());
 
     let input_styles = Style {
         top: StyleProp::Value(Units::Pixels(10.0)),
         ..Default::default()
     };
 
-    let cloned_value = value.clone();
+    let red_text_styles = Style {
+        color: StyleProp::Value(Color::new(1., 0., 0., 1.)),
+        ..input_styles.clone()
+    };
+
     let on_change = OnChange::new(move |event| {
-        cloned_value.set(event.value);
+        set_value(event.value);
     });
 
-    let cloned_value2 = value2.clone();
-    let on_change2 = OnChange::new(move |event| {
-        cloned_value2.set(event.value);
+    let on_change_empty = OnChange::new(move |event| {
+        set_empty_value(event.value);
     });
 
-    let current_value = value.get();
-    let current_value2 = value2.get();
+    let on_change_red = OnChange::new(move |event| {
+        set_red_value(event.value);
+    });
+
     rsx! {
-        <>
-            <Window position={(50.0, 50.0)} size={(300.0, 300.0)} title={"TextBox Example".to_string()}>
-                <TextBox styles={Some(input_styles)} value={current_value} on_change={Some(on_change)} />
-                <TextBox styles={Some(input_styles)} value={current_value2} on_change={Some(on_change2)} />
-            </Window>
-        </>
+        <Window position={(50.0, 50.0)} size={(300.0, 300.0)} title={"TextBox Example".to_string()}>
+            <TextBox styles={Some(input_styles)} value={value} on_change={Some(on_change)} />
+            <TextBox
+                styles={Some(input_styles)}
+                value={empty_value}
+                on_change={Some(on_change_empty)}
+                placeholder={Some("This is a placeholder".to_string())}
+            />
+            <TextBox styles={Some(red_text_styles)} value={red_value} on_change={Some(on_change_red)} />
+        </Window>
     }
 }
 

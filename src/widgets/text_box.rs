@@ -70,13 +70,14 @@ pub fn TextBox(value: String, on_change: Option<OnChange>, placeholder: Option<S
     let mut current_value = value.clone();
     let cloned_on_change = on_change.clone();
     let cloned_has_focus = has_focus.clone();
+
     self.on_event = Some(OnEvent::new(move |_, event| match event.event_type {
         EventType::CharInput { c } => {
             if !cloned_has_focus.get().0 {
                 return;
             }
             if is_backspace(c) {
-                if current_value.len() > 0 {
+                if !current_value.is_empty() {
                     current_value.truncate(current_value.len() - 1);
                 }
             } else if !c.is_control() {
@@ -95,15 +96,32 @@ pub fn TextBox(value: String, on_change: Option<OnChange>, placeholder: Option<S
         _ => {}
     }));
 
-    let value = if value.is_empty() {
-        placeholder.clone().unwrap_or(value.clone())
+    let text_styles = if value.is_empty() || (has_focus.get().0 && value.is_empty()) {
+        Style {
+            color: StyleProp::Value(Color::new(0.5, 0.5, 0.5, 1.0)),
+            ..Style::default()
+        }
     } else {
-        value.clone()
+        Style {
+            color: styles.clone().unwrap_or_default().color,
+            ..Style::default()
+        }
     };
+
+    let value = if value.is_empty() {
+        placeholder.unwrap_or_else(|| value.clone())
+    } else {
+        value
+    };
+
     rsx! {
         <Background styles={Some(background_styles)}>
             <Clip>
-                <Text content={value} size={14.0} />
+                <Text
+                    content={value}
+                    size={14.0}
+                    styles={Some(text_styles)}
+                />
             </Clip>
         </Background>
     }

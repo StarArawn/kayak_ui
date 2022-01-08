@@ -57,7 +57,7 @@ pub fn TextBox(value: String, on_change: Option<OnChange>, placeholder: Option<S
     });
 
     let background_styles = Style {
-        background_color: StyleProp::Value(Color::new(0.176, 0.196, 0.215, 1.0)),
+        background_color: StyleProp::Value(Color::rgba(0.176, 0.196, 0.215, 1.0)),
         border_radius: StyleProp::Value((5.0, 5.0, 5.0, 5.0)),
         height: StyleProp::Value(Units::Pixels(26.0)),
         padding_left: StyleProp::Value(Units::Pixels(5.0)),

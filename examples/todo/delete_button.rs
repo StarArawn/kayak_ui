@@ -10,7 +10,7 @@ use kayak_ui::widgets::{Background, Text};
 
 #[widget]
 pub fn DeleteButton(children: Children, styles: Option<Style>) {
-    let (color, set_color, ..) = use_state!(Color::new(0.0781, 0.0898, 0.101, 1.0));
+    let (color, set_color, ..) = use_state!(Color::rgba(0.0781, 0.0898, 0.101, 1.0));
 
     let base_styles = styles.clone().unwrap_or_default();
     *styles = Some(Style {
@@ -29,10 +29,10 @@ pub fn DeleteButton(children: Children, styles: Option<Style>) {
 
     let on_event = OnEvent::new(move |_, event| match event.event_type {
         EventType::MouseIn => {
-            set_color(Color::new(0.0791, 0.0998, 0.201, 1.0));
+            set_color(Color::rgba(0.0791, 0.0998, 0.201, 1.0));
         }
         EventType::MouseOut => {
-            set_color(Color::new(0.0781, 0.0898, 0.101, 1.0));
+            set_color(Color::rgba(0.0781, 0.0898, 0.101, 1.0));
         }
         _ => {}
     });

@@ -28,7 +28,7 @@ fn TextBoxExample(context: &mut KayakContext) {
     };
 
     let red_text_styles = Style {
-        color: StyleProp::Value(Color::RED),
+        color: StyleProp::Value(Color::new(1., 0., 0., 1.)),
         ..input_styles.clone()
     };
 

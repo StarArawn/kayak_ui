@@ -1,5 +1,5 @@
 use std::collections::{HashMap, HashSet};
-use crate::{Event, EventType, Index, InputEvent, InputEventCategory, KayakContext, PointerEvents};
+use crate::{Event, EventType, Index, InputEvent, InputEventCategory, KayakContext, KeyboardEvent, KeyboardModifiers, KeyCode, PointerEvents};
 use crate::layout_cache::Rect;
 use crate::widget_manager::WidgetManager;
 
@@ -35,6 +35,7 @@ pub(crate) struct EventDispatcher {
     current_mouse_position: (f32, f32),
     next_mouse_position: (f32, f32),
     previous_events: EventMap,
+    keyboard_modifiers: KeyboardModifiers,
 }
 
 impl EventDispatcher {
@@ -303,14 +304,26 @@ impl EventDispatcher {
                 InputEvent::CharEvent { c } => event_stream.push(
                     Event::new(current_focus, EventType::CharInput { c: *c })
                 ),
-                InputEvent::Keyboard { key, is_pressed } => if *is_pressed {
-                    event_stream.push(
-                        Event::new(current_focus, EventType::KeyDown { key: *key })
-                    )
-                } else {
-                    event_stream.push(
-                        Event::new(current_focus, EventType::KeyUp { key: *key })
-                    )
+                InputEvent::Keyboard { key, is_pressed } => {
+                    // === Modifers === //
+                    match key {
+                        KeyCode::LControl | KeyCode::RControl => self.keyboard_modifiers.is_ctrl_pressed = *is_pressed,
+                        KeyCode::LShift | KeyCode::RShift => self.keyboard_modifiers.is_shift_pressed = *is_pressed,
+                        KeyCode::LAlt | KeyCode::RAlt => self.keyboard_modifiers.is_alt_pressed = *is_pressed,
+                        KeyCode::LWin | KeyCode::RWin => self.keyboard_modifiers.is_meta_pressed = *is_pressed,
+                        _ => {}
+                    }
+
+                    // === Event === //
+                    if *is_pressed {
+                        event_stream.push(
+                            Event::new(current_focus, EventType::KeyDown(KeyboardEvent::new(*key, self.keyboard_modifiers)))
+                        )
+                    } else {
+                        event_stream.push(
+                            Event::new(current_focus, EventType::KeyUp(KeyboardEvent::new(*key, self.keyboard_modifiers)))
+                        )
+                    }
                 }
                 _ => {}
             }

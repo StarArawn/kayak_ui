@@ -24,7 +24,7 @@ impl Plugin for TextRendererPlugin {
         app.add_plugin(KayakFontPlugin)
             .init_resource::<FontMapping>();
 
-        let render_app = app.sub_app(RenderApp);
+        let render_app = app.sub_app_mut(RenderApp);
         render_app.add_system_to_stage(RenderStage::Queue, create_and_update_font_cache_texture);
     }
 }

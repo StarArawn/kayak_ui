@@ -6,7 +6,7 @@ pub enum InputEvent {
     MouseLeftPress,
     MouseLeftRelease,
     CharEvent { c: char },
-    Keyboard { key: KeyCode },
+    Keyboard { key: KeyCode, is_pressed: bool },
 }
 
 pub enum InputEventCategory {

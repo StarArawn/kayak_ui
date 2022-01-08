@@ -303,9 +303,15 @@ impl EventDispatcher {
                 InputEvent::CharEvent { c } => event_stream.push(
                     Event::new(current_focus, EventType::CharInput { c: *c })
                 ),
-                InputEvent::Keyboard { key } => event_stream.push(
-                    Event::new(current_focus, EventType::KeyboardInput { key: *key })
-                ),
+                InputEvent::Keyboard { key, is_pressed } => if *is_pressed {
+                    event_stream.push(
+                        Event::new(current_focus, EventType::KeyDown { key: *key })
+                    )
+                } else {
+                    event_stream.push(
+                        Event::new(current_focus, EventType::KeyUp { key: *key })
+                    )
+                }
                 _ => {}
             }
         }

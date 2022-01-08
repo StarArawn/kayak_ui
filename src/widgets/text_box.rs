@@ -98,7 +98,7 @@ pub fn TextBox(value: String, on_change: Option<OnChange>, placeholder: Option<S
 
     let text_styles = if value.is_empty() || (has_focus.get().0 && value.is_empty()) {
         Style {
-            color: StyleProp::Value(Color::GRAY),
+            color: StyleProp::Value(Color::new(0.5, 0.5, 0.5, 1.0)),
             ..Style::default()
         }
     } else {

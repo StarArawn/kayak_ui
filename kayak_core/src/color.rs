@@ -19,30 +19,27 @@ impl Default for Color {
 
 impl Color {
     /// The black color.
-    pub const BLACK: Color = Color {
-        r: 0.0,
-        g: 0.0,
-        b: 0.0,
-        a: 1.0,
-    };
+    pub const BLACK: Color = Color::rgb(0.0, 0.0, 0.0);
 
     /// The white color.
-    pub const WHITE: Color = Color {
-        r: 1.0,
-        g: 1.0,
-        b: 1.0,
-        a: 1.0,
-    };
+    pub const WHITE: Color = Color::rgb(1.0, 1.0, 1.0);
+
+    pub const GRAY: Color = Color::rgb(0.5, 0.5, 0.5);
+    pub const RED: Color = Color::rgb(1.0, 0.0, 0.0);
+    pub const GREEN: Color = Color::rgb(0.0, 1.0, 0.0);
+    pub const BLUE: Color = Color::rgb(0.0, 0.0, 1.0);
+    pub const YELLOW: Color = Color::rgb(1.0, 1.0, 0.0);
+    pub const MAGENTA: Color = Color::rgb(1.0, 0.0, 1.0);
+    pub const CYAN: Color = Color::rgb(0.0, 1.0, 1.0);
 
     /// A color with no opacity.
-    pub const TRANSPARENT: Color = Color {
-        r: 0.0,
-        g: 0.0,
-        b: 0.0,
-        a: 0.0,
-    };
+    pub const TRANSPARENT: Color = Color::new(0.0, 0.0, 0.0, 0.0);
 
-    pub fn new(r: f32, g: f32, b: f32, a: f32) -> Self {
+    pub const fn new(r: f32, g: f32, b: f32, a: f32) -> Self {
         Self { r, g, b, a }
+    }
+
+    pub const fn rgb(r: f32, g: f32, b: f32) -> Self {
+        Self { r, g, b, a: 1.0 }
     }
 }

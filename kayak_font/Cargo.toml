@@ -7,7 +7,7 @@ edition = "2021"
 
 [dependencies]
 anyhow = { version = "1.0" }
-bevy = { git = "https://github.com/bevyengine/bevy" }
+bevy = { version = "0.6.0" }
 bytemuck = "1.7.2"
 serde = "1.0"
 serde_json = "1.0"

@@ -321,6 +321,7 @@ pub fn queue_quads(
                     pipeline: quad_pipeline.pipeline,
                     entity,
                     sort_key: FloatOrd(quad.z_index),
+                    batch_range: None,
                 });
             }
         }

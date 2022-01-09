@@ -1,6 +1,6 @@
 use crate::{KayakFont, Sdf};
 use bevy::{
-    math::Vec2,
+    math::{Size, Vec2},
     prelude::{Handle, Res},
     render::{
         render_asset::RenderAssets,
@@ -137,7 +137,7 @@ impl FontTextureCache {
 
         let texture_view = texture.create_view(&TextureViewDescriptor {
             label: Some("font_texture_array_view"),
-            format: Some(format),
+            format: None,
             dimension: Some(TextureViewDimension::D2Array),
             aspect: bevy::render::render_resource::TextureAspect::All,
             base_mip_level: 0,
@@ -150,6 +150,10 @@ impl FontTextureCache {
             texture,
             sampler,
             texture_view,
+            size: Size {
+                width: size.0 as f32,
+                height: size.1 as f32,
+            },
         };
 
         images.insert(font_handle, image);
@@ -166,7 +170,7 @@ impl FontTextureCache {
             mip_level_count: 1,
             sample_count: 1,
             dimension: TextureDimension::D2,
-            format: TextureFormat::Rgba32Float,
+            format: TextureFormat::Rgba8Unorm,
             usage: TextureUsages::TEXTURE_BINDING | TextureUsages::COPY_DST,
         };
 
@@ -190,6 +194,10 @@ impl FontTextureCache {
             texture,
             sampler,
             texture_view,
+            size: Size {
+                width: 1.0,
+                height: 1.0,
+            },
         };
 
         let binding = device.create_bind_group(&BindGroupDescriptor {

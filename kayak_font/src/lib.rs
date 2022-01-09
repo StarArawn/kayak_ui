@@ -117,6 +117,7 @@ fn extract_fonts(
                 .texture_descriptor
                 .usage
                 .contains(TextureUsages::COPY_SRC)
+                || image.texture_descriptor.format != TextureFormat::Rgba8Unorm
             {
                 not_processed.push(handle);
                 continue;

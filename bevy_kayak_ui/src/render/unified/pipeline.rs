@@ -1,3 +1,4 @@
+use bevy::math::Size;
 use bevy::render::render_resource::std140::AsStd140;
 use bevy::{
     core::FloatOrd,
@@ -260,6 +261,10 @@ impl FromWorld for UnifiedPipeline {
             texture,
             sampler,
             texture_view,
+            size: Size {
+                width: 1.0,
+                height: 1.0,
+            },
         };
 
         let binding = render_device.create_bind_group(&BindGroupDescriptor {

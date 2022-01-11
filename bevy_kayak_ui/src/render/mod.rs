@@ -23,17 +23,17 @@ mod ui_pass_driver;
 pub mod unified;
 
 pub mod node {
-    pub const UI_PASS_DEPENDENCIES: &str = "ui_pass_dependencies";
-    pub const UI_PASS_DRIVER: &str = "ui_pass_driver";
+    pub const UI_PASS_DEPENDENCIES: &str = "kayak_ui_pass_dependencies";
+    pub const UI_PASS_DRIVER: &str = "kayak_ui_pass_driver";
 }
 
 pub mod draw_ui_graph {
-    pub const NAME: &str = "draw_ui";
+    pub const NAME: &str = "kayak_draw_ui";
     pub mod input {
-        pub const VIEW_ENTITY: &str = "view_entity";
+        pub const VIEW_ENTITY: &str = "kayak_view_entity";
     }
     pub mod node {
-        pub const MAIN_PASS: &str = "ui_pass";
+        pub const MAIN_PASS: &str = "kayak_ui_pass";
     }
 }
 

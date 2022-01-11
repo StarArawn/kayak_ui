@@ -10,49 +10,54 @@ I propose two different solutions for the issues above.
 1. KayakContext keeps track of all fonts that are loaded. This allows us to use the available measuring to properly size the Text widget.
 2. bevy_kayak_ui uses include_bytes to load in a default font(probably Roboto).
 
-For the first solution an example of how that would look is something like:
+
+## How this will look
+
+We'll need a few new types to store the fonts. I would also like to make something more generic and reusable in the future. It'll look something like this:
+
+`AssetHandle`:
 ```rust
-fonts: HashMap<u16, KayakFont>,
+pub struct AssetHandle<T> {
+    id: u32, // Optionally UUID here although I don't think its required..
+    phantom_data: PhantomData<T>,
+}
 ```
 
-For the second issue an example would look like:
+`AssetStorage`:
 ```rust
-let image = Image::new(
-    size,
-    dimension: TextureDimension::D2,
-    data: include_bytes!("./assets/roboto.png"),
-    format: TextureFormat::Rgba8Unorm,
-);
-let atlas_handle = images_assets.add(image);
-
-let mut font = KayakFont::new(
-    Sdf::from_bytes(include_bytes!("./assets/roboto.kayak_font")),
-    atlas_handle,
-);
+pub struct AssetStorage<T> {
+    assets: HashMap<AssetHandle<T>, T>,
+    // Stores bindings that notify us when changes are made.
+    // Optionally we can make Binding Hash here. Not sure if I like that though..
+    binding: HashMap<AssetHandle<T>, Binding<AssetHandle<T>>>,
+}
 ```
 
-## Additional issues:
-The text widget will need to be re-rendered when it's font is loaded in. I suggest quite a simple way of doing this:
+`KayakContext`:
 ```rust
-fonts: Binding<HashMap<u16, KayakFont>>,
-```
+pub struct KayakContext {
+    ..
+    // Stores AssetStorage generically.
+    assets: Resources,
+}
 
-When we add a new font to the hashmap we need to call `set` on the binding. We can use the `notify` function in the text widget to properly notify the widget of re-renders. This has the added downside of re-rendering all text whenever a font loads in.
+impl KayakContext {
+    pub fn get_asset<T>(&self, asset_handle: AssetHandle<T>) -> &T {
+        // Throw error if AssetStorage doesn't exist in the asset resources.
+        ..
+    }
+
+    // We want binding here because we need to allow widgets to track changes.
+    pub fn set_asset<T>(&mut self, asset: T) -> Binding<AssetHandle<T>> {
+        ..
+    }
+}
+```
 
 ### TL;DR
 1. Add default font in bevy_kayak_ui
-2. Add hash map wrapped in binding that stores kayak fonts.
+2. Add new asset storage types and implement logic.
 3. Implement the measuring in the default text widget.
-
-## Alternatives
-Another solution is to use an additional data structure:
-```rust
-fonts: HashMap<u16, KayakFont>,
-font_bindings: HashMap<u16, Binding<u16>>,
-```
-
-Unresolved issues with this method:
-1. How do we initially populate the binding? For example if font id 1 isn't loaded in yet, but a Text widget asks for 2? Do we create it then?
 
 ## Feedback
 All feedback is welcome!

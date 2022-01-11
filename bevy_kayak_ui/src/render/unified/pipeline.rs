@@ -32,7 +32,10 @@ use bevy::{
     utils::HashMap,
 };
 use bytemuck::{Pod, Zeroable};
-use kayak_font::{FontRenderingPipeline, FontTextureCache, KayakFont};
+use kayak_font::{
+    bevy::{FontRenderingPipeline, FontTextureCache},
+    KayakFont,
+};
 
 use super::{Dpi, UNIFIED_SHADER_HANDLE};
 use crate::{render::ui_pass::TransparentUI, WindowSize};

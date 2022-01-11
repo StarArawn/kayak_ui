@@ -28,7 +28,10 @@ use bevy::{
     sprite::Rect,
 };
 use bytemuck::{Pod, Zeroable};
-use kayak_font::{FontRenderingPipeline, FontTextureCache, KayakFont};
+use kayak_font::{
+    bevy::{FontRenderingPipeline, FontTextureCache},
+    KayakFont,
+};
 
 use super::FONT_SHADER_HANDLE;
 
@@ -169,7 +172,7 @@ impl FromWorld for FontPipeline {
             },
             depth_stencil: None,
             multisample: MultisampleState {
-                count: 1,
+                count: 4,
                 mask: !0,
                 alpha_to_coverage_enabled: false,
             },

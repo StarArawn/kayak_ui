@@ -84,7 +84,7 @@ impl FontTextureCache {
                         queue,
                         pipeline,
                         atlas_texture,
-                        font.sdf.max_glyph_size(),
+                        Vec2::new(font.sdf.max_glyph_size().0, font.sdf.max_glyph_size().1),
                     );
                 } else {
                     was_processed = false;
@@ -291,8 +291,8 @@ impl FontTextureCache {
                         aspect: TextureAspect::All,
                     },
                     Extent3d {
-                        width: glyph_size.x as u32,
-                        height: glyph_size.y as u32,
+                        width: glyph_size.0 as u32,
+                        height: glyph_size.1 as u32,
                         depth_or_array_layers: 1,
                     },
                 );

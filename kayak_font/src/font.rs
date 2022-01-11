@@ -1,15 +1,11 @@
 use std::collections::HashMap;
 
-use bevy::{
-    asset::{AssetLoader, AssetPath, BoxedFuture, LoadContext, LoadedAsset},
-    math::Vec2,
-    prelude::Handle,
-    reflect::TypeUuid,
-    render::texture::Image,
-};
+#[cfg(feature = "bevy_renderer")]
+use bevy::{prelude::Handle, reflect::TypeUuid, render::texture::Image};
 
 use crate::Sdf;
 
+#[cfg(feature = "bevy_renderer")]
 #[derive(Debug, Clone, TypeUuid)]
 #[uuid = "4fe4732c-6731-49bb-bafc-4690d636b848"]
 pub struct KayakFont {
@@ -18,10 +14,17 @@ pub struct KayakFont {
     char_ids: HashMap<char, u32>,
 }
 
+#[cfg(not(feature = "bevy_renderer"))]
+#[derive(Debug, Clone)]
+pub struct KayakFont {
+    pub sdf: Sdf,
+    char_ids: HashMap<char, u32>,
+}
+
 #[derive(Default, Debug, Clone, Copy)]
 pub struct LayoutRect {
-    pub position: Vec2,
-    pub size: Vec2,
+    pub position: (f32, f32),
+    pub size: (f32, f32),
     pub content: char,
 }
 
@@ -39,9 +42,10 @@ pub enum Alignment {
 }
 
 impl KayakFont {
-    pub fn new(sdf: Sdf, atlas_image: Handle<Image>) -> Self {
+    pub fn new(sdf: Sdf, #[cfg(feature = "bevy_renderer")] atlas_image: Handle<Image>) -> Self {
         Self {
             sdf,
+            #[cfg(feature = "bevy_renderer")]
             atlas_image,
             char_ids: HashMap::default(),
         }
@@ -68,8 +72,8 @@ impl KayakFont {
                     Some(val) => (
                         val.left,
                         val.top,
-                        val.size().x * font_size,
-                        val.size().y * font_size,
+                        val.size().0 * font_size,
+                        val.size().1 * font_size,
                     ),
                     None => (0.0, 0.0, 0.0, 0.0),
                 };
@@ -85,8 +89,8 @@ impl KayakFont {
         &self,
         axis_alignment: CoordinateSystem,
         alignment: Alignment,
-        position: Vec2,
-        max_size: Vec2,
+        position: (f32, f32),
+        max_size: (f32, f32),
         content: &String,
         line_height: f32,
         font_size: f32,
@@ -94,7 +98,7 @@ impl KayakFont {
         let mut positions_and_size = Vec::new();
         let max_glyph_size = self.sdf.max_glyph_size();
         let font_ratio = font_size / self.sdf.atlas.size;
-        let resized_max_glyph_size = (max_glyph_size.x * font_ratio, max_glyph_size.y * font_ratio);
+        let resized_max_glyph_size = (max_glyph_size.0 * font_ratio, max_glyph_size.1 * font_ratio);
 
         // TODO: Make this configurable?
         let split_chars = vec![' ', '\t', '-', '\n'];
@@ -117,7 +121,7 @@ impl KayakFont {
         let mut last_width = 0.0;
         for word in content.split(&split_chars[..]) {
             let word_width = self.get_word_width(word, font_size);
-            if x + word_width > max_size.x {
+            if x + word_width > max_size.0 {
                 y -= shift_sign * line_height;
                 line_widths.push((x, line_starting_index, positions_and_size.len()));
                 line_starting_index = positions_and_size.len();
@@ -130,8 +134,8 @@ impl KayakFont {
                         Some(val) => (
                             val.left,
                             val.top,
-                            val.size().x * font_size,
-                            val.size().y * font_size,
+                            val.size().0 * font_size,
+                            val.size().1 * font_size,
                         ),
                         None => (0.0, 0.0, 0.0, 0.0),
                     };
@@ -142,8 +146,8 @@ impl KayakFont {
                     let position_y = y + (shift_sign * top * font_size);
 
                     positions_and_size.push(LayoutRect {
-                        position: Vec2::new(position_x, position_y),
-                        size: Vec2::new(resized_max_glyph_size.0, resized_max_glyph_size.1),
+                        position: (position_x, position_y),
+                        size: (resized_max_glyph_size.0, resized_max_glyph_size.1),
                         content: c,
                     });
 
@@ -172,50 +176,17 @@ impl KayakFont {
         for (line_width, starting_index, end_index) in line_widths {
             let shift_x = match alignment {
                 Alignment::Start => 0.0,
-                Alignment::Middle => (max_size.x - line_width) / 2.0,
-                Alignment::End => max_size.x - line_width,
+                Alignment::Middle => (max_size.0 - line_width) / 2.0,
+                Alignment::End => max_size.0 - line_width,
             };
             for i in starting_index..end_index {
                 let layout_rect = &mut positions_and_size[i];
 
-                layout_rect.position.x += position.x + shift_x;
-                layout_rect.position.y += position.y;
+                layout_rect.position.0 += position.0 + shift_x;
+                layout_rect.position.1 += position.1;
             }
         }
 
         positions_and_size
-    }
-}
-
-#[derive(Default)]
-pub struct KayakFontLoader;
-
-impl AssetLoader for KayakFontLoader {
-    fn load<'a>(
-        &'a self,
-        bytes: &'a [u8],
-        load_context: &'a mut LoadContext,
-    ) -> BoxedFuture<'a, Result<(), anyhow::Error>> {
-        Box::pin(async move {
-            let path = load_context.path();
-            let path = path.with_extension("png");
-            let atlas_image_path = AssetPath::new(path, None);
-            let mut font = KayakFont::new(
-                Sdf::from_bytes(bytes),
-                load_context.get_handle(atlas_image_path.clone()),
-            );
-
-            font.generate_char_ids();
-
-            load_context
-                .set_default_asset(LoadedAsset::new(font).with_dependency(atlas_image_path));
-
-            Ok(())
-        })
-    }
-
-    fn extensions(&self) -> &[&str] {
-        static EXTENSIONS: &[&str] = &["kayak_font"];
-        EXTENSIONS
     }
 }

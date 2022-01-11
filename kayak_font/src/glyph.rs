@@ -1,4 +1,3 @@
-use bevy::math::Vec2;
 use serde::{Deserialize, Deserializer};
 
 fn from_u32<'de, D>(deserializer: D) -> Result<char, D::Error>
@@ -40,7 +39,7 @@ impl Rect {
         self.top - self.bottom
     }
 
-    pub fn size(&self) -> Vec2 {
-        Vec2::new(self.width(), self.height())
+    pub fn size(&self) -> (f32, f32) {
+        (self.width(), self.height())
     }
 }

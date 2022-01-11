@@ -7,7 +7,7 @@ use bevy::{
         RenderApp, RenderStage,
     },
 };
-use kayak_font::{FontTextureCache, KayakFontPlugin};
+use kayak_font::bevy::{FontTextureCache, KayakFontPlugin};
 
 mod extract;
 mod font_mapping;

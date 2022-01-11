@@ -11,7 +11,7 @@ use bevy::{
         RenderApp, RenderStage,
     },
 };
-use kayak_font::FontTextureCache;
+use kayak_font::bevy::FontTextureCache;
 
 use self::pipeline::{DrawUI, FontPipeline, QuadMeta};
 

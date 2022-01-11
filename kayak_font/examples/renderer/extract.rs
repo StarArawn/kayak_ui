@@ -31,7 +31,7 @@ pub fn extract(
 
             for layout in layouts {
                 let position = layout.position.into();
-                let size = layout.size.into();
+                let size: Vec2 = layout.size.into();
 
                 extracted_texts.push(ExtractCharBundle {
                     extracted_quad: ExtractedChar {

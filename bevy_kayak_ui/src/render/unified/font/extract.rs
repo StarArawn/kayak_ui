@@ -53,8 +53,8 @@ pub fn extract_texts(
     );
 
     for char_layout in chars_layouts {
-        let position = Vec2::new(char_layout.position.0, char_layout.position.1);
-        let size = Vec2::new(char_layout.size.0, char_layout.size.1);
+        let position = char_layout.position.into();
+        let size = char_layout.size.into();
         extracted_texts.push(ExtractQuadBundle {
             extracted_quad: ExtractedQuad {
                 font_handle: Some(font_handle.clone()),

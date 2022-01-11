@@ -1,6 +1,7 @@
 use bevy::{
+    math::Vec2,
     prelude::{Assets, Commands, Handle, Query, Res},
-    sprite::Rect, math::Vec2,
+    sprite::Rect,
 };
 use kayak_font::{CoordinateSystem, KayakFont};
 
@@ -29,8 +30,8 @@ pub fn extract(
             );
 
             for layout in layouts {
-                let position = Vec2::new(layout.position.0, layout.position.1);
-                let size = Vec2::new(layout.size.0, layout.size.1);
+                let position = layout.position.into();
+                let size = layout.size.into();
 
                 extracted_texts.push(ExtractCharBundle {
                     extracted_quad: ExtractedChar {

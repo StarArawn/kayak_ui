@@ -84,7 +84,7 @@ impl FontTextureCache {
                         queue,
                         pipeline,
                         atlas_texture,
-                        Vec2::new(font.sdf.max_glyph_size().0, font.sdf.max_glyph_size().1),
+                        font.sdf.max_glyph_size().into(),
                     );
                 } else {
                     was_processed = false;

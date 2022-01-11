@@ -15,21 +15,10 @@ I propose two different solutions for the issues above.
 
 We'll need a few new types to store the fonts. I would also like to make something more generic and reusable in the future. It'll look something like this:
 
-`AssetHandle`:
-```rust
-pub struct AssetHandle<T> {
-    id: u32, // Optionally UUID here although I don't think its required..
-    phantom_data: PhantomData<T>,
-}
-```
-
 `AssetStorage`:
 ```rust
 pub struct AssetStorage<T> {
-    assets: HashMap<AssetHandle<T>, T>,
-    // Stores bindings that notify us when changes are made.
-    // Optionally we can make Binding Hash here. Not sure if I like that though..
-    binding: HashMap<AssetHandle<T>, Binding<AssetHandle<T>>>,
+    assets: HashMap<String, Binding<Option<T>>>,
 }
 ```
 
@@ -42,13 +31,19 @@ pub struct KayakContext {
 }
 
 impl KayakContext {
-    pub fn get_asset<T>(&self, asset_handle: AssetHandle<T>) -> &T {
-        // Throw error if AssetStorage doesn't exist in the asset resources.
+    // Binding returned here to allow widgets to track loading.
+    pub fn get_asset<T>(&self, asset_handle: String) -> &Binding<Option<T>> {
+        // Create new asset if asset doesn't exist, and sets it to None.
+        ..
+    }
+ 
+    // Set's the asset value.
+    pub fn set_asset<T>(&mut self, asset_handle: String, asset: T) {
         ..
     }
 
-    // We want binding here because we need to allow widgets to track changes.
-    pub fn set_asset<T>(&mut self, asset: T) -> Binding<AssetHandle<T>> {
+    // Creates the AssetStorage<T> and stores it in assets
+    pub fn initialize_asset<T>(&mut self) {
         ..
     }
 }

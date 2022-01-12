@@ -428,6 +428,12 @@ impl Widget for MyWidget {
 
 ---
 
+## Tl;DR
+
+1. Add `KayakContextRef` and update `Widget` methods - to interface with  `KayakContext` safely
+2. Add `WidgetConstructor` and `BaseProps` - to consistently generate widgets in macros
+3. Generate Widget Context during `rsx` expansion - to interface with `KayakContext` and the widget safely
+
 ## Issues
 
 ### Protection

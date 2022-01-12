@@ -314,7 +314,7 @@ props.bar = "Hello".to_string();
 let widget = MyWidget::construct(widget_id, children, props);
 ```
 
-As for the implementation of `Widget:;render`, it will look largely the same as the manual widgets. The main difference is that now props are no longer found directly on the struct.
+As for the implementation of `Widget::render`, it will look largely the same as the manual widgets. The main difference is that now props are no longer found directly on the struct.
 
 ##### Derive
 

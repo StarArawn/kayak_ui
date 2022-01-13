@@ -58,7 +58,7 @@ impl WidgetManager {
         }
     }
 
-    pub fn create_widget<T: Widget + PartialEq + 'static>(
+    pub fn create_widget<T: Widget + PartialEq + Default + Clone + 'static>(
         &mut self,
         index: usize,
         mut widget: T,

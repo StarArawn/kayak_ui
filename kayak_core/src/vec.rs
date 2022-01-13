@@ -3,13 +3,14 @@ use derivative::*;
 use crate::{context::KayakContext, styles::Style, Index, Widget};
 
 #[derive(Derivative)]
-#[derivative(Debug, PartialEq, Clone)]
+#[derivative(Debug, PartialEq, Clone, Default)]
 pub struct VecTracker<T> {
     pub id: Index,
+    #[derivative(Default(value = "None"))]
     pub styles: Option<Style>,
-    #[derivative(Debug = "ignore", PartialEq = "ignore")]
+    #[derivative(Default(value = "None"), Debug = "ignore", PartialEq = "ignore")]
     pub children: crate::Children,
-    #[derivative(Debug = "ignore", PartialEq = "ignore")]
+    #[derivative(Default(value = "None"), Debug = "ignore", PartialEq = "ignore")]
     pub on_event: Option<crate::OnEvent>,
     pub data: Vec<T>,
 }
@@ -37,7 +38,7 @@ where
 
 impl<T> Widget for VecTracker<T>
 where
-    T: Widget + PartialEq + std::fmt::Debug + Clone,
+    T: Widget + PartialEq + std::fmt::Debug + Clone + Default,
 {
     fn get_id(&self) -> Index {
         self.id

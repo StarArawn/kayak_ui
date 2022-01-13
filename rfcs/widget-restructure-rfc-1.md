@@ -15,19 +15,29 @@ So in summary the two main issues are:
 1. Internal widget data is exposed to the user in the render function in a confusing manner
 2. Error-prone `KayakContext` methods are also exposed to the user in the render function when they shouldn't be
 
-## Solution *(Version 2)*
+## Solution *(Version 3)*
 
 > For Version 1, check out this commit: [841ff97fa68](https://github.com/StarArawn/kayak_ui/pull/56/commits/841ff97fa68b0e3919a42f871034383de10b2f68)
+>
+> For Version 2, check out these commits: [841ff97fa68..9a246ee1a](https://github.com/StarArawn/kayak_ui/pull/56/files/841ff97fa68b0e3919a42f871034383de10b2f68..9a246ee1a8fbc1e543f6ae58d5a18416f9e20dbf)
 
-### Issues and Differences with Version 1
+### Recap
 
-One issue with the solution proposed in Version 1 of this RFC, is that it only focused on those choosing to use `rsx`. Custom widgets would still need to go through a lot of boilerplate code in order to get up and running. Additionally, these custom widgets needed to match the schema of their `rsx` counterparts, down to the name (more-or-less).
+#### Version 1
 
-This updated version attempts to target these users as well, since customizing a widget to your liking is definitely a great thing to have. I'll go through each section in order of increasing automation (from manually writing code to using mostly macros). But first, changes to `Widget` and how it renders.
+This version proposed changes that would add a layer of abstraction between a functional component, its generated widget struct, and the `KayakContext`. This was good for people writing functional components, but offered nothing for those defining their widgets manually.
 
----
+It also added the concept of placing all user-defined props in a generated `<Widget Name>Props` struct to help isolate user-defined data with Kayak-defined data.
 
-###  Widget
+#### Version 2
+
+Version 2 sought to take the concepts of Version 1 and apply some of them across manually defined widgets as well. To do this, the `KayakContextRef` was created, which acts as a temporary interface to `KayakContext` and is what would be passed to `Widget` implementors, instead of the raw context. Functional widgets would continue to use the stricter `<Widget Name>Context` to interface.
+
+It also suggested bringing a props struct to manual implementors as well. To do this nicely it proposed a `WidgetConstructor` trait, which defined an associated `Props` type. After implementing, a widget could be created by calling `MyWidget::construct(id, children, props)`. And `props` would be generated like this `MyWidget::create_props(base_props)`.
+
+This worked but created a disparity between widgets: a widget could choose to not impl `WidgetConstructor`, preventing it from being composed in tags (i.e., `<MyWidget />`). It also forced the `Props` type to return a default struct (not necessarily by implementing `Default`), which isn't well-suited for required props.
+
+### Widget
 
 Previously we had the `WidgetContext` act as the barrier between the render method and the widget/context. This works well for `rsx`-generated widgets, but not so much for manually defined widgets. The reason is that by using `WidgetContext` we place a lot more expectations on how the rendering should be done. Again, one of the goals with this RFC is to cut back on expectations placed on the user.
 
@@ -35,15 +45,22 @@ And while `WidgetContext` isn't ideal for these scenarios, it still provides a f
 
 #### KayakContextRef
 
-This struct will be the interface into `KayakContext`. In it, we can place code specifically for widgets to use during their render phase.
+The first issue to address is providing safe access to `KayakContext`. By "safe," I'm referring to the fact that currently access to `KayakContext` is unfiltered. This allows the user to run code they shouldn't or come up with unmaintainable hacks. To reduce this, we can add a struct that is temporarily created by `KayakContext` to act as a safer interface to itself. 
+
+This is where `KayakContextRef` comes in:
 
 ```rust
 struct KayakContextRef<'a> {
   context: &'a mut KayakContext,
   current_id: Index,
+  // other fields...
 }
 
 impl<'a> KayakContextRef<'a> {
+  pub(crate) fn new(context: &mut KayakContext, current_id: Index) {
+    // ...
+  }
+  
   /// Expose the bind method to the widget
   pub fn bind(...) {
     /// Forward the call
@@ -69,7 +86,7 @@ This changes what `Widget::render` looks like:
 ```rust
 trait Widget {
   // ...
-  fn render(&mut self, mut context: KayakContextRef);
+  fn render(&mut self, context: &mut KayakContextRef);
 }
 ```
 
@@ -77,74 +94,216 @@ Allowing it to be called like:
 
 ```rust
 let widget = self.widget_manager.take(widget_id);
-let mut context = KayakContextRef { context: self, current_id: widget_id };
-widget.render(context);
+
+// Create temporary interface 
+let mut context = KayakContextRef::new(self, widget_id);
+widget.render(&mut context);
+
 self.widget_manager.repossess(widget);
 ```
+
+> A block *may* need to surround the call to `widget.render(&mut contex)` in order to drop `context` and appease the borrow checker.
 
 And the same for the `Widget::on_event` method:
 
 ```rust
 trait Widget {
   // ...
-  fn on_event(&mut self, mut context: KayakContextRef, event: &mut Event);
+  fn on_event(&mut self, context: &mut KayakContextRef, event: &mut Event);
   // ...
 }
 ```
 
-That's it for the changes to the `Widget` trait!
+##### Version 3: `mut` → `&mut`
+
+One change from the previous versions is that we now pass `&mut KayakContextRef` instead of `mut KayakContextRef`. The reason for this is that it allows us to run additional code over the context after being used by the widget. For example, we may want to track changes or set flags using `KayakContextRef`. This change allows us to do that and process them after the fact.
+
+#### WidgetProps
+
+Another addition is the `Props` associated type:
+
+```rust
+trait Widget {
+  type Props: WidgetProps;
+  // ...
+}
+```
+
+The `WidgetProps` trait will look something like this:
+
+```rust
+trait WidgetProps: Debug {
+  fn get_on_event(&self) -> Option<OnEvent>;
+  fn get_styles(&self) -> Option<Style>;
+  fn get_focusable(&self) -> Option<bool>;
+  // ...
+}
+```
+
+##### Deriving
+
+One additional feature for `WidgetProps` this RFC would like to propose is the ability to derive `WidgetProps`. This will make it much simpler for users to define their props and for defining Kayak-specific functionality.
+
+The derive macro would have some associated macros, which will be used to mark certain fields for use in the implementation. These are:
+
+* `#[props(OnEvent)]` - Used to mark a field as the `OnEvent` prop
+* `#[props(Styles)]` - Used to mark a field as the `Styles` prop
+* `#[props(Focusable)]` - Used to mark a field as the `Focusable` prop
+
+There may be more added to this list in the future, but for now this is the main assortment.
+
+There should only be a single usage of each of these markers within a struct. If there are more than one, only the one defined last will be used (last was chosen so we don't have to check if it already exists in the macro function).
+
+If any of these attributes are missing, the relevant method will return none.
+
+Additionally, they should be allowed to be specified as `Optional`. 
+
+```rust
+#[derive(WidgetProps)]
+struct MyWidgetProps {
+  #[props(OnEvent)]
+  event_handler: OnEvent
+  #[props(Focusable)]
+  focusable: Optional<bool>,
+  // Defined without the marker attribute:
+  styles: Styles,
+}
+
+// Generated:
+impl WidgetProps {
+  fn get_on_event(&self) -> Option<OnEvent> {
+  	Some(self.event_handler.clone())  
+  }
+  
+  fn get_styles(&self) -> Option<Style> {
+    None
+  }
+  
+  fn get_focusable(&self) -> Option<bool> {
+    self.focusable
+  }
+  
+  // ...
+}
+```
+
+#### The Constructor
+
+Another addition to `Widget` would be the constructor method. This associated method will allow widgets to be generated with a set of props in a more controlled and freeform way. The method looks like this:
+
+```rust
+fn constructor(id: Index, children: Children, mut props: Self::Props) -> dyn Widget<Props=Self::Props> where Self: Sized;
+```
+
+> Note that this would put the `Sized` restriction on widgets.
+
+Doing it this way allows the user to define the naming and placement of their props, or even replace them with their own.
 
 ---
 
 ### Defining Widgets
 
-#### Manual Widgets
+#### Custom Widgets
 
-> **Note:** In my opinion, this method is the least likely to be utilized as it isn't very versatile. But it's included to showcase the polar opposite side of using the `rsx` macros. This already exists with `VecTracker` (to some degree).
+A custom widget is a widget defined manually by a user using standard Rust syntax (i.e. not by using the `#[widget]` attribute). By defining a widget manually, a user has finer control over behavior, data, and more.
 
-Manual widgets are widgets that are not meant to be used with the tagging (`</>`) syntax. This is because they want to opt out of certain restrictions that tagged widgets have or to just completely take control.
-
-Some possible reasons include:
-
-* Avoiding implementing/deriving `Default`
-* Using a custom schema (not the one used by other widgets)
-* Needing only the bare essentials (i.e. just `impl Widget`)
+To define a custom widget, we need to first define our struct:
 
 ```rust
-#[derive(Debug, PartialEq)]
-struct MyManualWidget {
+#[derive(Debug)]
+struct MyButton {
   my_id: Index,
-  custom_value: CustomFoo,
+  my_children: Children,
+  my_props: MyButtonProps,
 }
 ```
 
-Here, we create the widget with non-standard fields and without deriving `Default` (though `PartialEq` isn't a bound on the `Widget` trait, it seems some of the macros still rely on it to exist).
+> We're naming these fields with the `my_` prefix to show that naming conventions are not mandatory for field names.
 
-Its goal is to be invoked like so:
+##### Props
+
+While `Index` and `Children` are structs defined by Kayak, `MyWidgetProps` is not. This struct must be defined by the user and should contain all the props this widget expects.
+
+One vital bit about this struct is that it is the only part of this RFC that requires a **specific naming convention**. All props for a widget must be defined as `<Widget Name>Props`. So `Foo` contains `FooProps` and `Props` (an awful name for a widget) contains `PropsProps`.
+
+This is one of the major limitations to this system. Once the [`more_qualified_paths`](https://github.com/rust-lang/rust/issues/86935) feature is stabilized, we can remove this limitation by instead doing `<MyButton as Widget>::Props { ... }`. Unfortunately, this feature is only available in nightly at the moment.
+
+For now though we can create our props struct and derive `WidgetProps` as explained above:
 
 ```rust
-rsx! {
-  <Element>
-  	{
-    	  MyManualWidget::new(CustomFoo(123))
-  	}
-  </Element>
+#[derive(Debug, WidgetProps)]
+struct MyButtonProps {
+  // Kayak Props
+  #[props(OnEvent)]
+  event_handler: Option<OnEvent>,
+  #[props(Styles)]
+  styles: Option<Style>,
+  #[props(Focusable)]
+  focusable: bool,
+  
+  // Widget Props
+  text: String,
+  disabled: bool,
 }
 ```
 
-To do this, it has to implement `Widget`:
+##### Implementing Widget
+
+Now with everything defined, we're ready to implement `Widget`.
+
+Firstly, the constructor:
 
 ```rust
-impl Widget for MyManualWidget {
-  fn get_id(&self) -> Index { self.my_id }
-  // ...
-  fn render(&mut self, mut context: KayakContextRef) {
-    // ???
+impl Widget for MyButton {
+  type Props = MyButtonProps;
+  
+  fn constructor(id: Index, children: Children, mut props: Self::Props) -> dyn Widget<Props=Self::Props> where Self: Sized {
+    if props.disabled {
+      // If disabled, also disable focusability
+      props.focusable = false;
+    }
+
+    Self {
+      my_id: id,
+      my_children: children,
+      my_props: props
+    }
   }
+  
 }
 ```
 
-Currently, the only way to build this widget is to do something like:
+Then we can implement all the getters and setters:
+
+```rust
+fn get_props(&self) -> &Self::Props {
+  &self.my_props
+}
+
+fn get_props_mut(&self) -> &mut Self::Props {
+  &mut self.my_props
+}
+
+fn get_id(&self) -> Index {
+  self.my_id
+}
+
+fn set_id(&mut self, id: Index) {
+	self.my_id = id;  
+}
+
+fn get_name(&self) -> String {
+  String::from("MyButton")
+}
+```
+
+Lastly, the render method.
+
+To help speed this last part up, another change will be proposed. This change actually targets another addition from this RFC: `KayakContextRef`.
+
+##### Extending KayakContextRef
+
+Normally to render out a widget, we need to do something akin to this:
 
 ```rust
 // fragment.rs
@@ -172,46 +331,55 @@ fn render(&mut self, context: &mut KayakContext) {
 
 But without access to `KayakContext` we can't quite do this anymore (which is good because it's a lot of boilerplate to write).
 
-There are two options for handling this: move logic into `KayakContextRef` or create a `WidgetTreeBuilder`.
-
-##### Extending KayakContextRef
-
-This would add the following methods:
+To address this and clean up the API a bit more, some more code will be placed in `KayakContextRef`.
 
 ```rust
-pub fn create_tree(&self) -> WidgetTree {
-  let tree = WidgetTree::new();
-  tree.add(self.current_id, None);
-  tree
+struct KayakContextRef<'a> {
+  // ...
+  widget_tree: WidgetTree
 }
 
-// Pretend `Children` isn't wrapped by `Option<...>`
-pub fn add_children(&mut self, children: Children, tree: &WidgetTree) {
-	let id =  self.current_id;
-	children(tree.clone(), Some(id), context);
-}
+impl<'a> KayakContextRef<'a> {
+  pub(crate) fn new(context: &mut KayakContext, current_id: Index) {
+    let widget_tree = WidgetTree::new();
+    widget_tree.add(current_id, None);
+   	Self {
+      context,
+      current_id,
+      widget_tree,
+    }
+  }
+  
+  // Pretend `Children` isn't wrapped by `Option<...>`
+  pub fn add_children(&mut self, children: Children) {
+    let id =  self.current_id;
+    children(self.widget_tree.clone(), Some(id), context);
+  }
 
-pub fn add_widget<W: Widget>(&mut self, widget: W, widget_index: usize, tree: &WidgetTree) {
-  let id =  self.current_id;
-  let (should_rerender, child_id) = self.context
-    .widget_manager
-    .create_widget(widget_index, widget.clone(), Some(id));
-  tree.add(child_id, Some(id));
-  if should_rerender {
-      let mut child_widget = self.context.widget_manager.take(child_id);
-      let mut context = KayakContextRef { context: self.context, current_id: id };
-      child_widget.render(context);
-      self.context.widget_manager.repossess(child_widget);
+  pub fn add_widget<W: Widget>(&mut self, widget: W, widget_index: usize) {
+    let id =  self.current_id;
+    let (should_rerender, child_id) = self.context
+      .widget_manager
+      .create_widget(widget_index, widget.clone(), Some(id));
+    self.widget_tree.add(child_id, Some(id));
+    if should_rerender {
+        let mut child_widget = self.context.widget_manager.take(child_id);
+        let mut context = KayakContextRef { context: self.context, current_id: id };
+        child_widget.render(context);
+        self.context.widget_manager.repossess(child_widget);
+    }
+  }
+
+  pub fn commit(mut self) {
+    let tree = self.widget_tree.take();
+    let id =  self.current_id;
+    let changes = self.context.widget_manager.tree.diff_children(&tree, id);
+    self.context.widget_manager.tree.merge(&tree, id, changes);
   }
 }
-
-pub fn commit_tree(&mut self, tree: WidgetTree) {
-  let tree = tree.take();
-  let id =  self.current_id;
-  let changes = self.context.widget_manager.tree.diff_children(&tree, id);
-  self.context.widget_manager.tree.merge(&tree, id, changes);
-}
 ```
+
+> This was added in Version 2 of this RFC, but Version 3 internalizes a bit more of the logic, specifically by storing the `WidgetTree` in context.
 
 And results in usage like so:
 
@@ -219,127 +387,23 @@ And results in usage like so:
 // fragment.rs
 
 fn render(&mut self, mut context: KayakContextRef) {
-	let tree = context.create_tree();
   if let Some(children) = self.children.take() {
-    context.add_children(children, &tree);
-  } else {
-      return;
+    context.add_children(children);
   }
-  context.commit_tree(tree);
+  
+  context.commit();
 }
 
 // vec.rs
 
 fn render(&mut self, mut context: KayakContextRef) {
-	let tree = context.create_tree();
-  
   for (index, item) in self.data.iter().enumerate() {
-      context.add_widget(item, index, &tree);
+      context.add_widget(item, index);
   }
   
-  context.commit_tree(tree);
+  context.commit();
 }
 ```
-
-##### WidgetTreeBuilder
-
-Alternatively, we could create a `WidgetTreeBuilder` struct that is use specifically for doing everything as above. The benefit of using the builder is that we can move some of the render specific logic to its own separate entity (again separating the concerns). It could be generated from `KayakContextRef::create_tree` and have a similar API:
-
-```rust
-struct WidgetTreeBuilder<'a> {
-  pub tree: WidgetTree,
-  context: &'a mut KayakContext,
-  current_id: Index,
-}
-
-impl<'a> WidgetTreeBuilder<'a> {
-	pub fn add_children(&mut self, children: Children) -> &mut WidgetTreeBuilder {
-    // ...
-  }
-  
-  pub fn add_widget<W: Widget>(&mut self, widget: W, widget_index: usize) -> &mut WidgetTreeBuilder {
-    // ...
-  }
-  
-  pub fn commit(self) {
-    // ...
-  }
-}
-```
-
-> Not super sold on the name of `WidgetTreeBuilder` since it's not really building anything?
-
-<br />
-
-<br />
-
-#### Constructed Widgets
-
-A constructed widget, for the purposes of this RFC, is one that is manually defined like above but uses some traits and derives to allow it to be used as a tagged (`</>`) component. Like the manually defined widgets, it's good for adding customization and extending the widget itself with other functionality.
-
-To integrate with the `rsx` tagging syntax without becoming a fully "functional widget," it must implement `WidgetConstructor` and define its props.
-
-```rust
-trait WidgetConstructor {
-  type Props;
-  fn create_props(base_props: BaseProps) -> Self::Props;
-  fn construct(id: Index, children: Children, props: Self::Props) -> Self;
-}
-
-/// A struct containing the base props most widgets expect.
-/// The widget can choose to use them or not.
-struct BaseProps {
-  styles: Option<Style>,
-  on_event: Option<OnEvent>
-}
-```
-
-> This trait can't be used as a trait object (`dyn WidgetConstructor`), but that's okay. It's only for ensuring the methods exist and are consistent.
-
-By having this bound on the widget struct, the `rsx` macro can then build the widget by doing something like:
-
-```rust
-let mut props = #widget_ident::create_props(base_props);
-#( props.#prop_ident = #prop_value );*
-let widget = #widget_ident::construct(widget_id, children, props);
-```
-
-Generated out might look something like:
-
-```rust
-// <MyWidget foo={Some(1)} bar={"Hello".to_string()} />
-let mut props = MyWidget::create_props(base_props);
-props.foo = Some(1);
-props.bar = "Hello".to_string();
-let widget = MyWidget::construct(widget_id, children, props);
-```
-
-As for the implementation of `Widget::render`, it will look largely the same as the manual widgets. The main difference is that now props are no longer found directly on the struct.
-
-##### Derive
-
-One thing this allows us to *maybe* do is add a derive macro for automatically implementing `WidgetConstructor`.
-
-```rust
-#[derive(WidgetConstructor)]
-struct MyWidget {
-  #[widget_constructor(id)]
-  widget_id: Index,
-  #[widget_constructor(props = "MyProps")]
-  // Or `#[widget_constructor(props)]` to assume "<Widget Name>Props"
-  widget_props: MyProps,
-  #[widget_constructor(children)]
-  widget_children: Children,
-}
-
-#[derive(Default)]
-struct MyProps {
-  foo: Option<i32>,
-  bar: String
-}
-```
-
-A derive would be nice since in order to reduce boilerplate, but it's not necessary. And this may add an extra layer of confusion (due to required marker attributes and the `Default` bound on the props). But I left it here as a possible option and to see if there are other, better ways of implementing something like this.
 
 <br />
 
@@ -347,7 +411,9 @@ A derive would be nice since in order to reduce boilerplate, but it's not necess
 
 #### Functional Widgets
 
-Finally, functional widgets. These are the widgets to use when customization isn't a huge concern and you just need to define a working widget. This is probably what most people will use when defining their own widgets. Most of it is the same as the ones listed above, but I'll go over some things I'd like to suggest as well.
+The other form of widget we need to consider are functional widgets. These are the widgets to use when customization isn't a huge concern and you just need to define a working widget, and this is probably what most people will use when defining their own widgets.
+
+In order to allow custom widgets to properly integrate with functional widgets and vice-versa, there are a few changes that need to be made.
 
 Consider the following widget:
 
@@ -358,35 +424,62 @@ fn MyWidget(foo: Option<i32>, bar: String) {
 }
 ```
 
-From this we can generate the following code (ignoring derives, attributes, and things like that):
+Currently this generates the following code:
 
 ```rust
+#[derive(Derivative)]
+#[derivative(Default, Debug, PartialEq, Clone)]
 struct MyWidget {
-  id: Index,
-  props: MyWidgetProps,
-  children: Children,
-}
-
-struct MyWidgetProps {
-  // Base props
-  styles: Option<Style>,
-  on_event: Option<OnEvent>,
-  // Custom props
-  foo: Option<i32>,
-  bar: String,
-}
-
-impl WidgetContructor for MyWidget {
-  type Props = MyWidgetProps;
-  // ...
-}
-
-impl Widget for MyWidget {
-  // ...
+	pub id: kayak_core::Index,
+  pub foo: Option<i32>,
+  pub bar: String,
+  #[derivative(Default(value = "None"))]
+	pub styles: Option<Style>,
+  #[derivative(Debug = "ignore", PartialEq = "ignore")] 
+  pub children: Children,
+	#[derivative(Default(value = "None"), Debug = "ignore", PartialEq = "ignore")] 
+  pub on_event: Option<kayak_core::OnEvent>,
 }
 ```
 
-All is normal so far. But something I suggested in Version 1 was to create a "Widget Context" that further separates widget logic from render logic (protecting the user from writing broken code or running into common pitfalls). This Widget Context, like `KayakContextRef`, would act as an interface for the render logic to use. It would probably be generated by a `KayakContextRef::create_context` method or something, and would look something like:
+However, we need this:
+
+```rust
+#[derive(Derivative)]
+#[derivative(Default, Debug, PartialEq, Clone)]
+struct MyWidget {
+  pub id: kayak_core::Index,
+  #[derivative(Debug = "ignore", PartialEq = "ignore")] 
+  pub children: Children,
+  pub props: MyWidgetProps,
+}
+```
+
+In order to properly get the props struct, we can instead define our widget like so:
+
+```rust
+#[widget]
+fn MyWidget(props: MyWidgetProps) {
+  let WidgetProps {foo, bar} = props;
+  // ...
+}
+
+#[derive(WidgetProps)]
+struct MyWidgetProps {
+  foo: Option<i32>,
+  bar: String
+}
+```
+
+The props have been moved out and into their own struct, controlled entirely by the user. While this might be a bit more verbose for small widgets, it becomes much more manageable for widgets with a high number of props. It also allows methods to be defined for `MyWidgetProps`, which can be very useful for encapsulating custom logic.
+
+> While it might not be necessary to enforce the `<Widget Name>Props` rule for a functional widget, since we can just get it from the type, it will probably be best to still follow that convention. Even going so far as to continue throwing errors like with custom widgets. This should help improve consistency across the two methods of defining a widget.
+
+##### MyWidgetContext
+
+All is normal so far. But something I suggested in Version 1 was to create a "Widget Context" that further separates widget logic from render logic (protecting the user from writing broken code or running into common pitfalls). This Widget Context, like `KayakContextRef`, would act as an interface for the render logic to use. Therefore, writing functional widgets is much safer, cleaner, and simpler, but comes at the cost of control. If more control and customization is needed, a manually defined custom widget is probably a better solution.
+
+This context would look something like:
 
 ```rust
 struct MyWidgetContext<'a> {
@@ -395,6 +488,13 @@ struct MyWidgetContext<'a> {
 }
 
 impl<'a> MyWidgetContext<'a> {
+  pub fn new(context: &mut KayakContextRef, widget: &mut MyWidget) -> Self {
+    Self {
+      context,
+      widget,
+    }
+  }
+  
   // Widget-specific logic and forwarding calls to KayakContextRef
 }
 ```
@@ -403,7 +503,7 @@ The generated `MyWidget` would contain an associated function where all the rend
 
 ```rust
 impl MyWidget {
-  pub fn render_internal(mut context: MyWidgetContext) {
+  pub fn render_internal(context: &mut MyWidgetContext) {
     // ...
   }
 }
@@ -414,9 +514,14 @@ And it would be called from the actual `Widget::render` method like so:
 ```rust
 impl Widget for MyWidget {
   // ...
-  fn render(&mut self, mut context: KayakContextRef) {
-    let mut context = MyWidgetContext {context: &mut context, widget: };
-    Self::render_internal(context);
+  fn render(&mut self, context: &mut KayakContextRef) {
+    
+    {
+      let mut context = MyWidgetContext::new(context, self);
+      Self::render_internal(context);
+    }
+    
+    context.commit();
   }
   // ...
 }
@@ -431,7 +536,8 @@ impl Widget for MyWidget {
 ## Tl;DR
 
 1. Add `KayakContextRef` and update `Widget` methods - to interface with  `KayakContext` safely
-2. Add `WidgetConstructor` and `BaseProps` - to consistently generate widgets in macros
+2. Add `WidgetProps` trait and derive macro - to consistently define a widget's props
+2. Move the props into its own struct for functional widgets
 3. Generate Widget Context during `rsx` expansion - to interface with `KayakContext` and the widget safely
 
 ## Issues
@@ -449,6 +555,12 @@ On this topic, it may be worth noting that the different render methods between 
 And we can't (or maybe shouldn't) just make both take `KayakContext` because the render method may need immutable access to the props, ID, focusability, etc.
 
 One way to mitigate this is just to try and mimic as much of the `KayakContext` API as possible. This shouldn't be too difficult if we impl `Deref` and `DerefMut` over it. But the smaller the API difference, the less of an issue this becomes.
+
+### Naming Requirements
+
+As previously mentioned, we currently have a requirement on the naming of a struct for widget props. This must follow the `<Widget Name>Props` convention, otherwise the user will face compile errors. This can be solved once the  [`more_qualified_paths`](https://github.com/rust-lang/rust/issues/86935) feature is stabilized.
+
+Other solutions are possible and were previously suggested, but they unfortunately had their own limitations and caveats. Namely, they put strict requirements on both the props and the `Widget` trait.
 
 ## Alternatives
 
@@ -546,12 +658,11 @@ impl Widget for MyWidget {
     let mut this = self.generate_context(context);
     if let Some(mut on_event) = this.widget.on_event.clone() {
       if let Ok(mut on_event) = on_event.0.write() {
-        on_event(this, event);
+        on_event(&mut this, event);
       }
     }
 
     // Maybe something like this? (assuming it all compiles like it does in my head)
-    // Although to do this, we'd need to pass `this` in as `&mut this`, which changes the API a bit
     let edits = this.edits;
     context.process_changes(edits);
   }

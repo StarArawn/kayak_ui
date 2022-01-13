@@ -1,4 +1,4 @@
-use crate::{Index, KeyCode};
+use crate::{Index, KeyboardEvent};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Event {
@@ -73,7 +73,8 @@ pub enum EventType {
     Focus,
     Blur,
     CharInput { c: char },
-    KeyboardInput { key: KeyCode },
+    KeyUp(KeyboardEvent),
+    KeyDown(KeyboardEvent),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -96,7 +97,8 @@ impl EventType {
             Self::MouseDown => true,
             Self::MouseUp => true,
             Self::CharInput { .. } => true,
-            Self::KeyboardInput { .. } => true,
+            Self::KeyUp(..) => true,
+            Self::KeyDown(..) => true,
             // Doesn't Propagate
             Self::MouseIn => false,
             Self::MouseOut => false,
@@ -117,7 +119,8 @@ impl EventType {
             Self::MouseOut => EventCategory::Mouse,
             // Keyboard
             Self::CharInput { .. } => EventCategory::Keyboard,
-            Self::KeyboardInput { .. } => EventCategory::Keyboard,
+            Self::KeyUp(..) => EventCategory::Keyboard,
+            Self::KeyDown(..) => EventCategory::Keyboard,
             // Focus
             Self::Focus => EventCategory::Focus,
             Self::Blur => EventCategory::Focus,

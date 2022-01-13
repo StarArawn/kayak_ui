@@ -18,6 +18,7 @@ pub mod widget;
 pub mod widget_manager;
 mod cursor;
 mod event_dispatcher;
+mod keyboard;
 mod focus_tree;
 
 use std::sync::{Arc, RwLock};
@@ -31,11 +32,13 @@ pub use fragment::Fragment;
 pub use focus_tree::FocusTree;
 pub use generational_arena::{Arena, Index};
 pub use input_event::*;
+pub use keyboard::{KeyboardEvent, KeyboardModifiers};
 pub use keys::KeyCode;
 pub use resources::Resources;
 pub use tree::{Tree, WidgetTree};
 pub use vec::VecTracker;
 pub use widget::Widget;
+
 pub mod derivative {
     pub use derivative::*;
 }
@@ -46,7 +49,7 @@ pub type Children = Option<
 
 #[derive(Clone)]
 pub struct OnEvent(
-    pub  Arc<
+    pub Arc<
         RwLock<dyn FnMut(&mut crate::context::KayakContext, &mut Event) + Send + Sync + 'static>,
     >,
 );

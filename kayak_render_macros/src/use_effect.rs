@@ -1,9 +1,9 @@
 use proc_macro::TokenStream;
 use proc_macro2::Ident;
 use quote::{format_ident, quote};
-use syn::{bracketed, Token};
 use syn::parse::{Parse, ParseStream};
 use syn::punctuated::{Iter, Punctuated};
+use syn::{bracketed, Token};
 
 pub(crate) struct UseEffect {
     pub closure: syn::ExprClosure,
@@ -30,8 +30,9 @@ impl UseEffect {
         self.dependencies.iter()
     }
 
-    fn get_clone_dep_idents(&self) -> impl Iterator<Item=Ident> + '_ {
-        self.get_deps().map(|dep| format_ident!("{}_dependency_clone", dep))
+    fn get_clone_dep_idents(&self) -> impl Iterator<Item = Ident> + '_ {
+        self.get_deps()
+            .map(|dep| format_ident!("{}_dependency_clone", dep))
     }
 
     fn create_clone_deps(&self) -> proc_macro2::TokenStream {
@@ -51,11 +52,24 @@ impl UseEffect {
 
     /// Build the output token stream, creating the actual use_effect code
     pub fn build(self) -> TokenStream {
+        let found_crate = proc_macro_crate::crate_name("kayak_core");
+        let kayak_core = if let Ok(found_crate) = found_crate {
+            match found_crate {
+                proc_macro_crate::FoundCrate::Itself => quote! { crate },
+                proc_macro_crate::FoundCrate::Name(name) => {
+                    let ident = syn::Ident::new(&name, proc_macro2::Span::call_site());
+                    quote!(#ident)
+                }
+            }
+        } else {
+            quote!(kayak_ui::core)
+        };
+
         let dep_array = self.create_dep_array();
         let cloned_deps = self.create_clone_deps();
         let closure = self.closure;
         let result = quote! {{
-            use kayak_core::{Bound, MutableBound};
+            use #kayak_core::{Bound, MutableBound};
             #cloned_deps;
             context.create_effect(
                 #closure,

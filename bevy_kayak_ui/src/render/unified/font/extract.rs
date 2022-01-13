@@ -45,20 +45,22 @@ pub fn extract_texts(
     let chars_layouts = font.get_layout(
         CoordinateSystem::PositiveYDown,
         Alignment::Start,
-        Vec2::new(layout.posx, layout.posy + line_height),
-        Vec2::new(layout.width, layout.height),
+        (layout.posx, layout.posy + line_height),
+        (layout.width, layout.height),
         content,
         line_height,
         font_size,
     );
 
     for char_layout in chars_layouts {
+        let position = char_layout.position.into();
+        let size: Vec2 = char_layout.size.into();
         extracted_texts.push(ExtractQuadBundle {
             extracted_quad: ExtractedQuad {
                 font_handle: Some(font_handle.clone()),
                 rect: Rect {
-                    min: char_layout.position,
-                    max: char_layout.position + char_layout.size,
+                    min: position,
+                    max: position + size,
                 },
                 color: to_bevy_color(background_color),
                 vertex_index: 0,

@@ -1,3 +1,4 @@
+use bevy::render::render_resource::std140::AsStd140;
 use bevy::{
     core::FloatOrd,
     core_pipeline::Transparent2d,
@@ -27,8 +28,10 @@ use bevy::{
     sprite::Rect,
 };
 use bytemuck::{Pod, Zeroable};
-use crevice::std140::AsStd140;
-use kayak_font::{FontRenderingPipeline, FontTextureCache, KayakFont};
+use kayak_font::{
+    bevy::{FontRenderingPipeline, FontTextureCache},
+    KayakFont,
+};
 
 use super::FONT_SHADER_HANDLE;
 
@@ -169,7 +172,7 @@ impl FromWorld for FontPipeline {
             },
             depth_stencil: None,
             multisample: MultisampleState {
-                count: 1,
+                count: 4,
                 mask: !0,
                 alpha_to_coverage_enabled: false,
             },
@@ -321,6 +324,7 @@ pub fn queue_quads(
                     pipeline: quad_pipeline.pipeline,
                     entity,
                     sort_key: FloatOrd(quad.z_index),
+                    batch_range: None,
                 });
             }
         }

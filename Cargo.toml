@@ -11,20 +11,20 @@ members = ["bevy_kayak_ui", "kayak_core", "kayak_render_macros", "kayak_font"]
 default = ["bevy_renderer"]
 bevy_renderer = [
     "bevy_kayak_ui",
-    "kayak_font",
     "kayak_core/bevy_renderer",
+    "kayak_font/bevy_renderer",
     "bevy",
 ]
 
 [dependencies]
-bevy = { git = "https://github.com/bevyengine/bevy", rev = "081350916c39fc1c7c9d659ccb6d86413832b465", optional = true }
-kayak_core = { path = "kayak_core" }
+bevy = { version = "0.6.0", optional = true }
 bevy_kayak_ui = { path = "bevy_kayak_ui", optional = true }
-kayak_font = { path = "kayak_font", optional = true }
+kayak_core = { path = "kayak_core" }
+kayak_font = { path = "kayak_font" }
 kayak_render_macros = { path = "kayak_render_macros" }
 
 [dev-dependencies]
-bevy = { git = "https://github.com/bevyengine/bevy", rev = "081350916c39fc1c7c9d659ccb6d86413832b465" }
+bevy = { version = "0.6.0" }
 
 [[example]]
 name = "todo"

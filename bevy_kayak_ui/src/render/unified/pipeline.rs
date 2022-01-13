@@ -1,3 +1,5 @@
+use bevy::math::Size;
+use bevy::render::render_resource::std140::AsStd140;
 use bevy::{
     core::FloatOrd,
     ecs::system::{
@@ -30,8 +32,10 @@ use bevy::{
     utils::HashMap,
 };
 use bytemuck::{Pod, Zeroable};
-use crevice::std140::AsStd140;
-use kayak_font::{FontRenderingPipeline, FontTextureCache, KayakFont};
+use kayak_font::{
+    bevy::{FontRenderingPipeline, FontTextureCache},
+    KayakFont,
+};
 
 use super::{Dpi, UNIFIED_SHADER_HANDLE};
 use crate::{render::ui_pass::TransparentUI, WindowSize};
@@ -260,6 +264,10 @@ impl FromWorld for UnifiedPipeline {
             texture,
             sampler,
             texture_view,
+            size: Size {
+                width: 1.0,
+                height: 1.0,
+            },
         };
 
         let binding = render_device.create_bind_group(&BindGroupDescriptor {

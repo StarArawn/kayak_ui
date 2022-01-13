@@ -3,7 +3,7 @@ use kayak_ui::core::{
     render_command::RenderCommand,
     rsx,
     styles::{Style, StyleProp, Units},
-    use_state, widget, Bound, Children, EventType, MutableBound, OnEvent,
+    use_state, widget, Children, EventType, OnEvent,
 };
 
 use kayak_ui::widgets::{Background, Text};

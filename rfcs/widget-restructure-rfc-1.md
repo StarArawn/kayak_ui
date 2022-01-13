@@ -39,10 +39,6 @@ This worked but created a disparity between widgets: a widget could choose to no
 
 ### Widget
 
-Previously we had the `WidgetContext` act as the barrier between the render method and the widget/context. This works well for `rsx`-generated widgets, but not so much for manually defined widgets. The reason is that by using `WidgetContext` we place a lot more expectations on how the rendering should be done. Again, one of the goals with this RFC is to cut back on expectations placed on the user.
-
-And while `WidgetContext` isn't ideal for these scenarios, it still provides a feature we want: a safe interface to the context. So this is the first change of Version 2: `KayakContextRef`.
-
 #### KayakContextRef
 
 The first issue to address is providing safe access to `KayakContext`. By "safe," I'm referring to the fact that currently access to `KayakContext` is unfiltered. This allows the user to run code they shouldn't or come up with unmaintainable hacks. To reduce this, we can add a struct that is temporarily created by `KayakContext` to act as a safer interface to itself. 

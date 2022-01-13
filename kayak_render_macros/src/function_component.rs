@@ -33,8 +33,6 @@ pub fn create_function_widget(f: syn::ItemFn, widget_arguments: WidgetArguments)
         quote!(kayak_ui::core)
     };
 
-    let focusable = widget_arguments.focusable;
-
     let mut input_names: Vec<_> = inputs
         .iter()
         .filter_map(|argument| match argument {
@@ -88,6 +86,12 @@ pub fn create_function_widget(f: syn::ItemFn, widget_arguments: WidgetArguments)
         }
     });
 
+    let focusable_default = if widget_arguments.focusable {
+        "Some(true)"
+    } else {
+        "None"
+    };
+
     let missing_struct_inputs = vec![
         (
             vec![
@@ -117,6 +121,15 @@ pub fn create_function_widget(f: syn::ItemFn, widget_arguments: WidgetArguments)
                 pub on_event: Option<#kayak_core::OnEvent>
             },
         ),
+        (
+            vec![
+                "focusable : Option < bool >",
+            ],
+            quote! {
+                #[derivative(Default(value=#focusable_default))]
+                pub focusable: Option<bool>
+            },
+        ),
     ];
 
     for (names, token) in missing_struct_inputs {
@@ -126,8 +139,7 @@ pub fn create_function_widget(f: syn::ItemFn, widget_arguments: WidgetArguments)
                 .any(|name| block_name.to_string().contains(name))
         }) {
             input_block_names.push(token);
-        } else {
-        }
+        } else {}
     }
 
     let inputs_block = quote!(
@@ -169,8 +181,8 @@ pub fn create_function_widget(f: syn::ItemFn, widget_arguments: WidgetArguments)
                 self.id
             }
 
-            fn focusable(&self) -> bool {
-                #focusable
+            fn focusable(&self) -> Option<bool> {
+                self.focusable
             }
 
             fn set_id(&mut self, id: #kayak_core::Index) {

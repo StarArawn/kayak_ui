@@ -21,8 +21,8 @@ impl Widget for Test {
         todo!()
     }
 
-    fn focusable(&self) -> bool {
-        false
+    fn focusable(&self) -> Option<bool> {
+        None
     }
 
     fn set_id(&mut self, _id: Index) {

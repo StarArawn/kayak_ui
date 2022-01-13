@@ -31,7 +31,6 @@ impl Default for EventState {
 #[derive(Debug, Default, Clone)]
 pub(crate) struct EventDispatcher {
     is_mouse_pressed: bool,
-    current_focus: Option<Index>,
     current_mouse_position: (f32, f32),
     next_mouse_position: (f32, f32),
     previous_events: EventMap,
@@ -43,12 +42,6 @@ impl EventDispatcher {
     #[allow(dead_code)]
     pub fn is_mouse_pressed(&self) -> bool {
         self.is_mouse_pressed
-    }
-
-    /// Gets the currently focused widget
-    #[allow(dead_code)]
-    pub fn current_focus(&self) -> Option<Index> {
-        self.current_focus
     }
 
     /// Gets the current mouse position (since last mouse event)
@@ -101,6 +94,12 @@ impl EventDispatcher {
                 // --- Call Event --- //
                 let mut target_widget = context.widget_manager.take(index);
                 target_widget.on_event(context, &mut node_event);
+                // if target_widget.get_name() == String::from("TextBox") {
+                //     println!("Event: {:#?}", node_event);
+                //     println!("Widget Focus: {} - {:?}", target_widget.focusable(), index);
+                //     println!("Context Focus: {} - {:?}", context.get_focusable(index), index);
+                // }
+                // target_widget.set_focusable(false);
                 context.widget_manager.repossess(target_widget);
 
                 event.default_prevented |= node_event.default_prevented;
@@ -210,13 +209,12 @@ impl EventDispatcher {
                 match event_type {
                     EventType::Focus => {
                         had_focus_event = true;
-                        if let Some(current_focus) = self.current_focus {
+                        if let Some(current_focus) = widget_manager.focus_tree.current() {
                             if current_focus != node {
                                 event_stream.push(Event::new(current_focus, EventType::Blur));
                             }
                         }
                         widget_manager.focus_tree.focus(node);
-                        self.current_focus = Some(node);
                     }
                     _ => {}
                 }
@@ -226,10 +224,9 @@ impl EventDispatcher {
         // --- Blur Event --- //
         if !had_focus_event && input_events.contains(&InputEvent::MouseLeftPress) {
             // A mouse press didn't contain a focus event -> blur
-            if let Some(current_focus) = self.current_focus {
+            if let Some(current_focus) = widget_manager.focus_tree.current() {
                 event_stream.push(Event::new(current_focus, EventType::Blur));
                 widget_manager.focus_tree.blur();
-                self.current_focus = None;
             }
         }
 
@@ -274,7 +271,7 @@ impl EventDispatcher {
                         event_stream.push(Event::new(node, EventType::MouseDown));
 
                         if let Some(widget) = widget_manager.current_widgets.get(node).unwrap() {
-                            if widget.focusable() {
+                            if widget.focusable().unwrap_or_default() {
                                 Self::update_state(states, (node, depth), layout, EventType::Focus);
                             }
                         }
@@ -305,9 +302,9 @@ impl EventDispatcher {
         event_stream
     }
 
-    fn process_keyboard_events(&mut self, input_event: &InputEvent, _states: &mut HashMap<EventType, EventState>, _widget_manager: &WidgetManager) -> Vec<Event> {
+    fn process_keyboard_events(&mut self, input_event: &InputEvent, _states: &mut HashMap<EventType, EventState>, widget_manager: &WidgetManager) -> Vec<Event> {
         let mut event_stream = Vec::new();
-        if let Some(current_focus) = self.current_focus {
+        if let Some(current_focus) = widget_manager.focus_tree.current() {
             match input_event {
                 InputEvent::CharEvent { c } => event_stream.push(
                     Event::new(current_focus, EventType::CharInput { c: *c })
@@ -375,14 +372,25 @@ impl EventDispatcher {
     /// Executes default actions for events
     fn execute_default(&mut self, event: Event, context: &mut KayakContext) {
         match event.event_type {
-            EventType::KeyboardInput { key } => {
-                match key {
+            EventType::KeyDown(evt) => {
+                match evt.key() {
                     KeyCode::Tab => {
-                        if let Some(index) = context.widget_manager.focus_tree.next() {
+                        let current_focus = context.widget_manager.focus_tree.current();
+
+                        let index = if evt.is_shift_pressed() {
+                            context.widget_manager.focus_tree.prev()
+                        } else {
+                            context.widget_manager.focus_tree.next()
+                        };
+
+                        if let Some(index) = index {
                             let mut events = vec![Event::new(index, EventType::Focus)];
-                            if let Some(current_focus) = self.current_focus {
-                                events.push(Event::new(current_focus, EventType::Blur));
+                            if let Some(current_focus) = current_focus {
+                                if current_focus != index {
+                                    events.push(Event::new(current_focus, EventType::Blur));
+                                }
                             }
+                            context.widget_manager.focus_tree.focus(index);
                             self.dispatch_events(events, context);
                         }
                     }

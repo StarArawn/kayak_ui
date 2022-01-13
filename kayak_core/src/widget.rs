@@ -3,7 +3,8 @@ use as_any::AsAny;
 use crate::{context::KayakContext, styles::Style, Event, Index};
 
 pub trait Widget: std::fmt::Debug + AsAny + Send + Sync {
-    fn focusable(&self) -> bool;
+    /// Returns whether this widget can be focused or not (or unspecified if `None`)
+    fn focusable(&self) -> Option<bool>;
     fn get_id(&self) -> Index;
     fn set_id(&mut self, id: Index);
     fn get_styles(&self) -> Option<Style>;

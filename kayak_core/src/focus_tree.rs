@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use crate::{Index, Tree};
 
 #[derive(Debug, Default, PartialEq)]
@@ -6,15 +7,65 @@ pub struct FocusTree {
     current_focus: Option<Index>,
 }
 
+/// A struct used to track and calculate widget focusability, based on the following rule:
+///
+/// > Focusability set by a widget itself will _always_ override focusability set by its parent.
+#[derive(Debug, Default)]
+pub(crate) struct FocusTracker {
+    /// The focusability as set by the parent (i.e. from its props)
+    parents: HashMap<Index, bool>,
+    /// The focusability as set by the widget itself (i.e. from its render function)
+    widgets: HashMap<Index, bool>,
+}
+
 impl FocusTree {
     /// Add the given focusable index to the tree
-    pub fn add(&mut self, index: Index, parent: Option<Index>) {
-        self.tree.add(index, parent);
+    pub fn add(&mut self, index: Index, widget_tree: &Tree) {
+        // Cases to handle:
+        // 1. Tree empty -> insert root node
+        // 2. Tree not empty
+        //   a. Contains parent -> insert child node
+        //   b. Not contains parent -> demote and replace root node
+
+        let mut current_index = index;
+        while let Some(parent) = widget_tree.get_parent(current_index) {
+            current_index = parent;
+            if self.contains(parent) {
+                self.tree.add(index, Some(parent));
+                return;
+            }
+        }
+
+        if let Some(root) = self.tree.root_node {
+            // Replace root node
+            self.tree.replace(root, index);
+            if widget_tree.is_descendant(root, index) {
+                // If old root is child -> add it back in
+                self.add(root, &widget_tree);
+            }
+        } else {
+            // Set root node
+            self.tree.add(index, None);
+            self.focus(index);
+        }
     }
 
     /// Remove the given focusable index from the tree
     pub fn remove(&mut self, index: Index) {
-        self.tree.remove(index);
+        if self.current_focus == Some(index) {
+            self.blur();
+        }
+
+        if self.tree.root_node == Some(index) {
+            self.tree.remove(index);
+        } else {
+            self.tree.remove_and_reparent(index);
+        }
+    }
+
+    /// Checks if the given index is present in the tree
+    pub fn contains(&self, index: Index) -> bool {
+        self.tree.contains(index)
     }
 
     /// Clear the tree and remove the current focus
@@ -29,8 +80,10 @@ impl FocusTree {
     }
 
     /// Remove the current focus
+    ///
+    /// This returns focus to the root node
     pub fn blur(&mut self) {
-        self.current_focus = None;
+        self.current_focus = self.tree.root_node;
     }
 
     /// Get the currently focused index
@@ -108,41 +161,101 @@ impl FocusTree {
 }
 
 
+impl FocusTracker {
+    /// Set the focusability of a widget
+    ///
+    /// The `is_parent_defined` parameter is important because it dictates how the focusability is stored
+    /// and calculated.
+    ///
+    /// Focusability map:
+    /// * `Some(true)` - This widget is focusable
+    /// * `Some(false)` - This widget is not focusable
+    /// * `None` - This widget can be either focusable or not
+    ///
+    /// # Arguments
+    ///
+    /// * `index`: The widget ID
+    /// * `focusable`: The focusability of the widget
+    /// * `is_parent_defined`: Does this setting come from the parent or the widget itself?
+    ///
+    /// returns: ()
+    pub fn set_focusability(&mut self, index: Index, focusable: Option<bool>, is_parent_defined: bool) {
+        let map = if is_parent_defined {
+            &mut self.parents
+        } else {
+            &mut self.widgets
+        };
+
+        if let Some(focusable) = focusable {
+            map.insert(index, focusable);
+        } else {
+            map.remove(&index);
+        }
+    }
+
+    /// Get the focusability for the given widget
+    ///
+    /// # Arguments
+    ///
+    /// * `index`: The widget ID
+    ///
+    /// returns: Option<bool>
+    pub fn get_focusability(&self, index: Index) -> Option<bool> {
+        if let Some(focusable) = self.widgets.get(&index) {
+            Some(*focusable)
+        } else if let Some(focusable) = self.parents.get(&index) {
+            Some(*focusable)
+        } else {
+            None
+        }
+    }
+}
+
+
 #[cfg(test)]
 mod tests {
     use crate::focus_tree::FocusTree;
-    use crate::Index;
+    use crate::{Index, Tree};
 
     #[test]
     fn next_should_cycle() {
         let mut focus_tree = FocusTree::default();
+        let mut tree = Tree::default();
 
         let a = Index::from_raw_parts(0, 0);
-        focus_tree.add(a, None);
+        tree.add(a, None);
         let a_a = Index::from_raw_parts(1, 0);
-        focus_tree.add(a_a, Some(a));
+        tree.add(a_a, Some(a));
         let a_b = Index::from_raw_parts(2, 0);
-        focus_tree.add(a_b, Some(a));
+        tree.add(a_b, Some(a));
         let a_a_a = Index::from_raw_parts(3, 0);
-        focus_tree.add(a_a_a, Some(a_a));
+        tree.add(a_a_a, Some(a_a));
         let a_a_a_a = Index::from_raw_parts(4, 0);
-        focus_tree.add(a_a_a_a, Some(a_a_a));
+        tree.add(a_a_a_a, Some(a_a_a));
         let a_a_a_b = Index::from_raw_parts(5, 0);
-        focus_tree.add(a_a_a_b, Some(a_a_a));
+        tree.add(a_a_a_b, Some(a_a_a));
         let a_b_a = Index::from_raw_parts(6, 0);
-        focus_tree.add(a_b_a, Some(a_b));
+        tree.add(a_b_a, Some(a_b));
 
-        assert_eq!(focus_tree.current_focus, None);
-        assert_eq!(focus_tree.next(), Some(a));
-        assert_eq!(focus_tree.next(), Some(a_a));
-        assert_eq!(focus_tree.next(), Some(a_a_a));
-        assert_eq!(focus_tree.next(), Some(a_a_a_a));
-        assert_eq!(focus_tree.next(), Some(a_a_a_b));
-        assert_eq!(focus_tree.next(), Some(a_b));
-        assert_eq!(focus_tree.next(), Some(a_b_a));
+        focus_tree.add(a, &tree);
+        focus_tree.add(a_a, &tree);
+        focus_tree.add(a_b, &tree);
+        focus_tree.add(a_a_a, &tree);
+        focus_tree.add(a_a_a_a, &tree);
+        focus_tree.add(a_a_a_b, &tree);
+        focus_tree.add(a_b_a, &tree);
 
-        assert_eq!(focus_tree.next(), Some(a));
-        assert_eq!(focus_tree.next(), Some(a_a));
+        assert_eq!(None, focus_tree.current_focus);
+        assert_eq!(Some(a), focus_tree.next());
+        assert_eq!(Some(a_a), focus_tree.next());
+        assert_eq!(Some(a_a_a), focus_tree.next());
+        assert_eq!(Some(a_a_a_a), focus_tree.next());
+        assert_eq!(Some(a_a_a_b), focus_tree.next());
+        assert_eq!(Some(a_b), focus_tree.next());
+        assert_eq!(Some(a_b_a), focus_tree.next());
+
+        assert_eq!(Some(a), focus_tree.next());
+        assert_eq!(Some(a_a), focus_tree.next());
 
         // etc.
     }
@@ -150,33 +263,42 @@ mod tests {
     #[test]
     fn prev_should_cycle() {
         let mut focus_tree = FocusTree::default();
+        let mut tree = Tree::default();
 
         let a = Index::from_raw_parts(0, 0);
-        focus_tree.add(a, None);
+        tree.add(a, None);
         let a_a = Index::from_raw_parts(1, 0);
-        focus_tree.add(a_a, Some(a));
+        tree.add(a_a, Some(a));
         let a_b = Index::from_raw_parts(2, 0);
-        focus_tree.add(a_b, Some(a));
+        tree.add(a_b, Some(a));
         let a_a_a = Index::from_raw_parts(3, 0);
-        focus_tree.add(a_a_a, Some(a_a));
+        tree.add(a_a_a, Some(a_a));
         let a_a_a_a = Index::from_raw_parts(4, 0);
-        focus_tree.add(a_a_a_a, Some(a_a_a));
+        tree.add(a_a_a_a, Some(a_a_a));
         let a_a_a_b = Index::from_raw_parts(5, 0);
-        focus_tree.add(a_a_a_b, Some(a_a_a));
+        tree.add(a_a_a_b, Some(a_a_a));
         let a_b_a = Index::from_raw_parts(6, 0);
-        focus_tree.add(a_b_a, Some(a_b));
+        tree.add(a_b_a, Some(a_b));
 
-        assert_eq!(focus_tree.current_focus, None);
-        assert_eq!(focus_tree.prev(), Some(a));
-        assert_eq!(focus_tree.prev(), Some(a_b_a));
-        assert_eq!(focus_tree.prev(), Some(a_b));
-        assert_eq!(focus_tree.prev(), Some(a_a_a_b));
-        assert_eq!(focus_tree.prev(), Some(a_a_a_a));
-        assert_eq!(focus_tree.prev(), Some(a_a_a));
-        assert_eq!(focus_tree.prev(), Some(a_a));
+        focus_tree.add(a, &tree);
+        focus_tree.add(a_a, &tree);
+        focus_tree.add(a_b, &tree);
+        focus_tree.add(a_a_a, &tree);
+        focus_tree.add(a_a_a_a, &tree);
+        focus_tree.add(a_a_a_b, &tree);
+        focus_tree.add(a_b_a, &tree);
 
-        assert_eq!(focus_tree.prev(), Some(a));
-        assert_eq!(focus_tree.prev(), Some(a_b_a));
+        assert_eq!(None, focus_tree.current_focus);
+        assert_eq!(Some(a), focus_tree.prev());
+        assert_eq!(Some(a_b_a), focus_tree.prev());
+        assert_eq!(Some(a_b), focus_tree.prev());
+        assert_eq!(Some(a_a_a_b), focus_tree.prev());
+        assert_eq!(Some(a_a_a_a), focus_tree.prev());
+        assert_eq!(Some(a_a_a), focus_tree.prev());
+        assert_eq!(Some(a_a), focus_tree.prev());
+
+        assert_eq!(Some(a), focus_tree.prev());
+        assert_eq!(Some(a_b_a), focus_tree.prev());
 
         // etc.
     }

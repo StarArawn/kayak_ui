@@ -62,25 +62,113 @@ impl Tree {
         }
     }
 
-    pub fn remove(&mut self, index: Index) {
+    /// Remove the given node and recursively removes its descendants
+    pub fn remove(&mut self, index: Index) -> Vec<Index> {
         let parent = self.parents.remove(&index);
         if let Some(parent) = parent {
-            if let Some(children) = self.children.remove(&index) {
-                for child in children {
-                    self.remove(child);
-                }
-            }
+            let children = self.children
+                .remove(&index)
+                .unwrap_or_default()
+                .into_iter()
+                .map(|child| self.remove(child))
+                .flatten()
+                .collect();
             if let Some(siblings) = self.children.get_mut(&parent) {
                 siblings.retain(|node| *node != index);
             }
+
+            children
         } else {
             // Is root node
             self.root_node = None;
             self.parents.clear();
             self.children.clear();
+
+            Vec::default()
         }
     }
 
+    /// Removes the current node and reparents any children to its current parent.
+    ///
+    /// Children fill at the original index of the removed node amongst its siblings.
+    ///
+    /// Panics if called on the root node
+    pub fn remove_and_reparent(&mut self, index: Index) {
+        let parent = self.parents.remove(&index);
+        if let Some(parent) = parent {
+            let mut insertion_index = 0usize;
+
+            // === Get Sibling Index === //
+            if let Some(siblings) = self.children.get_mut(&parent) {
+                insertion_index = siblings.iter().position(|node| *node == index).unwrap();
+            }
+
+            // === Reparent Children === //
+            if let Some(children) = self.children.remove(&index) {
+                for child in children.iter() {
+                    self.parents.insert(*child, parent);
+                }
+                if let Some(siblings) = self.children.get_mut(&parent) {
+                    siblings.splice(insertion_index..insertion_index + 1, children);
+                }
+            }
+        } else {
+            panic!("Cannot reparent a root node's children")
+        }
+    }
+
+    /// Replace the given node with another, transferring the parent and child relationships over to the replacement node
+    pub fn replace(&mut self, index: Index, replace_with: Index) {
+        // === Update Parent === //
+        if let Some(parent) = self.parents.remove(&index) {
+            self.parents.insert(replace_with, parent);
+            if let Some(siblings) = self.children.get_mut(&parent) {
+                let idx = siblings.iter().position(|node| *node == index).unwrap();
+                siblings[idx] = replace_with;
+            }
+        } else {
+            self.root_node = Some(replace_with);
+        }
+
+        // === Update Children === //
+        if let Some(children) = self.children.remove(&index) {
+            for child in children.iter() {
+                self.parents.insert(*child, replace_with);
+            }
+            self.children.insert(replace_with, children);
+        }
+    }
+
+    /// Returns true if the given node is in this tree
+    pub fn contains(&self, index: Index) -> bool {
+        Some(index) == self.root_node || self.parents.contains_key(&index) || self.children.contains_key(&index)
+    }
+
+    /// Get the number of nodes in this tree
+    pub fn len(&self) -> usize {
+        if self.root_node.is_some() {
+            self.parents.len() + 1
+        } else {
+            0
+        }
+    }
+
+    /// Returns true if this tree has no nodes
+    pub fn is_empty(&self) -> bool {
+        self.root_node.is_none() && self.parents.is_empty() && self.children.is_empty()
+    }
+
+    /// Returns true if the given node is a descendant of another node
+    pub fn is_descendant(&self, descendant: Index, of_node: Index) -> bool {
+        let mut index = descendant;
+        while let Some(parent) = self.get_parent(index) {
+            index = parent;
+            if parent == of_node {
+                return true;
+            }
+        }
+        false
+    }
 
     pub fn flatten(&self) -> Vec<Index> {
         if self.root_node.is_none() {
@@ -158,8 +246,7 @@ impl Tree {
                             children
                                 .get(child_index - 1)
                                 .map_or(None, |prev_child| Some(*prev_child))
-                        }
-                        else {
+                        } else {
                             None
                         }
                     })
@@ -625,43 +712,234 @@ impl WidgetTree {
     }
 }
 
-#[test]
-fn test_tree() {
+#[cfg(test)]
+mod tests {
     use crate::node::NodeBuilder;
-    use crate::Arena;
-    let mut store = Arena::new();
-    let root = store.insert(NodeBuilder::empty().build());
-    // Child 1 of root
-    let index1 = store.insert(NodeBuilder::empty().build());
-    // Children of child 1.
-    let index2 = store.insert(NodeBuilder::empty().build());
-    let index3 = store.insert(NodeBuilder::empty().build());
-    // Child 2 of root
-    let index4 = store.insert(NodeBuilder::empty().build());
+    use crate::{Arena, Index, Tree};
 
-    let mut tree = Tree::default();
-    tree.root_node = Some(root);
+    #[test]
+    fn test_tree() {
+        let mut store = Arena::new();
+        let root = store.insert(NodeBuilder::empty().build());
+        // Child 1 of root
+        let index1 = store.insert(NodeBuilder::empty().build());
+        // Children of child 1.
+        let index2 = store.insert(NodeBuilder::empty().build());
+        let index3 = store.insert(NodeBuilder::empty().build());
+        // Child 2 of root
+        let index4 = store.insert(NodeBuilder::empty().build());
 
-    // Setup Parents..
-    tree.parents.insert(index1, root);
-    tree.parents.insert(index4, root);
+        let mut tree = Tree::default();
+        tree.root_node = Some(root);
 
-    tree.parents.insert(index2, index1);
-    tree.parents.insert(index3, index1);
+        // Setup Parents..
+        tree.parents.insert(index1, root);
+        tree.parents.insert(index4, root);
 
-    tree.children.insert(root, vec![index1, index4]);
-    tree.children.insert(index1, vec![index2, index3]);
+        tree.parents.insert(index2, index1);
+        tree.parents.insert(index3, index1);
 
-    let flattened = tree.flatten();
+        tree.children.insert(root, vec![index1, index4]);
+        tree.children.insert(index1, vec![index2, index3]);
 
-    let mapped = flattened
-        .iter()
-        .map(|x| x.into_raw_parts().0)
-        .collect::<Vec<_>>();
+        let flattened = tree.flatten();
 
-    assert!(mapped[0] == 0);
-    assert!(mapped[1] == 1);
-    assert!(mapped[2] == 2);
-    assert!(mapped[3] == 3);
-    assert!(mapped[4] == 4);
+        let mapped = flattened
+            .iter()
+            .map(|x| x.into_raw_parts().0)
+            .collect::<Vec<_>>();
+
+        assert!(mapped[0] == 0);
+        assert!(mapped[1] == 1);
+        assert!(mapped[2] == 2);
+        assert!(mapped[3] == 3);
+        assert!(mapped[4] == 4);
+    }
+
+    #[test]
+    fn should_replace() {
+        let mut tree = Tree::default();
+        let root = Index::from_raw_parts(0, 0);
+        let child_a = Index::from_raw_parts(1, 0);
+        let child_b = Index::from_raw_parts(2, 0);
+        let grandchild_a = Index::from_raw_parts(3, 0);
+        let grandchild_b = Index::from_raw_parts(4, 0);
+        tree.add(root, None);
+        tree.add(child_a, Some(root));
+        tree.add(child_b, Some(root));
+        tree.add(grandchild_a, Some(child_a));
+        tree.add(grandchild_b, Some(child_b));
+
+        let mut expected = Tree::default();
+        let expected_root = Index::from_raw_parts(5, 0);
+        let expected_child_a = Index::from_raw_parts(6, 0);
+        let expected_child_b = Index::from_raw_parts(7, 0);
+        let expected_grandchild_a = Index::from_raw_parts(8, 0);
+        let expected_grandchild_b = Index::from_raw_parts(9, 0);
+        expected.add(expected_root, None);
+        expected.add(expected_child_a, Some(expected_root));
+        expected.add(expected_child_b, Some(expected_root));
+        expected.add(expected_grandchild_a, Some(expected_child_a));
+        expected.add(expected_grandchild_b, Some(expected_child_b));
+
+        tree.replace(grandchild_b, expected_grandchild_b);
+        assert!(tree.children.get(&child_b).unwrap().contains(&expected_grandchild_b));
+        assert!(!tree.children.get(&child_b).unwrap().contains(&grandchild_b));
+
+        tree.replace(grandchild_a, expected_grandchild_a);
+        assert!(tree.children.get(&child_a).unwrap().contains(&expected_grandchild_a));
+        assert!(!tree.children.get(&child_a).unwrap().contains(&grandchild_a));
+
+        tree.replace(child_a, expected_child_a);
+        assert!(tree.children.get(&root).unwrap().contains(&expected_child_a));
+        assert!(!tree.children.get(&root).unwrap().contains(&child_a));
+        assert_eq!(expected_child_a, tree.get_parent(expected_grandchild_a).unwrap());
+
+        tree.replace(child_b, expected_child_b);
+        assert!(tree.children.get(&root).unwrap().contains(&expected_child_b));
+        assert!(!tree.children.get(&root).unwrap().contains(&child_b));
+        assert_eq!(expected_child_b, tree.get_parent(expected_grandchild_b).unwrap());
+
+        tree.replace(root, expected_root);
+        assert_eq!(Some(expected_root), tree.root_node);
+        assert_eq!(expected_root, tree.get_parent(expected_child_a).unwrap());
+        assert_eq!(expected_root, tree.get_parent(expected_child_b).unwrap());
+
+        assert_eq!(expected, tree);
+    }
+
+    #[test]
+    fn should_remove() {
+        let mut tree = Tree::default();
+        let root = Index::from_raw_parts(0, 0);
+        let child_a = Index::from_raw_parts(1, 0);
+        let child_b = Index::from_raw_parts(2, 0);
+        let grandchild_a = Index::from_raw_parts(3, 0);
+        let grandchild_b = Index::from_raw_parts(4, 0);
+        tree.add(root, None);
+        tree.add(child_a, Some(root));
+        tree.add(child_b, Some(root));
+        tree.add(grandchild_a, Some(child_a));
+        tree.add(grandchild_b, Some(child_b));
+
+        let mut expected = Tree::default();
+        expected.add(root, None);
+        expected.add(child_a, Some(root));
+        expected.add(grandchild_a, Some(child_a));
+
+        tree.remove(child_b);
+
+        assert!(!tree.children.get(&root).unwrap().contains(&child_b));
+        assert_eq!(expected, tree);
+    }
+
+    #[test]
+    fn should_remove_root() {
+        let mut tree = Tree::default();
+        let root = Index::from_raw_parts(0, 0);
+        let child_a = Index::from_raw_parts(1, 0);
+        let child_b = Index::from_raw_parts(2, 0);
+        let grandchild_a = Index::from_raw_parts(3, 0);
+        let grandchild_b = Index::from_raw_parts(4, 0);
+        tree.add(root, None);
+        tree.add(child_a, Some(root));
+        tree.add(child_b, Some(root));
+        tree.add(grandchild_a, Some(child_a));
+        tree.add(grandchild_b, Some(child_b));
+
+        let expected = Tree::default();
+
+        tree.remove(root);
+
+        assert_eq!(None, tree.root_node);
+        assert_eq!(expected, tree);
+    }
+
+    #[test]
+    fn should_remove_and_reparent() {
+        let mut tree = Tree::default();
+        let root = Index::from_raw_parts(0, 0);
+        let child_a = Index::from_raw_parts(1, 0);
+        let child_b = Index::from_raw_parts(2, 0);
+        let grandchild_a = Index::from_raw_parts(3, 0);
+        let grandchild_b = Index::from_raw_parts(4, 0);
+        tree.add(root, None);
+        tree.add(child_a, Some(root));
+        tree.add(child_b, Some(root));
+        tree.add(grandchild_a, Some(child_a));
+        tree.add(grandchild_b, Some(child_b));
+
+        let mut expected = Tree::default();
+        expected.add(root, None);
+        expected.add(child_a, Some(root));
+        expected.add(grandchild_a, Some(child_a));
+        expected.add(grandchild_b, Some(root));
+
+        tree.remove_and_reparent(child_b);
+
+        assert_eq!(root, tree.get_parent(grandchild_b).unwrap());
+        assert!(tree.children.get(&root).unwrap().contains(&grandchild_b));
+        assert!(!tree.children.get(&root).unwrap().contains(&child_b));
+        assert_eq!(expected, tree);
+    }
+
+    #[test]
+    fn should_contain_root() {
+        let mut tree = Tree::default();
+        let root = Index::from_raw_parts(0, 0);
+        tree.add(root, None);
+
+        assert!(tree.contains(root));
+    }
+
+    #[test]
+    fn should_contain_child() {
+        let mut tree = Tree::default();
+        let root = Index::from_raw_parts(0, 0);
+        let child = Index::from_raw_parts(1, 0);
+        tree.add(root, None);
+        tree.add(child, Some(root));
+
+        assert!(tree.contains(root));
+        assert!(tree.contains(child));
+    }
+
+    #[test]
+    fn should_be_empty() {
+        let mut tree = Tree::default();
+        assert!(tree.is_empty());
+        tree.add(Index::default(), None);
+        assert!(!tree.is_empty())
+    }
+
+    #[test]
+    fn should_be_descendant() {
+        let mut tree = Tree::default();
+        let root = Index::from_raw_parts(0, 0);
+        let child = Index::from_raw_parts(1, 0);
+        let grandchild = Index::from_raw_parts(2, 0);
+        tree.add(root, None);
+        tree.add(child, Some(root));
+        tree.add(grandchild, Some(child));
+
+        assert!(!tree.is_descendant(root, root));
+        assert!(tree.is_descendant(child, root));
+        assert!(tree.is_descendant(grandchild, root));
+    }
+
+    #[test]
+    fn should_give_len() {
+        let mut tree = Tree::default();
+        let root = Index::from_raw_parts(0, 0);
+        let child = Index::from_raw_parts(1, 0);
+        let grandchild = Index::from_raw_parts(2, 0);
+
+        assert_eq!(0, tree.len());
+        tree.add(root, None);
+        assert_eq!(1, tree.len());
+        tree.add(child, Some(root));
+        assert_eq!(2, tree.len());
+        tree.add(grandchild, Some(child));
+        assert_eq!(3, tree.len());
+    }
 }

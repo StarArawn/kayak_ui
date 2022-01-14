@@ -17,6 +17,7 @@ pub fn DeleteButton(children: Children, styles: Option<Style>) {
         render_command: StyleProp::Value(RenderCommand::Layout),
         height: StyleProp::Value(Units::Pixels(32.0)),
         width: StyleProp::Value(Units::Pixels(30.0)),
+        left: StyleProp::Value(Units::Stretch(1.0)),
         ..base_styles
     });
 

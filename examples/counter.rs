@@ -24,12 +24,8 @@ fn Counter(context: &mut KayakContext) {
     };
 
     let button_text_styles = Style {
-        bottom: StyleProp::Value(Units::Stretch(1.0)),
         left: StyleProp::Value(Units::Stretch(1.0)),
         right: StyleProp::Value(Units::Stretch(1.0)),
-        top: StyleProp::Value(Units::Stretch(1.0)),
-        width: StyleProp::Value(Units::Pixels(67.0)),
-        height: StyleProp::Value(Units::Pixels(39.0)),
         ..Default::default()
     };
 
@@ -58,7 +54,7 @@ fn startup(
 ) {
     commands.spawn_bundle(UICameraBundle::new());
 
-    font_mapping.add(asset_server.load("roboto.kayak_font"));
+    font_mapping.add("Roboto", asset_server.load("roboto.kayak_font"));
 
     let context = BevyContext::new(|context| {
         render! {

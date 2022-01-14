@@ -6,7 +6,7 @@ use bevy::{prelude::Handle, reflect::TypeUuid, render::texture::Image};
 use crate::Sdf;
 
 #[cfg(feature = "bevy_renderer")]
-#[derive(Debug, Clone, TypeUuid)]
+#[derive(Debug, Clone, TypeUuid, PartialEq)]
 #[uuid = "4fe4732c-6731-49bb-bafc-4690d636b848"]
 pub struct KayakFont {
     pub sdf: Sdf,
@@ -85,6 +85,61 @@ impl KayakFont {
         width
     }
 
+    pub fn measure(
+        &self,
+        axis_alignment: CoordinateSystem,
+        content: &String,
+        font_size: f32,
+        line_height: f32,
+        max_size: (f32, f32),
+    ) -> (f32, f32) {
+        let mut size: (f32, f32) = (0.0, 0.0);
+        let split_chars = vec![' ', '\t', '-', '\n'];
+        let missing_chars: Vec<char> = content
+            .chars()
+            .filter(|c| split_chars.iter().any(|c2| c == c2))
+            .collect();
+
+        let shift_sign = match axis_alignment {
+            CoordinateSystem::PositiveYDown => -1.0,
+            CoordinateSystem::PositiveYUp => 1.0,
+        };
+
+        let mut x = 0.0;
+        let mut y = 0.0;
+        let mut i = 0;
+        for word in content.split(&split_chars[..]) {
+            let word_width = self.get_word_width(word, font_size);
+            if x + word_width > max_size.0 {
+                y -= shift_sign * line_height;
+                x = 0.0;
+            }
+            for c in word.chars() {
+                if let Some(glyph) = self.sdf.glyphs.iter().find(|glyph| glyph.unicode == c) {
+                    x += glyph.advance * font_size;
+                    size.0 = size.0.max(x);
+                }
+            }
+
+            if let Some(next_missing) = missing_chars.get(i) {
+                if let Some(glyph) = self
+                    .sdf
+                    .glyphs
+                    .iter()
+                    .find(|glyph| glyph.unicode == *next_missing)
+                {
+                    x += glyph.advance * font_size;
+                }
+                i += 1;
+            }
+        }
+        // One last shift..
+        y -= shift_sign * line_height;
+        size.1 = y.abs();
+
+        size
+    }
+
     pub fn get_layout(
         &self,
         axis_alignment: CoordinateSystem,
@@ -121,7 +176,7 @@ impl KayakFont {
         let mut last_width = 0.0;
         for word in content.split(&split_chars[..]) {
             let word_width = self.get_word_width(word, font_size);
-            if x + word_width > max_size.0 {
+            if x + word_width + (font_size / 2.0) > max_size.0 {
                 y -= shift_sign * line_height;
                 line_widths.push((x, line_starting_index, positions_and_size.len()));
                 line_starting_index = positions_and_size.len();

@@ -19,6 +19,8 @@ pub mod widget_manager;
 mod cursor;
 mod event_dispatcher;
 mod keyboard;
+mod assets;
+mod flo_binding;
 
 use std::sync::{Arc, RwLock};
 

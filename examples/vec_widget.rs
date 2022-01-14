@@ -14,7 +14,7 @@ fn startup(
 ) {
     commands.spawn_bundle(UICameraBundle::new());
 
-    font_mapping.add(asset_server.load("roboto.kayak_font"));
+    font_mapping.add("Roboto", asset_server.load("roboto.kayak_font"));
 
     let context = BevyContext::new(|context| {
         let data = vec!["Text1", "Text2", "Text3", "Text4"];

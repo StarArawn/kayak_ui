@@ -3,6 +3,7 @@ use std::{
     sync::{Arc, Mutex},
 };
 
+use crate::layout_cache::Rect;
 use crate::{
     layout_cache::LayoutCache,
     node::{Node, NodeBuilder},
@@ -12,7 +13,6 @@ use crate::{
     tree::Tree,
     Arena, Index, Widget,
 };
-use crate::layout_cache::Rect;
 // use as_any::Downcast;
 
 #[derive(Debug)]
@@ -375,17 +375,14 @@ impl WidgetManager {
         children
     }
 
-    fn get_valid_parent(&self, node_id: Index) -> Option<Index> {
+    pub fn get_valid_parent(&self, node_id: Index) -> Option<Index> {
         if let Some(parent_id) = self.tree.parents.get(&node_id) {
-            if let Some(parent_widget) = &self.current_widgets[*parent_id] {
-                if let Some(parent_styles) = parent_widget.get_styles() {
-                    if parent_styles.render_command.resolve() != RenderCommand::Empty {
-                        return Some(*parent_id);
-                    }
+            if let Some(parent_widget) = &self.nodes[*parent_id] {
+                if parent_widget.styles.render_command.resolve() != RenderCommand::Empty {
+                    return Some(*parent_id);
                 }
-
-                return self.get_valid_parent(*parent_id);
             }
+            return self.get_valid_parent(*parent_id);
         }
         None
     }

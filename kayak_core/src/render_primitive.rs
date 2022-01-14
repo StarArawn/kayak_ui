@@ -21,7 +21,8 @@ pub enum RenderPrimitive {
         color: Color,
         size: f32,
         content: String,
-        font: u16,
+        font: String,
+        parent_size: (f32, f32),
     },
     Image {
         layout: Rect,
@@ -72,12 +73,14 @@ impl From<&Style> for RenderPrimitive {
                 content,
                 size,
                 font,
+                parent_size,
             } => Self::Text {
                 layout: Rect::default(),
                 color: style.color.resolve(),
                 size,
                 content,
                 font,
+                parent_size,
             },
             RenderCommand::Image { handle } => Self::Image {
                 layout: Rect::default(),

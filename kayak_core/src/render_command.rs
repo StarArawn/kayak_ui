@@ -10,7 +10,8 @@ pub enum RenderCommand {
     Text {
         content: String,
         size: f32,
-        font: u16,
+        font: String,
+        parent_size: (f32, f32),
     },
     Image {
         handle: u16,

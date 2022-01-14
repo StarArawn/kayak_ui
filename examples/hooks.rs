@@ -16,7 +16,7 @@ use bevy::{
 };
 use kayak_ui::{
     bevy::{BevyContext, BevyKayakUIPlugin, FontMapping, UICameraBundle},
-    core::{EventType, Index, OnEvent, render, rsx, use_effect, use_state, widget},
+    core::{render, rsx, use_effect, use_state, widget, EventType, Index, OnEvent},
     widgets::{App, Button, Text, Window},
 };
 
@@ -81,26 +81,29 @@ fn EffectCounter() {
             // use the `get` method on the raw state binding instead, to get the actual value.
             set_effect_count(raw_count.get() * 2);
         },
-
         // In order to call this side-effect closure whenever `raw_count` updates, we need to pass it in as a dependency.
         // Don't worry about the borrow checker here, `raw_count` is automatically cloned internally, so you don't need
         // to do that yourself.
-        [raw_count]
-        // IMPORTANT:
-        // If a side-effect updates some other state, make sure you do not pass that state in as a dependency unless you have
-        // some checks in place to prevent an infinite loop!
+        [raw_count] // IMPORTANT:
+                    // If a side-effect updates some other state, make sure you do not pass that state in as a dependency unless you have
+                    // some checks in place to prevent an infinite loop!
     );
 
-
     // Passing an empty dependency array causes the callback to only run a single time: when the widget is first rendered.
-    use_effect!(|| {
-        println!("First!");
-    }, []);
+    use_effect!(
+        || {
+            println!("First!");
+        },
+        []
+    );
 
     // Additionally, order matters with these side-effects. They will be ran in the order they are defined.
-    use_effect!(|| {
-        println!("Second!");
-    }, []);
+    use_effect!(
+        || {
+            println!("Second!");
+        },
+        []
+    );
 
     rsx! {
         <Window position={(50.0, 225.0)} size={(300.0, 150.0)} title={"Effect Example".to_string()}>
@@ -120,7 +123,7 @@ fn startup(
 ) {
     commands.spawn_bundle(UICameraBundle::new());
 
-    font_mapping.add(asset_server.load("roboto.kayak_font"));
+    font_mapping.add("Roboto", asset_server.load("roboto.kayak_font"));
 
     let context = BevyContext::new(|context| {
         render! {

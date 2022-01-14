@@ -1362,17 +1362,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "279fb028e20b3c4c320317955b77c5e0c9701f05a1d309905d6fc702cdc5053e"
 
 [[package]]
-name = "flo_binding"
-version = "2.0.2"
-source = "git+https://github.com/StarArawn/flo_binding.git?rev=c78431a56df5ec082b7e1c271871e6c0ac75e81e#c78431a56df5ec082b7e1c271871e6c0ac75e81e"
-dependencies = [
- "desync",
- "flo_rope",
- "futures",
- "uuid",
-]
-
-[[package]]
 name = "flo_rope"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1869,11 +1858,14 @@ dependencies = [
  "as-any",
  "bevy",
  "derivative",
- "flo_binding",
+ "desync",
+ "flo_rope",
+ "futures",
  "kayak_font",
  "kayak_render_macros",
  "morphorm",
  "resources",
+ "uuid",
 ]
 
 [[package]]

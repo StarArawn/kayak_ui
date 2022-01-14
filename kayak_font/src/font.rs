@@ -198,7 +198,8 @@ impl KayakFont {
                     last_width = width;
 
                     let position_x = x + left * font_size;
-                    let position_y = y + (shift_sign * top * font_size);
+                    let position_y =
+                        y + (shift_sign * top * font_size) + ((line_height - font_size) / 2.0);
 
                     positions_and_size.push(LayoutRect {
                         position: (position_x, position_y),

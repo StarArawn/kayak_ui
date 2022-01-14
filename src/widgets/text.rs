@@ -8,7 +8,13 @@ use crate::core::{
 };
 
 #[widget]
-pub fn Text(size: f32, content: String, styles: Option<Style>, font: Option<String>) {
+pub fn Text(
+    size: f32,
+    line_height: Option<f32>,
+    content: String,
+    styles: Option<Style>,
+    font: Option<String>,
+) {
     let font_name = font;
     let font: Binding<Option<KayakFont>> =
         context.get_asset(font_name.clone().unwrap_or("Roboto".into()));
@@ -24,7 +30,7 @@ pub fn Text(size: f32, content: String, styles: Option<Style>, font: Option<Stri
                         CoordinateSystem::PositiveYDown,
                         &content,
                         size,
-                        size * 1.2,
+                        line_height.unwrap_or(size * 1.2),
                         (layout.width, layout.height),
                     );
 
@@ -43,6 +49,7 @@ pub fn Text(size: f32, content: String, styles: Option<Style>, font: Option<Stri
         content: content.clone(),
         size,
         parent_size,
+        line_height: line_height.unwrap_or(size * 1.2),
         font: font_name.clone().unwrap_or("Roboto".into()),
     };
 

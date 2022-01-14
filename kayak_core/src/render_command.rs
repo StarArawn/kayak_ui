@@ -9,9 +9,10 @@ pub enum RenderCommand {
     Quad,
     Text {
         content: String,
-        size: f32,
         font: String,
+        line_height: f32,
         parent_size: (f32, f32),
+        size: f32,
     },
     Image {
         handle: u16,

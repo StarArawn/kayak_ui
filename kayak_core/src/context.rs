@@ -138,10 +138,11 @@ impl KayakContext {
                 // Traverse the parents to find the one with the given state data
                 index = self.widget_manager.tree.get_parent(index.unwrap());
 
-                let key = index.unwrap();
-                if let Some(provider) = providers.get(&key) {
-                    if let Ok(state) = provider.get::<Binding<T>>() {
-                        return Some(state.clone());
+                if let Some(key) = index {
+                    if let Some(provider) = providers.get(&key) {
+                        if let Ok(state) = provider.get::<Binding<T>>() {
+                            return Some(state.clone());
+                        }
                     }
                 }
             }

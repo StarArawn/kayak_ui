@@ -38,7 +38,7 @@ fn Removal(context: &mut KayakContext) {
                     <Text styles={Some(text_styles)} size={32.0} content={"Hello!".to_string()} />
                 </If>
                 <Button on_event={Some(on_event)}>
-                    <Text line_height={Some(45.0)} size={24.0} content={"Swap!".to_string()} />
+                    <Text line_height={Some(40.0)} size={24.0} content={"Swap!".to_string()} />
                 </Button>
             </Window>
         </>

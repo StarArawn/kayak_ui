@@ -24,8 +24,6 @@ pub fn Button(children: Children, styles: Option<Style>) {
         },
         padding_left: StyleProp::Value(Units::Stretch(1.0)),
         padding_right: StyleProp::Value(Units::Stretch(1.0)),
-        padding_top: StyleProp::Value(Units::Stretch(1.0)),
-        padding_bottom: StyleProp::Value(Units::Stretch(1.0)),
         ..base_styles
     });
     rsx! {

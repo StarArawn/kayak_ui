@@ -47,7 +47,7 @@ fn StateCounter() {
         <Window position={(50.0, 50.0)} size={(300.0, 150.0)} title={"State Example".to_string()}>
             <Text size={16.0} content={format!("Current Count: {}", count)} />
              <Button on_event={Some(on_event)}>
-                <Text size={24.0} content={"Count!".to_string()} />
+                <Text line_height={Some(40.0)} size={24.0} content={"Count!".to_string()} />
             </Button>
         </Window>
     }
@@ -110,7 +110,7 @@ fn EffectCounter() {
             <Text size={16.0} content={format!("Actual Count: {}", count)} />
             <Text size={16.0} content={format!("Doubled Count: {}", effect_count)} />
              <Button on_event={Some(on_event)}>
-                <Text size={24.0} content={"Count!".to_string()} />
+                <Text line_height={Some(40.0)} size={24.0} content={"Count!".to_string()} />
             </Button>
         </Window>
     }

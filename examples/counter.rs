@@ -40,7 +40,7 @@ fn Counter(context: &mut KayakContext) {
             <Window position={(50.0, 50.0)} size={(300.0, 300.0)} title={"Counter Example".to_string()}>
                 <Text styles={Some(text_styles)} size={32.0} content={format!("Current Count: {}", count).to_string()}>{}</Text>
                 <Button on_event={Some(on_event)}>
-                    <Text styles={Some(button_text_styles)} size={24.0} content={"Count!".to_string()}>{}</Text>
+                    <Text styles={Some(button_text_styles)} line_height={Some(40.0)} size={24.0} content={"Count!".to_string()}>{}</Text>
                 </Button>
             </Window>
         </>

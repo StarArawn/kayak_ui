@@ -222,7 +222,7 @@ fn ThemeDemo(context: &mut KayakContext, is_root: bool) {
 
                 <Text content={text} size={12.0} styles={Some(text_style)} />
                 <Background styles={Some(btn_style)}>
-                    <Text content={btn_text} size={14.0} styles={Some(btn_text_style)} />
+                    <Text content={btn_text} line_height={Some(20.0)} size={14.0} styles={Some(btn_text_style)} />
                 </Background>
 
                 <If condition={is_root}>

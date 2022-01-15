@@ -436,6 +436,57 @@ impl Tree {
         //     );
         // }
     }
+    
+    
+    /// Dumps the tree's current state to the console
+    ///
+    /// To dump only a section of the tree, use [dump_at] instead.
+    ///
+    /// # Arguments
+    ///
+    /// * `widgets`: Optionally, provide the current widgets to include metadata about each widget
+    ///
+    /// returns: ()
+    pub fn dump(&self, widgets: Option<&Arena<Option<Box<dyn Widget>>>>) {
+        if let Some(root) = self.root_node {
+            self.dump_at_internal(root, 0, widgets);
+        }
+    }
+
+    /// Dumps a section of the tree's current state to the console (starting from a specific index)
+    ///
+    /// To dump the entire tree, use [dump] instead.
+    ///
+    /// # Arguments
+    ///
+    /// * `start_index`: The index to start recursing from (including itself)
+    /// * `widgets`: Optionally, provide the current widgets to include metadata about each widget
+    ///
+    /// returns: ()
+    pub fn dump_at(&self, start_index: Index, widgets: Option<&Arena<Option<Box<dyn Widget>>>>) {
+        self.dump_at_internal(start_index, 0, widgets);
+    }
+
+    fn dump_at_internal(&self, start_index: Index, depth: usize, widgets: Option<&Arena<Option<Box<dyn Widget>>>>) {
+        let mut name = None;
+        if let Some(widgets) = widgets {
+            if let Some(widget) = widgets.get(start_index) {
+                if let Some(widget) = widget {
+                    name = Some(widget.get_name());
+                }
+            }
+        }
+
+        let indent = "\t".repeat(depth);
+        let raw_parts = start_index.into_raw_parts();
+        println!("{}{} [{}:{}]", indent, name.unwrap_or_default(), raw_parts.0, raw_parts.1);
+
+        if let Some(children) = self.children.get(&start_index) {
+            for node_index in children {
+                self.dump_at_internal(*node_index, depth + 1, widgets);
+            }
+        }
+    }
 }
 
 pub struct DownwardIterator<'a> {

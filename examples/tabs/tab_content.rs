@@ -9,11 +9,13 @@ use kayak_ui::{
 
 use crate::TabTheme;
 
+/// A widget that displays the selected tab's content
 #[widget]
 pub fn TabContent(context: &mut KayakContext, tabs: Vec<Fragment>, selected: usize) {
     let theme = context.create_consumer::<TabTheme>().unwrap_or_default();
 
     if selected >= tabs.len() {
+        // Invalid tab -> don't do anything
         return;
     }
 

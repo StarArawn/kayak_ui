@@ -17,7 +17,6 @@ pub struct ColorState {
     pub normal: Color,
     pub hovered: Color,
     pub active: Color,
-    pub disabled: Color,
 }
 
 #[widget]

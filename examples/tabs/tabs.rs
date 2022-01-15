@@ -1,3 +1,9 @@
+//! This example demonstrates how one might create a tab system
+//!
+//! Additionally, it showcases focus navigation. Press `Tab` and `Shift + Tab` to move
+//! between focusable widgets. This example also sets it up so that `Enter` or `Space`
+//! can be used in place of a normal click.
+
 use bevy::{
     prelude::{App as BevyApp, AssetServer, Commands, Res, ResMut},
     window::WindowDescriptor,
@@ -8,7 +14,7 @@ use kayak_ui::{
     bevy::{BevyContext, BevyKayakUIPlugin, FontMapping, UICameraBundle},
     core::{
         styles::{Style, StyleProp, Units},
-        Children, Color, constructor, Handler, Index, render, rsx, use_state, widget
+        Children, Color, constructor, Index, render, rsx, widget
     },
     widgets::{App, Text, Window},
 };
@@ -34,11 +40,14 @@ fn TabDemo() {
         ..Default::default()
     };
 
-    let (count, set_count, ..) = use_state!(0);
-    let (tabs, set_tabs, ..) = use_state!(vec![
+    // This is not the most ideal way to generate tabs. For one, the `content` has no access to its actual context
+    // (i.e. where it actually exists in the hierarchy). Additionally, it would be better if tabs were created as
+    // children of `TabBox`. These are issues that will be addressed in the future, so for now, this will work.
+    let tabs = vec![
         TabData {
             name: "Tab 1".to_string(),
             content: {
+                // This is a temporary hack to prevent the `constructor` macro from throwing an error
                 let children = Children::None;
                 let text_style = text_style.clone();
                 constructor! {
@@ -72,36 +81,10 @@ fn TabDemo() {
                 }
             },
         },
-    ]);
-
-    let tab_clone = tabs.clone();
-    let set_added_tabs = set_tabs.clone();
-    let on_add_tab = Handler::new(move |_| {
-        let mut tab_clone = (&tab_clone).clone();
-        tab_clone.push(TabData {
-            name: format!("Tab {}", count),
-            content: {
-                let children = Children::None;
-                constructor! {
-                    <>
-                        <Text content={"Hello".to_string()} size={12.0} />
-                    </>
-                }
-            },
-        }, );
-        set_count(count + 1);
-        set_added_tabs(tab_clone);
-    });
-
-    let tab_clone = tabs.clone();
-    let on_remove_tab = Handler::new(move |index: usize| {
-        let mut tab_clone = (&tab_clone).clone();
-        tab_clone.remove(index);
-        set_tabs(tab_clone);
-    });
+    ];
 
     rsx! {
-        <TabBox tabs={tabs} on_add_tab={on_add_tab} on_remove_tab={on_remove_tab} />
+        <TabBox tabs={tabs} />
     }
 }
 
@@ -123,19 +106,16 @@ fn startup(
             normal: Color::new(0.949, 0.956, 0.968, 1.0),
             hovered: Color::new(0.650, 0.574, 0.669, 1.0),
             active: Color::new(0.949, 0.956, 0.968, 1.0),
-            disabled: Color::new(0.662, 0.678, 0.694, 1.0),
         },
         active_tab: ColorState {
             normal: Color::new(0.286, 0.353, 0.392, 1.0),
             hovered: Color::new(0.246, 0.323, 0.352, 1.0),
-            active: Default::default(),
-            disabled: Color::new(0.474, 0.486, 0.505, 1.0),
+            active: Color::new(0.196, 0.283, 0.312, 1.0),
         },
         inactive_tab: ColorState {
             normal: Color::new(0.176, 0.227, 0.255, 1.0),
             hovered: Color::new(0.16, 0.21, 0.23, 1.0),
-            active: Default::default(),
-            disabled: Color::new(0.474, 0.486, 0.505, 1.0),
+            active: Color::new(0.196, 0.283, 0.312, 1.0),
         },
         tab_height: 22.0,
     };

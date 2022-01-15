@@ -13,12 +13,17 @@ use crate::tab_content::TabContent;
 
 #[derive(Debug, Default, Clone, PartialEq)]
 pub struct TabData {
+    /// The name of this tab
     pub name: String,
+    /// The content to display for this tab, wrapped in a [Fragment]
     pub content: Fragment,
 }
 
+/// The actual tab container widget.
+///
+/// This houses both the tab bar and its content.
 #[widget]
-pub fn TabBox(context: &mut KayakContext, tabs: Vec<TabData>, initial_tab: usize, on_add_tab: Handler, on_remove_tab: Handler<usize>) {
+pub fn TabBox(context: &mut KayakContext, tabs: Vec<TabData>, initial_tab: usize) {
     let theme = context.create_consumer::<TabTheme>().unwrap_or_default();
     let (selected, set_selected, ..) = use_state!(initial_tab);
 
@@ -41,7 +46,7 @@ pub fn TabBox(context: &mut KayakContext, tabs: Vec<TabData>, initial_tab: usize
 
     rsx! {
         <>
-            <TabBar tabs={tab_names} selected={selected} on_select_tab={on_select_tab} on_add_tab={on_add_tab} on_remove_tab={on_remove_tab} />
+            <TabBar tabs={tab_names} selected={selected} on_select_tab={on_select_tab} />
             <TabContent tabs={tab_content} selected={selected}  />
         </>
     }

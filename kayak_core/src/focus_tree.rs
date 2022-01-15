@@ -36,14 +36,7 @@ impl FocusTree {
             }
         }
 
-        if let Some(root) = self.tree.root_node {
-            // Replace root node
-            self.tree.replace(root, index);
-            if widget_tree.is_descendant(root, index) {
-                // If old root is child -> add it back in
-                self.add(root, &widget_tree);
-            }
-        } else {
+        if self.tree.root_node.is_none() {
             // Set root node
             self.tree.add(index, None);
             self.focus(index);
@@ -157,6 +150,10 @@ impl FocusTree {
         }
 
         self.tree.root_node
+    }
+
+    pub fn tree(&self) -> &Tree {
+        &self.tree
     }
 }
 

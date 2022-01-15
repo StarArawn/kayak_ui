@@ -63,7 +63,7 @@ impl OnEvent {
 }
 
 #[derive(Clone)]
-pub struct Handler<T>(pub Arc<RwLock<dyn FnMut(T) + Send + Sync + 'static>>);
+pub struct Handler<T = ()>(pub Arc<RwLock<dyn FnMut(T) + Send + Sync + 'static>>);
 
 impl<T> Default for Handler<T> {
     fn default() -> Self {

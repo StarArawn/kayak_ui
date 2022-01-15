@@ -360,7 +360,7 @@ impl WidgetManager {
         )
     }
 
-    fn build_nodes_tree(&self) -> Tree {
+    fn build_nodes_tree(&mut self) -> Tree {
         let mut tree = Tree::default();
         let (root_node_id, _) = self.current_widgets.iter().next().unwrap();
         tree.root_node = Some(root_node_id);
@@ -368,6 +368,11 @@ impl WidgetManager {
             tree.root_node.unwrap(),
             self.get_valid_node_children(tree.root_node.unwrap()),
         );
+
+        let old_focus = self.focus_tree.current();
+        self.focus_tree.clear();
+        self.focus_tree.add(root_node_id, &self.tree);
+
         for (widget_id, widget) in self.current_widgets.iter().skip(1) {
             let widget_styles = widget.as_ref().unwrap().get_styles();
             if let Some(widget_styles) = widget_styles {
@@ -381,7 +386,19 @@ impl WidgetManager {
                     }
                 }
             }
+
+            let focusable = self.get_focusable(widget_id).unwrap_or_default();
+            if focusable {
+                self.focus_tree.add(widget_id, &self.tree);
+            }
         }
+
+        if let Some(old_focus) = old_focus {
+            if self.focus_tree.contains(old_focus) {
+                self.focus_tree.focus(old_focus);
+            }
+        }
+
         tree
     }
 
@@ -426,16 +443,6 @@ impl WidgetManager {
     }
 
     pub fn set_focusable(&mut self, focusable: Option<bool>, index: Index, is_parent: bool) {
-        let is_focusable = self.get_focusable(index).unwrap_or_default();
         self.focus_tracker.set_focusability(index, focusable, is_parent);
-        let focusable = self.get_focusable(index).unwrap_or_default();
-
-        if focusable {
-            if !is_focusable {
-                self.focus_tree.add(index, &self.tree);
-            }
-        } else if is_focusable {
-            self.focus_tree.remove(index);
-        }
     }
 }

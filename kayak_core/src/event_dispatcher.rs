@@ -94,12 +94,6 @@ impl EventDispatcher {
                 // --- Call Event --- //
                 let mut target_widget = context.widget_manager.take(index);
                 target_widget.on_event(context, &mut node_event);
-                // if target_widget.get_name() == String::from("TextBox") {
-                //     println!("Event: {:#?}", node_event);
-                //     println!("Widget Focus: {} - {:?}", target_widget.focusable(), index);
-                //     println!("Context Focus: {} - {:?}", context.get_focusable(index), index);
-                // }
-                // target_widget.set_focusable(false);
                 context.widget_manager.repossess(target_widget);
 
                 event.default_prevented |= node_event.default_prevented;

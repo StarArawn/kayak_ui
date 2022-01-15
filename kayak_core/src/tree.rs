@@ -6,7 +6,7 @@ use std::{
 
 use morphorm::Hierarchy;
 
-use crate::Index;
+use crate::{Arena, Index, Widget};
 
 #[derive(Default, Debug, PartialEq)]
 pub struct Tree {

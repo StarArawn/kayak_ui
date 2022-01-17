@@ -260,15 +260,14 @@ Firstly, the constructor:
 impl Widget for MyButton {
   type Props = MyButtonProps;
   
-  fn constructor(id: Index, children: Children, mut props: Self::Props) -> dyn Widget<Props=Self::Props> where Self: Sized {
+  fn constructor(mut props: Self::Props) -> dyn Widget<Props=Self::Props> where Self: Sized {
     if props.disabled {
       // If disabled, also disable focusability
       props.focusable = false;
     }
 
     Self {
-      my_id: id,
-      my_children: children,
+      my_id: Index::default(),
       my_props: props
     }
   }
@@ -452,8 +451,6 @@ However, we need this:
 #[derivative(Default, Debug, PartialEq, Clone)]
 struct MyWidget {
   pub id: kayak_core::Index,
-  #[derivative(Debug = "ignore", PartialEq = "ignore")] 
-  pub children: Children,
   pub props: MyWidgetProps,
 }
 ```

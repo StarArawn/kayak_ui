@@ -145,6 +145,7 @@ The derive macro would have some associated macros, which will be used to mark c
 * `#[props(OnEvent)]` - Used to mark a field as the `OnEvent` prop
 * `#[props(Styles)]` - Used to mark a field as the `Styles` prop
 * `#[props(Focusable)]` - Used to mark a field as the `Focusable` prop
+* `#[props(Children)]` - Used to mark a field as the `Children` prop
 
 There may be more added to this list in the future, but for now this is the main assortment.
 
@@ -161,6 +162,8 @@ struct MyWidgetProps {
   event_handler: OnEvent
   #[props(Focusable)]
   focusable: Optional<bool>,
+  #[props(Children)]
+  children: Children,
   // Defined without the marker attribute:
   styles: Styles,
 }
@@ -179,6 +182,11 @@ impl WidgetProps {
     self.focusable
   }
   
+  // Children is an alias for an Option so it doesn't need to return Option<Children>
+  fn get_children(&self) -> Children {
+    self.children.clone()
+  }
+  
   // ...
 }
 ```
@@ -188,7 +196,7 @@ impl WidgetProps {
 Another addition to `Widget` would be the constructor method. This associated method will allow widgets to be generated with a set of props in a more controlled and freeform way. The method looks like this:
 
 ```rust
-fn constructor(id: Index, children: Children, mut props: Self::Props) -> dyn Widget<Props=Self::Props> where Self: Sized;
+fn constructor(mut props: Self::Props) -> dyn Widget<Props=Self::Props> where Self: Sized;
 ```
 
 > Note that this would put the `Sized` restriction on widgets.
@@ -209,7 +217,6 @@ To define a custom widget, we need to first define our struct:
 #[derive(Debug)]
 struct MyButton {
   my_id: Index,
-  my_children: Children,
   my_props: MyButtonProps,
 }
 ```
@@ -360,7 +367,7 @@ impl<'a> KayakContextRef<'a> {
     self.widget_tree.add(child_id, Some(id));
     if should_rerender {
         let mut child_widget = self.context.widget_manager.take(child_id);
-        let mut context = KayakContextRef { context: self.context, current_id: id };
+        let mut context = KayakContextRef { context: self.context, current_id: child_id };
         child_widget.render(context);
         self.context.widget_manager.repossess(child_widget);
     }
@@ -456,6 +463,12 @@ In order to properly get the props struct, we can instead define our widget like
 ```rust
 #[widget]
 fn MyWidget(props: MyWidgetProps) {
+  // Internally insert:
+  // ```
+  // let props = self.props.clone();
+  // ```
+  
+  
   let WidgetProps {foo, bar} = props;
   // ...
 }

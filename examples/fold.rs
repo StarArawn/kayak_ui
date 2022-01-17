@@ -17,8 +17,8 @@ use kayak_ui::{
 #[widget]
 fn FolderTree(context: &mut KayakContext) {
     let text_styles = Style {
-        width: StyleProp::Value(Units::Stretch(1.0)),
-        height: StyleProp::Value(Units::Pixels(18.0)),
+        // width: StyleProp::Value(Units::Stretch(1.0)),
+        // height: StyleProp::Value(Units::Pixels(18.0)),
         ..Default::default()
     };
 

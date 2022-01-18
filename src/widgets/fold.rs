@@ -1,7 +1,8 @@
 use crate::core::{
     render_command::RenderCommand,
+    rsx,
     styles::{Style, StyleProp, Units},
-    Children, EventType, Handler, rsx, widget, use_state, OnEvent
+    use_state, widget, Children, EventType, Handler, OnEvent,
 };
 
 use crate::widgets::{Background, Clip, If, Text};
@@ -37,8 +38,13 @@ use crate::widgets::{Background, Clip, If, Text};
 /// }
 /// ```
 #[widget]
-pub fn Fold(label: String, children: Children, open: Option<bool>, on_change: Option<Handler<bool>>, default_open: bool) {
-
+pub fn Fold(
+    label: String,
+    children: Children,
+    open: Option<bool>,
+    on_change: Option<Handler<bool>>,
+    default_open: bool,
+) {
     // === State === //
     let initial = default_open || open.unwrap_or_default();
     let (is_open, set_is_open, ..) = use_state!(initial);
@@ -76,23 +82,19 @@ pub fn Fold(label: String, children: Children, open: Option<bool>, on_change: Op
 
     let container_style = Style {
         width: StyleProp::Value(Units::Stretch(1.0)),
-        // height: StyleProp::Value(Units::Auto),
-        height: StyleProp::Value(Units::Pixels(20.0)),
+        height: StyleProp::Value(Units::Auto),
         ..Default::default()
     };
 
-    let text_styles = Style {
-        height: StyleProp::Value(Units::Pixels(26.0)),
-        ..Default::default()
-    };
+    let inner_container_styles = container_style.clone();
 
     // === Render === //
     rsx! {
         <Background styles={Some(background_styles)}>
             <Clip styles={Some(container_style)}>
-                <Text content={label} on_event={Some(handler)} size={14.0} styles={Some(text_styles)} />
+                <Text content={label} on_event={Some(handler)} size={14.0} />
                 <If condition={is_open}>
-                    <Clip>
+                    <Clip styles={Some(inner_container_styles)}>
                         {children}
                     </Clip>
                 </If>

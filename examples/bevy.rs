@@ -6,7 +6,7 @@ use bevy::{
 use kayak_ui::bevy::{BevyContext, BevyKayakUIPlugin, FontMapping, UICameraBundle};
 use kayak_ui::core::Index;
 use kayak_ui::core::{render, rsx, widget};
-use kayak_ui::widgets::{App, Window};
+use kayak_ui::widgets::{App, Inspector, Window};
 
 #[widget]
 fn CustomWidget() {
@@ -29,12 +29,13 @@ fn startup(
 ) {
     commands.spawn_bundle(UICameraBundle::new());
 
-    font_mapping.add(asset_server.load("roboto.kayak_font"));
+    font_mapping.add("Roboto", asset_server.load("roboto.kayak_font"));
 
     let context = BevyContext::new(|context| {
         render! {
             <App>
                 <CustomWidget />
+                <Inspector />
             </App>
         }
     });

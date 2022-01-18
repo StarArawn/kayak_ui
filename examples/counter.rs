@@ -24,12 +24,8 @@ fn Counter(context: &mut KayakContext) {
     };
 
     let button_text_styles = Style {
-        bottom: StyleProp::Value(Units::Stretch(1.0)),
         left: StyleProp::Value(Units::Stretch(1.0)),
         right: StyleProp::Value(Units::Stretch(1.0)),
-        top: StyleProp::Value(Units::Stretch(1.0)),
-        width: StyleProp::Value(Units::Pixels(67.0)),
-        height: StyleProp::Value(Units::Pixels(39.0)),
         ..Default::default()
     };
 
@@ -44,7 +40,7 @@ fn Counter(context: &mut KayakContext) {
             <Window position={(50.0, 50.0)} size={(300.0, 300.0)} title={"Counter Example".to_string()}>
                 <Text styles={Some(text_styles)} size={32.0} content={format!("Current Count: {}", count).to_string()}>{}</Text>
                 <Button on_event={Some(on_event)}>
-                    <Text styles={Some(button_text_styles)} size={24.0} content={"Count!".to_string()}>{}</Text>
+                    <Text styles={Some(button_text_styles)} line_height={Some(40.0)} size={24.0} content={"Count!".to_string()}>{}</Text>
                 </Button>
             </Window>
         </>
@@ -58,7 +54,7 @@ fn startup(
 ) {
     commands.spawn_bundle(UICameraBundle::new());
 
-    font_mapping.add(asset_server.load("roboto.kayak_font"));
+    font_mapping.add("Roboto", asset_server.load("roboto.kayak_font"));
 
     let context = BevyContext::new(|context| {
         render! {

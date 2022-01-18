@@ -17,11 +17,13 @@ pub enum RenderPrimitive {
         border_radius: (f32, f32, f32, f32),
     },
     Text {
-        layout: Rect,
         color: Color,
-        size: f32,
         content: String,
-        font: u16,
+        font: String,
+        layout: Rect,
+        line_height: f32,
+        parent_size: (f32, f32),
+        size: f32,
     },
     Image {
         layout: Rect,
@@ -70,14 +72,18 @@ impl From<&Style> for RenderPrimitive {
             },
             RenderCommand::Text {
                 content,
-                size,
                 font,
-            } => Self::Text {
-                layout: Rect::default(),
-                color: style.color.resolve(),
+                line_height,
+                parent_size,
                 size,
+            } => Self::Text {
+                color: style.color.resolve(),
                 content,
                 font,
+                layout: Rect::default(),
+                line_height,
+                parent_size,
+                size,
             },
             RenderCommand::Image { handle } => Self::Image {
                 layout: Rect::default(),

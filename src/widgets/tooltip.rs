@@ -1,9 +1,10 @@
-use std::sync::{Arc};
 use crate::core::{
-    Bound, Children, Color, EventType, MutableBound, OnEvent, rsx, widget,
-    render_command::RenderCommand, 
-    styles::{PositionType, Style, StyleProp, Units}
+    render_command::RenderCommand,
+    rsx,
+    styles::{PositionType, Style, StyleProp, Units},
+    widget, Bound, Children, Color, EventType, MutableBound, OnEvent,
 };
+use std::sync::Arc;
 
 use crate::widgets::{Background, Clip, Element, If, Text};
 
@@ -18,7 +19,6 @@ pub struct TooltipData {
     /// Whether the tooltip is visible or not
     pub visible: bool,
 }
-
 
 /// A provider for managing a tooltip context.
 ///
@@ -58,19 +58,20 @@ pub struct TooltipData {
 /// }
 /// ```
 #[widget]
-pub fn TooltipProvider(
-    children: Children,
-    position: (f32, f32),
-    size: (f32, f32),
-) {
+pub fn TooltipProvider(children: Children, position: (f32, f32), size: (f32, f32)) {
     const WIDTH: f32 = 150.0;
     const HEIGHT: f32 = 18.0;
     const PADDING: (f32, f32) = (10.0, 5.0);
 
     let tooltip = context.create_provider(TooltipData::default());
-    let TooltipData { anchor, size: tooltip_size, text, visible, .. } = tooltip.get();
+    let TooltipData {
+        anchor,
+        size: tooltip_size,
+        text,
+        visible,
+        ..
+    } = tooltip.get();
     let tooltip_size = tooltip_size.unwrap_or((WIDTH, HEIGHT));
-
 
     *styles = Some(Style {
         left: StyleProp::Value(Units::Pixels(position.0)),
@@ -178,7 +179,9 @@ pub fn TooltipConsumer(
         ..styles.clone().unwrap_or_default()
     });
 
-    let data = context.create_consumer::<TooltipData>().expect("TooltipConsumer requires TooltipProvider as an ancestor");
+    let data = context
+        .create_consumer::<TooltipData>()
+        .expect("TooltipConsumer requires TooltipProvider as an ancestor");
 
     let text = Arc::new(text);
     self.on_event = Some(OnEvent::new(move |ctx, event| match event.event_type {

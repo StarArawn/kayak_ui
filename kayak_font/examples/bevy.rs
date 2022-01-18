@@ -5,7 +5,7 @@ use bevy::{
     window::WindowDescriptor,
     DefaultPlugins,
 };
-use kayak_font::{Alignment, KayakFont, bevy::KayakFontPlugin};
+use kayak_font::{bevy::KayakFontPlugin, Alignment, KayakFont};
 
 mod renderer;
 use renderer::FontRenderPlugin;

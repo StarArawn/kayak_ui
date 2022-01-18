@@ -1,0 +1,6 @@
+A list of changes can be found here:
+https://github.com/Logicalshift/flo_binding/compare/master...StarArawn:master
+
+Notable changes:
+- Use send + sync for all types that just required Send before.
+- Bindings are given ID's(UUID's) to track them.

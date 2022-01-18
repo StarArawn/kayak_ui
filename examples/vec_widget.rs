@@ -14,10 +14,13 @@ fn startup(
 ) {
     commands.spawn_bundle(UICameraBundle::new());
 
-    font_mapping.add(asset_server.load("roboto.kayak_font"));
+    font_mapping.add("Roboto", asset_server.load("roboto.kayak_font"));
 
     let context = BevyContext::new(|context| {
-        let data = vec!["Text1", "Text2", "Text3", "Text4"];
+        let data = vec![
+            "Text 1", "Text 2", "Text 3", "Text 4", "Text 5", "Text 6", "Text 7", "Text 8",
+            "Text 9", "Text 10",
+        ];
         render! {
             <App>
                 {VecTracker::from(data.iter().map(|data| {

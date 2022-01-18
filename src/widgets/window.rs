@@ -51,8 +51,8 @@ pub fn Window(
         top: StyleProp::Value(Units::Pixels(0.0)),
         bottom: StyleProp::Value(Units::Pixels(0.0)),
         padding_left: StyleProp::Value(Units::Pixels(5.0)),
-        padding_top: StyleProp::Value(Units::Stretch(1.0)),
-        padding_bottom: StyleProp::Value(Units::Stretch(1.0)),
+        // padding_top: StyleProp::Value(Units::Stretch(1.0)),
+        // padding_bottom: StyleProp::Value(Units::Stretch(1.0)),
         ..Style::default()
     };
 

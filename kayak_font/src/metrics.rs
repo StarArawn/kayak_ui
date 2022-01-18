@@ -1,6 +1,6 @@
 use serde::Deserialize;
 
-#[derive(Deserialize, Debug, Copy, Clone)]
+#[derive(Deserialize, Debug, Copy, Clone, PartialEq)]
 pub struct Metrics {
     #[serde(alias = "emSize")]
     em_size: f32,

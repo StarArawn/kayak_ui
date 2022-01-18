@@ -11,10 +11,13 @@ bevy_renderer = ["bevy", "kayak_font/bevy_renderer"]
 
 [dependencies]
 as-any = "0.2"
-derivative = "2.2"
 bevy = { version = "0.6.0", optional = true }
-flo_binding = { git = "https://github.com/StarArawn/flo_binding.git", rev = "c78431a56df5ec082b7e1c271871e6c0ac75e81e" }
+derivative = "2.2"
+desync = { version = "0.7" }
+flo_rope = { version = "0.1" }
+futures = { version = "0.3" }
 kayak_font = { path = "../kayak_font" }
 kayak_render_macros = { path = "../kayak_render_macros" }
 morphorm = { git = "https://github.com/geom3trik/morphorm", rev = "1243152d4cebea46fd3e5098df26402c73acae91" }
 resources = "1.1"
+uuid = { version = "0.8", features = ["v4"] }

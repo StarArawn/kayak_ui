@@ -3,7 +3,7 @@ use kayak_core::{derivative::*, Fragment, Widget};
 use kayak_render_macros::rsx;
 
 #[derive(Derivative)]
-#[derivative(Default, Debug, PartialEq)]
+#[derivative(Clone, Default, Debug, PartialEq)]
 #[allow(dead_code)]
 struct Test {
     id: Index,

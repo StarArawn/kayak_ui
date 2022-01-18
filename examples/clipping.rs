@@ -20,7 +20,7 @@ fn startup(
 ) {
     commands.spawn_bundle(UICameraBundle::new());
 
-    font_mapping.add(asset_server.load("roboto.kayak_font"));
+    font_mapping.add("Roboto", asset_server.load("roboto.kayak_font"));
 
     let handle: Handle<bevy::render::texture::Image> = asset_server.load("kenny/panel_brown.png");
     let panel_brown_handle = image_manager.get(&handle);
@@ -40,13 +40,7 @@ fn startup(
             ..Style::default()
         };
 
-        let clip_styles = Style {
-            // padding_left: StyleProp::Value(Units::Pixels(25.0)),
-            // padding_right: StyleProp::Value(Units::Pixels(25.0)),
-            // padding_top: StyleProp::Value(Units::Pixels(15.0)),
-            // padding_bottom: StyleProp::Value(Units::Pixels(125.0)),
-            ..Style::default()
-        };
+        let clip_styles = Style { ..Style::default() };
 
         let lorem_ipsum = r#"
 Lorem ipsum dolor sit amet, consectetur adipiscing elit. Cras sed tellus neque. Proin tempus ligula a mi molestie aliquam. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Nullam venenatis consequat ultricies. Sed ac orci purus. Nullam velit nisl, dapibus vel mauris id, dignissim elementum sapien. Vestibulum faucibus sapien ut erat bibendum, id lobortis nisi luctus. Mauris feugiat at lectus at pretium. Pellentesque vitae finibus ante. Nulla non ex neque. Cras varius, lorem facilisis consequat blandit, lorem mauris mollis massa, eget consectetur magna sem vel enim. Nam aliquam risus pulvinar, volutpat leo eget, eleifend urna. Suspendisse in magna sed ligula vehicula volutpat non vitae augue. Phasellus aliquam viverra consequat. Nam rhoncus molestie purus, sed laoreet neque imperdiet eget. Sed egestas metus eget sodales congue.

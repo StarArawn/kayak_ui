@@ -32,7 +32,7 @@ pub fn Card(card_id: usize, name: String, on_delete: Handler<usize>) {
 
     rsx! {
         <Background styles={Some(background_styles)}>
-            <Text size={14.0} content={name} />
+            <Text line_height={Some(26.0)} size={14.0} content={name} />
             <DeleteButton on_event={Some(on_event)} />
         </Background>
     }

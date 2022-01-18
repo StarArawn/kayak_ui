@@ -87,9 +87,9 @@ fn startup(
 ) {
     commands.spawn_bundle(UICameraBundle::new());
 
-    font_mapping.add(asset_server.load("roboto.kayak_font"));
+    font_mapping.add("Roboto", asset_server.load("roboto.kayak_font"));
     let main_font = asset_server.load("antiquity.kayak_font");
-    font_mapping.add(main_font.clone());
+    font_mapping.add("Antiquity", main_font.clone());
 
     let handle: Handle<bevy::render::texture::Image> = asset_server.load("kenny/panel_brown.png");
     let panel_brown_handle = image_manager.get(&handle);
@@ -99,15 +99,10 @@ fn startup(
             layout_type: StyleProp::Value(LayoutType::Column),
             width: StyleProp::Value(Units::Pixels(512.0)),
             height: StyleProp::Value(Units::Pixels(512.0)),
-            min_height: StyleProp::Value(Units::Pixels(0.0)),
-            padding_left: StyleProp::Value(Units::Stretch(1.0)),
-            padding_right: StyleProp::Value(Units::Stretch(1.0)),
-            padding_top: StyleProp::Value(Units::Stretch(1.0)),
-            padding_bottom: StyleProp::Value(Units::Stretch(1.0)),
-            ..Style::default()
-        };
-
-        let app_styles = Style {
+            left: StyleProp::Value(Units::Stretch(1.0)),
+            right: StyleProp::Value(Units::Stretch(1.0)),
+            top: StyleProp::Value(Units::Stretch(1.0)),
+            bottom: StyleProp::Value(Units::Stretch(1.0)),
             padding_left: StyleProp::Value(Units::Stretch(1.0)),
             padding_right: StyleProp::Value(Units::Stretch(1.0)),
             padding_top: StyleProp::Value(Units::Stretch(1.0)),
@@ -116,21 +111,7 @@ fn startup(
         };
 
         let header_styles = Style {
-            width: StyleProp::Value(Units::Pixels(408.0)),
-            height: StyleProp::Value(Units::Pixels(42.0)),
             bottom: StyleProp::Value(Units::Stretch(1.0)),
-            ..Style::default()
-        };
-
-        let text_styles = Style {
-            width: StyleProp::Value(Units::Pixels(56.0)),
-            height: StyleProp::Value(Units::Pixels(24.0)),
-            ..Style::default()
-        };
-
-        let options_button_text_styles = Style {
-            width: StyleProp::Value(Units::Pixels(94.0)),
-            height: StyleProp::Value(Units::Pixels(24.0)),
             ..Style::default()
         };
 
@@ -142,7 +123,7 @@ fn startup(
         let main_font_id = font_mapping.get(&main_font);
 
         render! {
-            <App styles={Some(app_styles)}>
+            <App>
                 <NinePatch
                     styles={Some(nine_patch_styles)}
                     border={Space {
@@ -160,13 +141,13 @@ fn startup(
                         font={main_font_id}
                     />
                     <BlueButton>
-                        <Text styles={Some(text_styles)} size={20.0} content={"Play".to_string()} font={main_font_id} />
+                        <Text line_height={Some(50.0)} size={20.0} content={"Play".to_string()} font={main_font_id} />
                     </BlueButton>
                     <BlueButton styles={Some(options_button_styles)}>
-                        <Text styles={Some(options_button_text_styles)} size={20.0} content={"Options".to_string()} font={main_font_id} />
+                        <Text line_height={Some(50.0)} size={20.0} content={"Options".to_string()} font={main_font_id} />
                     </BlueButton>
                     <BlueButton styles={Some(options_button_styles)}>
-                        <Text styles={Some(text_styles)} size={20.0} content={"Quit".to_string()} font={main_font_id} />
+                        <Text line_height={Some(50.0)} size={20.0} content={"Quit".to_string()} font={main_font_id} />
                     </BlueButton>
                 </NinePatch>
             </App>

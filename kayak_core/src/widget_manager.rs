@@ -3,6 +3,7 @@ use std::{
     sync::{Arc, Mutex},
 };
 
+use crate::layout_cache::Rect;
 use crate::{
     layout_cache::LayoutCache,
     node::{Node, NodeBuilder},
@@ -12,7 +13,6 @@ use crate::{
     tree::Tree,
     Arena, Index, Widget,
 };
-use crate::layout_cache::Rect;
 // use as_any::Downcast;
 
 #[derive(Debug)]
@@ -133,6 +133,14 @@ impl WidgetManager {
         self.layout_cache.rect.get(id)
     }
 
+    pub fn get_name(&self, id: &Index) -> Option<String> {
+        if let Some(widget) = &self.current_widgets[*id] {
+            return Some(widget.get_name());
+        }
+
+        None
+    }
+
     pub fn render(&mut self) {
         let default_styles = Style {
             background_color: crate::styles::StyleProp::Default,
@@ -215,40 +223,6 @@ impl WidgetManager {
         }
 
         self.node_tree = self.build_nodes_tree();
-
-        // let mut last_parent = Index::default();
-        // let mut space_count_lookup = HashMap::<Index, u32>::new();
-        // let mut space_count: u32 = 0;
-        // for node in self.node_tree.down_iter() {
-        //     space_count_lookup.insert(node.0, space_count);
-        //     let child_widget = &self.current_widgets[node.0].as_ref().unwrap();
-        //     let (child_id, _) = node.0.into_raw_parts();
-        //     println!(
-        //         "{:indent$}Widget: {} {}",
-        //         "",
-        //         child_widget.get_name(),
-        //         child_id,
-        //         indent = space_count as usize,
-        //     );
-        //     if let Some(parent_id) = self.node_tree.parents.get(&node.0) {
-        //         let parent_widget = &self.current_widgets[*parent_id].as_ref().unwrap();
-        //         println!(
-        //             "{:indent$}parent: {} {}",
-        //             "",
-        //             parent_widget.get_name(),
-        //             parent_id.into_raw_parts().0,
-        //             indent = space_count as usize,
-        //         );
-        //         if last_parent != *parent_id {
-        //             if let Some(stored_space_count) = space_count_lookup.get(parent_id) {
-        //                 space_count = *stored_space_count;
-        //             }
-        //         }
-        //         last_parent = *parent_id;
-        //     }
-        //     space_count += 2;
-        // }
-        // panic!();
     }
 
     pub fn calculate_layout(&mut self) {
@@ -375,18 +349,20 @@ impl WidgetManager {
         children
     }
 
-    fn get_valid_parent(&self, node_id: Index) -> Option<Index> {
+    pub fn get_valid_parent(&self, node_id: Index) -> Option<Index> {
         if let Some(parent_id) = self.tree.parents.get(&node_id) {
-            if let Some(parent_widget) = &self.current_widgets[*parent_id] {
-                if let Some(parent_styles) = parent_widget.get_styles() {
-                    if parent_styles.render_command.resolve() != RenderCommand::Empty {
-                        return Some(*parent_id);
-                    }
+            if let Some(parent_widget) = &self.nodes[*parent_id] {
+                if parent_widget.styles.render_command.resolve() != RenderCommand::Empty {
+                    return Some(*parent_id);
                 }
-
-                return self.get_valid_parent(*parent_id);
             }
+            return self.get_valid_parent(*parent_id);
         }
+        // assert!(node_id.into_raw_parts().0 == 0);
         None
+    }
+
+    pub fn get_node(&self, id: &Index) -> Option<Node> {
+        self.nodes[*id].clone()
     }
 }

@@ -20,18 +20,29 @@ pub fn extract_texts(
     _dpi: f32,
 ) -> Vec<ExtractQuadBundle> {
     let mut extracted_texts = Vec::new();
-    let (background_color, layout, font_size, content, font) = match render_primitive {
-        RenderPrimitive::Text {
-            color,
-            layout,
-            size,
-            content,
-            font,
-        } => (color, layout, *size, content, *font),
-        _ => panic!(""),
-    };
+    let (background_color, layout, font_size, content, font, parent_size, line_height) =
+        match render_primitive {
+            RenderPrimitive::Text {
+                color,
+                layout,
+                size,
+                content,
+                font,
+                parent_size,
+                line_height,
+            } => (
+                color,
+                layout,
+                *size,
+                content,
+                font,
+                parent_size,
+                line_height,
+            ),
+            _ => panic!(""),
+        };
 
-    let font_handle = font_mapping.get_handle(font).unwrap();
+    let font_handle = font_mapping.get_handle(font.clone()).unwrap();
     let font = fonts.get(font_handle.clone());
 
     if font.is_none() {
@@ -40,15 +51,13 @@ pub fn extract_texts(
 
     let font = font.unwrap();
 
-    let line_height = font_size * 1.2;
-
     let chars_layouts = font.get_layout(
         CoordinateSystem::PositiveYDown,
         Alignment::Start,
-        (layout.posx, layout.posy + line_height),
-        (layout.width, layout.height),
+        (layout.posx, layout.posy + font_size),
+        (parent_size.0, parent_size.1),
         content,
-        line_height,
+        *line_height,
         font_size,
     );
 

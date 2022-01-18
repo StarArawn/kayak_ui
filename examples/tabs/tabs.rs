@@ -40,7 +40,7 @@ fn TabDemo() {
         ..Default::default()
     };
 
-    // This is not the most ideal way to generate tabs. For one, the `content` has no access to its actual context
+    // TODO: This is not the most ideal way to generate tabs. For one, the `content` has no access to its actual context
     // (i.e. where it actually exists in the hierarchy). Additionally, it would be better if tabs were created as
     // children of `TabBox`. These are issues that will be addressed in the future, so for now, this will work.
     let tabs = vec![

@@ -5,7 +5,7 @@ use kayak_render_macros::{constructor, use_state};
 use crate::core::derivative::*;
 use crate::core::{rsx, widget, MutableBound};
 
-use crate::widgets::{Background, Button, Clip, If, Text};
+use crate::widgets::{Background, Button, Text};
 
 #[derive(Clone, PartialEq)]
 pub enum InspectData {

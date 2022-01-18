@@ -38,7 +38,6 @@ fn startup(
         render! {
             <App>
                 <CustomWidget />
-                <Inspector />
             </App>
         }
     });

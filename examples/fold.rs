@@ -154,7 +154,6 @@ fn startup(
         render! {
             <App>
                 <FolderTree />
-                <Inspector />
             </App>
         }
     });

@@ -111,21 +111,7 @@ fn startup(
         };
 
         let header_styles = Style {
-            // width: StyleProp::Value(Units::Pixels(408.0)),
-            // height: StyleProp::Value(Units::Pixels(42.0)),
             bottom: StyleProp::Value(Units::Stretch(1.0)),
-            ..Style::default()
-        };
-
-        let text_styles = Style {
-            // width: StyleProp::Value(Units::Pixels(56.0)),
-            // height: StyleProp::Value(Units::Pixels(24.0)),
-            ..Style::default()
-        };
-
-        let options_button_text_styles = Style {
-            // width: StyleProp::Value(Units::Pixels(94.0)),
-            // height: StyleProp::Value(Units::Pixels(24.0)),
             ..Style::default()
         };
 
@@ -155,13 +141,13 @@ fn startup(
                         font={main_font_id}
                     />
                     <BlueButton>
-                        <Text styles={Some(text_styles)} line_height={Some(50.0)} size={20.0} content={"Play".to_string()} font={main_font_id} />
+                        <Text line_height={Some(50.0)} size={20.0} content={"Play".to_string()} font={main_font_id} />
                     </BlueButton>
                     <BlueButton styles={Some(options_button_styles)}>
-                        <Text styles={Some(options_button_text_styles)} line_height={Some(50.0)} size={20.0} content={"Options".to_string()} font={main_font_id} />
+                        <Text line_height={Some(50.0)} size={20.0} content={"Options".to_string()} font={main_font_id} />
                     </BlueButton>
                     <BlueButton styles={Some(options_button_styles)}>
-                        <Text styles={Some(text_styles)} line_height={Some(50.0)} size={20.0} content={"Quit".to_string()} font={main_font_id} />
+                        <Text line_height={Some(50.0)} size={20.0} content={"Quit".to_string()} font={main_font_id} />
                     </BlueButton>
                 </NinePatch>
             </App>

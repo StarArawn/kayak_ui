@@ -186,9 +186,7 @@ fn ThemeDemo(context: &mut KayakContext, is_root: bool) {
 
     let btn_text = "BUTTON".to_string();
     let btn_text_style = Style {
-        // left: StyleProp::Value(Units::Stretch(0.375)),
         top: StyleProp::Value(Units::Pixels(4.0)),
-        // height: StyleProp::Value(Units::Pixels(20.0)),
         ..Default::default()
     };
     let btn_style = Style {

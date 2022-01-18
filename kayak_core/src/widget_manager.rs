@@ -223,40 +223,6 @@ impl WidgetManager {
         }
 
         self.node_tree = self.build_nodes_tree();
-
-        // let mut last_parent = Index::default();
-        // let mut space_count_lookup = HashMap::<Index, u32>::new();
-        // let mut space_count: u32 = 0;
-        // for node in self.node_tree.down_iter() {
-        //     space_count_lookup.insert(node.0, space_count);
-        //     let child_widget = &self.current_widgets[node.0].as_ref().unwrap();
-        //     let (child_id, _) = node.0.into_raw_parts();
-        //     println!(
-        //         "{:indent$}Widget: {} {}",
-        //         "",
-        //         child_widget.get_name(),
-        //         child_id,
-        //         indent = space_count as usize,
-        //     );
-        //     if let Some(parent_id) = self.node_tree.parents.get(&node.0) {
-        //         let parent_widget = &self.current_widgets[*parent_id].as_ref().unwrap();
-        //         println!(
-        //             "{:indent$}parent: {} {}",
-        //             "",
-        //             parent_widget.get_name(),
-        //             parent_id.into_raw_parts().0,
-        //             indent = space_count as usize,
-        //         );
-        //         if last_parent != *parent_id {
-        //             if let Some(stored_space_count) = space_count_lookup.get(parent_id) {
-        //                 space_count = *stored_space_count;
-        //             }
-        //         }
-        //         last_parent = *parent_id;
-        //     }
-        //     space_count += 2;
-        // }
-        // panic!();
     }
 
     pub fn calculate_layout(&mut self) {

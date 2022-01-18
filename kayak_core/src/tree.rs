@@ -436,8 +436,7 @@ impl Tree {
         //     );
         // }
     }
-    
-    
+
     /// Dumps the tree's current state to the console
     ///
     /// To dump only a section of the tree, use [dump_at] instead.
@@ -467,7 +466,12 @@ impl Tree {
         self.dump_at_internal(start_index, 0, widgets);
     }
 
-    fn dump_at_internal(&self, start_index: Index, depth: usize, widgets: Option<&Arena<Option<Box<dyn Widget>>>>) {
+    fn dump_at_internal(
+        &self,
+        start_index: Index,
+        depth: usize,
+        widgets: Option<&Arena<Option<Box<dyn Widget>>>>,
+    ) {
         let mut name = None;
         if let Some(widgets) = widgets {
             if let Some(widget) = widgets.get(start_index) {
@@ -479,7 +483,13 @@ impl Tree {
 
         let indent = "\t".repeat(depth);
         let raw_parts = start_index.into_raw_parts();
-        println!("{}{} [{}:{}]", indent, name.unwrap_or_default(), raw_parts.0, raw_parts.1);
+        println!(
+            "{}{} [{}:{}]",
+            indent,
+            name.unwrap_or_default(),
+            raw_parts.0,
+            raw_parts.1
+        );
 
         if let Some(children) = self.children.get(&start_index) {
             for node_index in children {

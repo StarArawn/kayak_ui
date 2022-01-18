@@ -16,7 +16,7 @@ pub struct ReleasableNotifiable {
     keep_alive: bool,
 
     /// The notifiable object that should be released when it's done
-    target: Arc<Mutex<Option<Arc<dyn Notifiable>>>>
+    target: Arc<Mutex<Option<Arc<dyn Notifiable>>>>,
 }
 
 impl ReleasableNotifiable {
@@ -26,7 +26,7 @@ impl ReleasableNotifiable {
     pub fn new(target: Arc<dyn Notifiable>) -> ReleasableNotifiable {
         ReleasableNotifiable {
             keep_alive: false,
-            target:     Arc::new(Mutex::new(Some(target)))
+            target: Arc::new(Mutex::new(Some(target))),
         }
     }
 
@@ -61,11 +61,11 @@ impl ReleasableNotifiable {
 
     ///
     /// Creates a new 'owned' clone (which will expire this notifiable when dropped)
-    /// 
+    ///
     pub fn clone_as_owned(&self) -> ReleasableNotifiable {
         ReleasableNotifiable {
             keep_alive: self.keep_alive,
-            target:     Arc::clone(&self.target)
+            target: Arc::clone(&self.target),
         }
     }
 
@@ -76,7 +76,7 @@ impl ReleasableNotifiable {
     pub fn clone_for_inspection(&self) -> ReleasableNotifiable {
         ReleasableNotifiable {
             keep_alive: true,
-            target:     Arc::clone(&self.target)
+            target: Arc::clone(&self.target),
         }
     }
 }

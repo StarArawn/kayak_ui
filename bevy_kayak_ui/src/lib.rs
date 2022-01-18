@@ -93,7 +93,7 @@ pub fn process_events(
                 let kayak_key_code = key::convert_virtual_key_code(key_code);
                 input_events.push(InputEvent::Keyboard {
                     key: kayak_key_code,
-                    is_pressed: matches!(event.state, ElementState::Pressed)
+                    is_pressed: matches!(event.state, ElementState::Pressed),
                 });
             }
         }

@@ -22,10 +22,7 @@ pub struct KeyboardEvent {
 
 impl KeyboardEvent {
     pub fn new(key: KeyCode, modifiers: KeyboardModifiers) -> Self {
-        Self {
-            key,
-            modifiers,
-        }
+        Self { key, modifiers }
     }
 
     /// Returns this event's affected key

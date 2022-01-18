@@ -1,10 +1,15 @@
+mod assets;
 mod binding;
 pub mod color;
 pub mod context;
+mod cursor;
 pub mod event;
+mod event_dispatcher;
+mod flo_binding;
 pub mod fragment;
 pub(crate) mod generational_arena;
 mod input_event;
+mod keyboard;
 mod keys;
 pub mod layout_cache;
 mod multi_state;
@@ -16,18 +21,13 @@ pub mod tree;
 mod vec;
 pub mod widget;
 pub mod widget_manager;
-mod cursor;
-mod event_dispatcher;
-mod keyboard;
-mod assets;
-mod flo_binding;
 
 use std::sync::{Arc, RwLock};
 
 pub use binding::*;
-pub use cursor::PointerEvents;
 pub use color::Color;
 pub use context::*;
+pub use cursor::PointerEvents;
 pub use event::*;
 pub use fragment::Fragment;
 pub use generational_arena::{Arena, Index};
@@ -49,7 +49,7 @@ pub type Children = Option<
 
 #[derive(Clone)]
 pub struct OnEvent(
-    pub Arc<
+    pub  Arc<
         RwLock<dyn FnMut(&mut crate::context::KayakContext, &mut Event) + Send + Sync + 'static>,
     >,
 );

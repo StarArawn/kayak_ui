@@ -1,90 +1,97 @@
-use super::traits::*;
-use super::releasable::*;
 use super::binding_context::*;
+use super::releasable::*;
+use super::traits::*;
 
-use futures::prelude::*;
 use ::desync::*;
+use futures::prelude::*;
 
 use std::sync::*;
 
 #[allow(dead_code)]
 ///
 /// Uses a stream to update a binding
-/// 
-pub fn bind_stream<S, Value, UpdateFn>(stream: S, initial_value: Value, update: UpdateFn) -> StreamBinding<Value>
-where   S:          'static+Send+Stream+Unpin,
-        Value:      'static+Send+Clone+PartialEq,
-        UpdateFn:   'static+Send+FnMut(Value, S::Item) -> Value,
-        S::Item:    Send {
+///
+pub fn bind_stream<S, Value, UpdateFn>(
+    stream: S,
+    initial_value: Value,
+    update: UpdateFn,
+) -> StreamBinding<Value>
+where
+    S: 'static + Send + Stream + Unpin,
+    Value: 'static + Send + Clone + PartialEq,
+    UpdateFn: 'static + Send + FnMut(Value, S::Item) -> Value,
+    S::Item: Send,
+{
     // Create the content of the binding
-    let value       = Arc::new(Mutex::new(initial_value));
-    let core        = StreamBindingCore {
-        value:          Arc::clone(&value),
-        notifications:  vec![]
+    let value = Arc::new(Mutex::new(initial_value));
+    let core = StreamBindingCore {
+        value: Arc::clone(&value),
+        notifications: vec![],
     };
 
-    let core        = Arc::new(Desync::new(core));
-    let mut update  = update;
+    let core = Arc::new(Desync::new(core));
+    let mut update = update;
 
     // Send in the stream
-    pipe_in(Arc::clone(&core), stream, 
-        move |core, next_item| {
-            // Only lock the value while updating it
-            let need_to_notify = {
-                // Update the value
-                let mut value = core.value.lock().unwrap();
-                let new_value = update((*value).clone(), next_item);
+    pipe_in(Arc::clone(&core), stream, move |core, next_item| {
+        // Only lock the value while updating it
+        let need_to_notify = {
+            // Update the value
+            let mut value = core.value.lock().unwrap();
+            let new_value = update((*value).clone(), next_item);
 
-                if new_value != *value {
-                    // Update the value in the core
-                    *value = new_value;
+            if new_value != *value {
+                // Update the value in the core
+                *value = new_value;
 
-                    // Notify anything that's listening
-                    true
-                } else {
-                    false
-                }
-            };
-
-            // If the update changed the value, then call the notifications (with the lock released, in case any try to read the value)
-            if need_to_notify {
-                core.notifications.retain(|notify| notify.is_in_use());
-                core.notifications.iter().for_each(|notify| { notify.mark_as_changed(); });
+                // Notify anything that's listening
+                true
+            } else {
+                false
             }
+        };
 
-            Box::pin(future::ready(()))
-        });
-    
+        // If the update changed the value, then call the notifications (with the lock released, in case any try to read the value)
+        if need_to_notify {
+            core.notifications.retain(|notify| notify.is_in_use());
+            core.notifications.iter().for_each(|notify| {
+                notify.mark_as_changed();
+            });
+        }
+
+        Box::pin(future::ready(()))
+    });
+
     StreamBinding {
-        core:   core,
-        value:  value
+        core: core,
+        value: value,
     }
 }
 
 ///
 /// Binding that represents the result of binding a stream to a value
-/// 
+///
 #[derive(Clone)]
 pub struct StreamBinding<Value: Send> {
     /// The core of the binding (where updates are streamed and notifications sent)
     core: Arc<Desync<StreamBindingCore<Value>>>,
 
     /// The current value of the binding
-    value: Arc<Mutex<Value>>
+    value: Arc<Mutex<Value>>,
 }
 
 ///
 /// The data stored with a stream binding
-/// 
+///
 struct StreamBindingCore<Value: Send> {
     /// The current value of this binidng
     value: Arc<Mutex<Value>>,
 
     /// The items that should be notified when this binding changes
-    notifications: Vec<ReleasableNotifiable>
+    notifications: Vec<ReleasableNotifiable>,
 }
 
-impl<Value: 'static+Send+Clone> Bound<Value> for StreamBinding<Value> {
+impl<Value: 'static + Send + Clone> Bound<Value> for StreamBinding<Value> {
     ///
     /// Retrieves the value stored by this binding
     ///
@@ -96,7 +103,7 @@ impl<Value: 'static+Send+Clone> Bound<Value> for StreamBinding<Value> {
     }
 }
 
-impl<Value: 'static+Send> Changeable for StreamBinding<Value> {
+impl<Value: 'static + Send> Changeable for StreamBinding<Value> {
     ///
     /// Supplies a function to be notified when this item is changed
     ///
@@ -117,12 +124,12 @@ impl<Value: 'static+Send> Changeable for StreamBinding<Value> {
 
 #[cfg(test)]
 mod test {
-    use super::*;
     use super::super::notify_fn::*;
+    use super::*;
 
-    use futures::stream;
-    use futures::executor;
     use futures::channel::mpsc;
+    use futures::executor;
+    use futures::stream;
 
     use std::thread;
     use std::time::Duration;
@@ -130,8 +137,8 @@ mod test {
     #[test]
     pub fn stream_in_all_values() {
         // Stream with the values '1,2,3'
-        let stream  = vec![1, 2, 3];
-        let stream  = stream::iter(stream.into_iter());
+        let stream = vec![1, 2, 3];
+        let stream = stream::iter(stream.into_iter());
 
         // Send the stream to a new binding
         let binding = bind_stream(stream, 0, |_old_value, new_value| new_value);
@@ -145,8 +152,8 @@ mod test {
     #[test]
     pub fn stream_processes_updates() {
         // Stream with the values '1,2,3'
-        let stream  = vec![1, 2, 3];
-        let stream  = stream::iter(stream.into_iter());
+        let stream = vec![1, 2, 3];
+        let stream = stream::iter(stream.into_iter());
 
         // Send the stream to a new binding (with some processing)
         let binding = bind_stream(stream, 0, |_old_value, new_value| new_value + 42);
@@ -163,13 +170,15 @@ mod test {
         let (mut sender, receiver) = mpsc::channel(0);
 
         // Send the receiver stream to a new binding
-        let binding         = bind_stream(receiver, 0, |_old_value, new_value| new_value);
+        let binding = bind_stream(receiver, 0, |_old_value, new_value| new_value);
 
         // Create the notification
-        let notified        = Arc::new(Mutex::new(false));
-        let also_notified   = Arc::clone(&notified);
+        let notified = Arc::new(Mutex::new(false));
+        let also_notified = Arc::clone(&notified);
 
-        binding.when_changed(notify(move || *also_notified.lock().unwrap() = true)).keep_alive();
+        binding
+            .when_changed(notify(move || *also_notified.lock().unwrap() = true))
+            .keep_alive();
 
         // Should be initially un-notified
         thread::sleep(Duration::from_millis(5));
@@ -195,10 +204,12 @@ mod test {
         let binding = bind_stream(receiver, 0, |_old_value, new_value| new_value);
 
         // Create the notification
-        let notified        = Arc::new(Mutex::new(false));
-        let also_notified   = Arc::clone(&notified);
+        let notified = Arc::new(Mutex::new(false));
+        let also_notified = Arc::clone(&notified);
 
-        binding.when_changed(notify(move || *also_notified.lock().unwrap() = true)).keep_alive();
+        binding
+            .when_changed(notify(move || *also_notified.lock().unwrap() = true))
+            .keep_alive();
 
         // Should be initially un-notified
         thread::sleep(Duration::from_millis(5));

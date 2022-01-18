@@ -1,6 +1,6 @@
-use super::traits::*;
-use super::releasable::*;
 use super::binding_context::*;
+use super::releasable::*;
+use super::traits::*;
 
 use std::sync::*;
 pub use uuid::Uuid;
@@ -13,17 +13,17 @@ struct BoundValue<Value> {
     value: Value,
 
     /// What to call when the value changes
-    when_changed: Vec<ReleasableNotifiable>
+    when_changed: Vec<ReleasableNotifiable>,
 }
 
-impl<Value: Clone+PartialEq> BoundValue<Value> {
+impl<Value: Clone + PartialEq> BoundValue<Value> {
     ///
     /// Creates a new binding with the specified value
     ///
     pub fn new(val: Value) -> BoundValue<Value> {
         BoundValue {
-            value:          val,
-            when_changed:   vec![]
+            value: val,
+            when_changed: vec![],
         }
     }
 
@@ -52,7 +52,8 @@ impl<Value: Clone+PartialEq> BoundValue<Value> {
     /// If there are any notifiables in this object that aren't in use, remove them
     ///
     pub fn filter_unused_notifications(&mut self) {
-        self.when_changed.retain(|releasable| releasable.is_in_use());
+        self.when_changed
+            .retain(|releasable| releasable.is_in_use());
     }
 
     ///
@@ -106,7 +107,7 @@ impl<Value: PartialEq> PartialEq for BoundValue<Value> {
 pub struct Binding<Value> {
     pub id: Uuid,
     /// The value stored in this binding
-    value: Arc<Mutex<BoundValue<Value>>>
+    value: Arc<Mutex<BoundValue<Value>>>,
 }
 
 impl<Value: Default + Clone + PartialEq> Default for Binding<Value> {
@@ -127,22 +128,22 @@ impl<Value: PartialEq> PartialEq for Binding<Value> {
     }
 }
 
-impl<Value: Clone+PartialEq> Binding<Value> {
+impl<Value: Clone + PartialEq> Binding<Value> {
     pub fn new(value: Value) -> Binding<Value> {
         Binding {
             id: Uuid::new_v4(),
-            value: Arc::new(Mutex::new(BoundValue::new(value)))
+            value: Arc::new(Mutex::new(BoundValue::new(value))),
         }
     }
 }
 
-impl<Value: 'static+Clone+PartialEq+Send+Sync> Changeable for Binding<Value> {
+impl<Value: 'static + Clone + PartialEq + Send + Sync> Changeable for Binding<Value> {
     fn when_changed(&self, what: Arc<dyn Notifiable>) -> Box<dyn Releasable> {
         self.value.lock().unwrap().when_changed(what)
     }
 }
 
-impl<Value: 'static+Clone+PartialEq+Send+Sync> Bound<Value> for Binding<Value> {
+impl<Value: 'static + Clone + PartialEq + Send + Sync> Bound<Value> for Binding<Value> {
     fn get(&self) -> Value {
         BindingContext::add_dependency(self.clone());
 
@@ -150,13 +151,13 @@ impl<Value: 'static+Clone+PartialEq+Send+Sync> Bound<Value> for Binding<Value> {
     }
 }
 
-impl<Value: 'static+Clone+PartialEq+Send+Sync> MutableBound<Value> for Binding<Value> {
+impl<Value: 'static + Clone + PartialEq + Send + Sync> MutableBound<Value> for Binding<Value> {
     fn set(&self, new_value: Value) {
         // Update the value with the lock held
         let notifications = {
-            let mut cell    = self.value.lock().unwrap();
-            let changed     = cell.set_without_notifying(new_value);
-        
+            let mut cell = self.value.lock().unwrap();
+            let changed = cell.set_without_notifying(new_value);
+
             if changed {
                 cell.get_notifiable_items()
             } else {
@@ -212,24 +213,25 @@ impl<Value: 'static + Clone + PartialEq + Send + Sync> WithBound<Value> for Bind
             cell.filter_unused_notifications();
         }
     }
-
 }
 
-impl<Value: 'static+Clone+PartialEq+Send+Sync> From<Value> for Binding<Value> {
+impl<Value: 'static + Clone + PartialEq + Send + Sync> From<Value> for Binding<Value> {
     #[inline]
     fn from(val: Value) -> Binding<Value> {
         Binding::new(val)
     }
 }
 
-impl<'a, Value: 'static+Clone+PartialEq+Send+Sync> From<&'a Binding<Value>> for Binding<Value> {
+impl<'a, Value: 'static + Clone + PartialEq + Send + Sync> From<&'a Binding<Value>>
+    for Binding<Value>
+{
     #[inline]
     fn from(val: &'a Binding<Value>) -> Binding<Value> {
         Binding::clone(val)
     }
 }
 
-impl<'a, Value: 'static+Clone+PartialEq+Send+Sync> From<&'a Value> for Binding<Value> {
+impl<'a, Value: 'static + Clone + PartialEq + Send + Sync> From<&'a Value> for Binding<Value> {
     #[inline]
     fn from(val: &'a Value) -> Binding<Value> {
         Binding::new(val.clone())

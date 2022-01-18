@@ -1,9 +1,9 @@
-use super::traits::*;
 use super::notify_fn::*;
+use super::traits::*;
 
+use std::cell::*;
 use std::rc::*;
 use std::sync::*;
-use std::cell::*;
 
 thread_local! {
     static CURRENT_CONTEXT: RefCell<Option<BindingContext>> = RefCell::new(None);
@@ -21,7 +21,7 @@ pub struct BindingDependencies {
     recent_change_monitors: Rc<RefCell<Vec<Box<dyn Releasable>>>>,
 
     /// The list of changables that are dependent on this context
-    dependencies: Rc<RefCell<Vec<Box<dyn Changeable>>>>
+    dependencies: Rc<RefCell<Vec<Box<dyn Changeable>>>>,
 }
 
 impl BindingDependencies {
@@ -30,20 +30,22 @@ impl BindingDependencies {
     ///
     pub fn new() -> BindingDependencies {
         BindingDependencies {
-            recently_changed:       Arc::new(Mutex::new(false)),
+            recently_changed: Arc::new(Mutex::new(false)),
             recent_change_monitors: Rc::new(RefCell::new(vec![])),
-            dependencies:           Rc::new(RefCell::new(vec![]))
+            dependencies: Rc::new(RefCell::new(vec![])),
         }
     }
 
     ///
     /// Adds a new dependency to this object
     ///
-    pub fn add_dependency<TChangeable: Changeable+'static>(&mut self, dependency: TChangeable) {
+    pub fn add_dependency<TChangeable: Changeable + 'static>(&mut self, dependency: TChangeable) {
         // Set the recently changed flag so that we can tell if the dependencies are already out of date before when_changed is called
-        let recently_changed            = Arc::clone(&self.recently_changed);
-        let mut recent_change_monitors  = self.recent_change_monitors.borrow_mut();
-        recent_change_monitors.push(dependency.when_changed(notify(move || { *recently_changed.lock().unwrap() = true; })));
+        let recently_changed = Arc::clone(&self.recently_changed);
+        let mut recent_change_monitors = self.recent_change_monitors.borrow_mut();
+        recent_change_monitors.push(dependency.when_changed(notify(move || {
+            *recently_changed.lock().unwrap() = true;
+        })));
 
         // Add this dependency to the list
         self.dependencies.borrow_mut().push(Box::new(dependency))
@@ -52,8 +54,11 @@ impl BindingDependencies {
     ///
     /// If the dependencies have not changed since they were registered, registers for changes
     /// and returns a `Releasable`. If the dependencies are already different, returns `None`.
-    /// 
-    pub fn when_changed_if_unchanged(&self, what: Arc<dyn Notifiable>) -> Option<Box<dyn Releasable>> {
+    ///
+    pub fn when_changed_if_unchanged(
+        &self,
+        what: Arc<dyn Notifiable>,
+    ) -> Option<Box<dyn Releasable>> {
         let mut to_release = vec![];
 
         // Register with all of the dependencies
@@ -63,7 +68,9 @@ impl BindingDependencies {
 
         if *self.recently_changed.lock().unwrap() {
             // If a value changed while we were building these dependencies, then immediately generate the notification
-            to_release.into_iter().for_each(|mut releasable| releasable.done());
+            to_release
+                .into_iter()
+                .for_each(|mut releasable| releasable.done());
 
             // Nothing to release
             None
@@ -79,8 +86,8 @@ impl Changeable for BindingDependencies {
         let when_changed_or_not = self.when_changed_if_unchanged(Arc::clone(&what));
 
         match when_changed_or_not {
-            Some(releasable)    => releasable,
-            None                => {
+            Some(releasable) => releasable,
+            None => {
                 what.mark_as_changed();
                 Box::new(vec![])
             }
@@ -90,7 +97,7 @@ impl Changeable for BindingDependencies {
 
 ///
 /// Represents a binding context. Binding contexts are
-/// per-thread structures, used to track 
+/// per-thread structures, used to track
 ///
 #[derive(Clone)]
 pub struct BindingContext {
@@ -98,7 +105,7 @@ pub struct BindingContext {
     dependencies: BindingDependencies,
 
     /// None, or the binding context that this context was created within
-    nested: Option<Box<BindingContext>>
+    nested: Option<Box<BindingContext>>,
 }
 
 impl BindingContext {
@@ -106,17 +113,12 @@ impl BindingContext {
     /// Gets the active binding context
     ///
     pub fn current() -> Option<BindingContext> {
-        CURRENT_CONTEXT.with(|current_context| {
-            current_context
-                .borrow()
-                .as_ref()
-                .cloned()
-        })
+        CURRENT_CONTEXT.with(|current_context| current_context.borrow().as_ref().cloned())
     }
 
     ///
     /// Panics if we're trying to create a binding, with a particular message
-    /// 
+    ///
     pub fn panic_if_in_binding_context(msg: &str) {
         if CURRENT_CONTEXT.with(|context| context.borrow().is_some()) {
             panic!("Not possible when binding: {}", msg);
@@ -126,16 +128,18 @@ impl BindingContext {
     ///
     /// Executes a function in a new binding context
     ///
-    pub fn bind<TResult, TFn>(to_do: TFn) -> (TResult, BindingDependencies) 
-    where TFn: FnOnce() -> TResult {
+    pub fn bind<TResult, TFn>(to_do: TFn) -> (TResult, BindingDependencies)
+    where
+        TFn: FnOnce() -> TResult,
+    {
         // Remember the previous context
         let previous_context = Self::current();
 
         // Create a new context
-        let dependencies    = BindingDependencies::new();
-        let new_context     = BindingContext {
-            dependencies:   dependencies.clone(),
-            nested:         previous_context.clone().map(Box::new)
+        let dependencies = BindingDependencies::new();
+        let new_context = BindingContext {
+            dependencies: dependencies.clone(),
+            nested: previous_context.clone().map(Box::new),
         };
 
         // Make the current context the same as the new context
@@ -152,11 +156,13 @@ impl BindingContext {
 
     #[allow(dead_code)]
     ///
-    /// Performs an action outside of the binding context (dependencies 
+    /// Performs an action outside of the binding context (dependencies
     /// will not be tracked for anything the supplied function does)
     ///
     pub fn out_of_context<TResult, TFn>(to_do: TFn) -> TResult
-    where TFn: FnOnce() -> TResult {
+    where
+        TFn: FnOnce() -> TResult,
+    {
         // Remember the previous context
         let previous_context = Self::current();
 
@@ -174,8 +180,8 @@ impl BindingContext {
 
     ///
     /// Adds a dependency to the current context (if one is found)
-    /// 
-    pub fn add_dependency<TChangeable: Changeable+'static>(dependency: TChangeable) {
+    ///
+    pub fn add_dependency<TChangeable: Changeable + 'static>(dependency: TChangeable) {
         Self::current().map(|mut ctx| ctx.dependencies.add_dependency(dependency));
     }
 }

@@ -1,27 +1,33 @@
+use crate::assets::AssetStorage;
 use crate::{Binding, Changeable};
 use std::collections::HashMap;
+use std::path::PathBuf;
 
-use crate::{multi_state::MultiState, widget_manager::WidgetManager, Index, InputEvent, MutableBound, Releasable};
 use crate::event_dispatcher::EventDispatcher;
+use crate::{
+    multi_state::MultiState, widget_manager::WidgetManager, Index, InputEvent, MutableBound,
+    Releasable,
+};
 
 pub struct KayakContext {
-    widget_states: HashMap<crate::Index, resources::Resources>,
+    assets: resources::Resources,
+    current_effect_index: usize,
+    current_id: Index,
+    current_state_index: usize,
+    event_dispatcher: EventDispatcher,
+    global_bindings: HashMap<crate::Index, Vec<crate::flo_binding::Uuid>>,
+    global_state: resources::Resources,
+    last_state_type_id: Option<std::any::TypeId>,
+    // TODO: Make widget_manager private.
+    pub widget_manager: WidgetManager,
     widget_effects: HashMap<crate::Index, resources::Resources>,
     /// Contains provider state data to be accessed by consumers.
     ///
     /// Maps the type of the data to a mapping of the provider node's ID to the state data
     widget_providers: HashMap<std::any::TypeId, HashMap<crate::Index, resources::Resources>>,
-    global_bindings: HashMap<crate::Index, Vec<flo_binding::Uuid>>,
     widget_state_lifetimes:
-    HashMap<crate::Index, HashMap<flo_binding::Uuid, Box<dyn crate::Releasable>>>,
-    current_id: Index,
-    // TODO: Make widget_manager private.
-    pub widget_manager: WidgetManager,
-    event_dispatcher: EventDispatcher,
-    global_state: resources::Resources,
-    last_state_type_id: Option<std::any::TypeId>,
-    current_state_index: usize,
-    current_effect_index: usize,
+        HashMap<crate::Index, HashMap<crate::flo_binding::Uuid, Box<dyn crate::Releasable>>>,
+    widget_states: HashMap<crate::Index, resources::Resources>,
 }
 
 impl std::fmt::Debug for KayakContext {
@@ -36,41 +42,41 @@ impl KayakContext {
     /// Creates a new [`KayakContext`].
     pub fn new() -> Self {
         Self {
-            widget_states: HashMap::new(),
-            widget_effects: HashMap::new(),
-            widget_providers: HashMap::new(),
-            global_bindings: HashMap::new(),
-            widget_state_lifetimes: HashMap::new(),
+            assets: resources::Resources::default(),
+            current_effect_index: 0,
             current_id: crate::Index::default(),
-            widget_manager: WidgetManager::new(),
-            event_dispatcher: EventDispatcher::default(),
+            current_state_index: 0,
+            event_dispatcher: EventDispatcher::new(),
+            global_bindings: HashMap::new(),
             global_state: resources::Resources::default(),
             last_state_type_id: None,
-            current_state_index: 0,
-            current_effect_index: 0,
+            widget_effects: HashMap::new(),
+            widget_manager: WidgetManager::new(),
+            widget_providers: HashMap::new(),
+            widget_state_lifetimes: HashMap::new(),
+            widget_states: HashMap::new(),
         }
     }
 
     /// Binds some global state to the current widget.
     pub fn bind<T: Clone + PartialEq + Send + Sync + 'static>(
         &mut self,
-        global_state: &crate::Binding<T>,
+        binding: &crate::Binding<T>,
     ) {
         if !self.global_bindings.contains_key(&self.current_id) {
             self.global_bindings.insert(self.current_id, vec![]);
         }
 
         let global_binding_ids = self.global_bindings.get_mut(&self.current_id).unwrap();
-
-        if !global_binding_ids.contains(&global_state.id) {
-            let lifetime = Self::create_lifetime(&global_state, &self.widget_manager, self.current_id);
+        if !global_binding_ids.contains(&binding.id) {
+            let lifetime = Self::create_lifetime(&binding, &self.widget_manager, self.current_id);
             Self::insert_state_lifetime(
                 &mut self.widget_state_lifetimes,
                 self.current_id,
-                global_state.id,
+                binding.id,
                 lifetime,
             );
-            global_binding_ids.push(global_state.id);
+            global_binding_ids.push(binding.id);
         }
     }
 
@@ -99,10 +105,16 @@ impl KayakContext {
     ///
     /// This works much like [create_state](Self::create_state), except that the state is also made available to any children. They can
     /// access this provider's state by calling [create_consumer](Self::create_consumer).
-    pub fn create_provider<T: resources::Resource + Clone + PartialEq>(&mut self, initial_state: T) -> Binding<T> {
+    pub fn create_provider<T: resources::Resource + Clone + PartialEq>(
+        &mut self,
+        initial_state: T,
+    ) -> Binding<T> {
         let type_id = initial_state.type_id();
 
-        let providers = self.widget_providers.entry(type_id.clone()).or_insert(HashMap::default());
+        let providers = self
+            .widget_providers
+            .entry(type_id.clone())
+            .or_insert(HashMap::default());
 
         if let Some(provider) = providers.get(&self.current_id) {
             if let Ok(state) = provider.get::<Binding<T>>() {
@@ -129,7 +141,9 @@ impl KayakContext {
     /// Creates a context consumer for the given type, [T]
     ///
     /// This allows direct access to a parent's state data made with [create_provider](Self::create_provider).
-    pub fn create_consumer<T: resources::Resource + Clone + PartialEq>(&mut self) -> Option<Binding<T>> {
+    pub fn create_consumer<T: resources::Resource + Clone + PartialEq>(
+        &mut self,
+    ) -> Option<Binding<T>> {
         let type_id = std::any::TypeId::of::<T>();
 
         if let Some(providers) = self.widget_providers.get(&type_id) {
@@ -243,7 +257,11 @@ impl KayakContext {
     ///     println!("Value: {}", my_state_clone.get());
     /// }, &[&my_state]);
     /// ```
-    pub fn create_effect<'a, F: Fn() + Send + Sync + 'static>(&'a mut self, effect: F, dependencies: &[&'a dyn Changeable]) {
+    pub fn create_effect<'a, F: Fn() + Send + Sync + 'static>(
+        &'a mut self,
+        effect: F,
+        dependencies: &[&'a dyn Changeable],
+    ) {
         // === Bind to Dependencies === //
         let notification = crate::notify(effect);
         let mut lifetimes = Vec::default();
@@ -263,9 +281,14 @@ impl KayakContext {
         };
 
         // === Insert Effect === //
-        let effects = self.widget_effects.entry(self.current_id).or_insert(resources::Resources::default());
+        let effects = self
+            .widget_effects
+            .entry(self.current_id)
+            .or_insert(resources::Resources::default());
         if effects.contains::<MultiState<Vec<Box<dyn Releasable>>>>() {
-            let mut state = effects.get_mut::<MultiState<Vec<Box<dyn Releasable>>>>().unwrap();
+            let mut state = effects
+                .get_mut::<MultiState<Vec<Box<dyn Releasable>>>>()
+                .unwrap();
             let old_size = state.data.len();
             state.get_or_add(lifetimes, &mut self.current_effect_index);
             if old_size != state.data.len() {
@@ -291,7 +314,11 @@ impl KayakContext {
     }
 
     /// Create a `Releasable` lifetime that marks the current node as dirty when the given state changes
-    fn create_lifetime<T: resources::Resource + Clone + PartialEq>(state: &Binding<T>, widget_manager: &WidgetManager, id: Index) -> Box<dyn Releasable> {
+    fn create_lifetime<T: resources::Resource + Clone + PartialEq>(
+        state: &Binding<T>,
+        widget_manager: &WidgetManager,
+        id: Index,
+    ) -> Box<dyn Releasable> {
         let dirty_nodes = widget_manager.dirty_nodes.clone();
         state.when_changed(crate::notify(move || {
             if let Ok(mut dirty_nodes) = dirty_nodes.lock() {
@@ -303,10 +330,10 @@ impl KayakContext {
     fn insert_state_lifetime(
         lifetimes: &mut HashMap<
             crate::Index,
-            HashMap<flo_binding::Uuid, Box<dyn crate::Releasable>>,
+            HashMap<crate::flo_binding::Uuid, Box<dyn crate::Releasable>>,
         >,
         id: Index,
-        binding_id: flo_binding::Uuid,
+        binding_id: crate::flo_binding::Uuid,
         lifetime: Box<dyn crate::Releasable>,
     ) {
         if lifetimes.contains_key(&id) {
@@ -325,10 +352,10 @@ impl KayakContext {
     fn remove_state_lifetime(
         lifetimes: &mut HashMap<
             crate::Index,
-            HashMap<flo_binding::Uuid, Box<dyn crate::Releasable>>,
+            HashMap<crate::flo_binding::Uuid, Box<dyn crate::Releasable>>,
         >,
         id: Index,
-        binding_id: flo_binding::Uuid,
+        binding_id: crate::flo_binding::Uuid,
     ) {
         if lifetimes.contains_key(&id) {
             if let Some(lifetimes) = lifetimes.get_mut(&id) {
@@ -433,8 +460,8 @@ impl KayakContext {
 
     #[cfg(feature = "bevy_renderer")]
     pub fn query_world<T: bevy::ecs::system::SystemParam, F, R>(&mut self, mut f: F) -> R
-        where
-            F: FnMut(<T::Fetch as bevy::ecs::system::SystemParamFetch<'_, '_>>::Item) -> R,
+    where
+        F: FnMut(<T::Fetch as bevy::ecs::system::SystemParamFetch<'_, '_>>::Item) -> R,
     {
         let mut world = self.get_global_state::<bevy::prelude::World>().unwrap();
         let mut system_state = bevy::ecs::system::SystemState::<T>::new(&mut world);
@@ -445,5 +472,40 @@ impl KayakContext {
         system_state.apply(&mut world);
 
         r
+    }
+
+    pub fn get_asset<T: 'static + Send + Sync + Clone + PartialEq>(
+        &mut self,
+        key: impl Into<PathBuf>,
+    ) -> Binding<Option<T>> {
+        self.create_asset_storage::<T>();
+        if let Ok(mut asset_storage) = self.assets.get_mut::<AssetStorage<T>>() {
+            asset_storage.get_asset(key).clone()
+        } else {
+            panic!("Couldn't find asset storage but it should exist!");
+        }
+    }
+
+    pub fn set_asset<T: 'static + Send + Sync + Clone + PartialEq>(
+        &mut self,
+        key: impl Into<PathBuf>,
+        asset: T,
+    ) {
+        self.create_asset_storage::<T>();
+        if let Ok(mut asset_storage) = self.assets.get_mut::<AssetStorage<T>>() {
+            asset_storage.set_asset(key, asset);
+        } else {
+            panic!("Couldn't find asset storage but it should exist!");
+        }
+    }
+
+    fn create_asset_storage<T: 'static + Send + Sync + Clone + PartialEq>(&mut self) {
+        if !self.assets.contains::<AssetStorage<T>>() {
+            self.assets.insert(AssetStorage::<T>::new());
+        }
+    }
+
+    pub fn get_last_clicked_widget(&self) -> Binding<Index> {
+        self.event_dispatcher.last_clicked.clone()
     }
 }

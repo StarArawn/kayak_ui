@@ -23,8 +23,8 @@ impl InputEvent {
             Self::MouseLeftPress => InputEventCategory::Mouse,
             Self::MouseLeftRelease => InputEventCategory::Mouse,
             // Keyboard events
-            Self::CharEvent {..} => InputEventCategory::Keyboard,
-            Self::Keyboard {..} => InputEventCategory::Keyboard,
+            Self::CharEvent { .. } => InputEventCategory::Keyboard,
+            Self::Keyboard { .. } => InputEventCategory::Keyboard,
         }
     }
 }

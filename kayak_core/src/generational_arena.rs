@@ -115,9 +115,6 @@ use core::mem;
 use core::ops;
 use core::slice;
 
-#[cfg(feature = "serde")]
-mod serde_impl;
-
 /// The `Arena` allows inserting and removing elements that are referred to by
 /// `Index`.
 ///

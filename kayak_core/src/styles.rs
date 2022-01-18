@@ -1,7 +1,7 @@
 pub use morphorm::{LayoutType, PositionType, Units};
 
-use crate::{color::Color, render_command::RenderCommand};
 use crate::cursor::PointerEvents;
+use crate::{color::Color, render_command::RenderCommand};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum StyleProp<T: Default + Clone> {
@@ -58,7 +58,7 @@ pub struct Style {
     pub min_height: StyleProp<Units>,
     pub max_width: StyleProp<Units>,
     pub max_height: StyleProp<Units>,
-    pub pointer_events: StyleProp<PointerEvents>
+    pub pointer_events: StyleProp<PointerEvents>,
 }
 
 impl Default for Style {

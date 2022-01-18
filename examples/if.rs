@@ -18,18 +18,6 @@ fn Removal(context: &mut KayakContext) {
         left: StyleProp::Value(Units::Stretch(0.1)),
         right: StyleProp::Value(Units::Stretch(0.1)),
         top: StyleProp::Value(Units::Stretch(1.0)),
-        width: StyleProp::Value(Units::Stretch(1.0)),
-        height: StyleProp::Value(Units::Pixels(28.0)),
-        ..Default::default()
-    };
-
-    let button_text_styles = Style {
-        bottom: StyleProp::Value(Units::Stretch(1.0)),
-        left: StyleProp::Value(Units::Stretch(1.0)),
-        right: StyleProp::Value(Units::Stretch(1.0)),
-        top: StyleProp::Value(Units::Stretch(1.0)),
-        width: StyleProp::Value(Units::Pixels(67.0)),
-        height: StyleProp::Value(Units::Pixels(39.0)),
         ..Default::default()
     };
 
@@ -50,7 +38,7 @@ fn Removal(context: &mut KayakContext) {
                     <Text styles={Some(text_styles)} size={32.0} content={"Hello!".to_string()} />
                 </If>
                 <Button on_event={Some(on_event)}>
-                    <Text styles={Some(button_text_styles)} size={24.0} content={"Swap!".to_string()} />
+                    <Text line_height={Some(40.0)} size={24.0} content={"Swap!".to_string()} />
                 </Button>
             </Window>
         </>
@@ -64,7 +52,7 @@ fn startup(
 ) {
     commands.spawn_bundle(UICameraBundle::new());
 
-    font_mapping.add(asset_server.load("roboto.kayak_font"));
+    font_mapping.add("Roboto", asset_server.load("roboto.kayak_font"));
 
     let context = BevyContext::new(|context| {
         render! {

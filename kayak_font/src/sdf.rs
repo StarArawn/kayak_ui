@@ -1,7 +1,7 @@
 use crate::{atlas::Atlas, glyph::Glyph, metrics::Metrics};
 use serde::Deserialize;
 
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Deserialize, Debug, Clone, PartialEq)]
 pub struct Sdf {
     pub atlas: Atlas,
     metrics: Metrics,
@@ -9,7 +9,7 @@ pub struct Sdf {
     kerning: Vec<KerningData>,
 }
 
-#[derive(Deserialize, Debug, Clone, Copy)]
+#[derive(Deserialize, Debug, Clone, Copy, PartialEq)]
 pub struct KerningData {
     pub unicode1: u32,
     pub unicode2: u32,

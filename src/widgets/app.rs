@@ -10,11 +10,6 @@ use crate::widgets::Clip;
 
 #[widget]
 pub fn App(children: Children) {
-    *styles = Some(Style {
-        render_command: StyleProp::Value(RenderCommand::Layout),
-        ..styles.clone().unwrap_or_default()
-    });
-
     #[cfg(feature = "bevy_renderer")]
     {
         use crate::bevy::WindowSize;
@@ -33,6 +28,7 @@ pub fn App(children: Children) {
         context.bind(&window_size);
         let window_size = window_size.get();
         *styles = Some(Style {
+            render_command: StyleProp::Value(RenderCommand::Layout),
             width: StyleProp::Value(Units::Pixels(window_size.0)),
             height: StyleProp::Value(Units::Pixels(window_size.1)),
             ..styles.clone().unwrap_or_default()

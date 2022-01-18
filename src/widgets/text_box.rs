@@ -120,6 +120,7 @@ pub fn TextBox(value: String, on_change: Option<OnChange>, placeholder: Option<S
                 <Text
                     content={value}
                     size={14.0}
+                    line_height={Some(22.0)}
                     styles={Some(text_styles)}
                 />
             </Clip>

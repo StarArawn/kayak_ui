@@ -11,7 +11,7 @@ where
     }
 }
 
-#[derive(Deserialize, Debug, Clone, Copy)]
+#[derive(Deserialize, Debug, Clone, Copy, PartialEq)]
 pub struct Glyph {
     #[serde(deserialize_with = "from_u32")]
     pub unicode: char,
@@ -22,7 +22,7 @@ pub struct Glyph {
     pub plane_bounds: Option<Rect>,
 }
 
-#[derive(Deserialize, Default, Clone, Copy, Debug)]
+#[derive(Deserialize, Default, Clone, Copy, Debug, PartialEq)]
 pub struct Rect {
     pub left: f32,
     pub bottom: f32,

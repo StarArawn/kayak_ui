@@ -3,7 +3,7 @@ use crate::{
     Arena, Index,
 };
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Node {
     pub children: Vec<Index>,
     pub id: Index,

@@ -1,7 +1,12 @@
-use std::collections::{HashMap, HashSet};
-use crate::{Event, EventType, Index, InputEvent, InputEventCategory, KayakContext, KeyboardEvent, KeyboardModifiers, KeyCode, PointerEvents};
+use crate::flo_binding::{Binding, MutableBound};
+
 use crate::layout_cache::Rect;
 use crate::widget_manager::WidgetManager;
+use crate::{
+    Event, EventType, Index, InputEvent, InputEventCategory, KayakContext, KeyCode, KeyboardEvent,
+    KeyboardModifiers, PointerEvents,
+};
+use std::collections::{HashMap, HashSet};
 
 type EventMap = HashMap<Index, HashSet<EventType>>;
 type TreeNode = (
@@ -28,16 +33,29 @@ impl Default for EventState {
     }
 }
 
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, Clone)]
 pub(crate) struct EventDispatcher {
     is_mouse_pressed: bool,
     current_mouse_position: (f32, f32),
     next_mouse_position: (f32, f32),
     previous_events: EventMap,
     keyboard_modifiers: KeyboardModifiers,
+    pub last_clicked: Binding<Index>,
 }
 
 impl EventDispatcher {
+    pub fn new() -> Self {
+        Self {
+            last_clicked: Binding::new(Index::default()),
+            is_mouse_pressed: Default::default(),
+            current_focus: Default::default(),
+            current_mouse_position: Default::default(),
+            next_mouse_position: Default::default(),
+            previous_events: Default::default(),
+            keyboard_modifiers: Default::default(),
+        }
+    }
+
     /// Returns whether the mouse is currently pressed or not
     #[allow(dead_code)]
     pub fn is_mouse_pressed(&self) -> bool {
@@ -85,11 +103,7 @@ impl EventDispatcher {
                 };
 
                 // --- Update State --- //
-                Self::insert_event(
-                    &mut next_events,
-                    &index,
-                    node_event.event_type,
-                );
+                Self::insert_event(&mut next_events, &index, node_event.event_type);
 
                 // --- Call Event --- //
                 let mut target_widget = context.widget_manager.take(index);
@@ -122,7 +136,8 @@ impl EventDispatcher {
 
             // Mouse is currently within this node
             if events.contains(&EventType::MouseIn)
-                && !Self::contains_event(&next_events, index, &EventType::MouseOut) {
+                && !Self::contains_event(&next_events, index, &EventType::MouseOut)
+            {
                 // Make sure this event isn't removed while mouse is still within node
                 Self::insert_event(&mut next_events, index, EventType::MouseIn);
             }
@@ -133,7 +148,11 @@ impl EventDispatcher {
     }
 
     /// Generates a stream of [Events](crate::Event) from a set of [InputEvents](crate::InputEvent)
-    fn build_event_stream(&mut self, input_events: &[InputEvent], widget_manager: &mut WidgetManager) -> Vec<Event> {
+    fn build_event_stream(
+        &mut self,
+        input_events: &[InputEvent],
+        widget_manager: &WidgetManager,
+    ) -> Vec<Event> {
         let mut event_stream = Vec::<Event>::new();
         let mut states: HashMap<EventType, EventState> = HashMap::new();
 
@@ -162,7 +181,12 @@ impl EventDispatcher {
 
                     match pointer_events {
                         PointerEvents::All | PointerEvents::SelfOnly => {
-                            let events = self.process_pointer_events(input_event, (current, depth), &mut states, widget_manager);
+                            let events = self.process_pointer_events(
+                                input_event,
+                                (current, depth),
+                                &mut states,
+                                widget_manager,
+                            );
                             event_stream.extend(events);
 
                             if matches!(pointer_events, PointerEvents::SelfOnly) {
@@ -230,7 +254,13 @@ impl EventDispatcher {
         event_stream
     }
 
-    fn process_pointer_events(&mut self, input_event: &InputEvent, tree_node: TreeNode, states: &mut HashMap<EventType, EventState>, widget_manager: &WidgetManager) -> Vec<Event> {
+    fn process_pointer_events(
+        &mut self,
+        input_event: &InputEvent,
+        tree_node: TreeNode,
+        states: &mut HashMap<EventType, EventState>,
+        widget_manager: &WidgetManager,
+    ) -> Vec<Event> {
         let mut event_stream = Vec::<Event>::new();
         let (node, depth) = tree_node;
 
@@ -279,12 +309,10 @@ impl EventDispatcher {
                 if let Some(layout) = widget_manager.get_layout(&node) {
                     if layout.contains(&self.current_mouse_position) {
                         event_stream.push(Event::new(node, EventType::MouseUp));
+                        self.last_clicked.set(node);
 
-                        if Self::contains_event(
-                            &self.previous_events,
-                            &node,
-                            &EventType::MouseDown,
-                        ) {
+                        if Self::contains_event(&self.previous_events, &node, &EventType::MouseDown)
+                        {
                             Self::update_state(states, (node, depth), layout, EventType::Click);
                         }
                     }
@@ -296,32 +324,47 @@ impl EventDispatcher {
         event_stream
     }
 
-    fn process_keyboard_events(&mut self, input_event: &InputEvent, _states: &mut HashMap<EventType, EventState>, widget_manager: &WidgetManager) -> Vec<Event> {
+    fn process_keyboard_events(
+        &mut self,
+        input_event: &InputEvent,
+        _states: &mut HashMap<EventType, EventState>,
+        _widget_manager: &WidgetManager,
+    ) -> Vec<Event> {
         let mut event_stream = Vec::new();
         if let Some(current_focus) = widget_manager.focus_tree.current() {
             match input_event {
-                InputEvent::CharEvent { c } => event_stream.push(
-                    Event::new(current_focus, EventType::CharInput { c: *c })
-                ),
+                InputEvent::CharEvent { c } => {
+                    event_stream.push(Event::new(current_focus, EventType::CharInput { c: *c }))
+                }
                 InputEvent::Keyboard { key, is_pressed } => {
                     // === Modifers === //
                     match key {
-                        KeyCode::LControl | KeyCode::RControl => self.keyboard_modifiers.is_ctrl_pressed = *is_pressed,
-                        KeyCode::LShift | KeyCode::RShift => self.keyboard_modifiers.is_shift_pressed = *is_pressed,
-                        KeyCode::LAlt | KeyCode::RAlt => self.keyboard_modifiers.is_alt_pressed = *is_pressed,
-                        KeyCode::LWin | KeyCode::RWin => self.keyboard_modifiers.is_meta_pressed = *is_pressed,
+                        KeyCode::LControl | KeyCode::RControl => {
+                            self.keyboard_modifiers.is_ctrl_pressed = *is_pressed
+                        }
+                        KeyCode::LShift | KeyCode::RShift => {
+                            self.keyboard_modifiers.is_shift_pressed = *is_pressed
+                        }
+                        KeyCode::LAlt | KeyCode::RAlt => {
+                            self.keyboard_modifiers.is_alt_pressed = *is_pressed
+                        }
+                        KeyCode::LWin | KeyCode::RWin => {
+                            self.keyboard_modifiers.is_meta_pressed = *is_pressed
+                        }
                         _ => {}
                     }
 
                     // === Event === //
                     if *is_pressed {
-                        event_stream.push(
-                            Event::new(current_focus, EventType::KeyDown(KeyboardEvent::new(*key, self.keyboard_modifiers)))
-                        )
+                        event_stream.push(Event::new(
+                            current_focus,
+                            EventType::KeyDown(KeyboardEvent::new(*key, self.keyboard_modifiers)),
+                        ))
                     } else {
-                        event_stream.push(
-                            Event::new(current_focus, EventType::KeyUp(KeyboardEvent::new(*key, self.keyboard_modifiers)))
-                        )
+                        event_stream.push(Event::new(
+                            current_focus,
+                            EventType::KeyUp(KeyboardEvent::new(*key, self.keyboard_modifiers)),
+                        ))
                     }
                 }
                 _ => {}
@@ -332,7 +375,12 @@ impl EventDispatcher {
     }
 
     /// Updates the state data for the given event
-    fn update_state(states: &mut HashMap<EventType, EventState>, tree_node: TreeNode, layout: &Rect, event_type: EventType) {
+    fn update_state(
+        states: &mut HashMap<EventType, EventState>,
+        tree_node: TreeNode,
+        layout: &Rect,
+        event_type: EventType,
+    ) {
         let state = states.entry(event_type).or_insert(EventState::default());
 
         let (node, depth) = tree_node;

@@ -1,12 +1,12 @@
 use serde::Deserialize;
 
-#[derive(Deserialize, Debug, Copy, Clone)]
+#[derive(Deserialize, Debug, Copy, Clone, PartialEq)]
 pub enum SDFType {
     #[serde(alias = "msdf")]
     Msdf,
 }
 
-#[derive(Deserialize, Debug, Copy, Clone)]
+#[derive(Deserialize, Debug, Copy, Clone, PartialEq)]
 pub enum Origin {
     #[serde(alias = "bottom")]
     Bottom,
@@ -18,7 +18,7 @@ pub enum Origin {
     Top,
 }
 
-#[derive(Deserialize, Debug, Copy, Clone)]
+#[derive(Deserialize, Debug, Copy, Clone, PartialEq)]
 pub struct Atlas {
     #[serde(alias = "type")]
     pub sdf_type: SDFType,

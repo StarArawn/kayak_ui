@@ -48,7 +48,6 @@ impl EventDispatcher {
         Self {
             last_clicked: Binding::new(Index::default()),
             is_mouse_pressed: Default::default(),
-            current_focus: Default::default(),
             current_mouse_position: Default::default(),
             next_mouse_position: Default::default(),
             previous_events: Default::default(),
@@ -151,7 +150,7 @@ impl EventDispatcher {
     fn build_event_stream(
         &mut self,
         input_events: &[InputEvent],
-        widget_manager: &WidgetManager,
+        widget_manager: &mut WidgetManager,
     ) -> Vec<Event> {
         let mut event_stream = Vec::<Event>::new();
         let mut states: HashMap<EventType, EventState> = HashMap::new();
@@ -328,7 +327,7 @@ impl EventDispatcher {
         &mut self,
         input_event: &InputEvent,
         _states: &mut HashMap<EventType, EventState>,
-        _widget_manager: &WidgetManager,
+        widget_manager: &WidgetManager,
     ) -> Vec<Event> {
         let mut event_stream = Vec::new();
         if let Some(current_focus) = widget_manager.focus_tree.current() {

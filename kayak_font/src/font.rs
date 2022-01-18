@@ -94,7 +94,7 @@ impl KayakFont {
         max_size: (f32, f32),
     ) -> (f32, f32) {
         let mut size: (f32, f32) = (0.0, 0.0);
-        let split_chars = vec![' ', '\t', '-', '\n'];
+        let split_chars = vec![' ', '\t', '-'];
         let missing_chars: Vec<char> = content
             .chars()
             .filter(|c| split_chars.iter().any(|c2| c == c2))
@@ -115,6 +115,10 @@ impl KayakFont {
                 x = 0.0;
             }
             for c in word.chars() {
+                if c == '\n' {
+                    y -= shift_sign * line_height;
+                    x = 0.0;
+                }
                 if let Some(glyph) = self.sdf.glyphs.iter().find(|glyph| glyph.unicode == c) {
                     x += glyph.advance * font_size;
                     size.0 = size.0.max(x);
@@ -156,7 +160,7 @@ impl KayakFont {
         let resized_max_glyph_size = (max_glyph_size.0 * font_ratio, max_glyph_size.1 * font_ratio);
 
         // TODO: Make this configurable?
-        let split_chars = vec![' ', '\t', '-', '\n'];
+        let split_chars = vec![' ', '\t', '-'];
         let missing_chars: Vec<char> = content
             .chars()
             .filter(|c| split_chars.iter().any(|c2| c == c2))
@@ -183,6 +187,13 @@ impl KayakFont {
                 x = 0.0;
             }
             for c in word.chars() {
+                if c == '\n' {
+                    y -= shift_sign * line_height;
+                    line_widths.push((x, line_starting_index, positions_and_size.len()));
+                    line_starting_index = positions_and_size.len();
+                    x = 0.0;
+                }
+
                 if let Some(glyph) = self.sdf.glyphs.iter().find(|glyph| glyph.unicode == c) {
                     let plane_bounds = glyph.plane_bounds.as_ref();
                     let (left, top, width, _height) = match plane_bounds {

@@ -3,13 +3,10 @@ use bevy::{
     window::WindowDescriptor,
     DefaultPlugins,
 };
+use kayak_ui::bevy::{BevyContext, BevyKayakUIPlugin, FontMapping, UICameraBundle};
 use kayak_ui::core::Index;
 use kayak_ui::core::{render, rsx, widget};
-use kayak_ui::widgets::{App, Window};
-use kayak_ui::{
-    bevy::{BevyContext, BevyKayakUIPlugin, FontMapping, UICameraBundle},
-    widgets::Inspector,
-};
+use kayak_ui::widgets::{App, Inspector, Window};
 
 #[widget]
 fn CustomWidget() {
@@ -38,6 +35,7 @@ fn startup(
         render! {
             <App>
                 <CustomWidget />
+                <Inspector />
             </App>
         }
     });

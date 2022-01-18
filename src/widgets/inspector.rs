@@ -48,8 +48,11 @@ pub fn Inspector() {
             data.push(format!("Y: {}", layout.posy));
             data.push(format!("Width: {}", layout.width));
             data.push(format!("Height: {}", layout.height));
-            data.push(format!("RenderCommand: {:?}", node.styles.render_command));
-            data.push(format!("Height: {:?}", node.styles.height));
+            data.push(format!(
+                "RenderCommand: \n{:#?}",
+                node.styles.render_command
+            ));
+            data.push(format!("Height: \n{:#?}", node.styles.height));
 
             if let Some(parent_id) = context.widget_manager.get_valid_parent(last_clicked_value) {
                 parent_id_move = Some(parent_id);

@@ -1,8 +1,8 @@
 use kayak_ui::{
     core::{
+        constructor, rsx,
         styles::{LayoutType, Style, StyleProp, Units},
-        Bound, constructor, EventType, Handler, KeyCode, OnEvent,
-        rsx, VecTracker, widget,
+        widget, Bound, EventType, Handler, KeyCode, OnEvent, VecTracker,
     },
     widgets::Background,
 };
@@ -12,7 +12,12 @@ use crate::TabTheme;
 
 /// A widget displaying a collection of tabs in a horizontal bar
 #[widget]
-pub fn TabBar(context: &mut KayakContext, tabs: Vec<String>, selected: usize, on_select_tab: Handler<usize>) {
+pub fn TabBar(
+    context: &mut KayakContext,
+    tabs: Vec<String>,
+    selected: usize,
+    on_select_tab: Handler<usize>,
+) {
     let theme = context.create_consumer::<TabTheme>().unwrap_or_default();
 
     let tabs = tabs.iter().enumerate().map(|(index, tab)| {

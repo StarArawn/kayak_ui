@@ -1,5 +1,5 @@
-use std::collections::HashMap;
 use crate::{Index, Tree};
+use std::collections::HashMap;
 
 #[derive(Debug, Default, PartialEq)]
 pub struct FocusTree {
@@ -157,7 +157,6 @@ impl FocusTree {
     }
 }
 
-
 impl FocusTracker {
     /// Set the focusability of a widget
     ///
@@ -176,7 +175,12 @@ impl FocusTracker {
     /// * `is_parent_defined`: Does this setting come from the parent or the widget itself?
     ///
     /// returns: ()
-    pub fn set_focusability(&mut self, index: Index, focusable: Option<bool>, is_parent_defined: bool) {
+    pub fn set_focusability(
+        &mut self,
+        index: Index,
+        focusable: Option<bool>,
+        is_parent_defined: bool,
+    ) {
         let map = if is_parent_defined {
             &mut self.parents
         } else {
@@ -207,7 +211,6 @@ impl FocusTracker {
         }
     }
 }
-
 
 #[cfg(test)]
 mod tests {

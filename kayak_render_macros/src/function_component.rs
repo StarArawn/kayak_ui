@@ -122,9 +122,7 @@ pub fn create_function_widget(f: syn::ItemFn, widget_arguments: WidgetArguments)
             },
         ),
         (
-            vec![
-                "focusable : Option < bool >",
-            ],
+            vec!["focusable : Option < bool >"],
             quote! {
                 #[derivative(Default(value=#focusable_default))]
                 pub focusable: Option<bool>
@@ -139,7 +137,8 @@ pub fn create_function_widget(f: syn::ItemFn, widget_arguments: WidgetArguments)
                 .any(|name| block_name.to_string().contains(name))
         }) {
             input_block_names.push(token);
-        } else {}
+        } else {
+        }
     }
 
     let inputs_block = quote!(

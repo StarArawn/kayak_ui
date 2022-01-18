@@ -414,31 +414,29 @@ impl EventDispatcher {
     /// Executes default actions for events
     fn execute_default(&mut self, event: Event, context: &mut KayakContext) {
         match event.event_type {
-            EventType::KeyDown(evt) => {
-                match evt.key() {
-                    KeyCode::Tab => {
-                        let current_focus = context.widget_manager.focus_tree.current();
+            EventType::KeyDown(evt) => match evt.key() {
+                KeyCode::Tab => {
+                    let current_focus = context.widget_manager.focus_tree.current();
 
-                        let index = if evt.is_shift_pressed() {
-                            context.widget_manager.focus_tree.prev()
-                        } else {
-                            context.widget_manager.focus_tree.next()
-                        };
+                    let index = if evt.is_shift_pressed() {
+                        context.widget_manager.focus_tree.prev()
+                    } else {
+                        context.widget_manager.focus_tree.next()
+                    };
 
-                        if let Some(index) = index {
-                            let mut events = vec![Event::new(index, EventType::Focus)];
-                            if let Some(current_focus) = current_focus {
-                                if current_focus != index {
-                                    events.push(Event::new(current_focus, EventType::Blur));
-                                }
+                    if let Some(index) = index {
+                        let mut events = vec![Event::new(index, EventType::Focus)];
+                        if let Some(current_focus) = current_focus {
+                            if current_focus != index {
+                                events.push(Event::new(current_focus, EventType::Blur));
                             }
-                            context.widget_manager.focus_tree.focus(index);
-                            self.dispatch_events(events, context);
                         }
+                        context.widget_manager.focus_tree.focus(index);
+                        self.dispatch_events(events, context);
                     }
-                    _ => {}
                 }
-            }
+                _ => {}
+            },
             _ => {}
         }
     }

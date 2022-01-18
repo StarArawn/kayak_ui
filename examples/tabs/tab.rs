@@ -1,8 +1,9 @@
 use kayak_ui::{
     core::{
         render_command::RenderCommand,
+        rsx,
         styles::{LayoutType, Style, StyleProp, Units},
-        Bound, EventType, OnEvent, rsx, use_state, widget,
+        use_state, widget, Bound, EventType, OnEvent,
     },
     widgets::{Background, Text},
 };
@@ -28,26 +29,24 @@ pub fn Tab(context: &mut KayakContext, content: String, selected: bool) {
         _ => {}
     };
 
-    let event_handler = OnEvent::new(move |_, event| {
-        match event.event_type {
-            EventType::Hover => {
-                if selected {
-                    set_hover_state(TabHoverState::Active);
-                } else {
-                    set_hover_state(TabHoverState::Inactive);
-                }
+    let event_handler = OnEvent::new(move |_, event| match event.event_type {
+        EventType::Hover => {
+            if selected {
+                set_hover_state(TabHoverState::Active);
+            } else {
+                set_hover_state(TabHoverState::Inactive);
             }
-            EventType::MouseOut => {
-                set_hover_state(TabHoverState::None);
-            }
-            EventType::Focus => {
-                set_focus_state(true);
-            }
-            EventType::Blur => {
-                set_focus_state(false);
-            }
-            _ => {}
         }
+        EventType::MouseOut => {
+            set_hover_state(TabHoverState::None);
+        }
+        EventType::Focus => {
+            set_focus_state(true);
+        }
+        EventType::Blur => {
+            set_focus_state(false);
+        }
+        _ => {}
     });
 
     let tab_color = match hover_state {

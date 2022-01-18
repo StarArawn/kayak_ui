@@ -5,14 +5,14 @@ use std::{
 
 use crate::layout_cache::Rect;
 use crate::{
+    focus_tree::FocusTracker,
+    focus_tree::FocusTree,
     layout_cache::LayoutCache,
     node::{Node, NodeBuilder},
     render_command::RenderCommand,
     render_primitive::RenderPrimitive,
     styles::Style,
     tree::Tree,
-    focus_tree::FocusTree,
-    focus_tree::FocusTracker,
     Arena, Index, Widget,
 };
 // use as_any::Downcast;
@@ -97,7 +97,6 @@ impl WidgetManager {
             } else {
                 self.set_focusable(widget.focusable(), widget_id, true);
             }
-
 
             // TODO: Figure a good way of diffing props passed to children of a widget
             // that wont naturally-rerender it's children because of a lack of changes
@@ -419,6 +418,7 @@ impl WidgetManager {
     }
 
     pub fn set_focusable(&mut self, focusable: Option<bool>, index: Index, is_parent: bool) {
-        self.focus_tracker.set_focusability(index, focusable, is_parent);
+        self.focus_tracker
+            .set_focusability(index, focusable, is_parent);
     }
 }

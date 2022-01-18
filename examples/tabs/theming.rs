@@ -1,4 +1,4 @@
-use kayak_ui::{core::{Color, rsx, widget}};
+use kayak_ui::core::{rsx, widget, Color};
 
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct TabTheme {
@@ -9,7 +9,7 @@ pub struct TabTheme {
     pub text: ColorState,
     pub active_tab: ColorState,
     pub inactive_tab: ColorState,
-    pub tab_height: f32
+    pub tab_height: f32,
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq)]

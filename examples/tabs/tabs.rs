@@ -13,20 +13,21 @@ use bevy::{
 use kayak_ui::{
     bevy::{BevyContext, BevyKayakUIPlugin, FontMapping, UICameraBundle},
     core::{
+        constructor, render, rsx,
         styles::{Style, StyleProp, Units},
-        Children, Color, constructor, Index, render, rsx, widget
+        widget, Children, Color, Index,
     },
     widgets::{App, Text, Window},
 };
 
+use crate::theming::{ColorState, TabTheme, TabThemeProvider};
 use tab_box::TabBox;
 use tab_box::TabData;
-use crate::theming::{ColorState, TabTheme, TabThemeProvider};
 
+mod tab;
 mod tab_bar;
 mod tab_box;
 mod tab_content;
-mod tab;
 mod theming;
 
 #[widget]

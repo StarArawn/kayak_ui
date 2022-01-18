@@ -66,7 +66,8 @@ impl Tree {
     pub fn remove(&mut self, index: Index) -> Vec<Index> {
         let parent = self.parents.remove(&index);
         if let Some(parent) = parent {
-            let children = self.children
+            let children = self
+                .children
                 .remove(&index)
                 .unwrap_or_default()
                 .into_iter()
@@ -141,7 +142,9 @@ impl Tree {
 
     /// Returns true if the given node is in this tree
     pub fn contains(&self, index: Index) -> bool {
-        Some(index) == self.root_node || self.parents.contains_key(&index) || self.children.contains_key(&index)
+        Some(index) == self.root_node
+            || self.parents.contains_key(&index)
+            || self.children.contains_key(&index)
     }
 
     /// Get the number of nodes in this tree
@@ -212,9 +215,7 @@ impl Tree {
 
     pub fn get_last_child(&self, index: Index) -> Option<Index> {
         self.children.get(&index).map_or(None, |children| {
-            children
-                .last()
-                .map_or(None, |last_child| Some(*last_child))
+            children.last().map_or(None, |last_child| Some(*last_child))
         })
     }
 
@@ -355,8 +356,8 @@ impl Tree {
                     let parent_b = parent_b.unwrap();
                     parent_a != parent_b
                         || (parent_a == parent_b
-                        && *node != children_a.get(*id).unwrap().1
-                        && children_a.iter().any(|(_, node_b)| node == node_b))
+                            && *node != children_a.get(*id).unwrap().1
+                            && children_a.iter().any(|(_, node_b)| node == node_b))
                 } else {
                     false
                 };
@@ -477,8 +478,8 @@ impl Tree {
                     let parent_b = parent_b.unwrap();
                     parent_a != parent_b
                         || (parent_a == parent_b
-                        && *node != tree1.get(*id).unwrap().1
-                        && tree1.iter().any(|(_, node_b)| node == node_b))
+                            && *node != tree1.get(*id).unwrap().1
+                            && tree1.iter().any(|(_, node_b)| node == node_b))
                 } else {
                     false
                 };
@@ -647,7 +648,7 @@ impl<'a> Iterator for DownwardIterator<'a> {
                 while current_parent.is_some() {
                     if let Some(current_parent) = current_parent {
                         if let Some(next_parent_sibling) =
-                        self.tree.get_next_sibling(current_parent)
+                            self.tree.get_next_sibling(current_parent)
                         {
                             self.current_node = Some(next_parent_sibling);
                             return Some(next_parent_sibling);
@@ -845,22 +846,44 @@ mod tests {
         expected.add(expected_grandchild_b, Some(expected_child_b));
 
         tree.replace(grandchild_b, expected_grandchild_b);
-        assert!(tree.children.get(&child_b).unwrap().contains(&expected_grandchild_b));
+        assert!(tree
+            .children
+            .get(&child_b)
+            .unwrap()
+            .contains(&expected_grandchild_b));
         assert!(!tree.children.get(&child_b).unwrap().contains(&grandchild_b));
 
         tree.replace(grandchild_a, expected_grandchild_a);
-        assert!(tree.children.get(&child_a).unwrap().contains(&expected_grandchild_a));
+        assert!(tree
+            .children
+            .get(&child_a)
+            .unwrap()
+            .contains(&expected_grandchild_a));
         assert!(!tree.children.get(&child_a).unwrap().contains(&grandchild_a));
 
         tree.replace(child_a, expected_child_a);
-        assert!(tree.children.get(&root).unwrap().contains(&expected_child_a));
+        assert!(tree
+            .children
+            .get(&root)
+            .unwrap()
+            .contains(&expected_child_a));
         assert!(!tree.children.get(&root).unwrap().contains(&child_a));
-        assert_eq!(expected_child_a, tree.get_parent(expected_grandchild_a).unwrap());
+        assert_eq!(
+            expected_child_a,
+            tree.get_parent(expected_grandchild_a).unwrap()
+        );
 
         tree.replace(child_b, expected_child_b);
-        assert!(tree.children.get(&root).unwrap().contains(&expected_child_b));
+        assert!(tree
+            .children
+            .get(&root)
+            .unwrap()
+            .contains(&expected_child_b));
         assert!(!tree.children.get(&root).unwrap().contains(&child_b));
-        assert_eq!(expected_child_b, tree.get_parent(expected_grandchild_b).unwrap());
+        assert_eq!(
+            expected_child_b,
+            tree.get_parent(expected_grandchild_b).unwrap()
+        );
 
         tree.replace(root, expected_root);
         assert_eq!(Some(expected_root), tree.root_node);

@@ -1,11 +1,10 @@
-use std::ops::Index;
-use kayak_ui::{
-    core::{
-        render_command::RenderCommand,
-        styles::{Style, StyleProp},
-        Bound, Fragment, rsx, VecTracker, widget,
-    }
+use kayak_ui::core::{
+    render_command::RenderCommand,
+    rsx,
+    styles::{Style, StyleProp},
+    widget, Bound, Fragment, VecTracker,
 };
+use std::ops::Index;
 
 use crate::TabTheme;
 

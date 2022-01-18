@@ -17,7 +17,7 @@ pub fn Window(
     title: String,
 ) {
     *styles = Some(Style {
-        background_color: StyleProp::Value(Color::new(0.125, 0.125, 0.125, 1.0)),
+        background_color: StyleProp::Value(Color::rgba(0.125, 0.125, 0.125, 1.0)),
         border_radius: StyleProp::Value((5.0, 5.0, 5.0, 5.0)),
         render_command: StyleProp::Value(RenderCommand::Quad),
         position_type: StyleProp::Value(PositionType::SelfDirected),
@@ -43,7 +43,7 @@ pub fn Window(
     };
 
     let title_background_styles = Style {
-        background_color: StyleProp::Value(Color::new(0.0781, 0.0898, 0.101, 1.0)),
+        background_color: StyleProp::Value(Color::rgba(0.0781, 0.0898, 0.101, 1.0)),
         border_radius: StyleProp::Value((5.0, 0.0, 0.0, 5.0)),
         height: StyleProp::Value(Units::Pixels(24.0)),
         left: StyleProp::Value(Units::Pixels(0.0)),

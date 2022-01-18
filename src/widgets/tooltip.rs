@@ -84,7 +84,7 @@ pub fn TooltipProvider(
     let mut tooltip_styles = Style {
         position_type: StyleProp::Value(PositionType::SelfDirected),
         background_color: if matches!(base_styles.background_color, StyleProp::Default) {
-            StyleProp::Value(Color::new(0.13, 0.15, 0.17, 0.85))
+            StyleProp::Value(Color::rgba(0.13, 0.15, 0.17, 0.85))
         } else {
             base_styles.background_color
         },

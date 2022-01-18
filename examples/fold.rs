@@ -31,7 +31,7 @@ fn FolderTree(context: &mut KayakContext) {
     let button_styles = Style {
         width: StyleProp::Value(Units::Stretch(1.0)),
         height: StyleProp::Value(Units::Pixels(24.0)),
-        background_color: StyleProp::Value(Color::new(0.33, 0.33, 0.33, 1.0)),
+        background_color: StyleProp::Value(Color::rgba(0.33, 0.33, 0.33, 1.0)),
         ..Default::default()
     };
 
@@ -42,28 +42,27 @@ fn FolderTree(context: &mut KayakContext) {
         ..Default::default()
     };
 
-
     // === Folder A === //
     let fold_a_styles = Some(Style {
-        background_color: StyleProp::Value(Color::new(0.25882,  0.24314,  0.19608, 1.0)),
+        background_color: StyleProp::Value(Color::rgba(0.25882, 0.24314, 0.19608, 1.0)),
         ..Default::default()
     });
     let fold_a_child_styles = Style {
-        background_color: StyleProp::Value(Color::new(0.16863,  0.16863,  0.12549, 1.0)),
+        background_color: StyleProp::Value(Color::rgba(0.16863, 0.16863, 0.12549, 1.0)),
         ..fold_child_base_styles.clone()
     };
     let fold_a_child_child_styles = Style {
-        background_color: StyleProp::Value(Color::new(0.12941,  0.12941,  0.09412, 1.0)),
+        background_color: StyleProp::Value(Color::rgba(0.12941, 0.12941, 0.09412, 1.0)),
         ..fold_a_child_styles.clone()
     };
 
     // === Folder B === //
     let fold_b_styles = Style {
-        background_color: StyleProp::Value(Color::new(0.19608,  0.25882,  0.21569, 1.0)),
+        background_color: StyleProp::Value(Color::rgba(0.19608, 0.25882, 0.21569, 1.0)),
         ..Default::default()
     };
     let fold_b_child_styles = Style {
-        background_color: StyleProp::Value(Color::new(0.11765,  0.16078,  0.12941, 1.0)),
+        background_color: StyleProp::Value(Color::rgba(0.11765, 0.16078, 0.12941, 1.0)),
         ..fold_child_base_styles.clone()
     };
 
@@ -81,15 +80,15 @@ fn FolderTree(context: &mut KayakContext) {
 
     // === Folder C === //
     let fold_c_styles = Some(Style {
-        background_color: StyleProp::Value(Color::new(0.25882,  0.19608,  0.23529, 1.0)),
+        background_color: StyleProp::Value(Color::rgba(0.25882, 0.19608, 0.23529, 1.0)),
         ..Default::default()
     });
     let fold_c_child_styles = Style {
-        background_color: StyleProp::Value(Color::new(0.16863,  0.12549,  0.15294, 1.0)),
+        background_color: StyleProp::Value(Color::rgba(0.16863, 0.12549, 0.15294, 1.0)),
         ..fold_child_base_styles.clone()
     };
     let try_style = Style {
-       color: StyleProp::Value(Color::new(1.0, 0.5, 0.5, 1.0)),
+        color: StyleProp::Value(Color::rgba(1.0, 0.5, 0.5, 1.0)),
         ..text_styles.clone()
     };
 

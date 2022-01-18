@@ -34,25 +34,25 @@ impl Theme {
     fn vampire() -> Self {
         Self {
             name: "Vampire".to_string(),
-            primary: Color::new(1.0, 0.475, 0.776, 1.0),
-            secondary: Color::new(0.641, 0.476, 0.876, 1.0),
-            background: Color::new(0.157, 0.165, 0.212, 1.0),
+            primary: Color::rgba(1.0, 0.475, 0.776, 1.0),
+            secondary: Color::rgba(0.641, 0.476, 0.876, 1.0),
+            background: Color::rgba(0.157, 0.165, 0.212, 1.0),
         }
     }
     fn solar() -> Self {
         Self {
             name: "Solar".to_string(),
-            primary: Color::new(0.514, 0.580, 0.588, 1.0),
-            secondary: Color::new(0.149, 0.545, 0.824, 1.0),
-            background: Color::new(0.026, 0.212, 0.259, 1.0),
+            primary: Color::rgba(0.514, 0.580, 0.588, 1.0),
+            secondary: Color::rgba(0.149, 0.545, 0.824, 1.0),
+            background: Color::rgba(0.026, 0.212, 0.259, 1.0),
         }
     }
     fn vector() -> Self {
         Self {
             name: "Vector".to_string(),
-            primary: Color::new(0.533, 1.0, 0.533, 1.0),
-            secondary: Color::new(0.098, 0.451, 0.098, 1.0),
-            background: Color::new(0.004, 0.059, 0.004, 1.0),
+            primary: Color::rgba(0.533, 1.0, 0.533, 1.0),
+            secondary: Color::rgba(0.098, 0.451, 0.098, 1.0),
+            background: Color::rgba(0.004, 0.059, 0.004, 1.0),
         }
     }
 }

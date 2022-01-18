@@ -11,7 +11,7 @@ use super::delete_button::DeleteButton;
 pub fn Card(card_id: usize, name: String, on_delete: Handler<usize>) {
     let background_styles = Style {
         layout_type: StyleProp::Value(LayoutType::Row),
-        background_color: StyleProp::Value(Color::new(0.176, 0.196, 0.215, 1.0)),
+        background_color: StyleProp::Value(Color::rgba(0.176, 0.196, 0.215, 1.0)),
         height: StyleProp::Value(Units::Auto),
         min_height: StyleProp::Value(Units::Pixels(26.0)),
         top: StyleProp::Value(Units::Pixels(10.0)),

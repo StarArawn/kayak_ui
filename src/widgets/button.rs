@@ -18,7 +18,7 @@ pub fn Button(children: Children, styles: Option<Style>) {
             base_styles.height
         },
         background_color: if matches!(base_styles.background_color, StyleProp::Default) {
-            StyleProp::Value(Color::new(0.0781, 0.0898, 0.101, 1.0))
+            StyleProp::Value(Color::rgba(0.0781, 0.0898, 0.101, 1.0))
         } else {
             base_styles.background_color
         },

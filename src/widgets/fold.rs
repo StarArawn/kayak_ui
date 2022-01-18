@@ -83,22 +83,18 @@ pub fn Fold(
     let container_style = Style {
         width: StyleProp::Value(Units::Stretch(1.0)),
         height: StyleProp::Value(Units::Auto),
-        // height: StyleProp::Value(Units::Pixels(20.0)),
         ..Default::default()
     };
 
-    let text_styles = Style {
-        // height: StyleProp::Value(Units::Pixels(26.0)),
-        ..Default::default()
-    };
+    let inner_container_styles = container_style.clone();
 
     // === Render === //
     rsx! {
         <Background styles={Some(background_styles)}>
             <Clip styles={Some(container_style)}>
-                <Text content={label} on_event={Some(handler)} size={14.0} styles={Some(text_styles)} />
+                <Text content={label} on_event={Some(handler)} size={14.0} />
                 <If condition={is_open}>
-                    <Clip>
+                    <Clip styles={Some(inner_container_styles)}>
                         {children}
                     </Clip>
                 </If>

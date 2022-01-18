@@ -3,7 +3,7 @@ use derivative::*;
 use crate::{context::KayakContext, styles::Style, Index, Widget};
 
 #[derive(Derivative)]
-#[derivative(Default, Debug, PartialEq)]
+#[derivative(Default, Debug, PartialEq, Clone)]
 pub struct Fragment {
     pub id: Index,
     #[derivative(Default(value = "None"))]

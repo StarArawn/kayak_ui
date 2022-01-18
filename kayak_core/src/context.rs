@@ -46,7 +46,7 @@ impl KayakContext {
             current_effect_index: 0,
             current_id: crate::Index::default(),
             current_state_index: 0,
-            event_dispatcher: EventDispatcher::default(),
+            event_dispatcher: EventDispatcher::new(),
             global_bindings: HashMap::new(),
             global_state: resources::Resources::default(),
             last_state_type_id: None,
@@ -68,7 +68,6 @@ impl KayakContext {
         }
 
         let global_binding_ids = self.global_bindings.get_mut(&self.current_id).unwrap();
-
         if !global_binding_ids.contains(&binding.id) {
             let lifetime = Self::create_lifetime(&binding, &self.widget_manager, self.current_id);
             Self::insert_state_lifetime(
@@ -486,5 +485,9 @@ impl KayakContext {
         if !self.assets.contains::<AssetStorage<T>>() {
             self.assets.insert(AssetStorage::<T>::new());
         }
+    }
+
+    pub fn get_last_clicked_widget(&self) -> Binding<Index> {
+        self.event_dispatcher.last_clicked.clone()
     }
 }

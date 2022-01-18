@@ -11,7 +11,7 @@ use kayak_ui::{
         styles::{Style, StyleProp, Units},
         use_state, widget, Color, EventType, Handler, Index, OnEvent,
     },
-    widgets::{App, Background, Button, Fold, If, Text, Window},
+    widgets::{App, Background, Button, Fold, If, Inspector, Text, Window},
 };
 
 #[widget]
@@ -154,6 +154,7 @@ fn startup(
         render! {
             <App>
                 <FolderTree />
+                <Inspector />
             </App>
         }
     });

@@ -519,7 +519,8 @@ impl<'a> Hierarchy<'a> for Tree {
     type ChildIter = ChildIterator<'a>;
 
     fn up_iter(&'a self) -> Self::UpIter {
-        self.flatten().into_iter().rev()
+        let up_iter = self.flatten().into_iter().rev();
+        up_iter
     }
 
     fn down_iter(&'a self) -> Self::DownIter {

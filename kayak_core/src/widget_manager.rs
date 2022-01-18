@@ -58,7 +58,7 @@ impl WidgetManager {
         }
     }
 
-    pub fn create_widget<T: Widget + PartialEq + 'static>(
+    pub fn create_widget<T: Widget + PartialEq + Default + Clone + 'static>(
         &mut self,
         index: usize,
         mut widget: T,
@@ -131,6 +131,14 @@ impl WidgetManager {
 
     pub fn get_layout(&self, id: &Index) -> Option<&Rect> {
         self.layout_cache.rect.get(id)
+    }
+
+    pub fn get_name(&self, id: &Index) -> Option<String> {
+        if let Some(widget) = &self.current_widgets[*id] {
+            return Some(widget.get_name());
+        }
+
+        None
     }
 
     pub fn render(&mut self) {
@@ -384,6 +392,11 @@ impl WidgetManager {
             }
             return self.get_valid_parent(*parent_id);
         }
+        // assert!(node_id.into_raw_parts().0 == 0);
         None
+    }
+
+    pub fn get_node(&self, id: &Index) -> Option<Node> {
+        self.nodes[*id].clone()
     }
 }

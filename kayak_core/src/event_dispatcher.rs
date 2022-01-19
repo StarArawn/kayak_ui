@@ -3,7 +3,10 @@ use crate::flo_binding::{Binding, MutableBound};
 use crate::layout_cache::Rect;
 use crate::render_command::RenderCommand;
 use crate::widget_manager::WidgetManager;
-use crate::{Event, EventType, Index, InputEvent, InputEventCategory, KayakContext, KeyCode, KeyboardEvent, KeyboardModifiers, PointerEvents, Widget};
+use crate::{
+    Event, EventType, Index, InputEvent, InputEventCategory, KayakContext, KeyCode, KeyboardEvent,
+    KeyboardModifiers, PointerEvents, Widget,
+};
 use std::collections::{HashMap, HashSet};
 
 type EventMap = HashMap<Index, HashSet<EventType>>;
@@ -363,7 +366,8 @@ impl EventDispatcher {
                         }
 
                         if self.has_cursor.is_none() {
-                            if let Some(widget) = widget_manager.current_widgets.get(node).unwrap() {
+                            let widget = widget_manager.current_widgets.get(node).unwrap();
+                            if let Some(widget) = widget {
                                 // Check if the cursor moved onto a widget that qualifies as one that can contain it
                                 if Self::can_contain_cursor(widget) {
                                     self.has_cursor = Some(node);
@@ -490,7 +494,10 @@ impl EventDispatcher {
     fn can_contain_cursor(widget: &Box<dyn Widget>) -> bool {
         if let Some(styles) = widget.get_styles() {
             let cmds = styles.render_command.resolve();
-            !matches!(cmds, RenderCommand::Empty | RenderCommand::Layout | RenderCommand::Clip)
+            !matches!(
+                cmds,
+                RenderCommand::Empty | RenderCommand::Layout | RenderCommand::Clip
+            )
         } else {
             false
         }

@@ -5,6 +5,8 @@ use std::{
 
 use crate::layout_cache::Rect;
 use crate::{
+    focus_tree::FocusTracker,
+    focus_tree::FocusTree,
     layout_cache::LayoutCache,
     node::{Node, NodeBuilder},
     render_command::RenderCommand,
@@ -21,9 +23,14 @@ pub struct WidgetManager {
     pub(crate) dirty_render_nodes: HashSet<Index>,
     pub(crate) dirty_nodes: Arc<Mutex<HashSet<Index>>>,
     pub(crate) nodes: Arena<Option<Node>>,
+    /// A tree containing all widgets in the hierarchy.
     pub tree: Tree,
+    /// A tree containing only the widgets with layouts in the hierarchy.
     pub node_tree: Tree,
+    /// A tree containing all actively focusable widgets.
+    pub focus_tree: FocusTree,
     pub layout_cache: LayoutCache,
+    focus_tracker: FocusTracker,
     current_z: f32,
 }
 
@@ -37,6 +44,8 @@ impl WidgetManager {
             tree: Tree::default(),
             node_tree: Tree::default(),
             layout_cache: LayoutCache::default(),
+            focus_tree: FocusTree::default(),
+            focus_tracker: FocusTracker::default(),
             current_z: 0.0,
         }
     }
@@ -64,37 +73,57 @@ impl WidgetManager {
         mut widget: T,
         parent: Option<Index>,
     ) -> (bool, Index) {
-        if let Some(parent) = parent.clone() {
+        let widget_id = if let Some(parent) = parent.clone() {
             if let Some(parent_children) = self.tree.children.get_mut(&parent) {
-                // Pull child and update.
-                if let Some(widget_id) = parent_children.get(index) {
-                    widget.set_id(*widget_id);
-                    // Remove from the dirty nodes lists.
-                    // if let Some(index) = self.dirty_nodes.iter().position(|id| *widget_id == *id) {
-                    //     self.dirty_nodes.remove(index);
-                    // }
-
-                    // TODO: Figure a good way of diffing props passed to children of a widget
-                    // that wont naturally-rerender it's children because of a lack of changes
-                    // to it's own props.
-                    // if &widget
-                    //     != self.current_widgets[*widget_id]
-                    //         .as_ref()
-                    //         .unwrap()
-                    //         .downcast_ref::<T>()
-                    //         .unwrap()
-                    // {
-                    let boxed_widget: Box<dyn Widget> = Box::new(widget);
-                    *self.current_widgets[*widget_id].as_mut().unwrap() = boxed_widget;
-                    // Tell renderer that the nodes changed.
-                    self.dirty_render_nodes.insert(*widget_id);
-                    return (true, *widget_id);
-                    // } else {
-                    //     return (false, *widget_id);
-                    // }
-                }
+                parent_children.get(index).cloned()
+            } else {
+                None
             }
+        } else {
+            None
+        };
+
+        // Pull child and update.
+        if let Some(widget_id) = widget_id {
+            widget.set_id(widget_id);
+            // Remove from the dirty nodes lists.
+            // if let Some(index) = self.dirty_nodes.iter().position(|id| *widget_id == *id) {
+            //     self.dirty_nodes.remove(index);
+            // }
+
+            // Mark this widget as focusable if it's designated focusable or if it's the root node
+            if self.tree.is_empty() {
+                self.set_focusable(Some(true), widget_id, true);
+            } else {
+                self.set_focusable(widget.focusable(), widget_id, true);
+            }
+
+            // TODO: Figure a good way of diffing props passed to children of a widget
+            // that wont naturally-rerender it's children because of a lack of changes
+            // to it's own props.
+            // if &widget
+            //     != self.current_widgets[*widget_id]
+            //         .as_ref()
+            //         .unwrap()
+            //         .downcast_ref::<T>()
+            //         .unwrap()
+            // {
+            let boxed_widget: Box<dyn Widget> = Box::new(widget);
+            *self.current_widgets[widget_id].as_mut().unwrap() = boxed_widget;
+            // Tell renderer that the nodes changed.
+            self.dirty_render_nodes.insert(widget_id);
+            return (true, widget_id);
+            // } else {
+            //     return (false, *widget_id);
+            // }
         }
+
+        // Mark this widget as focusable if it's designated focusable or if it's the root node
+        let focusable = if self.tree.is_empty() {
+            Some(true)
+        } else {
+            widget.focusable()
+        };
 
         // Create Flow
         // We should only have one widget that doesn't have a parent.
@@ -116,6 +145,7 @@ impl WidgetManager {
 
         self.tree.add(widget_id, parent);
         self.layout_cache.add(widget_id);
+        self.set_focusable(focusable, widget_id, true);
 
         (true, widget_id)
     }
@@ -303,7 +333,7 @@ impl WidgetManager {
         )
     }
 
-    fn build_nodes_tree(&self) -> Tree {
+    fn build_nodes_tree(&mut self) -> Tree {
         let mut tree = Tree::default();
         let (root_node_id, _) = self.current_widgets.iter().next().unwrap();
         tree.root_node = Some(root_node_id);
@@ -311,6 +341,11 @@ impl WidgetManager {
             tree.root_node.unwrap(),
             self.get_valid_node_children(tree.root_node.unwrap()),
         );
+
+        let old_focus = self.focus_tree.current();
+        self.focus_tree.clear();
+        self.focus_tree.add(root_node_id, &self.tree);
+
         for (widget_id, widget) in self.current_widgets.iter().skip(1) {
             let widget_styles = widget.as_ref().unwrap().get_styles();
             if let Some(widget_styles) = widget_styles {
@@ -324,7 +359,19 @@ impl WidgetManager {
                     }
                 }
             }
+
+            let focusable = self.get_focusable(widget_id).unwrap_or_default();
+            if focusable {
+                self.focus_tree.add(widget_id, &self.tree);
+            }
         }
+
+        if let Some(old_focus) = old_focus {
+            if self.focus_tree.contains(old_focus) {
+                self.focus_tree.focus(old_focus);
+            }
+        }
+
         tree
     }
 
@@ -364,5 +411,14 @@ impl WidgetManager {
 
     pub fn get_node(&self, id: &Index) -> Option<Node> {
         self.nodes[*id].clone()
+    }
+
+    pub fn get_focusable(&self, index: Index) -> Option<bool> {
+        self.focus_tracker.get_focusability(index)
+    }
+
+    pub fn set_focusable(&mut self, focusable: Option<bool>, index: Index, is_parent: bool) {
+        self.focus_tracker
+            .set_focusability(index, focusable, is_parent);
     }
 }

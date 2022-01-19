@@ -6,7 +6,7 @@ use crate::core::{
     widget, Children, Fragment,
 };
 
-#[widget]
+#[widget(focusable)]
 pub fn Button(children: Children, styles: Option<Style>) {
     let base_styles = styles.clone().unwrap_or_default();
     *styles = Some(Style {

@@ -29,3 +29,7 @@ bevy = { version = "0.6.0" }
 [[example]]
 name = "todo"
 path = "examples/todo/todo.rs"
+
+[[example]]
+name = "tabs"
+path = "examples/tabs/tabs.rs"

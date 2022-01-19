@@ -152,10 +152,11 @@ impl KayakContext {
                 // Traverse the parents to find the one with the given state data
                 index = self.widget_manager.tree.get_parent(index.unwrap());
 
-                let key = index.unwrap();
-                if let Some(provider) = providers.get(&key) {
-                    if let Ok(state) = provider.get::<Binding<T>>() {
-                        return Some(state.clone());
+                if let Some(key) = index {
+                    if let Some(provider) = providers.get(&key) {
+                        if let Ok(state) = provider.get::<Binding<T>>() {
+                            return Some(state.clone());
+                        }
                     }
                 }
             }
@@ -431,6 +432,23 @@ impl KayakContext {
             parents.push(*parent);
             self.get_all_parents(*parent, parents);
         }
+    }
+
+    pub fn is_focused(&self, index: Index) -> bool {
+        let current = self.widget_manager.focus_tree.current();
+        current == Some(index)
+    }
+
+    pub fn current_focus(&self) -> Option<Index> {
+        self.widget_manager.focus_tree.current()
+    }
+
+    pub fn get_focusable(&self, index: Index) -> Option<bool> {
+        self.widget_manager.get_focusable(index)
+    }
+
+    pub fn set_focusable(&mut self, focusable: Option<bool>, index: Index) {
+        self.widget_manager.set_focusable(focusable, index, false);
     }
 
     /// Get the last calculated mouse position.

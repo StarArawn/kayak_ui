@@ -293,8 +293,8 @@ impl EventDispatcher {
                     if layout.contains(&self.current_mouse_position) {
                         event_stream.push(Event::new(node, EventType::MouseDown));
 
-                        if let Some(widget) = widget_manager.current_widgets.get(node).unwrap() {
-                            if widget.focusable().unwrap_or_default() {
+                        if let Some(focusable) = widget_manager.get_focusable(node) {
+                            if focusable {
                                 Self::update_state(states, (node, depth), layout, EventType::Focus);
                             }
                         }

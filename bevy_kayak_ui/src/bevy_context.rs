@@ -17,4 +17,41 @@ impl BevyContext {
 
         Self { kayak_context }
     }
+
+    /// Returns true if the cursor is currently over a valid widget
+    ///
+    /// For the purposes of this method, a valid widget is one which has the means to display a visual component on its own.
+    /// This means widgets specified with `RenderCommand::Empty`, `RenderCommand::Layout`, or `RenderCommand::Clip`
+    /// do not meet the requirements to "contain" the cursor.
+    pub fn contains_cursor(&self) -> bool {
+        if let Ok(kayak_context) = self.kayak_context.read() {
+            kayak_context.contains_cursor()
+        } else {
+            false
+        }
+    }
+
+    /// Returns true if the cursor may be needed by a widget or it's already in use by one
+    ///
+    /// This is useful for checking if certain events (such as a click) would "matter" to the UI at all. Example widgets
+    /// include buttons, sliders, and text boxes.
+    pub fn wants_cursor(&self) -> bool {
+        if let Ok(kayak_context) = self.kayak_context.read() {
+            kayak_context.wants_cursor()
+        } else {
+            false
+        }
+    }
+
+    /// Returns true if the cursor is currently in use by a widget
+    ///
+    /// This is most often useful for checking drag events as it will still return true even if the drag continues outside
+    /// the widget bounds (as long as it started within it).
+    pub fn has_cursor(&self) -> bool {
+        if let Ok(kayak_context) = self.kayak_context.read() {
+            kayak_context.has_cursor()
+        } else {
+            false
+        }
+    }
 }

@@ -460,8 +460,8 @@ impl KayakContext {
 
     #[cfg(feature = "bevy_renderer")]
     pub fn query_world<T: bevy::ecs::system::SystemParam, F, R>(&mut self, mut f: F) -> R
-    where
-        F: FnMut(<T::Fetch as bevy::ecs::system::SystemParamFetch<'_, '_>>::Item) -> R,
+        where
+            F: FnMut(<T::Fetch as bevy::ecs::system::SystemParamFetch<'_, '_>>::Item) -> R,
     {
         let mut world = self.get_global_state::<bevy::prelude::World>().unwrap();
         let mut system_state = bevy::ecs::system::SystemState::<T>::new(&mut world);
@@ -507,5 +507,30 @@ impl KayakContext {
 
     pub fn get_last_clicked_widget(&self) -> Binding<Index> {
         self.event_dispatcher.last_clicked.clone()
+    }
+
+    /// Returns true if the cursor is currently over a valid widget
+    ///
+    /// For the purposes of this method, a valid widget is one which has the means to display a visual component on its own.
+    /// This means widgets specified with `RenderCommand::Empty`, `RenderCommand::Layout`, or `RenderCommand::Clip`
+    /// do not meet the requirements to "contain" the cursor.
+    pub fn contains_cursor(&self) -> bool {
+        self.event_dispatcher.contains_cursor()
+    }
+
+    /// Returns true if the cursor may be needed by a widget or it's already in use by one
+    ///
+    /// This is useful for checking if certain events (such as a click) would "matter" to the UI at all. Example widgets
+    /// include buttons, sliders, and text boxes.
+    pub fn wants_cursor(&self) -> bool {
+        self.event_dispatcher.wants_cursor()
+    }
+
+    /// Returns true if the cursor is currently in use by a widget
+    ///
+    /// This is most often useful for checking drag events as it will still return true even if the drag continues outside
+    /// the widget bounds (as long as it started within it).
+    pub fn has_cursor(&self) -> bool {
+        self.event_dispatcher.has_cursor()
     }
 }

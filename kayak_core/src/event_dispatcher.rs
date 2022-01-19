@@ -1,11 +1,9 @@
 use crate::flo_binding::{Binding, MutableBound};
 
 use crate::layout_cache::Rect;
+use crate::render_command::RenderCommand;
 use crate::widget_manager::WidgetManager;
-use crate::{
-    Event, EventType, Index, InputEvent, InputEventCategory, KayakContext, KeyCode, KeyboardEvent,
-    KeyboardModifiers, PointerEvents,
-};
+use crate::{Event, EventType, Index, InputEvent, InputEventCategory, KayakContext, KeyCode, KeyboardEvent, KeyboardModifiers, PointerEvents, Widget};
 use std::collections::{HashMap, HashSet};
 
 type EventMap = HashMap<Index, HashSet<EventType>>;
@@ -41,6 +39,9 @@ pub(crate) struct EventDispatcher {
     previous_events: EventMap,
     keyboard_modifiers: KeyboardModifiers,
     pub last_clicked: Binding<Index>,
+    contains_cursor: Option<bool>,
+    wants_cursor: Option<bool>,
+    has_cursor: Option<Index>,
 }
 
 impl EventDispatcher {
@@ -52,6 +53,9 @@ impl EventDispatcher {
             next_mouse_position: Default::default(),
             previous_events: Default::default(),
             keyboard_modifiers: Default::default(),
+            contains_cursor: None,
+            wants_cursor: None,
+            has_cursor: None,
         }
     }
 
@@ -65,6 +69,34 @@ impl EventDispatcher {
     #[allow(dead_code)]
     pub fn current_mouse_position(&self) -> (f32, f32) {
         self.current_mouse_position
+    }
+
+    /// Returns true if the cursor is currently over a valid widget
+    ///
+    /// For the purposes of this method, a valid widget is one which has the means to display a visual component on its own.
+    /// This means widgets specified with [`RenderCommand::Empty`], [`RenderCommand::Layout`], or [`RenderCommand::Clip`]
+    /// do not meet the requirements to "contain" the cursor.
+    #[allow(dead_code)]
+    pub fn contains_cursor(&self) -> bool {
+        self.contains_cursor.unwrap_or_default()
+    }
+
+    /// Returns true if the cursor may be needed by a widget or it's already in use by one
+    ///
+    /// This is useful for checking if certain events (such as a click) would "matter" to the UI at all. Example widgets
+    /// include buttons, sliders, and text boxes.
+    #[allow(dead_code)]
+    pub fn wants_cursor(&self) -> bool {
+        self.wants_cursor.unwrap_or_default() || self.has_cursor.is_some()
+    }
+
+    /// Returns true if the cursor is currently in use by a widget
+    ///
+    /// This is most often useful for checking drag events as it will still return true even if the drag continues outside
+    /// the widget bounds (as long as it started within it).
+    #[allow(dead_code)]
+    pub fn has_cursor(&self) -> bool {
+        self.has_cursor.is_some()
     }
 
     /// Process and dispatch an [InputEvent](crate::InputEvent)
@@ -161,6 +193,12 @@ impl EventDispatcher {
             return event_stream;
         };
 
+        // === Setup Cursor States === //
+        let old_contains_cursor = self.contains_cursor;
+        let old_wants_cursor = self.wants_cursor;
+        self.contains_cursor = None;
+        self.wants_cursor = None;
+
         // === Mouse Events === //
         let mut stack: Vec<TreeNode> = vec![(root, 0)];
         while stack.len() > 0 {
@@ -247,8 +285,17 @@ impl EventDispatcher {
             }
         }
 
-        // Apply changes
+        // === Process Cursor States === //
         self.current_mouse_position = self.next_mouse_position;
+
+        if self.contains_cursor.is_none() {
+            // No change -> revert
+            self.contains_cursor = old_contains_cursor;
+        }
+        if self.wants_cursor.is_none() {
+            // No change -> revert
+            self.wants_cursor = old_wants_cursor;
+        }
 
         event_stream
     }
@@ -275,6 +322,22 @@ impl EventDispatcher {
                             event_stream.push(Event::new(node, EventType::MouseIn));
                         }
                     }
+                    if self.contains_cursor.is_none() || !self.contains_cursor.unwrap_or_default() {
+                        if let Some(widget) = widget_manager.current_widgets.get(node).unwrap() {
+                            // Check if the cursor moved onto a widget that qualifies as one that can contain it
+                            if Self::can_contain_cursor(widget) {
+                                self.contains_cursor = Some(is_contained);
+                            }
+                        }
+                    }
+
+                    if self.wants_cursor.is_none() || !self.wants_cursor.unwrap_or_default() {
+                        let focusable = widget_manager.get_focusable(node);
+                        // Check if the cursor moved onto a focusable widget (i.e. one that would want it)
+                        if matches!(focusable, Some(true)) {
+                            self.wants_cursor = Some(is_contained);
+                        }
+                    }
 
                     // Check for hover eligibility
                     if is_contained {
@@ -298,12 +361,22 @@ impl EventDispatcher {
                                 Self::update_state(states, (node, depth), layout, EventType::Focus);
                             }
                         }
+
+                        if self.has_cursor.is_none() {
+                            if let Some(widget) = widget_manager.current_widgets.get(node).unwrap() {
+                                // Check if the cursor moved onto a widget that qualifies as one that can contain it
+                                if Self::can_contain_cursor(widget) {
+                                    self.has_cursor = Some(node);
+                                }
+                            }
+                        }
                     }
                 }
             }
             InputEvent::MouseLeftRelease => {
                 // Reset global mouse pressed
                 self.is_mouse_pressed = false;
+                self.has_cursor = None;
 
                 if let Some(layout) = widget_manager.get_layout(&node) {
                     if layout.contains(&self.current_mouse_position) {
@@ -408,6 +481,19 @@ impl EventDispatcher {
     fn insert_event(events: &mut EventMap, widget_id: &Index, event_type: EventType) -> bool {
         let entry = events.entry(*widget_id).or_insert(HashSet::default());
         entry.insert(event_type)
+    }
+
+    /// Checks if the given widget is eligible to "contain" the cursor (i.e. the cursor is considered contained when hovering over it)
+    ///
+    /// Currently a valid widget is defined as one where:
+    /// * RenderCommands is neither `Empty` nor `Layout` nor `Clip`
+    fn can_contain_cursor(widget: &Box<dyn Widget>) -> bool {
+        if let Some(styles) = widget.get_styles() {
+            let cmds = styles.render_command.resolve();
+            !matches!(cmds, RenderCommand::Empty | RenderCommand::Layout | RenderCommand::Clip)
+        } else {
+            false
+        }
     }
 
     /// Executes default actions for events

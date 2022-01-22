@@ -1,3 +1,4 @@
+use crate::cursor::CursorEvent;
 use crate::{Index, KeyboardEvent};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -19,7 +20,7 @@ impl Default for Event {
         Self {
             target: Default::default(),
             current_target: Default::default(),
-            event_type: EventType::Click,
+            event_type: EventType::Click(CursorEvent::default()),
             should_propagate: true,
             default_prevented: false,
         }
@@ -62,19 +63,38 @@ impl Event {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+/// The type of event
+///
+/// __Note:__ This type implements `PartialEq` and `Hash` in a way that only considers the variant itself,
+/// not the underlying data. If full comparisons are needed, they should be done with the inner data or
+/// with a custom wrapper.
+#[derive(Debug, Clone, Copy)]
 pub enum EventType {
-    Click,
-    Hover,
-    MouseIn,
-    MouseOut,
-    MouseDown,
-    MouseUp,
+    Click(CursorEvent),
+    Hover(CursorEvent),
+    MouseIn(CursorEvent),
+    MouseOut(CursorEvent),
+    MouseDown(CursorEvent),
+    MouseUp(CursorEvent),
     Focus,
     Blur,
     CharInput { c: char },
     KeyUp(KeyboardEvent),
     KeyDown(KeyboardEvent),
+}
+
+impl Eq for EventType {}
+
+impl PartialEq for EventType {
+    fn eq(&self, _other: &Self) -> bool {
+        matches!(self, _other)
+    }
+}
+
+impl std::hash::Hash for EventType {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        std::hash::Hash::hash(&std::mem::discriminant(self), state);
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -92,16 +112,16 @@ impl EventType {
     pub fn propagates(&self) -> bool {
         match self {
             // Propagates
-            Self::Hover => true,
-            Self::Click => true,
-            Self::MouseDown => true,
-            Self::MouseUp => true,
+            Self::Hover(..) => true,
+            Self::Click(..) => true,
+            Self::MouseDown(..) => true,
+            Self::MouseUp(..) => true,
             Self::CharInput { .. } => true,
             Self::KeyUp(..) => true,
             Self::KeyDown(..) => true,
             // Doesn't Propagate
-            Self::MouseIn => false,
-            Self::MouseOut => false,
+            Self::MouseIn(..) => false,
+            Self::MouseOut(..) => false,
             Self::Focus => false,
             Self::Blur => false,
         }
@@ -111,12 +131,12 @@ impl EventType {
     pub fn event_category(&self) -> EventCategory {
         match self {
             // Mouse
-            Self::Hover => EventCategory::Mouse,
-            Self::Click => EventCategory::Mouse,
-            Self::MouseDown => EventCategory::Mouse,
-            Self::MouseUp => EventCategory::Mouse,
-            Self::MouseIn => EventCategory::Mouse,
-            Self::MouseOut => EventCategory::Mouse,
+            Self::Hover(..) => EventCategory::Mouse,
+            Self::Click(..) => EventCategory::Mouse,
+            Self::MouseDown(..) => EventCategory::Mouse,
+            Self::MouseUp(..) => EventCategory::Mouse,
+            Self::MouseIn(..) => EventCategory::Mouse,
+            Self::MouseOut(..) => EventCategory::Mouse,
             // Keyboard
             Self::CharInput { .. } => EventCategory::Keyboard,
             Self::KeyUp(..) => EventCategory::Keyboard,

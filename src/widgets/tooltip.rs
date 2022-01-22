@@ -185,19 +185,19 @@ pub fn TooltipConsumer(
 
     let text = Arc::new(text);
     self.on_event = Some(OnEvent::new(move |ctx, event| match event.event_type {
-        EventType::MouseIn => {
+        EventType::MouseIn(..) => {
             let mut state = data.get();
             state.visible = true;
             state.text = (*text).clone();
             state.size = size;
             data.set(state);
         }
-        EventType::Hover => {
+        EventType::Hover(..) => {
             let mut state = data.get();
             state.anchor = anchor.unwrap_or(ctx.last_mouse_position());
             data.set(state);
         }
-        EventType::MouseOut => {
+        EventType::MouseOut(..) => {
             let mut state = data.get();
             // Set hidden only if the tooltip's text matches this consumer's
             // Otherwise, it likely got picked up by another widget and should be kept visible

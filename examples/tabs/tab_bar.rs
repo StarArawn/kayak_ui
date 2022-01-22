@@ -24,7 +24,7 @@ pub fn TabBar(
         let on_select = on_select_tab.clone();
         let tab_event_handler = OnEvent::new(move |_, event| {
             match event.event_type {
-                EventType::Click => {
+                EventType::Click(..) =>  {
                     on_select.call(index);
                 }
                 EventType::KeyDown(evt) => {

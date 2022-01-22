@@ -423,7 +423,7 @@ impl KayakContext {
     pub fn process_events(&mut self, input_events: Vec<InputEvent>) {
         let mut dispatcher = self.event_dispatcher.to_owned();
         dispatcher.process_events(input_events, self);
-        self.event_dispatcher = dispatcher;
+        self.event_dispatcher.merge(dispatcher);
     }
 
     #[allow(dead_code)]
@@ -532,5 +532,33 @@ impl KayakContext {
     /// the widget bounds (as long as it started within it).
     pub fn has_cursor(&self) -> bool {
         self.event_dispatcher.has_cursor()
+    }
+
+    /// Captures all cursor events and instead makes the given index the target
+    pub fn capture_cursor(&mut self, index: Index) -> Option<Index> {
+        self.event_dispatcher.capture_cursor(index)
+    }
+
+    /// Releases the captured cursor
+    ///
+    /// Returns true if successful.
+    ///
+    /// This will only release the cursor if the given index matches the current captor. This
+    /// prevents other widgets from accidentally releasing against the will of the original captor.
+    ///
+    /// This check can be side-stepped if necessary by calling [`force_release_cursor`](Self::force_release_cursor)
+    /// instead (or by calling this method with the correct index).
+    pub fn release_cursor(&mut self, index: Index) -> bool {
+        self.event_dispatcher.release_cursor(index)
+    }
+
+    /// Releases the captured cursor
+    ///
+    /// Returns the index of the previous captor.
+    ///
+    /// This will force the release, regardless of which widget has called it. To safely release,
+    /// use the standard [`release_cursor`](Self::release_cursor) method instead.
+    pub fn force_release_cursor(&mut self) -> Option<Index> {
+        self.event_dispatcher.force_release_cursor()
     }
 }

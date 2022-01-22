@@ -97,7 +97,7 @@ fn ControlPanel() {
     }
 
     let on_change_color = OnEvent::new(move |_, event| match event.event_type {
-        EventType::Click => {
+        EventType::Click(..) => {
             // Cycle the color
             set_color_index((color_index + 1) % COLORS.len());
         }
@@ -106,7 +106,7 @@ fn ControlPanel() {
 
     rsx! {
         <>
-            <Window position={(0.0, 570.0)} size={(1270.0, 150.0)} title={"Square Mover: The Game".to_string()}>
+            <Window draggable={true} position={(50.0, 50.0)} size={(300.0, 150.0)} title={"Square Mover: The Game".to_string()}>
                 <Text size={13.0} content={"You can check if the cursor is over the UI or on a focusable widget using the BevyContext resource.".to_string()} styles={Some(text_styles)} />
                 <Button on_event={Some(on_change_color)} styles={Some(button_styles)}>
                     <Text size={16.0} content={"Change Tile Color".to_string()} />

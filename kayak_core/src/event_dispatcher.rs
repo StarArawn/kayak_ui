@@ -1,5 +1,6 @@
 use crate::flo_binding::{Binding, MutableBound};
 
+use crate::cursor::CursorEvent;
 use crate::layout_cache::Rect;
 use crate::render_command::RenderCommand;
 use crate::widget_manager::WidgetManager;
@@ -37,6 +38,7 @@ impl Default for EventState {
 #[derive(Debug, Clone)]
 pub(crate) struct EventDispatcher {
     is_mouse_pressed: bool,
+    next_mouse_pressed: bool,
     current_mouse_position: (f32, f32),
     next_mouse_position: (f32, f32),
     previous_events: EventMap,
@@ -45,6 +47,7 @@ pub(crate) struct EventDispatcher {
     contains_cursor: Option<bool>,
     wants_cursor: Option<bool>,
     has_cursor: Option<Index>,
+    pub cursor_capture: Option<Index>,
 }
 
 impl EventDispatcher {
@@ -52,6 +55,7 @@ impl EventDispatcher {
         Self {
             last_clicked: Binding::new(Index::default()),
             is_mouse_pressed: Default::default(),
+            next_mouse_pressed: Default::default(),
             current_mouse_position: Default::default(),
             next_mouse_position: Default::default(),
             previous_events: Default::default(),
@@ -59,6 +63,7 @@ impl EventDispatcher {
             contains_cursor: None,
             wants_cursor: None,
             has_cursor: None,
+            cursor_capture: None,
         }
     }
 
@@ -72,6 +77,43 @@ impl EventDispatcher {
     #[allow(dead_code)]
     pub fn current_mouse_position(&self) -> (f32, f32) {
         self.current_mouse_position
+    }
+
+    /// Captures all cursor events and instead makes the given index the target
+    pub fn capture_cursor(&mut self, index: Index) -> Option<Index> {
+        let old = self.cursor_capture;
+        self.cursor_capture = Some(index);
+        old
+    }
+
+    /// Releases the captured cursor
+    ///
+    /// Returns true if successful.
+    ///
+    /// This will only release the cursor if the given index matches the current captor. This
+    /// prevents other widgets from accidentally releasing against the will of the original captor.
+    ///
+    /// This check can be side-stepped if necessary by calling [`force_release_cursor`](Self::force_release_cursor)
+    /// instead (or by calling this method with the correct index).
+    pub fn release_cursor(&mut self, index: Index) -> bool {
+        if self.cursor_capture == Some(index) {
+            self.force_release_cursor();
+            true
+        } else {
+            false
+        }
+    }
+
+    /// Releases the captured cursor
+    ///
+    /// Returns the index of the previous captor.
+    ///
+    /// This will force the release, regardless of which widget has called it. To safely release,
+    /// use the standard [`release_cursor`](Self::release_cursor) method instead.
+    pub fn force_release_cursor(&mut self) -> Option<Index> {
+        let old = self.cursor_capture;
+        self.cursor_capture = None;
+        old
     }
 
     /// Returns true if the cursor is currently over a valid widget
@@ -163,17 +205,29 @@ impl EventDispatcher {
         // Events that need to be maintained without re-firing between event updates should be managed here
         for (index, events) in &self.previous_events {
             // Mouse is currently pressed for this node
-            if self.is_mouse_pressed && events.contains(&EventType::MouseDown) {
+            if self.is_mouse_pressed && events.contains(&EventType::MouseDown(Default::default())) {
                 // Make sure this event isn't removed while mouse is still held down
-                Self::insert_event(&mut next_events, index, EventType::MouseDown);
+                Self::insert_event(
+                    &mut next_events,
+                    index,
+                    EventType::MouseDown(Default::default()),
+                );
             }
 
             // Mouse is currently within this node
-            if events.contains(&EventType::MouseIn)
-                && !Self::contains_event(&next_events, index, &EventType::MouseOut)
+            if events.contains(&EventType::MouseIn(Default::default()))
+                && !Self::contains_event(
+                    &next_events,
+                    index,
+                    &EventType::MouseOut(Default::default()),
+                )
             {
                 // Make sure this event isn't removed while mouse is still within node
-                Self::insert_event(&mut next_events, index, EventType::MouseIn);
+                Self::insert_event(
+                    &mut next_events,
+                    index,
+                    EventType::MouseIn(Default::default()),
+                );
             }
         }
 
@@ -201,49 +255,95 @@ impl EventDispatcher {
         let old_wants_cursor = self.wants_cursor;
         self.contains_cursor = None;
         self.wants_cursor = None;
+        self.next_mouse_position = self.current_mouse_position;
+        self.next_mouse_pressed = self.is_mouse_pressed;
+
+        // --- Pre-Process --- //
+        // We pre-process some events so that we can provide accurate event data (such as if the mouse is pressed)
+        // This is faster than resolving data after the fact since `input_events` is generally very small
+        for input_event in input_events {
+            if let InputEvent::MouseMoved(point) = input_event {
+                // Reset next global mouse position
+                self.next_mouse_position = *point;
+            }
+
+            if matches!(input_event, InputEvent::MouseLeftPress) {
+                // Reset next global mouse pressed
+                self.next_mouse_pressed = true;
+                break;
+            } else if matches!(input_event, InputEvent::MouseLeftRelease) {
+                // Reset next global mouse pressed
+                self.next_mouse_pressed = false;
+                // Reset global cursor container
+                self.has_cursor = None;
+                break;
+            }
+        }
 
         // === Mouse Events === //
-        let mut stack: Vec<TreeNode> = vec![(root, 0)];
-        while stack.len() > 0 {
-            let (current, depth) = stack.pop().unwrap();
-            let mut enter_children = true;
-
+        if let Some(captor) = self.cursor_capture {
+            // A widget has been set to capture pointer events -> it should be the only one receiving events
             for input_event in input_events {
                 // --- Process Event --- //
                 if matches!(input_event.category(), InputEventCategory::Mouse) {
                     // A widget's PointerEvents style will determine how it and its children are processed
-                    let mut pointer_events = PointerEvents::default();
-                    if let Some(widget) = widget_manager.current_widgets.get(current).unwrap() {
-                        if let Some(styles) = widget.get_styles() {
-                            pointer_events = styles.pointer_events.resolve();
-                        }
-                    }
+                    let pointer_events = Self::resolve_pointer_events(captor, widget_manager);
 
                     match pointer_events {
                         PointerEvents::All | PointerEvents::SelfOnly => {
                             let events = self.process_pointer_events(
                                 input_event,
-                                (current, depth),
+                                (captor, 0),
                                 &mut states,
                                 widget_manager,
+                                true,
                             );
                             event_stream.extend(events);
-
-                            if matches!(pointer_events, PointerEvents::SelfOnly) {
-                                enter_children = false;
-                            }
                         }
-                        PointerEvents::None => enter_children = false,
-                        PointerEvents::ChildrenOnly => {}
+                        _ => {}
                     }
                 }
             }
+        } else {
+            // No capturing widget -> process cursor events as normal
+            let mut stack: Vec<TreeNode> = vec![(root, 0)];
+            while stack.len() > 0 {
+                let (current, depth) = stack.pop().unwrap();
+                let mut enter_children = true;
 
-            // --- Push Children to Stack --- //
-            if enter_children {
-                if let Some(children) = widget_manager.node_tree.children.get(&current) {
-                    for child in children {
-                        stack.push((*child, depth + 1));
+                for input_event in input_events {
+                    // --- Process Event --- //
+                    if matches!(input_event.category(), InputEventCategory::Mouse) {
+                        // A widget's PointerEvents style will determine how it and its children are processed
+                        let pointer_events = Self::resolve_pointer_events(current, widget_manager);
+
+                        match pointer_events {
+                            PointerEvents::All | PointerEvents::SelfOnly => {
+                                let events = self.process_pointer_events(
+                                    input_event,
+                                    (current, depth),
+                                    &mut states,
+                                    widget_manager,
+                                    false,
+                                );
+                                event_stream.extend(events);
+
+                                if matches!(pointer_events, PointerEvents::SelfOnly) {
+                                    enter_children = false;
+                                }
+                            }
+                            PointerEvents::None => enter_children = false,
+                            PointerEvents::ChildrenOnly => {}
+                        }
+                    }
+                }
+
+                // --- Push Children to Stack --- //
+                if enter_children {
+                    if let Some(children) = widget_manager.node_tree.children.get(&current) {
+                        for child in children {
+                            stack.push((*child, depth + 1));
+                        }
                     }
                 }
             }
@@ -290,6 +390,7 @@ impl EventDispatcher {
 
         // === Process Cursor States === //
         self.current_mouse_position = self.next_mouse_position;
+        self.is_mouse_pressed = self.next_mouse_pressed;
 
         if self.contains_cursor.is_none() {
             // No change -> revert
@@ -303,12 +404,24 @@ impl EventDispatcher {
         event_stream
     }
 
+    /// Process the pointer-related events of an input event
+    ///
+    /// # Arguments
+    ///
+    /// * `input_event`: The input event
+    /// * `tree_node`: The current node to process
+    /// * `states`: The map of events to their current state (for selecting best fit)
+    /// * `widget_manager`: The widget manager
+    /// * `ignore_layout`: Whether to ignore layout (useful for handling captured events)
+    ///
+    /// returns: Vec<Event>
     fn process_pointer_events(
         &mut self,
         input_event: &InputEvent,
         tree_node: TreeNode,
         states: &mut HashMap<EventType, EventState>,
         widget_manager: &WidgetManager,
+        ignore_layout: bool,
     ) -> Vec<Event> {
         let mut event_stream = Vec::<Event>::new();
         let (node, depth) = tree_node;
@@ -316,19 +429,20 @@ impl EventDispatcher {
         match input_event {
             InputEvent::MouseMoved(point) => {
                 if let Some(layout) = widget_manager.get_layout(&node) {
+                    let cursor_event = self.get_cursor_event(*point);
                     let was_contained = layout.contains(&self.current_mouse_position);
                     let is_contained = layout.contains(point);
-                    if was_contained != is_contained {
+                    if !ignore_layout && was_contained != is_contained {
                         if was_contained {
-                            event_stream.push(Event::new(node, EventType::MouseOut));
+                            event_stream.push(Event::new(node, EventType::MouseOut(cursor_event)));
                         } else {
-                            event_stream.push(Event::new(node, EventType::MouseIn));
+                            event_stream.push(Event::new(node, EventType::MouseIn(cursor_event)));
                         }
                     }
                     if self.contains_cursor.is_none() || !self.contains_cursor.unwrap_or_default() {
                         if let Some(widget) = widget_manager.current_widgets.get(node).unwrap() {
                             // Check if the cursor moved onto a widget that qualifies as one that can contain it
-                            if Self::can_contain_cursor(widget) {
+                            if ignore_layout || Self::can_contain_cursor(widget) {
                                 self.contains_cursor = Some(is_contained);
                             }
                         }
@@ -343,21 +457,21 @@ impl EventDispatcher {
                     }
 
                     // Check for hover eligibility
-                    if is_contained {
-                        Self::update_state(states, (node, depth), layout, EventType::Hover);
+                    if ignore_layout || is_contained {
+                        Self::update_state(
+                            states,
+                            (node, depth),
+                            layout,
+                            EventType::Hover(cursor_event),
+                        );
                     }
                 }
-
-                // Reset global mouse position
-                self.next_mouse_position = *point;
             }
             InputEvent::MouseLeftPress => {
-                // Reset global mouse pressed
-                self.is_mouse_pressed = true;
-
                 if let Some(layout) = widget_manager.get_layout(&node) {
-                    if layout.contains(&self.current_mouse_position) {
-                        event_stream.push(Event::new(node, EventType::MouseDown));
+                    if ignore_layout || layout.contains(&self.current_mouse_position) {
+                        let cursor_event = self.get_cursor_event(self.current_mouse_position);
+                        event_stream.push(Event::new(node, EventType::MouseDown(cursor_event)));
 
                         if let Some(focusable) = widget_manager.get_focusable(node) {
                             if focusable {
@@ -378,18 +492,23 @@ impl EventDispatcher {
                 }
             }
             InputEvent::MouseLeftRelease => {
-                // Reset global mouse pressed
-                self.is_mouse_pressed = false;
-                self.has_cursor = None;
-
                 if let Some(layout) = widget_manager.get_layout(&node) {
-                    if layout.contains(&self.current_mouse_position) {
-                        event_stream.push(Event::new(node, EventType::MouseUp));
+                    if ignore_layout || layout.contains(&self.current_mouse_position) {
+                        let cursor_event = self.get_cursor_event(self.current_mouse_position);
+                        event_stream.push(Event::new(node, EventType::MouseUp(cursor_event)));
                         self.last_clicked.set(node);
 
-                        if Self::contains_event(&self.previous_events, &node, &EventType::MouseDown)
-                        {
-                            Self::update_state(states, (node, depth), layout, EventType::Click);
+                        if Self::contains_event(
+                            &self.previous_events,
+                            &node,
+                            &EventType::MouseDown(cursor_event),
+                        ) {
+                            Self::update_state(
+                                states,
+                                (node, depth),
+                                layout,
+                                EventType::Click(cursor_event),
+                            );
                         }
                     }
                 }
@@ -398,6 +517,27 @@ impl EventDispatcher {
         }
 
         event_stream
+    }
+
+    fn resolve_pointer_events(index: Index, widget_manager: &WidgetManager) -> PointerEvents {
+        let mut pointer_events = PointerEvents::default();
+        if let Some(widget) = widget_manager.current_widgets.get(index).unwrap() {
+            if let Some(styles) = widget.get_styles() {
+                pointer_events = styles.pointer_events.resolve();
+            }
+        }
+        pointer_events
+    }
+
+    fn get_cursor_event(&self, position: (f32, f32)) -> CursorEvent {
+        let change = self.next_mouse_pressed != self.is_mouse_pressed;
+        let pressed = self.next_mouse_pressed;
+        CursorEvent {
+            position,
+            pressed,
+            just_pressed: change && pressed,
+            just_released: change && !pressed,
+        }
     }
 
     fn process_keyboard_events(
@@ -531,5 +671,36 @@ impl EventDispatcher {
             },
             _ => {}
         }
+    }
+
+    /// Merge this `EventDispatcher` with another, taking only the internally mutated data.
+    ///
+    /// This is meant to solve the issue in `KayakContext`, where [`EventDispatcher::process_events`] and
+    /// similar methods require mutable access to `KayakContext`, forcing `EventDispatcher` to be cloned
+    /// before running the method. However, some data mutated through `KayakContext` may be lost when
+    /// re-claiming the `EventDispatcher`. This method ensures that data mutated in such a way will not be
+    /// overwritten during the merge.
+    ///
+    /// # Arguments
+    ///
+    /// * `from`: The other `EventDispatcher` to merge from
+    ///
+    /// returns: ()
+    pub fn merge(&mut self, from: EventDispatcher) {
+        // Merge only what could be changed internally. External changes (i.e. from KayakContext)
+        // should not be touched
+        self.last_clicked = from.last_clicked;
+        self.is_mouse_pressed = from.is_mouse_pressed;
+        self.next_mouse_pressed = from.next_mouse_pressed;
+        self.current_mouse_position = from.current_mouse_position;
+        self.next_mouse_position = from.next_mouse_position;
+        self.previous_events = from.previous_events;
+        self.keyboard_modifiers = from.keyboard_modifiers;
+        self.contains_cursor = from.contains_cursor;
+        self.wants_cursor = from.wants_cursor;
+        self.has_cursor = from.has_cursor;
+
+        // Do not include:
+        // self.cursor_capture = from.cursor_capture;
     }
 }

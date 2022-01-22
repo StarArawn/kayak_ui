@@ -29,10 +29,10 @@ pub fn DeleteButton(children: Children, styles: Option<Style>) {
     });
 
     let on_event = OnEvent::new(move |_, event| match event.event_type {
-        EventType::MouseIn => {
+        EventType::MouseIn(..) => {
             set_color(Color::new(0.0791, 0.0998, 0.201, 1.0));
         }
-        EventType::MouseOut => {
+        EventType::MouseOut(..) => {
             set_color(Color::new(0.0781, 0.0898, 0.101, 1.0));
         }
         _ => {}

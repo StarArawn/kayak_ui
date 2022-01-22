@@ -1,5 +1,6 @@
 use crate::flo_binding::{Binding, MutableBound};
 
+use crate::cursor::CursorEvent;
 use crate::layout_cache::Rect;
 use crate::render_command::RenderCommand;
 use crate::widget_manager::WidgetManager;
@@ -8,7 +9,6 @@ use crate::{
     KeyboardModifiers, PointerEvents, Widget,
 };
 use std::collections::{HashMap, HashSet};
-use crate::cursor::CursorEvent;
 
 type EventMap = HashMap<Index, HashSet<EventType>>;
 type TreeNode = (
@@ -207,15 +207,27 @@ impl EventDispatcher {
             // Mouse is currently pressed for this node
             if self.is_mouse_pressed && events.contains(&EventType::MouseDown(Default::default())) {
                 // Make sure this event isn't removed while mouse is still held down
-                Self::insert_event(&mut next_events, index, EventType::MouseDown(Default::default()));
+                Self::insert_event(
+                    &mut next_events,
+                    index,
+                    EventType::MouseDown(Default::default()),
+                );
             }
 
             // Mouse is currently within this node
             if events.contains(&EventType::MouseIn(Default::default()))
-                && !Self::contains_event(&next_events, index, &EventType::MouseOut(Default::default()))
+                && !Self::contains_event(
+                    &next_events,
+                    index,
+                    &EventType::MouseOut(Default::default()),
+                )
             {
                 // Make sure this event isn't removed while mouse is still within node
-                Self::insert_event(&mut next_events, index, EventType::MouseIn(Default::default()));
+                Self::insert_event(
+                    &mut next_events,
+                    index,
+                    EventType::MouseIn(Default::default()),
+                );
             }
         }
 
@@ -398,7 +410,7 @@ impl EventDispatcher {
         tree_node: TreeNode,
         states: &mut HashMap<EventType, EventState>,
         widget_manager: &WidgetManager,
-        ignore_layout: bool
+        ignore_layout: bool,
     ) -> Vec<Event> {
         let mut event_stream = Vec::<Event>::new();
         let (node, depth) = tree_node;
@@ -435,7 +447,12 @@ impl EventDispatcher {
 
                     // Check for hover eligibility
                     if ignore_layout || is_contained {
-                        Self::update_state(states, (node, depth), layout, EventType::Hover(cursor_event));
+                        Self::update_state(
+                            states,
+                            (node, depth),
+                            layout,
+                            EventType::Hover(cursor_event),
+                        );
                     }
                 }
             }
@@ -470,9 +487,17 @@ impl EventDispatcher {
                         event_stream.push(Event::new(node, EventType::MouseUp(cursor_event)));
                         self.last_clicked.set(node);
 
-                        if Self::contains_event(&self.previous_events, &node, &EventType::MouseDown(cursor_event))
-                        {
-                            Self::update_state(states, (node, depth), layout, EventType::Click(cursor_event));
+                        if Self::contains_event(
+                            &self.previous_events,
+                            &node,
+                            &EventType::MouseDown(cursor_event),
+                        ) {
+                            Self::update_state(
+                                states,
+                                (node, depth),
+                                layout,
+                                EventType::Click(cursor_event),
+                            );
                         }
                     }
                 }

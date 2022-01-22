@@ -1,5 +1,5 @@
-use crate::{Index, KeyboardEvent};
 use crate::cursor::CursorEvent;
+use crate::{Index, KeyboardEvent};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Event {

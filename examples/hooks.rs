@@ -39,7 +39,7 @@ fn StateCounter() {
     // both implement `Copy`. For other types, you may have to clone the state to pass it into a closure like this.
     // (You can also clone the setter as well if you need to use it in multiple places.)
     let on_event = OnEvent::new(move |_, event| match event.event_type {
-        EventType::Click(..) =>  set_count(count + 1),
+        EventType::Click(..) => set_count(count + 1),
         _ => {}
     });
 
@@ -64,7 +64,7 @@ fn EffectCounter() {
     // the third field in the tuple returned from the `use_state` macro.
     let (count, set_count, raw_count) = use_state!(0);
     let on_event = OnEvent::new(move |_, event| match event.event_type {
-        EventType::Click(..) =>  set_count(count + 1),
+        EventType::Click(..) => set_count(count + 1),
         _ => {}
     });
 

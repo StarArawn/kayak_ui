@@ -1,9 +1,9 @@
 use crate::core::{
     color::Color,
     render_command::RenderCommand,
-    rsx, EventType, OnEvent, use_state,
+    rsx,
     styles::{PositionType, Style, StyleProp, Units},
-    widget, Children,
+    use_state, widget, Children, EventType, OnEvent,
 };
 
 use crate::widgets::{Background, Clip, Element, Text};
@@ -22,25 +22,23 @@ pub fn Window(
     let (pos, set_pos, ..) = use_state!(position);
 
     let drag_handler = if draggable {
-        Some(OnEvent::new(move |ctx, event|
-            match event.event_type {
-                EventType::MouseDown(data) => {
-                    ctx.capture_cursor(event.current_target);
-                    set_is_dragging(true);
-                    set_offset((pos.0 - data.position.0, pos.1 - data.position.1));
-                }
-                EventType::MouseUp(..) => {
-                    ctx.release_cursor(event.current_target);
-                    set_is_dragging(false);
-                }
-                EventType::Hover(data) => {
-                    if is_dragging {
-                        set_pos((offset.0 + data.position.0, offset.1 + data.position.1));
-                    }
-                }
-                _ => {}
+        Some(OnEvent::new(move |ctx, event| match event.event_type {
+            EventType::MouseDown(data) => {
+                ctx.capture_cursor(event.current_target);
+                set_is_dragging(true);
+                set_offset((pos.0 - data.position.0, pos.1 - data.position.1));
             }
-        ))
+            EventType::MouseUp(..) => {
+                ctx.release_cursor(event.current_target);
+                set_is_dragging(false);
+            }
+            EventType::Hover(data) => {
+                if is_dragging {
+                    set_pos((offset.0 + data.position.0, offset.1 + data.position.1));
+                }
+            }
+            _ => {}
+        }))
     } else {
         None
     };

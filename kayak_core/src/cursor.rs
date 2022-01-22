@@ -22,5 +22,5 @@ pub struct CursorEvent {
     pub pressed: bool,
     pub just_pressed: bool,
     pub just_released: bool,
-    pub position: (f32, f32)
+    pub position: (f32, f32),
 }

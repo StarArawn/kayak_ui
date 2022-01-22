@@ -11,8 +11,12 @@ pub fn extract_images(
     image_manager: &Res<ImageManager>,
     dpi: f32,
 ) -> Vec<ExtractQuadBundle> {
-    let (layout, handle) = match render_command {
-        RenderPrimitive::Image { layout, handle } => (layout, handle),
+    let (border_radius, layout, handle) = match render_command {
+        RenderPrimitive::Image {
+            border_radius,
+            layout,
+            handle,
+        } => (*border_radius, layout, handle),
         _ => panic!(""),
     };
 
@@ -29,7 +33,7 @@ pub fn extract_images(
             font_handle: None,
             quad_type: UIQuadType::Image,
             type_index: 0,
-            border_radius: (0.0, 0.0, 0.0, 0.0),
+            border_radius,
             image: image_manager
                 .get_handle(handle)
                 .and_then(|a| Some(a.clone_weak())),

@@ -18,6 +18,7 @@ pub fn Window(
 ) {
     *styles = Some(Style {
         background_color: StyleProp::Value(Color::new(0.125, 0.125, 0.125, 1.0)),
+        border: StyleProp::Value((4.0, 4.0, 4.0, 4.0)),
         border_radius: StyleProp::Value((5.0, 5.0, 5.0, 5.0)),
         render_command: StyleProp::Value(RenderCommand::Quad),
         position_type: StyleProp::Value(PositionType::SelfDirected),
@@ -35,8 +36,8 @@ pub fn Window(
         padding_right: StyleProp::Value(Units::Pixels(5.0)),
         padding_top: StyleProp::Value(Units::Pixels(5.0)),
         padding_bottom: StyleProp::Value(Units::Pixels(5.0)),
-        width: StyleProp::Value(Units::Pixels(size.0)),
-        height: StyleProp::Value(Units::Pixels(size.1)),
+        width: StyleProp::Value(Units::Stretch(1.0)),
+        height: StyleProp::Value(Units::Stretch(1.0)),
         max_width: StyleProp::Value(Units::Pixels(size.0)),
         max_height: StyleProp::Value(Units::Pixels(size.1)),
         ..Style::default()
@@ -46,6 +47,7 @@ pub fn Window(
         background_color: StyleProp::Value(Color::new(0.0781, 0.0898, 0.101, 1.0)),
         border_radius: StyleProp::Value((5.0, 0.0, 0.0, 5.0)),
         height: StyleProp::Value(Units::Pixels(24.0)),
+        width: StyleProp::Value(Units::Stretch(1.0)),
         left: StyleProp::Value(Units::Pixels(0.0)),
         right: StyleProp::Value(Units::Pixels(0.0)),
         top: StyleProp::Value(Units::Pixels(0.0)),

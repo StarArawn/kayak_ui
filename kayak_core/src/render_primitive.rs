@@ -14,6 +14,7 @@ pub enum RenderPrimitive {
     Quad {
         layout: Rect,
         background_color: Color,
+        border: (f32, f32, f32, f32),
         border_radius: (f32, f32, f32, f32),
     },
     Text {
@@ -26,6 +27,7 @@ pub enum RenderPrimitive {
         size: f32,
     },
     Image {
+        border_radius: (f32, f32, f32, f32),
         layout: Rect,
         handle: u16,
     },
@@ -68,6 +70,7 @@ impl From<&Style> for RenderPrimitive {
             RenderCommand::Quad => Self::Quad {
                 background_color: background_color,
                 border_radius: style.border_radius.resolve(),
+                border: style.border.resolve(),
                 layout: Rect::default(),
             },
             RenderCommand::Text {
@@ -86,6 +89,7 @@ impl From<&Style> for RenderPrimitive {
                 size,
             },
             RenderCommand::Image { handle } => Self::Image {
+                border_radius: style.border_radius.resolve(),
                 layout: Rect::default(),
                 handle,
             },

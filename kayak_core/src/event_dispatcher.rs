@@ -47,6 +47,7 @@ pub(crate) struct EventDispatcher {
     contains_cursor: Option<bool>,
     wants_cursor: Option<bool>,
     has_cursor: Option<Index>,
+    pub cursor_capture: Option<Index>,
 }
 
 impl EventDispatcher {
@@ -62,6 +63,7 @@ impl EventDispatcher {
             contains_cursor: None,
             wants_cursor: None,
             has_cursor: None,
+            cursor_capture: None,
         }
     }
 
@@ -75,6 +77,43 @@ impl EventDispatcher {
     #[allow(dead_code)]
     pub fn current_mouse_position(&self) -> (f32, f32) {
         self.current_mouse_position
+    }
+
+    /// Captures all cursor events and instead makes the given index the target
+    pub fn capture_cursor(&mut self, index: Index) -> Option<Index> {
+        let old = self.cursor_capture;
+        self.cursor_capture = Some(index);
+        old
+    }
+
+    /// Releases the captured cursor
+    ///
+    /// Returns true if successful.
+    ///
+    /// This will only release the cursor if the given index matches the current captor. This
+    /// prevents other widgets from accidentally releasing against the will of the original captor.
+    ///
+    /// This check can be side-stepped if necessary by calling [`force_release_cursor`](Self::force_release_cursor)
+    /// instead (or by calling this method with the correct index).
+    pub fn release_cursor(&mut self, index: Index) -> bool {
+        if self.cursor_capture == Some(index) {
+            self.force_release_cursor();
+            true
+        } else {
+            false
+        }
+    }
+
+    /// Releases the captured cursor
+    ///
+    /// Returns the index of the previous captor.
+    ///
+    /// This will force the release, regardless of which widget has called it. To safely release,
+    /// use the standard [`release_cursor`](Self::release_cursor) method instead.
+    pub fn force_release_cursor(&mut self) -> Option<Index> {
+        let old = self.cursor_capture;
+        self.cursor_capture = None;
+        old
     }
 
     /// Returns true if the cursor is currently over a valid widget
@@ -230,43 +269,69 @@ impl EventDispatcher {
         }
 
         // === Mouse Events === //
-        let mut stack: Vec<TreeNode> = vec![(root, 0)];
-        while stack.len() > 0 {
-            let (current, depth) = stack.pop().unwrap();
-            let mut enter_children = true;
-
+        if let Some(captor) = self.cursor_capture {
+            // A widget has been set to capture pointer events -> it should be the only one receiving events
             for input_event in input_events {
                 // --- Process Event --- //
                 if matches!(input_event.category(), InputEventCategory::Mouse) {
                     // A widget's PointerEvents style will determine how it and its children are processed
-                    let pointer_events = Self::resolve_pointer_events(current, widget_manager);
+                    let pointer_events = Self::resolve_pointer_events(captor, widget_manager);
 
                     match pointer_events {
                         PointerEvents::All | PointerEvents::SelfOnly => {
                             let events = self.process_pointer_events(
                                 input_event,
-                                (current, depth),
+                                (captor, 0),
                                 &mut states,
                                 widget_manager,
-                                false,
+                                true,
                             );
                             event_stream.extend(events);
-
-                            if matches!(pointer_events, PointerEvents::SelfOnly) {
-                                enter_children = false;
-                            }
                         }
-                        PointerEvents::None => enter_children = false,
-                        PointerEvents::ChildrenOnly => {}
+                        _ => {}
                     }
                 }
             }
+        } else {
+            // No capturing widget -> process cursor events as normal
+            let mut stack: Vec<TreeNode> = vec![(root, 0)];
+            while stack.len() > 0 {
+                let (current, depth) = stack.pop().unwrap();
+                let mut enter_children = true;
 
-            // --- Push Children to Stack --- //
-            if enter_children {
-                if let Some(children) = widget_manager.node_tree.children.get(&current) {
-                    for child in children {
-                        stack.push((*child, depth + 1));
+                for input_event in input_events {
+                    // --- Process Event --- //
+                    if matches!(input_event.category(), InputEventCategory::Mouse) {
+                        // A widget's PointerEvents style will determine how it and its children are processed
+                        let pointer_events = Self::resolve_pointer_events(current, widget_manager);
+
+                        match pointer_events {
+                            PointerEvents::All | PointerEvents::SelfOnly => {
+                                let events = self.process_pointer_events(
+                                    input_event,
+                                    (current, depth),
+                                    &mut states,
+                                    widget_manager,
+                                    false,
+                                );
+                                event_stream.extend(events);
+
+                                if matches!(pointer_events, PointerEvents::SelfOnly) {
+                                    enter_children = false;
+                                }
+                            }
+                            PointerEvents::None => enter_children = false,
+                            PointerEvents::ChildrenOnly => {}
+                        }
+                    }
+                }
+
+                // --- Push Children to Stack --- //
+                if enter_children {
+                    if let Some(children) = widget_manager.node_tree.children.get(&current) {
+                        for child in children {
+                            stack.push((*child, depth + 1));
+                        }
                     }
                 }
             }
@@ -570,5 +635,36 @@ impl EventDispatcher {
             },
             _ => {}
         }
+    }
+
+    /// Merge this `EventDispatcher` with another, taking only the internally mutated data.
+    ///
+    /// This is meant to solve the issue in `KayakContext`, where [`EventDispatcher::process_events`] and
+    /// similar methods require mutable access to `KayakContext`, forcing `EventDispatcher` to be cloned
+    /// before running the method. However, some data mutated through `KayakContext` may be lost when
+    /// re-claiming the `EventDispatcher`. This method ensures that data mutated in such a way will not be
+    /// overwritten during the merge.
+    ///
+    /// # Arguments
+    ///
+    /// * `from`: The other `EventDispatcher` to merge from
+    ///
+    /// returns: ()
+    pub fn merge(&mut self, from: EventDispatcher) {
+        // Merge only what could be changed internally. External changes (i.e. from KayakContext)
+        // should not be touched
+        self.last_clicked = from.last_clicked;
+        self.is_mouse_pressed = from.is_mouse_pressed;
+        self.next_mouse_pressed = from.next_mouse_pressed;
+        self.current_mouse_position = from.current_mouse_position;
+        self.next_mouse_position = from.next_mouse_position;
+        self.previous_events = from.previous_events;
+        self.keyboard_modifiers = from.keyboard_modifiers;
+        self.contains_cursor = from.contains_cursor;
+        self.wants_cursor = from.wants_cursor;
+        self.has_cursor = from.has_cursor;
+
+        // Do not include:
+        // self.cursor_capture = from.cursor_capture;
     }
 }

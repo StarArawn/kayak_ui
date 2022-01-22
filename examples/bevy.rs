@@ -12,10 +12,10 @@ use kayak_ui::widgets::{App, Inspector, Window};
 fn CustomWidget() {
     rsx! {
         <>
-            <Window position={(50.0, 50.0)} size={(300.0, 300.0)} title={"Window 1".to_string()}>
+            <Window draggable={true} position={(50.0, 50.0)} size={(300.0, 300.0)} title={"Window 1".to_string()}>
                 {}
             </Window>
-            <Window position={(550.0, 50.0)} size={(200.0, 200.0)} title={"Window 2".to_string()}>
+            <Window draggable={true} position={(550.0, 50.0)} size={(200.0, 200.0)} title={"Window 2".to_string()}>
                 {}
             </Window>
         </>

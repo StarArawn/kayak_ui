@@ -404,6 +404,17 @@ impl EventDispatcher {
         event_stream
     }
 
+    /// Process the pointer-related events of an input event
+    ///
+    /// # Arguments
+    ///
+    /// * `input_event`: The input event
+    /// * `tree_node`: The current node to process
+    /// * `states`: The map of events to their current state (for selecting best fit)
+    /// * `widget_manager`: The widget manager
+    /// * `ignore_layout`: Whether to ignore layout (useful for handling captured events)
+    ///
+    /// returns: Vec<Event>
     fn process_pointer_events(
         &mut self,
         input_event: &InputEvent,

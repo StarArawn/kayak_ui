@@ -19,8 +19,8 @@ impl Default for PointerEvents {
 
 #[derive(Default, Debug, Copy, Clone, PartialEq)]
 pub struct CursorEvent {
-    pub(crate) pressed: bool,
-    pub(crate) just_pressed: bool,
-    pub(crate) just_released: bool,
-    pub(crate) position: (f32, f32)
+    pub pressed: bool,
+    pub just_pressed: bool,
+    pub just_released: bool,
+    pub position: (f32, f32)
 }

@@ -63,6 +63,11 @@ impl Event {
     }
 }
 
+/// The type of event
+///
+/// __Note:__ This type implements `PartialEq` and `Hash` in a way that only considers the variant itself,
+/// not the underlying data. If full comparisons are needed, they should be done with the inner data or
+/// with a custom wrapper.
 #[derive(Debug, Clone, Copy)]
 pub enum EventType {
     Click(CursorEvent),

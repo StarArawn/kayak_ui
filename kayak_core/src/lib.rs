@@ -6,6 +6,7 @@ mod cursor;
 pub mod event;
 mod event_dispatcher;
 mod flo_binding;
+mod focus_tree;
 pub mod fragment;
 pub(crate) mod generational_arena;
 mod input_event;
@@ -29,6 +30,7 @@ pub use color::Color;
 pub use context::*;
 pub use cursor::PointerEvents;
 pub use event::*;
+pub use focus_tree::FocusTree;
 pub use fragment::Fragment;
 pub use generational_arena::{Arena, Index};
 pub use input_event::*;
@@ -63,7 +65,7 @@ impl OnEvent {
 }
 
 #[derive(Clone)]
-pub struct Handler<T>(pub Arc<RwLock<dyn FnMut(T) + Send + Sync + 'static>>);
+pub struct Handler<T = ()>(pub Arc<RwLock<dyn FnMut(T) + Send + Sync + 'static>>);
 
 impl<T> Default for Handler<T> {
     fn default() -> Self {

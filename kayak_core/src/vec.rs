@@ -44,8 +44,8 @@ where
         self.id
     }
 
-    fn focusable(&self) -> bool {
-        false
+    fn focusable(&self) -> Option<bool> {
+        Some(false)
     }
 
     fn set_id(&mut self, id: Index) {

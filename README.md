@@ -90,7 +90,7 @@ Widget's can create their own state and will re-render when that state changes.
 fn Counter(context: &mut KayakContext) {
     let (count, set_count, ..) = use_state!(0i32);
     let on_event = OnEvent::new(move |_, event| match event.event_type {
-        EventType::Click => set_count(count + 1),
+        EventType::Click(..) => set_count(count + 1),
         _ => {}
     });
 

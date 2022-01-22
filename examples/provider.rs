@@ -89,7 +89,7 @@ fn ThemeButton(context: &mut KayakContext, theme: Theme) {
 
     let theme_clone = Arc::new(theme);
     let on_event = OnEvent::new(move |_, event| match event.event_type {
-        EventType::Click => {
+        EventType::Click(..) => {
             // Update the shared state
             // This will cause the ThemeProvider to re-render along with all of the other consumers
             consumer.set((*theme_clone).clone());

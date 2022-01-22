@@ -16,3 +16,11 @@ impl Default for PointerEvents {
         Self::All
     }
 }
+
+#[derive(Default, Debug, Copy, Clone, PartialEq)]
+pub struct CursorEvent {
+    pub pressed: bool,
+    pub just_pressed: bool,
+    pub just_released: bool,
+    pub position: (f32, f32),
+}

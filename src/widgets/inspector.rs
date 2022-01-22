@@ -72,7 +72,7 @@ pub fn Inspector() {
     }
 
     let handle_button_events = Some(OnEvent::new(move |_, event| match event.event_type {
-        EventType::Click => last_clicked.set(parent_id_move.unwrap()),
+        EventType::Click(..) => last_clicked.set(parent_id_move.unwrap()),
         _ => {}
     }));
 

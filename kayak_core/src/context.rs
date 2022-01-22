@@ -152,10 +152,11 @@ impl KayakContext {
                 // Traverse the parents to find the one with the given state data
                 index = self.widget_manager.tree.get_parent(index.unwrap());
 
-                let key = index.unwrap();
-                if let Some(provider) = providers.get(&key) {
-                    if let Ok(state) = provider.get::<Binding<T>>() {
-                        return Some(state.clone());
+                if let Some(key) = index {
+                    if let Some(provider) = providers.get(&key) {
+                        if let Ok(state) = provider.get::<Binding<T>>() {
+                            return Some(state.clone());
+                        }
                     }
                 }
             }
@@ -422,7 +423,7 @@ impl KayakContext {
     pub fn process_events(&mut self, input_events: Vec<InputEvent>) {
         let mut dispatcher = self.event_dispatcher.to_owned();
         dispatcher.process_events(input_events, self);
-        self.event_dispatcher = dispatcher;
+        self.event_dispatcher.merge(dispatcher);
     }
 
     #[allow(dead_code)]
@@ -431,6 +432,23 @@ impl KayakContext {
             parents.push(*parent);
             self.get_all_parents(*parent, parents);
         }
+    }
+
+    pub fn is_focused(&self, index: Index) -> bool {
+        let current = self.widget_manager.focus_tree.current();
+        current == Some(index)
+    }
+
+    pub fn current_focus(&self) -> Option<Index> {
+        self.widget_manager.focus_tree.current()
+    }
+
+    pub fn get_focusable(&self, index: Index) -> Option<bool> {
+        self.widget_manager.get_focusable(index)
+    }
+
+    pub fn set_focusable(&mut self, focusable: Option<bool>, index: Index) {
+        self.widget_manager.set_focusable(focusable, index, false);
     }
 
     /// Get the last calculated mouse position.
@@ -489,5 +507,58 @@ impl KayakContext {
 
     pub fn get_last_clicked_widget(&self) -> Binding<Index> {
         self.event_dispatcher.last_clicked.clone()
+    }
+
+    /// Returns true if the cursor is currently over a valid widget
+    ///
+    /// For the purposes of this method, a valid widget is one which has the means to display a visual component on its own.
+    /// This means widgets specified with `RenderCommand::Empty`, `RenderCommand::Layout`, or `RenderCommand::Clip`
+    /// do not meet the requirements to "contain" the cursor.
+    pub fn contains_cursor(&self) -> bool {
+        self.event_dispatcher.contains_cursor()
+    }
+
+    /// Returns true if the cursor may be needed by a widget or it's already in use by one
+    ///
+    /// This is useful for checking if certain events (such as a click) would "matter" to the UI at all. Example widgets
+    /// include buttons, sliders, and text boxes.
+    pub fn wants_cursor(&self) -> bool {
+        self.event_dispatcher.wants_cursor()
+    }
+
+    /// Returns true if the cursor is currently in use by a widget
+    ///
+    /// This is most often useful for checking drag events as it will still return true even if the drag continues outside
+    /// the widget bounds (as long as it started within it).
+    pub fn has_cursor(&self) -> bool {
+        self.event_dispatcher.has_cursor()
+    }
+
+    /// Captures all cursor events and instead makes the given index the target
+    pub fn capture_cursor(&mut self, index: Index) -> Option<Index> {
+        self.event_dispatcher.capture_cursor(index)
+    }
+
+    /// Releases the captured cursor
+    ///
+    /// Returns true if successful.
+    ///
+    /// This will only release the cursor if the given index matches the current captor. This
+    /// prevents other widgets from accidentally releasing against the will of the original captor.
+    ///
+    /// This check can be side-stepped if necessary by calling [`force_release_cursor`](Self::force_release_cursor)
+    /// instead (or by calling this method with the correct index).
+    pub fn release_cursor(&mut self, index: Index) -> bool {
+        self.event_dispatcher.release_cursor(index)
+    }
+
+    /// Releases the captured cursor
+    ///
+    /// Returns the index of the previous captor.
+    ///
+    /// This will force the release, regardless of which widget has called it. To safely release,
+    /// use the standard [`release_cursor`](Self::release_cursor) method instead.
+    pub fn force_release_cursor(&mut self) -> Option<Index> {
+        self.event_dispatcher.force_release_cursor()
     }
 }

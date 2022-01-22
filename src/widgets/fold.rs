@@ -54,7 +54,7 @@ pub fn Fold(
     }
 
     let handler = OnEvent::new(move |_, event| match event.event_type {
-        EventType::Click => {
+        EventType::Click(..) => {
             if open.is_none() {
                 // This is an internally-managed state
                 set_is_open(!is_open);

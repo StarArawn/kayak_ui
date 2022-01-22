@@ -24,7 +24,7 @@ fn Removal(context: &mut KayakContext) {
     let is_visible = context.create_state(true).unwrap();
     let cloned_is_visible = is_visible.clone();
     let on_event = OnEvent::new(move |_, event| match event.event_type {
-        EventType::Click => {
+        EventType::Click(..) =>  {
             cloned_is_visible.set(!cloned_is_visible.get());
         }
         _ => {}

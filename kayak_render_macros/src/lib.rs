@@ -137,7 +137,7 @@ pub fn dyn_partial_eq(_: TokenStream, input: TokenStream) -> TokenStream {
 /// let (count, set_count, ..) = use_state!(0);
 ///
 /// let on_event = OnEvent::new(move |_, event| match event.event_type {
-///         EventType::Click => {
+///         EventType::Click(..) => {
 ///             set_count(foo + 1);
 ///         }
 ///         _ => {}
@@ -215,7 +215,7 @@ pub fn use_state(initial_state: TokenStream) -> TokenStream {
 /// }, [count_state]);
 ///
 /// let on_event = OnEvent::new(move |_, event| match event.event_type {
-///         EventType::Click => {
+///         EventType::Click(..) => {
 ///             set_count(foo + 1);
 ///         }
 ///         _ => {}

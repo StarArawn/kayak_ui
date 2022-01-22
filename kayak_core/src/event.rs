@@ -1,4 +1,6 @@
+use derivative::Derivative;
 use crate::{Index, KeyboardEvent};
+use crate::cursor::CursorEvent;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Event {
@@ -19,7 +21,7 @@ impl Default for Event {
         Self {
             target: Default::default(),
             current_target: Default::default(),
-            event_type: EventType::Click,
+            event_type: EventType::Click(CursorEvent::default()),
             should_propagate: true,
             default_prevented: false,
         }
@@ -62,19 +64,52 @@ impl Event {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, Derivative)]
+#[derivative(PartialEq, Hash, Eq)]
 pub enum EventType {
-    Click,
-    Hover,
-    MouseIn,
-    MouseOut,
-    MouseDown,
-    MouseUp,
+    Click(
+        #[derivative(PartialEq = "ignore")]
+        #[derivative(Hash = "ignore")]
+        CursorEvent
+    ),
+    Hover(
+        #[derivative(PartialEq = "ignore")]
+        #[derivative(Hash = "ignore")]
+        CursorEvent
+    ),
+    MouseIn(
+        #[derivative(PartialEq = "ignore")]
+        #[derivative(Hash = "ignore")]
+        CursorEvent
+    ),
+    MouseOut(
+        #[derivative(PartialEq = "ignore")]
+        #[derivative(Hash = "ignore")]
+        CursorEvent
+    ),
+    MouseDown(
+        #[derivative(PartialEq = "ignore")]
+        #[derivative(Hash = "ignore")]
+        CursorEvent
+    ),
+    MouseUp(
+        #[derivative(PartialEq = "ignore")]
+        #[derivative(Hash = "ignore")]
+        CursorEvent
+    ),
     Focus,
     Blur,
     CharInput { c: char },
-    KeyUp(KeyboardEvent),
-    KeyDown(KeyboardEvent),
+    KeyUp(
+        #[derivative(PartialEq = "ignore")]
+        #[derivative(Hash = "ignore")]
+        KeyboardEvent
+    ),
+    KeyDown(
+        #[derivative(PartialEq = "ignore")]
+        #[derivative(Hash = "ignore")]
+        KeyboardEvent
+    ),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -92,16 +127,16 @@ impl EventType {
     pub fn propagates(&self) -> bool {
         match self {
             // Propagates
-            Self::Hover => true,
-            Self::Click => true,
-            Self::MouseDown => true,
-            Self::MouseUp => true,
+            Self::Hover(..) => true,
+            Self::Click(..) => true,
+            Self::MouseDown(..) => true,
+            Self::MouseUp(..) => true,
             Self::CharInput { .. } => true,
             Self::KeyUp(..) => true,
             Self::KeyDown(..) => true,
             // Doesn't Propagate
-            Self::MouseIn => false,
-            Self::MouseOut => false,
+            Self::MouseIn(..) => false,
+            Self::MouseOut(..) => false,
             Self::Focus => false,
             Self::Blur => false,
         }
@@ -111,12 +146,12 @@ impl EventType {
     pub fn event_category(&self) -> EventCategory {
         match self {
             // Mouse
-            Self::Hover => EventCategory::Mouse,
-            Self::Click => EventCategory::Mouse,
-            Self::MouseDown => EventCategory::Mouse,
-            Self::MouseUp => EventCategory::Mouse,
-            Self::MouseIn => EventCategory::Mouse,
-            Self::MouseOut => EventCategory::Mouse,
+            Self::Hover(..) => EventCategory::Mouse,
+            Self::Click(..) => EventCategory::Mouse,
+            Self::MouseDown(..) => EventCategory::Mouse,
+            Self::MouseUp(..) => EventCategory::Mouse,
+            Self::MouseIn(..) => EventCategory::Mouse,
+            Self::MouseOut(..) => EventCategory::Mouse,
             // Keyboard
             Self::CharInput { .. } => EventCategory::Keyboard,
             Self::KeyUp(..) => EventCategory::Keyboard,

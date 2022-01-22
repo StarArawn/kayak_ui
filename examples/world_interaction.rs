@@ -97,7 +97,7 @@ fn ControlPanel() {
     }
 
     let on_change_color = OnEvent::new(move |_, event| match event.event_type {
-        EventType::Click => {
+        EventType::Click(..) => {
             // Cycle the color
             set_color_index((color_index + 1) % COLORS.len());
         }

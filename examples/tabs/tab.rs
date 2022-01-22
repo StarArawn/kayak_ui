@@ -30,14 +30,14 @@ pub fn Tab(context: &mut KayakContext, content: String, selected: bool) {
     };
 
     let event_handler = OnEvent::new(move |_, event| match event.event_type {
-        EventType::Hover => {
+        EventType::Hover(..) => {
             if selected {
                 set_hover_state(TabHoverState::Active);
             } else {
                 set_hover_state(TabHoverState::Inactive);
             }
         }
-        EventType::MouseOut => {
+        EventType::MouseOut(..) => {
             set_hover_state(TabHoverState::None);
         }
         EventType::Focus => {

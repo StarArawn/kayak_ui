@@ -61,7 +61,7 @@ fn TodoApp() {
     let mut todos_cloned = todos.clone();
     let cloned_set_todos = set_todos.clone();
     let add_events = OnEvent::new(move |_, event| match event.event_type {
-        EventType::Click => {
+        EventType::Click(..) => {
             if !new_todo_value_cloned.is_empty() {
                 todos_cloned.push(Todo {
                     name: new_todo_value_cloned.clone(),

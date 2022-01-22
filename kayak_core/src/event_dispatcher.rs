@@ -8,6 +8,7 @@ use crate::{
     KeyboardModifiers, PointerEvents, Widget,
 };
 use std::collections::{HashMap, HashSet};
+use crate::cursor::CursorEvent;
 
 type EventMap = HashMap<Index, HashSet<EventType>>;
 type TreeNode = (
@@ -37,6 +38,7 @@ impl Default for EventState {
 #[derive(Debug, Clone)]
 pub(crate) struct EventDispatcher {
     is_mouse_pressed: bool,
+    next_mouse_pressed: bool,
     current_mouse_position: (f32, f32),
     next_mouse_position: (f32, f32),
     previous_events: EventMap,
@@ -52,6 +54,7 @@ impl EventDispatcher {
         Self {
             last_clicked: Binding::new(Index::default()),
             is_mouse_pressed: Default::default(),
+            next_mouse_pressed: Default::default(),
             current_mouse_position: Default::default(),
             next_mouse_position: Default::default(),
             previous_events: Default::default(),
@@ -163,17 +166,17 @@ impl EventDispatcher {
         // Events that need to be maintained without re-firing between event updates should be managed here
         for (index, events) in &self.previous_events {
             // Mouse is currently pressed for this node
-            if self.is_mouse_pressed && events.contains(&EventType::MouseDown) {
+            if self.is_mouse_pressed && events.contains(&EventType::MouseDown(Default::default())) {
                 // Make sure this event isn't removed while mouse is still held down
-                Self::insert_event(&mut next_events, index, EventType::MouseDown);
+                Self::insert_event(&mut next_events, index, EventType::MouseDown(Default::default()));
             }
 
             // Mouse is currently within this node
-            if events.contains(&EventType::MouseIn)
-                && !Self::contains_event(&next_events, index, &EventType::MouseOut)
+            if events.contains(&EventType::MouseIn(Default::default()))
+                && !Self::contains_event(&next_events, index, &EventType::MouseOut(Default::default()))
             {
                 // Make sure this event isn't removed while mouse is still within node
-                Self::insert_event(&mut next_events, index, EventType::MouseIn);
+                Self::insert_event(&mut next_events, index, EventType::MouseIn(Default::default()));
             }
         }
 
@@ -201,6 +204,30 @@ impl EventDispatcher {
         let old_wants_cursor = self.wants_cursor;
         self.contains_cursor = None;
         self.wants_cursor = None;
+        self.next_mouse_position = self.current_mouse_position;
+        self.next_mouse_pressed = self.is_mouse_pressed;
+
+        // --- Pre-Process --- //
+        // We pre-process some events so that we can provide accurate event data (such as if the mouse is pressed)
+        // This is faster than resolving data after the fact since `input_events` is generally very small
+        for input_event in input_events {
+            if let InputEvent::MouseMoved(point) = input_event {
+                // Reset next global mouse position
+                self.next_mouse_position = *point;
+            }
+
+            if matches!(input_event, InputEvent::MouseLeftPress) {
+                // Reset next global mouse pressed
+                self.next_mouse_pressed = true;
+                break;
+            } else if matches!(input_event, InputEvent::MouseLeftRelease) {
+                // Reset next global mouse pressed
+                self.next_mouse_pressed = false;
+                // Reset global cursor container
+                self.has_cursor = None;
+                break;
+            }
+        }
 
         // === Mouse Events === //
         let mut stack: Vec<TreeNode> = vec![(root, 0)];
@@ -212,12 +239,7 @@ impl EventDispatcher {
                 // --- Process Event --- //
                 if matches!(input_event.category(), InputEventCategory::Mouse) {
                     // A widget's PointerEvents style will determine how it and its children are processed
-                    let mut pointer_events = PointerEvents::default();
-                    if let Some(widget) = widget_manager.current_widgets.get(current).unwrap() {
-                        if let Some(styles) = widget.get_styles() {
-                            pointer_events = styles.pointer_events.resolve();
-                        }
-                    }
+                    let pointer_events = Self::resolve_pointer_events(current, widget_manager);
 
                     match pointer_events {
                         PointerEvents::All | PointerEvents::SelfOnly => {
@@ -226,6 +248,7 @@ impl EventDispatcher {
                                 (current, depth),
                                 &mut states,
                                 widget_manager,
+                                false,
                             );
                             event_stream.extend(events);
 
@@ -290,6 +313,7 @@ impl EventDispatcher {
 
         // === Process Cursor States === //
         self.current_mouse_position = self.next_mouse_position;
+        self.is_mouse_pressed = self.next_mouse_pressed;
 
         if self.contains_cursor.is_none() {
             // No change -> revert
@@ -309,6 +333,7 @@ impl EventDispatcher {
         tree_node: TreeNode,
         states: &mut HashMap<EventType, EventState>,
         widget_manager: &WidgetManager,
+        ignore_layout: bool
     ) -> Vec<Event> {
         let mut event_stream = Vec::<Event>::new();
         let (node, depth) = tree_node;
@@ -316,19 +341,20 @@ impl EventDispatcher {
         match input_event {
             InputEvent::MouseMoved(point) => {
                 if let Some(layout) = widget_manager.get_layout(&node) {
+                    let cursor_event = self.get_cursor_event(*point);
                     let was_contained = layout.contains(&self.current_mouse_position);
                     let is_contained = layout.contains(point);
-                    if was_contained != is_contained {
+                    if !ignore_layout && was_contained != is_contained {
                         if was_contained {
-                            event_stream.push(Event::new(node, EventType::MouseOut));
+                            event_stream.push(Event::new(node, EventType::MouseOut(cursor_event)));
                         } else {
-                            event_stream.push(Event::new(node, EventType::MouseIn));
+                            event_stream.push(Event::new(node, EventType::MouseIn(cursor_event)));
                         }
                     }
                     if self.contains_cursor.is_none() || !self.contains_cursor.unwrap_or_default() {
                         if let Some(widget) = widget_manager.current_widgets.get(node).unwrap() {
                             // Check if the cursor moved onto a widget that qualifies as one that can contain it
-                            if Self::can_contain_cursor(widget) {
+                            if ignore_layout || Self::can_contain_cursor(widget) {
                                 self.contains_cursor = Some(is_contained);
                             }
                         }
@@ -343,21 +369,16 @@ impl EventDispatcher {
                     }
 
                     // Check for hover eligibility
-                    if is_contained {
-                        Self::update_state(states, (node, depth), layout, EventType::Hover);
+                    if ignore_layout || is_contained {
+                        Self::update_state(states, (node, depth), layout, EventType::Hover(cursor_event));
                     }
                 }
-
-                // Reset global mouse position
-                self.next_mouse_position = *point;
             }
             InputEvent::MouseLeftPress => {
-                // Reset global mouse pressed
-                self.is_mouse_pressed = true;
-
                 if let Some(layout) = widget_manager.get_layout(&node) {
-                    if layout.contains(&self.current_mouse_position) {
-                        event_stream.push(Event::new(node, EventType::MouseDown));
+                    if ignore_layout || layout.contains(&self.current_mouse_position) {
+                        let cursor_event = self.get_cursor_event(self.current_mouse_position);
+                        event_stream.push(Event::new(node, EventType::MouseDown(cursor_event)));
 
                         if let Some(focusable) = widget_manager.get_focusable(node) {
                             if focusable {
@@ -378,18 +399,15 @@ impl EventDispatcher {
                 }
             }
             InputEvent::MouseLeftRelease => {
-                // Reset global mouse pressed
-                self.is_mouse_pressed = false;
-                self.has_cursor = None;
-
                 if let Some(layout) = widget_manager.get_layout(&node) {
-                    if layout.contains(&self.current_mouse_position) {
-                        event_stream.push(Event::new(node, EventType::MouseUp));
+                    if ignore_layout || layout.contains(&self.current_mouse_position) {
+                        let cursor_event = self.get_cursor_event(self.current_mouse_position);
+                        event_stream.push(Event::new(node, EventType::MouseUp(cursor_event)));
                         self.last_clicked.set(node);
 
-                        if Self::contains_event(&self.previous_events, &node, &EventType::MouseDown)
+                        if Self::contains_event(&self.previous_events, &node, &EventType::MouseDown(cursor_event))
                         {
-                            Self::update_state(states, (node, depth), layout, EventType::Click);
+                            Self::update_state(states, (node, depth), layout, EventType::Click(cursor_event));
                         }
                     }
                 }
@@ -398,6 +416,27 @@ impl EventDispatcher {
         }
 
         event_stream
+    }
+
+    fn resolve_pointer_events(index: Index, widget_manager: &WidgetManager) -> PointerEvents {
+        let mut pointer_events = PointerEvents::default();
+        if let Some(widget) = widget_manager.current_widgets.get(index).unwrap() {
+            if let Some(styles) = widget.get_styles() {
+                pointer_events = styles.pointer_events.resolve();
+            }
+        }
+        pointer_events
+    }
+
+    fn get_cursor_event(&self, position: (f32, f32)) -> CursorEvent {
+        let change = self.next_mouse_pressed != self.is_mouse_pressed;
+        let pressed = self.next_mouse_pressed;
+        CursorEvent {
+            position,
+            pressed,
+            just_pressed: change && pressed,
+            just_released: change && !pressed,
+        }
     }
 
     fn process_keyboard_events(

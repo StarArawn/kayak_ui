@@ -60,10 +60,10 @@ fn sdRoundBox(p: vec2<f32>, b: vec2<f32>, r: f32) -> f32
 [[stage(fragment)]]
 fn fragment(in: VertexOutput) -> [[location(0)]] vec4<f32> {
     if (quad_type.t == 0) {
-        var border = 10.0;
         var size = in.size;
         var pos = in.pos.xy * 2.0;
-        var bs = min(in.border_radius * 2.0, min(in.size.x, in.size.y));
+        // Lock border to max size. This is similar to how HTML/CSS handles border radius.
+        var bs = min(in.border_radius * 2.0, min(size.x, size.y));
         var rect_dist = sdRoundBox(
             pos - size,
             size,

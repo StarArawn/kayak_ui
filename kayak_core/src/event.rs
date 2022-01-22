@@ -1,4 +1,3 @@
-use derivative::Derivative;
 use crate::{Index, KeyboardEvent};
 use crate::cursor::CursorEvent;
 
@@ -64,52 +63,33 @@ impl Event {
     }
 }
 
-#[derive(Debug, Clone, Copy, Derivative)]
-#[derivative(PartialEq, Hash, Eq)]
+#[derive(Debug, Clone, Copy)]
 pub enum EventType {
-    Click(
-        #[derivative(PartialEq = "ignore")]
-        #[derivative(Hash = "ignore")]
-        CursorEvent
-    ),
-    Hover(
-        #[derivative(PartialEq = "ignore")]
-        #[derivative(Hash = "ignore")]
-        CursorEvent
-    ),
-    MouseIn(
-        #[derivative(PartialEq = "ignore")]
-        #[derivative(Hash = "ignore")]
-        CursorEvent
-    ),
-    MouseOut(
-        #[derivative(PartialEq = "ignore")]
-        #[derivative(Hash = "ignore")]
-        CursorEvent
-    ),
-    MouseDown(
-        #[derivative(PartialEq = "ignore")]
-        #[derivative(Hash = "ignore")]
-        CursorEvent
-    ),
-    MouseUp(
-        #[derivative(PartialEq = "ignore")]
-        #[derivative(Hash = "ignore")]
-        CursorEvent
-    ),
+    Click(CursorEvent),
+    Hover(CursorEvent),
+    MouseIn(CursorEvent),
+    MouseOut(CursorEvent),
+    MouseDown(CursorEvent),
+    MouseUp(CursorEvent),
     Focus,
     Blur,
     CharInput { c: char },
-    KeyUp(
-        #[derivative(PartialEq = "ignore")]
-        #[derivative(Hash = "ignore")]
-        KeyboardEvent
-    ),
-    KeyDown(
-        #[derivative(PartialEq = "ignore")]
-        #[derivative(Hash = "ignore")]
-        KeyboardEvent
-    ),
+    KeyUp(KeyboardEvent),
+    KeyDown(KeyboardEvent),
+}
+
+impl Eq for EventType {}
+
+impl PartialEq for EventType {
+    fn eq(&self, _other: &Self) -> bool {
+        matches!(self, _other)
+    }
+}
+
+impl std::hash::Hash for EventType {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        std::hash::Hash::hash(&std::mem::discriminant(self), state);
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]

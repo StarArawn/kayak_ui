@@ -86,7 +86,11 @@ fn fragment(in: VertexOutput) -> [[location(0)]] vec4<f32> {
         return vec4<f32>(in.color.rgb, dist);
     }
     if (quad_type.t == 1) {
-        var px_range = 3.5;
+        // TODO: figure out how to calculate px_range.
+        var px_range = 2.5;
+        if (in.size.x <= 14.0) {
+            px_range = 3.5;
+        }
         var tex_dimensions = textureDimensions(font_texture);
         var msdf_unit = vec2<f32>(px_range, px_range) / vec2<f32>(f32(tex_dimensions.x), f32(tex_dimensions.y));
         var x = textureSample(font_texture, font_sampler, vec2<f32>(in.uv.x, 1.0 - in.uv.y), i32(in.uv.z)); 

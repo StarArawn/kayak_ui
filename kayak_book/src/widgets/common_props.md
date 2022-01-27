@@ -1,14 +1,20 @@
 # Common Props
 
-You may have seen some props like `Children` and `Option<Style>` in this book or in one of the [examples](https://github.com/StarArawn/kayak_ui/tree/main/examples). These are examples of some of Kayak UI's *common props*. Such props allow Kayak UI to work seamlessly with your custom widgets, providing all the functionality it has to offer.
+You may have seen some props like `Children` and `Option<Style>` in this book or in one of
+the [examples](https://github.com/StarArawn/kayak_ui/tree/main/examples). These are examples of some of Kayak UI's *
+common props*. Such props allow Kayak UI to work seamlessly with your custom widgets, providing all the functionality it
+has to offer.
 
-Functional widgets are generated with these props by default. Manually implemented widgets do not necessarily need to include all of these props, but if they do, it's recommended to follow the naming convention set by the functional widgets.
+Functional widgets are generated with these props by default. Manually implemented widgets do not necessarily need to
+include all of these props, but if they do, it's recommended to follow the naming convention set by the functional
+widgets.
 
 ## Children
 
 *Functional Signature: `children: Children`*
 
-This is the *most* common of the common props, as well as the most unique. It is used to pass the optional child widget(s) that should be attached to this widget.
+This is the *most* common of the common props, as well as the most unique. It is used to pass the optional child widget(
+s) that should be attached to this widget.
 
 The type `Children` is actually an alias:
 
@@ -20,7 +26,8 @@ pub type Children = Option<
 
 ### Usage
 
-This prop is unique in that it is rarely used as a standard prop; rather, it is usually defined with its own syntax. You've probably seen it before:
+This prop is unique in that it is rarely used as a standard prop; rather, it is usually defined with its own syntax.
+You've probably seen it before:
 
 ```rust,noplayground
 # #[widget]
@@ -45,7 +52,8 @@ This prop is unique in that it is rarely used as a standard prop; rather, it is 
 # }
 ```
 
-By placing our `Child` widgets between the opening and closing tags of our `Parent` widget, we're actually passing all three of them into the `children` prop.
+By placing our `Child` widgets between the opening and closing tags of our `Parent` widget, we're actually passing all
+three of them into the `children` prop.
 
 ## Styles
 
@@ -75,7 +83,7 @@ As its name suggests, this prop is used to pass along styles.
 
 *Functional Signature: `on_event: Option<OnEvent>`*
 
-This prop allows an event listener to be attached to a widget. 
+This prop allows an event listener to be attached to a widget.
 
 ### Usage
 
@@ -109,7 +117,8 @@ This prop allows you to set the focusability of a widget. Focusability comes in 
 * `Some(false)` - The widget is not focusable
 * `None` - The widget can be either focusable or not
 
-If a widget sets its own focusability, this will override the focusability set by a parent widget. For more details, check out (TODO: ADD FOCUS SECTION LINK).
+If a widget sets its own focusability, this will override the focusability set by a parent widget. For more details,
+check out (TODO: ADD FOCUS SECTION LINK).
 
 ### Usage
 

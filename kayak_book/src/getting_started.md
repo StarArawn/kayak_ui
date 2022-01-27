@@ -7,6 +7,10 @@
 kayak_ui = { git = "https://github.com/StarArawn/kayak_ui", rev="b489c6b64187ab926624604738037726cfb4296b", features = "bevy_renderer" }
 ```
 
+## Quick Note
+
+Most of this book assumes you are using Kayak with the [Bevy](https://github.com/bevyengine/bevy) game engine. This is mainly due to the fact that this crate was made with Bevy in mind. Other custom integrations can be made to use Kayak UI, but for simplicity's sake, we will be using the Bevy integration to demonstrate certain concepts.
+
 ## Hello World!
 
 
@@ -25,7 +29,7 @@ fn main() {
 }
 ```
 
-To add Kayak UI as a bevy plugin import the module you'll also want to bring in the `Context`, `FontMapping`, and `UICameraBundle`. Make sure to add `BevyKayakUIPlugin` to the bevy app using `add_plugin`! Finally we'll add the widgets `App` and `Text` for this example and a macro for creating our JSX like tree.
+To add Kayak UI as a Bevy plugin import the module you'll also want to bring in the `Context`, `FontMapping`, and `UICameraBundle`. Make sure to add `BevyKayakUIPlugin` to the Bevy app using `add_plugin`! Finally we'll add the widgets `App` and `Text` for this example and a macro for creating our JSX like tree.
 
 ```rust
 use kayak_ui::{

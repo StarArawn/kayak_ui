@@ -3,9 +3,9 @@
 
 # Usage
 
-- [Widgets](./widgets.md)
-  - [Creating Widgets]()
-  - [Common Props]()
+- [Widgets](./widgets/README.md)
+  - [Creating Widgets](./widgets/creating_widgets.md)
+  - [Common Props](./widgets/common_props.md)
   - [State]()
 - [Macros](./macros.md)
 - [Events]()
@@ -14,6 +14,6 @@
   - [Setup]()
   - [Using Resources]()
   - [Managing Input]()
-- [Appendix]()
-  - [A - Built-in Widgets]()
+- [Appendix](./appendix/README.md)
+  - [A - Built-in Widgets](./appendix/basic_widgets.md)
   - [B - Creating Fonts]()

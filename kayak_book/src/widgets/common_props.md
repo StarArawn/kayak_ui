@@ -41,7 +41,7 @@ You've probably seen it before:
 # }
 #
 # #[widget]
-# fn MyWidget {
+# fn MyWidget() {
   rsx! {
     <Parent>
       <Child />
@@ -65,7 +65,7 @@ As its name suggests, this prop is used to pass along styles.
 
 ```rust,noplayground
 # #[widget]
-# fn MyWidget {
+# fn MyWidget() {
   let text_styles = Style {
     color: StyleProp::Value(Color::new(1.0, 0.0, 0.0, 1.0)),
     ..Default::default()
@@ -89,7 +89,7 @@ This prop allows an event listener to be attached to a widget.
 
 ```rust,noplayground
 # #[widget]
-# fn MyWidget {
+# fn MyWidget() {
   let event_handler = OnEvent::new(move |_, event| {
   	match event.event_type {
   		EventType::Click => println!("Clicked!"),
@@ -124,7 +124,7 @@ check out (TODO: ADD FOCUS SECTION LINK).
 
 ```rust,noplayground
 # #[widget]
-# fn MyWidget {
+# fn MyWidget() {
   rsx! {
     <Text focusable={Some(true)} content={"I'm focusable!".to_string()} size={18.0} />
   }

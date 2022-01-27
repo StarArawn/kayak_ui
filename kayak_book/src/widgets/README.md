@@ -50,7 +50,7 @@ To make widgets even more modular, provide greater functionality, and be reactiv
 While props can be used to pass data to widgets, state allows data to be retained. This is important because non-state
 data, such as props, are lost between renders. Without state, what goes in is all the widget has at its disposal.
 
-This book has a section dedicated to widget state so check that out for more on state!
+This book has a [section](./state.md) dedicated to widget state so check that out for more on state!
 
 ### Lifecycle
 

@@ -1,6 +1,6 @@
 # State
 
-One of the great things about Kayak UI is that it's *reactive*. This is different from immediate mode and event-driven GUIs in that updating a widget's state *automatically* re-renders the widget— without having to redraw the entire interface every frame.
+One of the great things about Kayak UI is that it's *reactive*. This is different from immediate mode and event-driven GUIs in that updating a widget's state *automatically* re-renders the widget— without having to rebuild the widget tree.
 
 But what is state? And what makes it different from props or other data?
 
@@ -154,3 +154,48 @@ fn PlayerHud() {
 And if this is the case, then when `hp` changes, it causes `PlayerHud` to re-render, which results in `Health` *also* being re-rendered. So `Health` re-rendering is not the prop's doing but the parent's.
 
 > As a side-note, `hp` does not need to specifically be a state on the immediate parent. It could be passed down from the parent's parent or taken as a field from another state. The point is that at some point up the tree, `hp` had to have come from some sort of state in order to have the ability to change.
+
+## Conditional States
+
+One important detail about states is how they're managed internally. States are created by `KayakContext` and use two things to track which data belongs to which state: type and order.
+
+When creating a state,`KayakContext` first checks if a state with the same type already exists for that widget. If it doesn't, great! If it does, it needs another method for differentiating between them. The differentiator is the order in which they're created.
+
+Take this code:
+
+```rust,noplayground
+# #[widget]
+# fn MyWidget() {
+  let state_1 = context.create_state(0).unwrap();
+  let state_2 = context.create_state(false).unwrap();
+  let state_3 = context.create_state(123).unwrap();
+# }
+```
+
+To `KayakContext` this looks something like:
+
+1. **State 1** - Create a state with value `0` of type `i32` and order `1`
+2. **State 2** - Create a state with value `false` of type `bool` and order `1`
+3. **State 3** - Create a state with value `123` of type `i32` and order `2` (since we already have a state of type `i32`)
+
+Why is it important to know about this? Well, consider the following:
+
+```rust,noplayground
+# #[widget]
+# fn MyWidget(some_conditional: bool) {
+  if some_conditional {
+    let state_1 = context.create_state(0).unwrap();
+    // ...
+  }
+  let state_2 = context.create_state(false).unwrap();
+  let state_3 = context.create_state(123).unwrap();
+# }
+```
+
+When `some_conditional` is true, we follow the same steps as before. But if, on the next render,  `some_conditional` becomes false, then we end up with:
+
+1. **State 1** - Skipped
+2. **State 2** - Get state of type `bool` and order `1` → `false`
+3. **State 3** - Get state of type `i32` and order `1` → `0` (Whoops! That belongs to State 1)
+
+Because we skipped the reading of State 1, its value ended up being read by State 3, since that became the first state of type `i32`. This can result in strange behavior and is therefore *strongly* cautioned against.

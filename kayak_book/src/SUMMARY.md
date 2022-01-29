@@ -8,6 +8,7 @@
   - [Common Props](./widgets/common_props.md)
   - [State](./widgets/state.md)
   - [Provider/Consumer](./widgets/providers.md)
+  - [Side-Effects](./widgets/effects.md)
 - [Macros](./macros.md)
 - [Events](./events/README.md)
   - [Cursor Events](./events/cursor.md)

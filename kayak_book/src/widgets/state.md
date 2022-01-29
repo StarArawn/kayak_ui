@@ -88,6 +88,8 @@ pub fn Health(hp: i32) {
 }
 ```
 
+### `use_state!`
+
 Creating state via `context` can be a bit cumbersome, however. You need to unwrap, call get and set everywhere, and add the required use statements in order to get/set the value. If you're okay with hiding a bit of the most common logic, you can instead use the second method for creating state: the `use_state!` proc macro.
 
 The `use_state!` proc macro allows you to get the state much easier in most cases. It returns a tuple containing: the current value, a closure that allows you to set the value, and the state object itself. This results in a much simpler usage:

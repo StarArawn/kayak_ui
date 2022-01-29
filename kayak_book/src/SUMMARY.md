@@ -7,6 +7,7 @@
   - [Creating Widgets](./widgets/creating_widgets.md)
   - [Common Props](./widgets/common_props.md)
   - [State](./widgets/state.md)
+  - [Provider/Consumer](./widgets/providers.md)
 - [Macros](./macros.md)
 - [Events](./events/README.md)
   - [Cursor Events](./events/cursor.md)

@@ -25,7 +25,7 @@ fn Health(hp: i32) {
 	// DON'T DO THIS
   let mut is_percent = false;
   let event_handler = OnEvent::new(move |_, event| match event.event_type {
-		EventType::Click => {
+		EventType::Click(..) => {
 			is_percent = !is_percent;
 			println!("Percentage Mode Enabled: {}", is_percent);
 		},
@@ -78,7 +78,7 @@ use kayak_ui::core::{Bound, MutableBound};
 pub fn Health(hp: i32) {
   let is_percent = context.create_state(false).unwrap();
   let event_handler = OnEvent::new(move |_, event| match event.event_type {
-		EventType::Click => {
+		EventType::Click(..) => {
 			is_percent.set(!is_percent.get());
 			println!("Percentage Mode Enabled: {}", is_percent.get());
 		},

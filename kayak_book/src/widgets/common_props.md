@@ -91,15 +91,15 @@ This prop allows an event listener to be attached to a widget.
 # #[widget]
 # fn MyWidget() {
   let event_handler = OnEvent::new(move |_, event| {
-  	match event.event_type {
-  		EventType::Click => println!("Clicked!"),
-  		_ => {}
+    match event.event_type {
+      EventType::Click(..) => println!("Clicked!"),
+      _ => {}
   	}
-  } );
+  });
 
   rsx! {
-  	<Button on_event={Some(event_handler)}>
-    	<Text content={"Click Me!".to_string()} size={16.0} />
+    <Button on_event={Some(event_handler)}>
+      <Text content={"Click Me!".to_string()} size={16.0} />
     </Button>
   }
 # }
@@ -111,14 +111,7 @@ This prop allows an event listener to be attached to a widget.
 
 *Functional Signature: `focusable: Option<bool>`*
 
-This prop allows you to set the focusability of a widget. Focusability comes in three states:
-
-* `Some(true)` - The widget is focusable
-* `Some(false)` - The widget is not focusable
-* `None` - The widget can be either focusable or not
-
-If a widget sets its own focusability, this will override the focusability set by a parent widget. For more details,
-check out (TODO: ADD FOCUS SECTION LINK).
+This prop allows you to set the focusability of a widget. For more details on focusability check out the [Focus Events](../events/focus.md) section.
 
 ### Usage
 

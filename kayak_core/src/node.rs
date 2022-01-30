@@ -336,19 +336,55 @@ impl<'a> morphorm::Node<'a> for Index {
         Some(1)
     }
 
-    fn border_left(&self, _store: &'_ Self::Data) -> Option<morphorm::Units> {
+    fn border_left(&self, store: &'_ Self::Data) -> Option<morphorm::Units> {
+        if let Some(node) = store.get(*self) {
+            if let Some(node) = node {
+                return match node.styles.border {
+                    StyleProp::Default => Some(morphorm::Units::Auto),
+                    StyleProp::Value(prop) => Some(morphorm::Units::Pixels(prop.3)),
+                    _ => Some(morphorm::Units::Auto),
+                };
+            }
+        }
         Some(morphorm::Units::Auto)
     }
 
-    fn border_right(&self, _store: &'_ Self::Data) -> Option<morphorm::Units> {
+    fn border_right(&self, store: &'_ Self::Data) -> Option<morphorm::Units> {
+        if let Some(node) = store.get(*self) {
+            if let Some(node) = node {
+                return match node.styles.border {
+                    StyleProp::Default => Some(morphorm::Units::Auto),
+                    StyleProp::Value(prop) => Some(morphorm::Units::Pixels(prop.1)),
+                    _ => Some(morphorm::Units::Auto),
+                };
+            }
+        }
         Some(morphorm::Units::Auto)
     }
 
-    fn border_top(&self, _store: &'_ Self::Data) -> Option<morphorm::Units> {
+    fn border_top(&self, store: &'_ Self::Data) -> Option<morphorm::Units> {
+        if let Some(node) = store.get(*self) {
+            if let Some(node) = node {
+                return match node.styles.border {
+                    StyleProp::Default => Some(morphorm::Units::Auto),
+                    StyleProp::Value(prop) => Some(morphorm::Units::Pixels(prop.0)),
+                    _ => Some(morphorm::Units::Auto),
+                };
+            }
+        }
         Some(morphorm::Units::Auto)
     }
 
-    fn border_bottom(&self, _store: &'_ Self::Data) -> Option<morphorm::Units> {
+    fn border_bottom(&self, store: &'_ Self::Data) -> Option<morphorm::Units> {
+        if let Some(node) = store.get(*self) {
+            if let Some(node) = node {
+                return match node.styles.border {
+                    StyleProp::Default => Some(morphorm::Units::Auto),
+                    StyleProp::Value(prop) => Some(morphorm::Units::Pixels(prop.2)),
+                    _ => Some(morphorm::Units::Auto),
+                };
+            }
+        }
         Some(morphorm::Units::Auto)
     }
 }

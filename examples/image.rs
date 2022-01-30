@@ -3,6 +3,7 @@ use bevy::{
     window::WindowDescriptor,
     DefaultPlugins,
 };
+use kayak_core::styles::PositionType;
 use kayak_ui::bevy::{BevyContext, BevyKayakUIPlugin, ImageManager, UICameraBundle};
 use kayak_ui::core::{
     render,
@@ -23,6 +24,10 @@ fn startup(
 
     let context = BevyContext::new(|context| {
         let image_styles = Style {
+            position_type: StyleProp::Value(PositionType::SelfDirected),
+            left: StyleProp::Value(Units::Pixels(10.0)),
+            top: StyleProp::Value(Units::Pixels(10.0)),
+            border_radius: StyleProp::Value((500.0, 500.0, 500.0, 500.0)),
             width: StyleProp::Value(Units::Pixels(200.0)),
             height: StyleProp::Value(Units::Pixels(182.0)),
             ..Style::default()

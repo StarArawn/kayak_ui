@@ -36,29 +36,30 @@ where
 pub struct Style {
     pub background_color: StyleProp<Color>,
     pub border_radius: StyleProp<(f32, f32, f32, f32)>,
+    pub border: StyleProp<(f32, f32, f32, f32)>,
     pub bottom: StyleProp<Units>,
     pub color: StyleProp<Color>,
     pub height: StyleProp<Units>,
     pub layout_type: StyleProp<LayoutType>,
     pub left: StyleProp<Units>,
+    pub margin_bottom: StyleProp<Units>,
+    pub margin_left: StyleProp<Units>,
+    pub margin_right: StyleProp<Units>,
+    pub margin_top: StyleProp<Units>,
+    pub max_height: StyleProp<Units>,
+    pub max_width: StyleProp<Units>,
+    pub min_height: StyleProp<Units>,
+    pub min_width: StyleProp<Units>,
+    pub padding_bottom: StyleProp<Units>,
+    pub padding_left: StyleProp<Units>,
+    pub padding_right: StyleProp<Units>,
+    pub padding_top: StyleProp<Units>,
+    pub pointer_events: StyleProp<PointerEvents>,
     pub position_type: StyleProp<PositionType>,
     pub render_command: StyleProp<RenderCommand>,
     pub right: StyleProp<Units>,
     pub top: StyleProp<Units>,
     pub width: StyleProp<Units>,
-    pub padding_left: StyleProp<Units>,
-    pub padding_right: StyleProp<Units>,
-    pub padding_top: StyleProp<Units>,
-    pub padding_bottom: StyleProp<Units>,
-    pub margin_left: StyleProp<Units>,
-    pub margin_right: StyleProp<Units>,
-    pub margin_top: StyleProp<Units>,
-    pub margin_bottom: StyleProp<Units>,
-    pub min_width: StyleProp<Units>,
-    pub min_height: StyleProp<Units>,
-    pub max_width: StyleProp<Units>,
-    pub max_height: StyleProp<Units>,
-    pub pointer_events: StyleProp<PointerEvents>,
 }
 
 impl Default for Style {
@@ -66,29 +67,30 @@ impl Default for Style {
         Self {
             background_color: StyleProp::Default,
             border_radius: StyleProp::Default,
-            render_command: StyleProp::Value(RenderCommand::Empty),
+            border: StyleProp::Default,
             bottom: StyleProp::Default,
             color: StyleProp::Inherit,
             height: StyleProp::Default,
             layout_type: StyleProp::Default,
             left: StyleProp::Default,
-            position_type: StyleProp::Default,
-            right: StyleProp::Default,
-            top: StyleProp::Default,
-            width: StyleProp::Default,
-            padding_left: StyleProp::Default,
-            padding_right: StyleProp::Default,
-            padding_top: StyleProp::Default,
-            padding_bottom: StyleProp::Default,
+            margin_bottom: StyleProp::Default,
             margin_left: StyleProp::Default,
             margin_right: StyleProp::Default,
             margin_top: StyleProp::Default,
-            margin_bottom: StyleProp::Default,
-            min_width: StyleProp::Default,
-            min_height: StyleProp::Default,
-            max_width: StyleProp::Default,
             max_height: StyleProp::Default,
+            max_width: StyleProp::Default,
+            min_height: StyleProp::Default,
+            min_width: StyleProp::Default,
+            padding_bottom: StyleProp::Default,
+            padding_left: StyleProp::Default,
+            padding_right: StyleProp::Default,
+            padding_top: StyleProp::Default,
             pointer_events: StyleProp::Default,
+            position_type: StyleProp::Default,
+            render_command: StyleProp::Value(RenderCommand::Empty),
+            right: StyleProp::Default,
+            top: StyleProp::Default,
+            width: StyleProp::Default,
         }
     }
 }
@@ -104,6 +106,12 @@ impl Style {
         match self.border_radius {
             StyleProp::Inherit => {
                 self.border_radius = other.border_radius.clone();
+            }
+            _ => (),
+        }
+        match self.border {
+            StyleProp::Inherit => {
+                self.border = other.border.clone();
             }
             _ => (),
         }

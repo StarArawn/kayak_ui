@@ -130,7 +130,7 @@ Ideally, we'd have a way to send that hover event to the slider widget while we 
 
 Capturing the cursor forces all cursor events to be sent to the captor widget, setting it as the target. The event will still propagate as normal, but the target will always be that widget. When we're done with it, we can subsequently release the widget.
 
-To do this, we can use `KayakContext::capture_cursor(...)` and `KayakContext::release_cursor(...)`.
+To do this, we can use `KayakContextRef::capture_cursor(...)` and `KayakContextRef::release_cursor(...)`.
 
 ```rust,noplayground
 # #[widget]

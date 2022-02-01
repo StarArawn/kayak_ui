@@ -8,7 +8,7 @@ However, be mindful when using the provider/consumer pattern. It might be tempti
 
 ## Providers
 
-You can create a provider by calling `KayakContext::create_provider(...)` with the data to provide.
+You can create a provider by calling `KayakContextRef::create_provider(...)` with the data to provide.
 
 ```rust,noplayground
 #[widget]

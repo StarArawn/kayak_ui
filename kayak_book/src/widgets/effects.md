@@ -25,7 +25,7 @@ We can do a similar thing with widgets, wherein when a state is changed, a side-
 
 ## Creating a Side-Effect
 
-A side-effect (we'll call them "effects" for short from here on) can be registered to the `KayakContext` with a set of state dependencies. When any of the given states are changed, the effect closure will be called. These dependencies are passed by reference into the *dependency array*.
+A side-effect (we'll call them "effects" for short from here on) can be registered to the `KayakContextRef` with a set of state dependencies. When any of the given states are changed, the effect closure will be called. These dependencies are passed by reference into the *dependency array*.
 
 ```rust,noplayground
 # #[widget]
@@ -120,7 +120,7 @@ Well the macro takes the common pattern of cloning your state for use in the clo
 # }
 ```
 
-> Ensure that `context` point to the `KayakContext` (i.e. it should not be reassigned). Also try not to use variables in your closure with the same names as the generated variables, which follow the pattern `<State Name>_dependency_clone`. Hopefully that won't be an issue...
+> Ensure that `context` point to the `KayakContextRef` (i.e. it should not be reassigned). Also try not to use variables in your closure with the same names as the generated variables, which follow the pattern `<State Name>_dependency_clone`. Hopefully that won't be an issue...
 
 ### Context vs Macro
 

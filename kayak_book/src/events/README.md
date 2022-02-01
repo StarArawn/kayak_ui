@@ -14,7 +14,7 @@ To fully understand Kayak's event system, it's important to first understand the
 
 ### Creation
 
-Events start out as a completely separate event type called `InputEvent`. As you can guess, these events directly map to the raw inputs given. These input events are then sent to `KayakContext`, where they will be processed and dispatched immediately.
+Events start out as a completely separate event type called `InputEvent`. As you can guess, these events directly map to the raw inputs given. These input events are then sent to `KayakContextRef`, where they will be processed and dispatched immediately.
 
 ### Processing
 
@@ -45,7 +45,7 @@ And, like propagation, they can be prevented. To do this, simply call the event'
 
 All widgets— at least all functional widgets— allow you to attach an event listener to handle these input events. On most widgets this can be set by passing an `on_event` prop.
 
-A handler should be an `Option<OnEvent>`, where the `OnEvent` struct contains your handler closure. The closure takes two parameters: a reference to the `KayakContext` and the `Event`.
+A handler should be an `Option<OnEvent>`, where the `OnEvent` struct contains your handler closure. The closure takes two parameters: a reference to the `KayakContextRef` and the `Event`.
 
 ```rust,noplayground
 # #[widget]

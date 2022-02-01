@@ -54,7 +54,7 @@ To create state we have two methods (currently). The first is to create the stat
 # }
 ```
 
-When the widget is first created, it will register this state with the `KayakContext`, with the given data used as the initial value. This returns an `Option<Binding<T>>` that can be used to `get` the current value or `set` the next value:
+When the widget is first created, it will register this state with the `KayakContextRef`, with the given data used as the initial value. This returns an `Option<Binding<T>>` that can be used to `get` the current value or `set` the next value:
 
 ```rust,noplayground
 // Required for getting and setting
@@ -159,9 +159,9 @@ And if this is the case, then when `hp` changes, it causes `PlayerHud` to re-ren
 
 ## Conditional States
 
-One important detail about states is how they're managed internally. States are created by `KayakContext` and use two things to track which data belongs to which state: type and order.
+One important detail about states is how they're managed internally. States are created by `KayakContextRef` and use two things to track which data belongs to which state: type and order.
 
-When creating a state,`KayakContext` first checks if a state with the same type already exists for that widget. If it doesn't, great! If it does, it needs another method for differentiating between them. The differentiator is the order in which they're created.
+When creating a state,`KayakContextRef` first checks if a state with the same type already exists for that widget. If it doesn't, great! If it does, it needs another method for differentiating between them. The differentiator is the order in which they're created.
 
 Take this code:
 
@@ -174,7 +174,7 @@ Take this code:
 # }
 ```
 
-To `KayakContext` this looks something like:
+To `KayakContextRef` this looks something like:
 
 1. **State 1** - Create a state with value `0` of type `i32` and order `1`
 2. **State 2** - Create a state with value `false` of type `bool` and order `1`

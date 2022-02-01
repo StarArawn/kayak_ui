@@ -41,7 +41,7 @@ see [RFC 1](https://github.com/StarArawn/kayak_ui/blob/book/rfcs/widget-restruct
 #### Context
 
 The most important of these is the `context` variable. This hidden variable provides access to the
-containing `KayakContext`.
+containing `KayakContextRef`.
 
 ```rust,noplayground
 #[widget]
@@ -158,11 +158,9 @@ pub struct Element {
             }
         }
     }
-    fn render(&mut self, context: &mut kayak_core::context::KayakContext) {
+    fn render(&mut self, context: &mut kayak_core::context::KayakContextRef) {
         // It's important to set the current ID this is how we track state management.
-        let parent_id = self.get_id();
-        context.set_current_id(parent_id);
-        let parent_id = Some(parent_id);
+        let parent_id = Some(self.get_id());
 
         // We pull out the props(struct fields) from the widget here.
         let Element {
@@ -170,9 +168,6 @@ pub struct Element {
         } = self;
 
         let children = children.clone();
-
-        // We create a new sub tree.
-        let tree = kayak_core::WidgetTree::new();
         
         // This block is actually where the code from a functional widget is placed
         {
@@ -185,38 +180,11 @@ pub struct Element {
             };
 
             // Creates the fragment widget.
-            let (should_rerender, child_id) =
-                context
-                    .widget_manager
-                    .create_widget(0usize, built_widget, parent_id);
-            // Add the fragment widget to the sub tree.
-            tree.add(child_id, parent_id);
-            
-            // If should_rerender is true we need to render the widget.
-            if should_rerender {
-                // We pull the widget out of storage
-                let mut child_widget = context.widget_manager.take(child_id);
-                // Render the widget
-                child_widget.render(context);
-                // And place it back into storage.
-                context.widget_manager.repossess(child_widget);
-            }
+            context.add_widget(built_widget, 0);
         }
         
-        // Take ownership of the sub tree.
-        let tree = tree.take();
-
-        // Diff the sub tree with the full UI tree.
-        let changes = context
-            .widget_manager
-            .tree
-            .diff_children(&tree, self.get_id());
-
-        // Apply the changes to the full UI tree.
-        context
-            .widget_manager
-            .tree
-            .merge(&tree, self.get_id(), changes);
+        // Commits the sub tree to the main tree
+        context.commit();
     }
 }
 ```

@@ -55,7 +55,7 @@ The focusability of a widget can be set one of three ways:
    }
    ```
 
-2. Using `KayakContext`
+2. Using `KayakContextRef`
 
    ```rust,noplayground
    # #[widget]

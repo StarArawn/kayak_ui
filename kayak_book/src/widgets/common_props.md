@@ -20,7 +20,7 @@ The type `Children` is actually an alias:
 
 ```rust,noplayground
 pub type Children = Option<
-	Arc<dyn Fn(WidgetTree, Option<Index>, &mut KayakContext) + Send + Sync>
+	Arc<dyn Fn(Option<Index>, &mut KayakContextRef) + Send + Sync>
 >
 ```
 

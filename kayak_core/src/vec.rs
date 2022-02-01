@@ -1,6 +1,6 @@
 use derivative::*;
 
-use crate::{context::KayakContext, styles::Style, Index, Widget};
+use crate::{context::KayakContext, context_ref::KayakContextRef, styles::Style, Index, Widget};
 
 #[derive(Derivative)]
 #[derivative(Debug, PartialEq, Clone, Default)]
@@ -64,33 +64,11 @@ where
         // Do nothing.
     }
 
-    fn render(&mut self, context: &mut KayakContext) {
-        let tree = crate::WidgetTree::new();
-
+    fn render(&mut self, context: &mut KayakContextRef) {
         for (index, item) in self.data.iter().enumerate() {
-            let (should_rerender, child_id) =
-                context
-                    .widget_manager
-                    .create_widget(index, item.clone(), Some(self.get_id()));
-            tree.add(child_id, Some(self.get_id()));
-            if should_rerender {
-                let mut child_widget = context.widget_manager.take(child_id);
-                child_widget.render(context);
-                context.widget_manager.repossess(child_widget);
-            }
+            context.add_widget(item.clone(), index);
         }
 
-        // Consume the widget tree taking the inner value
-        let tree = tree.take();
-
-        // Evaluate changes to the tree.
-        let changes = context
-            .widget_manager
-            .tree
-            .diff_children(&tree, self.get_id());
-        context
-            .widget_manager
-            .tree
-            .merge(&tree, self.get_id(), changes);
+        context.commit();
     }
 }

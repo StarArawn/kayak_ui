@@ -8,7 +8,7 @@ use crate::{
 use quote::{quote, ToTokens};
 use syn::parse::{Parse, ParseStream, Result};
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct Children {
     pub nodes: Vec<Child>,
 }
@@ -98,15 +98,14 @@ impl Children {
                         let children_builder = build_arc_function(
                             quote! { child_widget },
                             quote! { #(#children_quotes),* },
-                            true,
                             0,
-                            true,
                         );
 
                         quote! {
-                            Some(std::sync::Arc::new(move |tree: #kayak_core::WidgetTree, parent_id: Option<#kayak_core::Index>, context: &mut #kayak_core::context::KayakContext| {
+                            Some(std::sync::Arc::new(move |parent_id: Option<#kayak_core::Index>, context: &mut #kayak_core::KayakContextRef| {
                                 #cloned_attrs
                                 #children_builder
+                                context.commit();
                             }))
                         }
                     }
@@ -160,19 +159,14 @@ impl Children {
                 for i in 0..children_quotes.len() {
                     output.push(quote! { #base_clones_inner });
                     let name: proc_macro2::TokenStream = format!("child{}", i).parse().unwrap();
-                    let child = build_arc_function(
-                        quote! { #name },
-                        children_quotes[i].clone(),
-                        true,
-                        i,
-                        true,
-                    );
+                    let child = build_arc_function(quote! { #name }, children_quotes[i].clone(), i);
                     output.push(quote! { #child });
                 }
 
                 quote! {
-                    Some(std::sync::Arc::new(move |tree: #kayak_core::WidgetTree, parent_id: Option<#kayak_core::Index>, context: &mut #kayak_core::context::KayakContext| {
+                    Some(std::sync::Arc::new(move |parent_id: Option<#kayak_core::Index>, context: &mut #kayak_core::KayakContextRef| {
                         #(#output)*
+                        context.commit();
                     }))
                 }
             }

@@ -1,6 +1,6 @@
 use as_any::AsAny;
 
-use crate::{context::KayakContext, styles::Style, Event, Index};
+use crate::{context::KayakContext, styles::Style, Event, Index, context_ref::KayakContextRef};
 
 pub trait Widget: std::fmt::Debug + AsAny + Send + Sync {
     /// Returns whether this widget can be focused or not (or unspecified if `None`)
@@ -10,7 +10,7 @@ pub trait Widget: std::fmt::Debug + AsAny + Send + Sync {
     fn get_styles(&self) -> Option<Style>;
     fn get_name(&self) -> String;
     fn on_event(&mut self, context: &mut KayakContext, event: &mut Event);
-    fn render(&mut self, context: &mut KayakContext);
+    fn render(&mut self, context: &mut KayakContextRef);
 }
 
 impl as_any::Downcast for dyn Widget {}

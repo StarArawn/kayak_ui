@@ -23,8 +23,8 @@ pub fn Text(
 
     // TODO: It might be worth caching the measurement here until content changes.
     let (layout_size, parent_size) =
-        if let Some(parent_id) = context.widget_manager.get_valid_parent(parent_id.unwrap()) {
-            if let Some(layout) = context.widget_manager.get_layout(&parent_id) {
+        if let Some(parent_id) = context.get_valid_parent(parent_id.unwrap()) {
+            if let Some(layout) = context.get_layout(&parent_id) {
                 if let Some(font) = font.get() {
                     let measurement = font.measure(
                         CoordinateSystem::PositiveYDown,

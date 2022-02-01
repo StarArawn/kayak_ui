@@ -1,6 +1,6 @@
 use derivative::*;
 
-use crate::{context::KayakContext, styles::Style, Index, Widget};
+use crate::{context::KayakContext, context_ref::KayakContextRef, styles::Style, Index, Widget};
 
 #[derive(Derivative)]
 #[derivative(Default, Debug, PartialEq, Clone)]
@@ -39,23 +39,15 @@ impl Widget for Fragment {
         // Do nothing.
     }
 
-    fn render(&mut self, context: &mut KayakContext) {
+    fn render(&mut self, context: &mut KayakContextRef) {
         let parent_id = self.get_id();
-        let tree = crate::WidgetTree::new();
-        tree.add(parent_id, None);
-
         if let Some(children) = self.children.take() {
-            children(tree.clone(), Some(parent_id), context);
+            let mut context = KayakContextRef::new(&mut context.context, Some(parent_id));
+            children(Some(parent_id), &mut context);
         } else {
             return;
         }
 
-        // Consume the widget tree taking the inner value
-        let tree = tree.take();
-
-        // Evaluate changes to the tree.
-        let changes = context.widget_manager.tree.diff_children(&tree, parent_id);
-
-        context.widget_manager.tree.merge(&tree, parent_id, changes);
+        // Note: No need to do anything here with this KayakContextRef.
     }
 }

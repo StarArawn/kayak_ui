@@ -9,7 +9,7 @@ use syn::{
 
 use crate::{attribute::Attribute, children::Children};
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct WidgetAttributes {
     pub attributes: HashSet<Attribute>,
 }

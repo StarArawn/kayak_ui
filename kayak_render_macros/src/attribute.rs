@@ -9,7 +9,7 @@ use syn::{
 
 pub type AttributeKey = syn::punctuated::Punctuated<syn::Ident, syn::Token![-]>;
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub enum Attribute {
     Punned(AttributeKey),
     WithValue(AttributeKey, syn::Block),

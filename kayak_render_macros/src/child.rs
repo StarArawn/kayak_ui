@@ -3,7 +3,7 @@ use syn::parse::{Parse, ParseStream, Result};
 
 use crate::widget::Widget;
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub enum Child {
     Widget(Widget),
     RawBlock(syn::Block),
@@ -28,7 +28,7 @@ impl ToTokens for Child {
 
 impl Parse for Child {
     fn parse(input: ParseStream) -> Result<Self> {
-        match Widget::custom_parse(input, true, true) {
+        match Widget::custom_parse(input, true) {
             Ok(widget) => Ok(Self::Widget(widget)),
             Err(_) => {
                 let block = input.parse::<syn::Block>()?;

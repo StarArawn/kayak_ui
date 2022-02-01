@@ -1,6 +1,6 @@
 use as_any::AsAny;
 
-use crate::{context::KayakContext, styles::Style, Event, Index, context_ref::KayakContextRef};
+use crate::{context::KayakContext, context_ref::KayakContextRef, styles::Style, Event, Index};
 
 pub trait Widget: std::fmt::Debug + AsAny + Send + Sync {
     /// Returns whether this widget can be focused or not (or unspecified if `None`)

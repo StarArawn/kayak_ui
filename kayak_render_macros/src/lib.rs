@@ -11,6 +11,7 @@ mod partial_eq;
 mod use_effect;
 mod widget;
 mod widget_attributes;
+mod widget_props;
 
 use function_component::WidgetArguments;
 use partial_eq::impl_dyn_partial_eq;
@@ -22,24 +23,14 @@ use use_effect::UseEffect;
 use widget::ConstructedWidget;
 
 use crate::widget::Widget;
+use crate::widget_props::impl_widget_props;
 
 #[proc_macro]
 #[proc_macro_error]
 pub fn render(input: TokenStream) -> TokenStream {
     let widget = parse_macro_input!(input as Widget);
 
-    let found_crate = proc_macro_crate::crate_name("kayak_core");
-    let kayak_core = if let Ok(found_crate) = found_crate {
-        match found_crate {
-            proc_macro_crate::FoundCrate::Itself => quote! { crate },
-            proc_macro_crate::FoundCrate::Name(name) => {
-                let ident = syn::Ident::new(&name, proc_macro2::Span::call_site());
-                quote!(#ident)
-            }
-        }
-    } else {
-        quote!(kayak_ui::core)
-    };
+    let kayak_core = get_core_crate();
 
     let result = quote! {
         let parent_id: Option<Index> = None;
@@ -81,6 +72,12 @@ pub fn widget(args: TokenStream, item: TokenStream) -> TokenStream {
 
     let f = parse_macro_input!(item as syn::ItemFn);
     function_component::create_function_widget(f, widget_args)
+}
+
+#[proc_macro_derive(WidgetProps, attributes(props, widget_props))]
+#[proc_macro_error]
+pub fn derive_widget_props(item: TokenStream) -> TokenStream {
+    impl_widget_props(item)
 }
 
 #[proc_macro_derive(DynPartialEq)]
@@ -154,18 +151,7 @@ pub fn dyn_partial_eq(_: TokenStream, input: TokenStream) -> TokenStream {
 #[proc_macro]
 pub fn use_state(initial_state: TokenStream) -> TokenStream {
     let initial_state = parse_macro_input!(initial_state as syn::Expr);
-    let found_crate = proc_macro_crate::crate_name("kayak_core");
-    let kayak_core = if let Ok(found_crate) = found_crate {
-        match found_crate {
-            proc_macro_crate::FoundCrate::Itself => quote! { crate },
-            proc_macro_crate::FoundCrate::Name(name) => {
-                let ident = syn::Ident::new(&name, proc_macro2::Span::call_site());
-                quote!(#ident)
-            }
-        }
-    } else {
-        quote!(kayak_ui::core)
-    };
+    let kayak_core = get_core_crate();
 
     let result = quote! {{
         use #kayak_core::{Bound, MutableBound};
@@ -233,4 +219,19 @@ pub fn use_state(initial_state: TokenStream) -> TokenStream {
 pub fn use_effect(input: TokenStream) -> TokenStream {
     let effect = parse_macro_input!(input as UseEffect);
     effect.build()
+}
+
+fn get_core_crate() -> proc_macro2::TokenStream {
+    let found_crate = proc_macro_crate::crate_name("kayak_core");
+    if let Ok(found_crate) = found_crate {
+        match found_crate {
+            proc_macro_crate::FoundCrate::Itself => quote! { crate },
+            proc_macro_crate::FoundCrate::Name(name) => {
+                let ident = syn::Ident::new(&name, proc_macro2::Span::call_site());
+                quote!(#ident)
+            }
+        }
+    } else {
+        quote!(kayak_ui::core)
+    }
 }

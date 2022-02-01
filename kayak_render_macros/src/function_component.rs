@@ -2,6 +2,7 @@ use proc_macro::TokenStream;
 use proc_macro_error::emit_error;
 use quote::{quote, ToTokens};
 use syn::spanned::Spanned;
+use crate::get_core_crate;
 
 pub struct WidgetArguments {
     pub focusable: bool,
@@ -20,18 +21,7 @@ pub fn create_function_widget(f: syn::ItemFn, widget_arguments: WidgetArguments)
     let block = f.block;
     let vis = f.vis;
 
-    let found_crate = proc_macro_crate::crate_name("kayak_core");
-    let kayak_core = if let Ok(found_crate) = found_crate {
-        match found_crate {
-            proc_macro_crate::FoundCrate::Itself => quote! { crate },
-            proc_macro_crate::FoundCrate::Name(name) => {
-                let ident = syn::Ident::new(&name, proc_macro2::Span::call_site());
-                quote!(#ident)
-            }
-        }
-    } else {
-        quote!(kayak_ui::core)
-    };
+    let kayak_core = get_core_crate();
 
     let mut input_names: Vec<_> = inputs
         .iter()

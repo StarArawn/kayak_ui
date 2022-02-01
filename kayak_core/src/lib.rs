@@ -39,7 +39,7 @@ pub use keys::KeyCode;
 pub use resources::Resources;
 pub use tree::{Tree, WidgetTree};
 pub use vec::VecTracker;
-pub use widget::Widget;
+pub use widget::{Widget, WidgetProps};
 
 pub mod derivative {
     pub use derivative::*;

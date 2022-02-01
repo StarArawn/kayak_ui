@@ -1,10 +1,6 @@
 use std::collections::HashSet;
 
-use crate::{
-    arc_function::build_arc_function,
-    attribute::Attribute,
-    child::{walk_block_to_variable, Child},
-};
+use crate::{arc_function::build_arc_function, attribute::Attribute, child::{walk_block_to_variable, Child}, get_core_crate};
 use quote::{quote, ToTokens};
 use syn::parse::{Parse, ParseStream, Result};
 
@@ -52,18 +48,7 @@ impl Children {
     }
 
     pub fn as_option_of_tuples_tokens(&self) -> proc_macro2::TokenStream {
-        let found_crate = proc_macro_crate::crate_name("kayak_core");
-        let kayak_core = if let Ok(found_crate) = found_crate {
-            match found_crate {
-                proc_macro_crate::FoundCrate::Itself => quote! { crate },
-                proc_macro_crate::FoundCrate::Name(name) => {
-                    let ident = syn::Ident::new(&name, proc_macro2::Span::call_site());
-                    quote!(#ident)
-                }
-            }
-        } else {
-            quote!(kayak_ui::core)
-        };
+        let kayak_core = get_core_crate();
 
         let children_quotes: Vec<_> = self
             .nodes

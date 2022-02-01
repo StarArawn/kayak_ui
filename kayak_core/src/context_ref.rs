@@ -218,6 +218,14 @@ impl<'a> KayakContextRef<'a> {
         self.context.widget_manager.get_layout(widget_id)
     }
 
+    pub fn get_node(&self, widget_id: &Index) -> Option<crate::node::Node> {
+        self.context.widget_manager.get_node(widget_id)
+    }
+
+    pub fn get_name(&self, widget_id: &Index) -> Option<String> {
+        self.context.widget_manager.get_name(widget_id)
+    }
+
     /// Adds a widget to the context reference tree that will be committed to the main tree when `commit` is called.
     /// This also adds the widget to the `KayakContext` and renders the new widget.
     pub fn add_widget<W: crate::Widget + Clone + Default + PartialEq>(

@@ -35,41 +35,41 @@ pub fn Inspector() {
     let (id, _) = last_clicked_value.into_raw_parts();
 
     let mut parent_id_move = None;
-    // if let Some(layout) = context.widget_manager.get_layout(&last_clicked_value) {
-    //     if let Some(node) = context.widget_manager.get_node(&last_clicked_value) {
-    //         let mut data = Vec::new();
+    if let Some(layout) = context.get_layout(&last_clicked_value) {
+        if let Some(node) = context.get_node(&last_clicked_value) {
+            let mut data = Vec::new();
 
-    //         if let Some(name) = context.widget_manager.get_name(&last_clicked_value) {
-    //             data.push(format!("Name: {}", name));
-    //         }
+            if let Some(name) = context.get_name(&last_clicked_value) {
+                data.push(format!("Name: {}", name));
+            }
 
-    //         data.push(format!("ID: {}", id));
-    //         data.push(format!("X: {}", layout.posx));
-    //         data.push(format!("Y: {}", layout.posy));
-    //         data.push(format!("Width: {}", layout.width));
-    //         data.push(format!("Height: {}", layout.height));
-    //         data.push(format!(
-    //             "RenderCommand: \n{:#?}",
-    //             node.styles.render_command
-    //         ));
-    //         data.push(format!("Height: \n{:#?}", node.styles.height));
+            data.push(format!("ID: {}", id));
+            data.push(format!("X: {}", layout.posx));
+            data.push(format!("Y: {}", layout.posy));
+            data.push(format!("Width: {}", layout.width));
+            data.push(format!("Height: {}", layout.height));
+            data.push(format!(
+                "RenderCommand: \n{:#?}",
+                node.styles.render_command
+            ));
+            data.push(format!("Height: \n{:#?}", node.styles.height));
 
-    //         if let Some(parent_id) = context.get_valid_parent(last_clicked_value) {
-    //             parent_id_move = Some(parent_id);
-    //             if let Some(layout) = context.get_layout(&parent_id) {
-    //                 data.push(format!("_________Parent_________"));
-    //                 if let Some(name) = context.get_name(&parent_id) {
-    //                     data.push(format!("Name: {}", name));
-    //                 }
-    //                 data.push(format!("X: {}", layout.posx));
-    //                 data.push(format!("Y: {}", layout.posy));
-    //                 data.push(format!("Width: {}", layout.width));
-    //                 data.push(format!("Height: {}", layout.height));
-    //             }
-    //         }
-    //         set_inspect_data(data);
-    //     }
-    // }
+            if let Some(parent_id) = context.get_valid_parent(last_clicked_value) {
+                parent_id_move = Some(parent_id);
+                if let Some(layout) = context.get_layout(&parent_id) {
+                    data.push(format!("_________Parent_________"));
+                    if let Some(name) = context.get_name(&parent_id) {
+                        data.push(format!("Name: {}", name));
+                    }
+                    data.push(format!("X: {}", layout.posx));
+                    data.push(format!("Y: {}", layout.posy));
+                    data.push(format!("Width: {}", layout.width));
+                    data.push(format!("Height: {}", layout.height));
+                }
+            }
+            set_inspect_data(data);
+        }
+    }
 
     let handle_button_events = Some(OnEvent::new(move |_, event| match event.event_type {
         EventType::Click(..) => last_clicked.set(parent_id_move.unwrap()),

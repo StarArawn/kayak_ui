@@ -49,10 +49,9 @@ impl Widget for Test {
 fn main() {
     let mut context = KayakContext::new();
     {
-        let mut context = KayakContextRef::new(&mut context, Index::default());
+        let mut context = KayakContextRef::new(&mut context, None);
         let foo = 10;
         let test_styles = Style::default();
-        let parent_id: Option<Index> = None;
         let children: Option<kayak_core::Children> = None;
         rsx! {
             <Fragment>
@@ -70,8 +69,6 @@ fn main() {
 
         let foo = 10;
         let test_styles = Style::default();
-
-        let parent_id: Option<Index> = None;
         let children: Option<kayak_core::Children> = None;
         rsx! {
             <Fragment>

@@ -36,18 +36,18 @@ pub(crate) fn to_bevy_color(color: &kayak_core::color::Color) -> Color {
 }
 
 pub fn update(world: &mut World) {
-    let bevy_context = world.remove_resource::<BevyContext>().unwrap();
-    if let Ok(mut context) = bevy_context.kayak_context.write() {
-        context.set_global_state(std::mem::take(world));
-        context.render();
-        *world = context.take_global_state::<World>().unwrap()
+    if let Some(bevy_context) = world.remove_resource::<BevyContext>() {
+        if let Ok(mut context) = bevy_context.kayak_context.write() {
+            context.set_global_state(std::mem::take(world));
+            context.render();
+            *world = context.take_global_state::<World>().unwrap()
+        }
+        world.insert_resource(bevy_context);
     }
-
-    world.insert_resource(bevy_context);
 }
 
 pub fn process_events(
-    bevy_context: Res<BevyContext>,
+    bevy_context: Option<Res<BevyContext>>,
     windows: Res<Windows>,
     mut cursor_moved_events: EventReader<CursorMoved>,
     mut mouse_button_input_events: EventReader<MouseButtonInput>,
@@ -60,45 +60,47 @@ pub fn process_events(
         panic!("Couldn't find primary window!");
     };
 
-    if let Ok(mut context) = bevy_context.kayak_context.write() {
-        let mut input_events = Vec::new();
+    if let Some(bevy_context) = bevy_context {
+        if let Ok(mut context) = bevy_context.kayak_context.write() {
+            let mut input_events = Vec::new();
 
-        if let Some(event) = cursor_moved_events.iter().last() {
-            // Currently, we can only handle a single MouseMoved event at a time so everything but the last needs to be skipped
-            input_events.push(InputEvent::MouseMoved((
-                event.position.x as f32,
-                window_size.y - event.position.y as f32,
-            )));
-        }
+            if let Some(event) = cursor_moved_events.iter().last() {
+                // Currently, we can only handle a single MouseMoved event at a time so everything but the last needs to be skipped
+                input_events.push(InputEvent::MouseMoved((
+                    event.position.x as f32,
+                    window_size.y - event.position.y as f32,
+                )));
+            }
 
-        for event in mouse_button_input_events.iter() {
-            match event.button {
-                MouseButton::Left => {
-                    if event.state == ElementState::Pressed {
-                        input_events.push(InputEvent::MouseLeftPress);
-                    } else if event.state == ElementState::Released {
-                        input_events.push(InputEvent::MouseLeftRelease);
+            for event in mouse_button_input_events.iter() {
+                match event.button {
+                    MouseButton::Left => {
+                        if event.state == ElementState::Pressed {
+                            input_events.push(InputEvent::MouseLeftPress);
+                        } else if event.state == ElementState::Released {
+                            input_events.push(InputEvent::MouseLeftRelease);
+                        }
                     }
+                    _ => {}
                 }
-                _ => {}
             }
-        }
 
-        for event in char_input_events.iter() {
-            input_events.push(InputEvent::CharEvent { c: event.char });
-        }
-
-        for event in keyboard_input_events.iter() {
-            if let Some(key_code) = event.key_code {
-                let kayak_key_code = key::convert_virtual_key_code(key_code);
-                input_events.push(InputEvent::Keyboard {
-                    key: kayak_key_code,
-                    is_pressed: matches!(event.state, ElementState::Pressed),
-                });
+            for event in char_input_events.iter() {
+                input_events.push(InputEvent::CharEvent { c: event.char });
             }
-        }
 
-        context.process_events(input_events);
+            for event in keyboard_input_events.iter() {
+                if let Some(key_code) = event.key_code {
+                    let kayak_key_code = key::convert_virtual_key_code(key_code);
+                    input_events.push(InputEvent::Keyboard {
+                        key: kayak_key_code,
+                        is_pressed: matches!(event.state, ElementState::Pressed),
+                    });
+                }
+            }
+
+            context.process_events(input_events);
+        }
     }
 }
 

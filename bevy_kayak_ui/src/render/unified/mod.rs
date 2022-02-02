@@ -66,7 +66,7 @@ pub struct Dpi(f32);
 
 pub fn extract(
     mut commands: Commands,
-    context: Res<BevyContext>,
+    context: Option<Res<BevyContext>>,
     fonts: Res<Assets<KayakFont>>,
     font_mapping: Res<FontMapping>,
     image_manager: Res<ImageManager>,
@@ -74,6 +74,12 @@ pub fn extract(
     windows: Res<Windows>,
     window_size: Res<Binding<WindowSize>>,
 ) {
+    if context.is_none() {
+        return;
+    }
+
+    let context = context.unwrap();
+
     let render_primitives = if let Ok(context) = context.kayak_context.read() {
         context.widget_manager.build_render_primitives()
     } else {

@@ -53,6 +53,6 @@ fn main() {
         })
         .add_plugins(DefaultPlugins)
         .add_plugin(BevyKayakUIPlugin)
-        .add_startup_system(startup)
+        // .add_startup_system(startup)
         .run();
 }

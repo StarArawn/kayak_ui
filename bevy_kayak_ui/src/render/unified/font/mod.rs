@@ -38,9 +38,11 @@ impl Plugin for TextRendererPlugin {
 fn process_loaded_fonts(
     mut font_mapping: ResMut<FontMapping>,
     fonts: Res<Assets<KayakFont>>,
-    context: Res<BevyContext>,
+    bevy_context: Option<Res<BevyContext>>,
 ) {
-    font_mapping.add_loaded_to_kayak(&fonts, &context);
+    if let Some(context) = bevy_context {
+        font_mapping.add_loaded_to_kayak(&fonts, &context);
+    }
 }
 
 fn create_and_update_font_cache_texture(

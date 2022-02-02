@@ -41,11 +41,14 @@ pub use keys::KeyCode;
 pub use resources::Resources;
 pub use tree::{Tree, WidgetTree};
 pub use vec::VecTracker;
-pub use widget::{Widget, WidgetProps};
+pub use widget::{BaseWidget, Widget, WidgetProps};
 
 pub mod derivative {
     pub use derivative::*;
 }
+
+/// Type alias for dynamic widget objects. We use [BaseWidget] so that we can be object-safe
+type BoxedWidget = Box<dyn BaseWidget>;
 
 pub type Children = Option<Arc<dyn Fn(Option<crate::Index>, &mut KayakContextRef) + Send + Sync>>;
 

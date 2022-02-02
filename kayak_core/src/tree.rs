@@ -6,7 +6,7 @@ use std::{
 
 use morphorm::Hierarchy;
 
-use crate::{Arena, Index, Widget};
+use crate::{Arena, BoxedWidget, Index};
 
 #[derive(Default, Debug, PartialEq)]
 pub struct Tree {
@@ -567,7 +567,7 @@ impl Tree {
     /// * `widgets`: Optionally, provide the current widgets to include metadata about each widget
     ///
     /// returns: ()
-    pub fn dump(&self, widgets: Option<&Arena<Option<Box<dyn Widget>>>>) {
+    pub fn dump(&self, widgets: Option<&Arena<Option<BoxedWidget>>>) {
         if let Some(root) = self.root_node {
             self.dump_at_internal(root, 0, widgets);
         }
@@ -583,7 +583,7 @@ impl Tree {
     /// * `widgets`: Optionally, provide the current widgets to include metadata about each widget
     ///
     /// returns: ()
-    pub fn dump_at(&self, start_index: Index, widgets: Option<&Arena<Option<Box<dyn Widget>>>>) {
+    pub fn dump_at(&self, start_index: Index, widgets: Option<&Arena<Option<BoxedWidget>>>) {
         self.dump_at_internal(start_index, 0, widgets);
     }
 
@@ -591,7 +591,7 @@ impl Tree {
         &self,
         start_index: Index,
         depth: usize,
-        widgets: Option<&Arena<Option<Box<dyn Widget>>>>,
+        widgets: Option<&Arena<Option<BoxedWidget>>>,
     ) {
         let mut name = None;
         if let Some(widgets) = widgets {

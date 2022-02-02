@@ -64,7 +64,7 @@ pub(crate) fn impl_widget_props(input: TokenStream) -> TokenStream {
     let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
     let output = quote! {
         impl #impl_generics #kayak_core::WidgetProps for #ident #ty_generics #where_clause {
-            fn get_children(&self) -> Option<kayak_core::Children> {
+            fn get_children(&self) -> kayak_core::Children {
                 #children_return
             }
 

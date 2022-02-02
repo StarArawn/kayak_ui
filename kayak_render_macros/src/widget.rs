@@ -8,14 +8,14 @@ use crate::children::Children;
 use crate::tags::ClosingTag;
 use crate::{tags::OpenTag, widget_attributes::WidgetAttributes};
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct Widget {
     pub attributes: WidgetAttributes,
     pub children: Children,
     declaration: TokenStream,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct ConstructedWidget {
     pub widget: Widget,
 }
@@ -23,14 +23,14 @@ pub struct ConstructedWidget {
 impl Parse for ConstructedWidget {
     fn parse(input: ParseStream) -> Result<Self> {
         Ok(Self {
-            widget: Widget::custom_parse(input, true, true).unwrap(),
+            widget: Widget::custom_parse(input, true).unwrap(),
         })
     }
 }
 
 impl Parse for Widget {
     fn parse(input: ParseStream) -> Result<Self> {
-        Self::custom_parse(input, false, true)
+        Self::custom_parse(input, false)
     }
 }
 
@@ -46,7 +46,7 @@ impl Widget {
         }
     }
 
-    pub fn custom_parse(input: ParseStream, as_prop: bool, has_parent: bool) -> Result<Widget> {
+    pub fn custom_parse(input: ParseStream, as_prop: bool) -> Result<Widget> {
         let open_tag = input.parse::<OpenTag>()?;
 
         let children = if open_tag.self_closing {
@@ -64,8 +64,7 @@ impl Widget {
             let attrs = attrs.to_token_stream();
             if !as_prop {
                 let attrs = quote! { #name #attrs };
-                let widget_block =
-                    build_arc_function(quote! { built_widget }, attrs, has_parent, 0, true);
+                let widget_block = build_arc_function(quote! { built_widget }, attrs, 0);
                 quote! {
                     #widget_block
                 }

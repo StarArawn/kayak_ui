@@ -35,11 +35,11 @@ pub fn Inspector() {
     let (id, _) = last_clicked_value.into_raw_parts();
 
     let mut parent_id_move = None;
-    if let Some(layout) = context.widget_manager.get_layout(&last_clicked_value) {
-        if let Some(node) = context.widget_manager.get_node(&last_clicked_value) {
+    if let Some(layout) = context.get_layout(&last_clicked_value) {
+        if let Some(node) = context.get_node(&last_clicked_value) {
             let mut data = Vec::new();
 
-            if let Some(name) = context.widget_manager.get_name(&last_clicked_value) {
+            if let Some(name) = context.get_name(&last_clicked_value) {
                 data.push(format!("Name: {}", name));
             }
 
@@ -54,11 +54,11 @@ pub fn Inspector() {
             ));
             data.push(format!("Height: \n{:#?}", node.styles.height));
 
-            if let Some(parent_id) = context.widget_manager.get_valid_parent(last_clicked_value) {
+            if let Some(parent_id) = context.get_valid_parent(last_clicked_value) {
                 parent_id_move = Some(parent_id);
-                if let Some(layout) = context.widget_manager.get_layout(&parent_id) {
+                if let Some(layout) = context.get_layout(&parent_id) {
                     data.push(format!("_________Parent_________"));
-                    if let Some(name) = context.widget_manager.get_name(&parent_id) {
+                    if let Some(name) = context.get_name(&parent_id) {
                         data.push(format!("Name: {}", name));
                     }
                     data.push(format!("X: {}", layout.posx));

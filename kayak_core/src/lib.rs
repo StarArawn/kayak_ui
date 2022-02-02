@@ -2,6 +2,7 @@ mod assets;
 mod binding;
 pub mod color;
 pub mod context;
+mod context_ref;
 mod cursor;
 pub mod event;
 mod event_dispatcher;
@@ -28,6 +29,7 @@ use std::sync::{Arc, RwLock};
 pub use binding::*;
 pub use color::Color;
 pub use context::*;
+pub use context_ref::KayakContextRef;
 pub use cursor::PointerEvents;
 pub use event::*;
 pub use focus_tree::FocusTree;
@@ -45,9 +47,7 @@ pub mod derivative {
     pub use derivative::*;
 }
 
-pub type Children = Option<
-    Arc<dyn Fn(WidgetTree, Option<crate::Index>, &mut crate::context::KayakContext) + Send + Sync>,
->;
+pub type Children = Option<Arc<dyn Fn(Option<crate::Index>, &mut KayakContextRef) + Send + Sync>>;
 
 #[derive(Clone)]
 pub struct OnEvent(

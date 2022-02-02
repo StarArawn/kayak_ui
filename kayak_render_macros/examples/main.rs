@@ -1,5 +1,5 @@
 use kayak_core::{context::KayakContext, styles::Style, Children, Index};
-use kayak_core::{derivative::*, Fragment, Widget};
+use kayak_core::{derivative::*, Fragment, KayakContextRef, Widget};
 use kayak_render_macros::rsx;
 
 #[derive(Derivative)]
@@ -25,8 +25,8 @@ impl Widget for Test {
         None
     }
 
-    fn set_id(&mut self, _id: Index) {
-        todo!()
+    fn set_id(&mut self, id: Index) {
+        self.id = id;
     }
 
     fn get_styles(&self) -> Option<Style> {
@@ -41,7 +41,7 @@ impl Widget for Test {
         todo!()
     }
 
-    fn render(&mut self, _context: &mut KayakContext) {
+    fn render(&mut self, _context: &mut KayakContextRef) {
         todo!()
     }
 }
@@ -49,12 +49,10 @@ impl Widget for Test {
 fn main() {
     let mut context = KayakContext::new();
     {
-        let context = &mut context;
+        let mut context = KayakContextRef::new(&mut context, None);
         let foo = 10;
         let test_styles = Style::default();
-        let parent_id: Option<Index> = None;
         let children: Option<kayak_core::Children> = None;
-        let tree = kayak_core::WidgetTree::new();
         rsx! {
             <Fragment>
                 <Test foo={10}>
@@ -71,11 +69,7 @@ fn main() {
 
         let foo = 10;
         let test_styles = Style::default();
-
-        let parent_id: Option<Index> = None;
         let children: Option<kayak_core::Children> = None;
-        let tree = kayak_core::WidgetTree::new();
-
         rsx! {
             <Fragment>
                 <Test foo={foo} styles={Some(test_styles)}>

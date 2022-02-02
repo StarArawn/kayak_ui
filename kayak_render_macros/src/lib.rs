@@ -33,10 +33,11 @@ pub fn render(input: TokenStream) -> TokenStream {
     let kayak_core = get_core_crate();
 
     let result = quote! {
+        let mut context = #kayak_core::KayakContextRef::new(context, None);
         let parent_id: Option<Index> = None;
         let children: Option<#kayak_core::Children> = None;
-        let tree = #kayak_core::WidgetTree::new();
         #widget
+        context.commit();
     };
 
     TokenStream::from(result)

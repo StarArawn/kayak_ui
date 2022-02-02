@@ -323,6 +323,10 @@ impl WidgetManager {
     }
 
     pub fn build_render_primitives(&self) -> Vec<RenderPrimitive> {
+        if self.node_tree.root_node.is_none() {
+            return vec![];
+        }
+
         Self::recurse_node_tree_to_build_primitives(
             &self.node_tree,
             &self.layout_cache,

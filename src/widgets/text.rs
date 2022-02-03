@@ -9,20 +9,19 @@ use crate::core::{
     widget, Children, Fragment,
 };
 
-#[derive(WidgetProps, Derivative)]
-#[derivative(Default, Debug, PartialEq, Clone)]
+#[derive(WidgetProps, Default, Debug, PartialEq, Clone)]
 pub struct TextProps {
     pub content: String,
     pub font: Option<String>,
     pub line_height: Option<f32>,
     pub size: f32,
-    #[props(Styles)]
+    #[prop_field(Styles)]
     pub styles: Option<Style>,
-    #[props(OnEvent)]
-    #[derivative(Default(value = "None"), Debug = "ignore", PartialEq = "ignore")]
+    #[prop_field(OnEvent)]
+
     pub on_event: Option<OnEvent>,
-    #[props(Focusable)]
-    #[derivative(Default(value = "None"), PartialEq = "ignore")]
+    #[prop_field(Focusable)]
+
     pub focusable: Option<bool>,
 }
 

@@ -60,16 +60,14 @@ pub trait Widget: std::fmt::Debug + Clone + Default + PartialEq + AsAny + Send +
     /// Send an event to this widget
     fn on_event(&mut self, context: &mut KayakContext, event: &mut Event) {
         if let Some(on_event) = self.get_props().get_on_event() {
-            if let Ok(mut on_event) = on_event.0.write() {
-                on_event(context, event);
-            }
+            on_event.try_call(context, event);
         }
     }
 }
 
 /// Trait for props passed to a widget
 pub trait WidgetProps: std::fmt::Debug + AsAny + Send + Sync {
-    fn get_children(&self) -> Children;
+    fn get_children(&self) -> Option<Children>;
     fn get_styles(&self) -> Option<Style>;
     fn get_on_event(&self) -> Option<OnEvent>;
     fn get_focusable(&self) -> Option<bool>;

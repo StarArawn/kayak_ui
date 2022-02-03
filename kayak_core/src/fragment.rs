@@ -1,13 +1,9 @@
-use derivative::*;
-
 use crate::{context_ref::KayakContextRef, styles::Style, Index, Widget, WidgetProps, Children, OnEvent};
 
-#[derive(Derivative)]
-#[derivative(Default, Debug, PartialEq, Clone)]
+#[derive(Default, Debug, PartialEq, Clone)]
 pub struct FragmentProps {
     pub styles: Option<Style>,
-    #[derivative(Default(value = "None"), Debug = "ignore", PartialEq = "ignore")]
-    pub children: crate::Children,
+    pub children: Option<crate::Children>,
 }
 
 #[derive(Default, Debug, PartialEq, Clone)]
@@ -17,7 +13,7 @@ pub struct Fragment {
 }
 
 impl WidgetProps for FragmentProps {
-    fn get_children(&self) -> Children {
+    fn get_children(&self) -> Option<Children> {
         self.children.clone()
     }
 
@@ -64,7 +60,7 @@ impl Widget for Fragment {
         let parent_id = self.get_id();
         if let Some(children) = self.props.children.take() {
             let mut context = KayakContextRef::new(&mut context.context, Some(parent_id));
-            children(Some(parent_id), &mut context);
+            children.build(Some(parent_id), &mut context);
         } else {
             return;
         }

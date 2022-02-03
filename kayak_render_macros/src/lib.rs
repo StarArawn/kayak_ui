@@ -75,7 +75,7 @@ pub fn widget(args: TokenStream, item: TokenStream) -> TokenStream {
     function_component::create_function_widget(f, widget_args)
 }
 
-#[proc_macro_derive(WidgetProps, attributes(props, widget_props))]
+#[proc_macro_derive(WidgetProps, attributes(prop_field))]
 #[proc_macro_error]
 pub fn derive_widget_props(item: TokenStream) -> TokenStream {
     impl_widget_props(item)

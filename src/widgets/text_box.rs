@@ -9,22 +9,21 @@ use std::sync::{Arc, RwLock};
 
 use crate::widgets::{Background, Clip, Text};
 
-#[derive(WidgetProps, Derivative)]
-#[derivative(Default, Debug, PartialEq, Clone)]
+#[derive(WidgetProps, Default, Debug, PartialEq, Clone)]
 pub struct TextBoxProps {
     pub value: String,
     pub on_change: Option<OnChange>,
     pub placeholder: Option<String>,
-    #[props(Styles)]
+    #[prop_field(Styles)]
     pub styles: Option<Style>,
-    #[props(Children)]
-    #[derivative(Default(value = "None"), Debug = "ignore", PartialEq = "ignore")]
-    pub children: Children,
-    #[props(OnEvent)]
-    #[derivative(Default(value = "None"), Debug = "ignore", PartialEq = "ignore")]
+    #[prop_field(Children)]
+
+    pub children: Option<Children>,
+    #[prop_field(OnEvent)]
+
     pub on_event: Option<OnEvent>,
-    #[props(Focusable)]
-    #[derivative(Default(value = "Some(true)"), PartialEq = "ignore")]
+    #[prop_field(Focusable)]
+
     pub focusable: Option<bool>,
 }
 

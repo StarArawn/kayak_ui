@@ -21,34 +21,32 @@ pub struct TooltipData {
     pub visible: bool,
 }
 
-#[derive(WidgetProps, Derivative)]
-#[derivative(Default, Debug, PartialEq, Clone)]
+#[derive(WidgetProps, Default, Debug, PartialEq, Clone)]
 pub struct TooltipProviderProps {
     pub position: (f32, f32),
     pub size: (f32, f32),
-    #[props(Styles)]
+    #[prop_field(Styles)]
     pub styles: Option<Style>,
-    #[props(Children)]
-    #[derivative(Default(value = "None"), Debug = "ignore", PartialEq = "ignore")]
-    pub children: Children,
-    #[props(OnEvent)]
-    #[derivative(Default(value = "None"), Debug = "ignore", PartialEq = "ignore")]
+    #[prop_field(Children)]
+
+    pub children: Option<Children>,
+    #[prop_field(OnEvent)]
+
     pub on_event: Option<OnEvent>,
 }
 
-#[derive(WidgetProps, Derivative)]
-#[derivative(Default, Debug, PartialEq, Clone)]
+#[derive(WidgetProps, Default, Debug, PartialEq, Clone)]
 pub struct TooltipConsumerProps {
     pub anchor: Option<(f32, f32)>,
     pub size: Option<(f32, f32)>,
     pub text: String,
-    #[props(Styles)]
+    #[prop_field(Styles)]
     pub styles: Option<Style>,
-    #[props(Children)]
-    #[derivative(Default(value = "None"), Debug = "ignore", PartialEq = "ignore")]
-    pub children: Children,
-    #[props(OnEvent)]
-    #[derivative(Default(value = "None"), Debug = "ignore", PartialEq = "ignore")]
+    #[prop_field(Children)]
+
+    pub children: Option<Children>,
+    #[prop_field(OnEvent)]
+
     pub on_event: Option<OnEvent>,
 }
 

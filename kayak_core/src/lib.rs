@@ -23,10 +23,13 @@ pub mod tree;
 mod vec;
 pub mod widget;
 pub mod widget_manager;
+mod children;
+mod on_event;
 
 use std::sync::{Arc, RwLock};
 
 pub use binding::*;
+pub use children::Children;
 pub use color::Color;
 pub use context::*;
 pub use context_ref::KayakContextRef;
@@ -38,6 +41,7 @@ pub use generational_arena::{Arena, Index};
 pub use input_event::*;
 pub use keyboard::{KeyboardEvent, KeyboardModifiers};
 pub use keys::KeyCode;
+pub use on_event::OnEvent;
 pub use resources::Resources;
 pub use tree::{Tree, WidgetTree};
 pub use vec::{VecTracker, VecTrackerProps};
@@ -49,23 +53,6 @@ pub mod derivative {
 
 /// Type alias for dynamic widget objects. We use [BaseWidget] so that we can be object-safe
 type BoxedWidget = Box<dyn BaseWidget>;
-
-pub type Children = Option<Arc<dyn Fn(Option<crate::Index>, &mut KayakContextRef) + Send + Sync>>;
-
-#[derive(Clone)]
-pub struct OnEvent(
-    pub  Arc<
-        RwLock<dyn FnMut(&mut crate::context::KayakContext, &mut Event) + Send + Sync + 'static>,
-    >,
-);
-
-impl OnEvent {
-    pub fn new<F: FnMut(&mut crate::context::KayakContext, &mut Event) + Send + Sync + 'static>(
-        f: F,
-    ) -> OnEvent {
-        OnEvent(Arc::new(RwLock::new(f)))
-    }
-}
 
 #[derive(Clone)]
 pub struct Handler<T = ()>(pub Arc<RwLock<dyn FnMut(T) + Send + Sync + 'static>>);

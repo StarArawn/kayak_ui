@@ -1,41 +1,19 @@
 use proc_macro::TokenStream;
 
-use proc_macro2::Ident;
+use proc_macro2::{Ident};
 use proc_macro_error::{emit_error, emit_warning};
 use quote::quote;
-use syn::{Data, DeriveInput, Field, Meta, NestedMeta, parse_macro_input, spanned::Spanned};
+use syn::{AttributeArgs, Data, DeriveInput, Field, Fields, ItemStruct, Meta, NestedMeta, parse_macro_input, spanned::Spanned};
+use crate::attribute::Attribute;
 
 use crate::get_core_crate;
 
-/// The ident for the props helper attribute (`#[props(Children)]`)
-const PROPS_HELPER_1: &str = "props";
-/// An alternate for the props helper attribute in case more specificity is needed to
-/// prevent conflicts with other crates (`#[widget_props(Children)]`)
-const PROPS_HELPER_2: &str = "widget_props";
+/// The ident for the props helper attribute (`#[prop_field(Children)]`)
+const PROPS_HELPER_IDENT: &str = "prop_field";
 
-
-/// Usage:
-/// ```
-/// #[props(Children)]
-/// ```
 const PROP_CHILDREN: &str = "Children";
-
-/// Usage:
-/// ```
-/// #[props(Styles)]
-/// ```
 const PROP_STYLE: &str = "Styles";
-
-/// Usage:
-/// ```
-/// #[props(OnEvent)]
-/// ```
 const PROP_ON_EVENT: &str = "OnEvent";
-
-/// Usage:
-/// ```
-/// #[props(Focusable)]
-/// ```
 const PROP_FOCUSABLE: &str = "Focusable";
 
 #[derive(Default)]
@@ -64,15 +42,15 @@ pub(crate) fn impl_widget_props(input: TokenStream) -> TokenStream {
     let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
     let output = quote! {
         impl #impl_generics #kayak_core::WidgetProps for #ident #ty_generics #where_clause {
-            fn get_children(&self) -> kayak_core::Children {
+            fn get_children(&self) -> Option<#kayak_core::Children> {
                 #children_return
             }
 
-            fn get_styles(&self) -> Option<kayak_core::styles::Style> {
+            fn get_styles(&self) -> Option<#kayak_core::styles::Style> {
                 #styles_return
             }
 
-            fn get_on_event(&self) -> Option<kayak_core::OnEvent> {
+            fn get_on_event(&self) -> Option<#kayak_core::OnEvent> {
                 #on_event_return
             }
 
@@ -126,7 +104,7 @@ fn process_field(field: Field, props: &mut PropsHelpers) {
     for attr in field.attrs {
         if let Ok(meta) = attr.parse_meta() {
             if let Meta::List(meta) = meta {
-                if !meta.path.is_ident(PROPS_HELPER_1) && !meta.path.is_ident(PROPS_HELPER_2) {
+                if !meta.path.is_ident(PROPS_HELPER_IDENT) {
                     continue;
                 }
 

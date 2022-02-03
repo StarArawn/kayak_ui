@@ -15,7 +15,7 @@ pub enum InspectData {
 
 #[derive(WidgetProps, Default, Debug, PartialEq, Clone)]
 pub struct InspectorProps {
-    #[props(Styles)]
+    #[prop_field(Styles)]
     pub styles: Option<Style>,
 }
 

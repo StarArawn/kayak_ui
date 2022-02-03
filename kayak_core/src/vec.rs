@@ -1,21 +1,14 @@
-use derivative::*;
-
 use crate::{context_ref::KayakContextRef, styles::Style, Index, Widget, Children, OnEvent, WidgetProps};
 
-#[derive(Derivative)]
-#[derivative(Default, Debug, PartialEq, Clone)]
+#[derive(Default, Debug, PartialEq, Clone)]
 pub struct VecTrackerProps<T> {
     pub data: Vec<T>,
-    #[derivative(Default(value = "None"))]
     pub styles: Option<Style>,
-    #[derivative(Default(value = "None"), Debug = "ignore", PartialEq = "ignore")]
-    pub children: crate::Children,
-    #[derivative(Default(value = "None"), Debug = "ignore", PartialEq = "ignore")]
-    pub on_event: Option<crate::OnEvent>,
+    pub children: Option<Children>,
+    pub on_event: Option<OnEvent>,
 }
 
-#[derive(Derivative)]
-#[derivative(Debug, PartialEq, Clone, Default)]
+#[derive(Debug, PartialEq, Clone, Default)]
 pub struct VecTracker<T> {
     pub id: Index,
     pub props: VecTrackerProps<T>,
@@ -50,7 +43,7 @@ impl<T> WidgetProps for VecTrackerProps<T>
     where
         T: Widget, {
 
-    fn get_children(&self) -> Children {
+    fn get_children(&self) -> Option<Children> {
         self.children.clone()
     }
 

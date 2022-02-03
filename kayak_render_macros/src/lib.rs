@@ -3,7 +3,6 @@ extern crate proc_macro;
 mod function_component;
 mod tags;
 
-mod widget_builder;
 mod attribute;
 mod child;
 mod children;
@@ -11,6 +10,7 @@ mod partial_eq;
 mod use_effect;
 mod widget;
 mod widget_attributes;
+mod widget_builder;
 mod widget_props;
 
 use function_component::WidgetArguments;
@@ -23,7 +23,7 @@ use use_effect::UseEffect;
 use widget::ConstructedWidget;
 
 use crate::widget::Widget;
-use crate::widget_props::{add_widget_props, impl_widget_props};
+use crate::widget_props::impl_widget_props;
 
 #[proc_macro]
 #[proc_macro_error]

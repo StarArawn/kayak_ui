@@ -1,5 +1,7 @@
+use proc_macro_error::emit_error;
 use quote::{quote, ToTokens};
 use syn::parse::{Parse, ParseStream, Result};
+use syn::spanned::Spanned;
 
 use crate::widget::Widget;
 

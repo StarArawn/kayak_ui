@@ -33,14 +33,14 @@ pub use context_ref::KayakContextRef;
 pub use cursor::PointerEvents;
 pub use event::*;
 pub use focus_tree::FocusTree;
-pub use fragment::Fragment;
+pub use fragment::{Fragment, FragmentProps};
 pub use generational_arena::{Arena, Index};
 pub use input_event::*;
 pub use keyboard::{KeyboardEvent, KeyboardModifiers};
 pub use keys::KeyCode;
 pub use resources::Resources;
 pub use tree::{Tree, WidgetTree};
-pub use vec::VecTracker;
+pub use vec::{VecTracker, VecTrackerProps};
 pub use widget::{BaseWidget, Widget, WidgetProps};
 
 pub mod derivative {

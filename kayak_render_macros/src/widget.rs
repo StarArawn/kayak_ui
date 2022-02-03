@@ -1,12 +1,16 @@
 use proc_macro2::TokenStream;
-use quote::quote;
+use proc_macro_error::{emit_error, emit_warning};
+use quote::{format_ident, quote};
 use quote::ToTokens;
 use syn::parse::{Parse, ParseStream, Result};
+use syn::Path;
+use syn::spanned::Spanned;
 
-use crate::arc_function::build_arc_function;
+use crate::widget_builder::build_widget_stream;
 use crate::children::Children;
 use crate::tags::ClosingTag;
-use crate::{tags::OpenTag, widget_attributes::WidgetAttributes};
+use crate::{get_core_crate, tags::OpenTag, widget_attributes::WidgetAttributes};
+use crate::widget_attributes::CustomWidgetAttributes;
 
 #[derive(Clone)]
 pub struct Widget {
@@ -61,17 +65,19 @@ impl Widget {
         let name = open_tag.name;
         let declaration = if Self::is_custom_element(&name) {
             let attrs = &open_tag.attributes.for_custom_element(&children);
-            let attrs = attrs.to_token_stream();
+            let (props, constructor) = Self::construct(&name, attrs);
             if !as_prop {
-                let attrs = quote! { #name #attrs };
-                let widget_block = build_arc_function(quote! { built_widget }, attrs, 0);
-                quote! {
+                let widget_block = build_widget_stream(quote! { built_widget }, constructor, 0);
+                quote! {{
+                    #props
                     #widget_block
-                }
+                }}
             } else {
-                quote! {
-                    #name #attrs
-                }
+                quote! {{
+                    #props
+                    let widget = #constructor;
+                    widget
+                }}
             }
         } else {
             panic!("Couldn't find widget!");
@@ -82,6 +88,37 @@ impl Widget {
             children,
             declaration,
         })
+    }
+
+
+    /// Constructs a widget and its props
+    ///
+    /// The returned tuple contains:
+    /// 1. The props constructor and assignment
+    /// 2. The widget constructor
+    ///
+    /// # Arguments
+    ///
+    /// * `name`: The full-path name of the widget
+    /// * `attrs`: The attributes (props) to apply to this widget
+    ///
+    /// returns: (TokenStream, TokenStream)
+    fn construct(name: &Path, attrs: &CustomWidgetAttributes) -> (TokenStream, TokenStream) {
+        let kayak_core = get_core_crate();
+
+        let prop_ident = format_ident!("props");
+        let attrs = attrs.assign_attributes(&prop_ident);
+
+        let props = quote! {
+            let mut #prop_ident = <#name as kayak_core::Widget>::Props::default();
+            #attrs
+        };
+
+        let constructor = quote! {
+            <#name as kayak_core::Widget>::constructor(#prop_ident)
+        };
+
+        (props, constructor)
     }
 }
 

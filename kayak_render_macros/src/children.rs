@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use crate::{arc_function::build_arc_function, attribute::Attribute, child::{walk_block_to_variable, Child}, get_core_crate};
+use crate::{widget_builder::build_widget_stream, attribute::Attribute, child::{walk_block_to_variable, Child}, get_core_crate};
 use quote::{quote, ToTokens};
 use syn::parse::{Parse, ParseStream, Result};
 
@@ -80,7 +80,7 @@ impl Children {
                             #(#children_quotes)*.clone()
                         }
                     } else {
-                        let children_builder = build_arc_function(
+                        let children_builder = build_widget_stream(
                             quote! { child_widget },
                             quote! { #(#children_quotes),* },
                             0,
@@ -144,7 +144,7 @@ impl Children {
                 for i in 0..children_quotes.len() {
                     output.push(quote! { #base_clones_inner });
                     let name: proc_macro2::TokenStream = format!("child{}", i).parse().unwrap();
-                    let child = build_arc_function(quote! { #name }, children_quotes[i].clone(), i);
+                    let child = build_widget_stream(quote! { #name }, children_quotes[i].clone(), i);
                     output.push(quote! { #child });
                 }
 

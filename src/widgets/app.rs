@@ -1,15 +1,31 @@
 use crate::core::derivative::*;
 use crate::core::{
     render_command::RenderCommand,
-    rsx,
+    OnEvent, rsx, WidgetProps,
     styles::{Style, StyleProp},
     widget, Children,
 };
 
 use crate::widgets::Clip;
 
+#[derive(WidgetProps, Derivative)]
+#[derivative(Default, Debug, PartialEq, Clone)]
+pub struct AppProps {
+    #[props(Styles)]
+    pub styles: Option<Style>,
+    #[props(Children)]
+    #[derivative(Default(value = "None"), Debug = "ignore", PartialEq = "ignore")]
+    pub children: Children,
+    #[props(OnEvent)]
+    #[derivative(Default(value = "None"), Debug = "ignore", PartialEq = "ignore")]
+    pub on_event: Option<OnEvent>,
+    #[props(Focusable)]
+    #[derivative(Default(value = "None"), PartialEq = "ignore")]
+    pub focusable: Option<bool>,
+}
+
 #[widget]
-pub fn App(children: Children) {
+pub fn App(props: AppProps) {
     #[cfg(feature = "bevy_renderer")]
     {
         use crate::bevy::WindowSize;
@@ -27,11 +43,11 @@ pub fn App(children: Children) {
 
         context.bind(&window_size);
         let window_size = window_size.get();
-        *styles = Some(Style {
+        props.styles = Some(Style {
             render_command: StyleProp::Value(RenderCommand::Layout),
             width: StyleProp::Value(Units::Pixels(window_size.0)),
             height: StyleProp::Value(Units::Pixels(window_size.1)),
-            ..styles.clone().unwrap_or_default()
+            ..props.styles.clone().unwrap_or_default()
         });
     }
 

@@ -1,6 +1,7 @@
 use crate::core::{
     render_command::RenderCommand,
-    rsx,
+    derivative::Derivative,
+    rsx, WidgetProps,
     styles::{PositionType, Style, StyleProp, Units},
     widget, Bound, Children, Color, EventType, MutableBound, OnEvent,
 };
@@ -18,6 +19,37 @@ pub struct TooltipData {
     pub text: String,
     /// Whether the tooltip is visible or not
     pub visible: bool,
+}
+
+#[derive(WidgetProps, Derivative)]
+#[derivative(Default, Debug, PartialEq, Clone)]
+pub struct TooltipProviderProps {
+    pub position: (f32, f32),
+    pub size: (f32, f32),
+    #[props(Styles)]
+    pub styles: Option<Style>,
+    #[props(Children)]
+    #[derivative(Default(value = "None"), Debug = "ignore", PartialEq = "ignore")]
+    pub children: Children,
+    #[props(OnEvent)]
+    #[derivative(Default(value = "None"), Debug = "ignore", PartialEq = "ignore")]
+    pub on_event: Option<OnEvent>,
+}
+
+#[derive(WidgetProps, Derivative)]
+#[derivative(Default, Debug, PartialEq, Clone)]
+pub struct TooltipConsumerProps {
+    pub anchor: Option<(f32, f32)>,
+    pub size: Option<(f32, f32)>,
+    pub text: String,
+    #[props(Styles)]
+    pub styles: Option<Style>,
+    #[props(Children)]
+    #[derivative(Default(value = "None"), Debug = "ignore", PartialEq = "ignore")]
+    pub children: Children,
+    #[props(OnEvent)]
+    #[derivative(Default(value = "None"), Debug = "ignore", PartialEq = "ignore")]
+    pub on_event: Option<OnEvent>,
 }
 
 /// A provider for managing a tooltip context.
@@ -58,7 +90,8 @@ pub struct TooltipData {
 /// }
 /// ```
 #[widget]
-pub fn TooltipProvider(children: Children, position: (f32, f32), size: (f32, f32)) {
+pub fn TooltipProvider(props: TooltipProviderProps) {
+    let TooltipProviderProps{position, size, ..} = props;
     const WIDTH: f32 = 150.0;
     const HEIGHT: f32 = 18.0;
     const PADDING: (f32, f32) = (10.0, 5.0);
@@ -73,15 +106,15 @@ pub fn TooltipProvider(children: Children, position: (f32, f32), size: (f32, f32
     } = tooltip.get();
     let tooltip_size = tooltip_size.unwrap_or((WIDTH, HEIGHT));
 
-    *styles = Some(Style {
+    props.styles = Some(Style {
         left: StyleProp::Value(Units::Pixels(position.0)),
         top: StyleProp::Value(Units::Pixels(position.1)),
         width: StyleProp::Value(Units::Pixels(size.0)),
         height: StyleProp::Value(Units::Pixels(size.1)),
-        ..styles.clone().unwrap_or_default()
+        ..props.styles.clone().unwrap_or_default()
     });
 
-    let base_styles = styles.clone().unwrap();
+    let base_styles = props.styles.clone().unwrap();
     let mut tooltip_styles = Style {
         position_type: StyleProp::Value(PositionType::SelfDirected),
         background_color: if matches!(base_styles.background_color, StyleProp::Default) {
@@ -166,17 +199,13 @@ pub fn TooltipProvider(children: Children, position: (f32, f32), size: (f32, f32
 /// }
 /// ```
 #[widget]
-pub fn TooltipConsumer(
-    children: Children,
-    text: String,
-    anchor: Option<(f32, f32)>,
-    size: Option<(f32, f32)>,
-) {
-    *styles = Some(Style {
+pub fn TooltipConsumer(props: TooltipConsumerProps) {
+    let TooltipConsumerProps {anchor, size, text, ..} = props.clone();
+    props.styles = Some(Style {
         render_command: StyleProp::Value(RenderCommand::Clip),
         width: StyleProp::Value(Units::Auto),
         height: StyleProp::Value(Units::Auto),
-        ..styles.clone().unwrap_or_default()
+        ..props.styles.clone().unwrap_or_default()
     });
 
     let data = context
@@ -184,7 +213,7 @@ pub fn TooltipConsumer(
         .expect("TooltipConsumer requires TooltipProvider as an ancestor");
 
     let text = Arc::new(text);
-    self.on_event = Some(OnEvent::new(move |ctx, event| match event.event_type {
+    props.on_event = Some(OnEvent::new(move |ctx, event| match event.event_type {
         EventType::MouseIn(..) => {
             let mut state = data.get();
             state.visible = true;

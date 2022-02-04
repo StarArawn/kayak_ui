@@ -4,7 +4,17 @@ use std::{
 };
 
 use crate::layout_cache::Rect;
-use crate::{focus_tree::FocusTracker, focus_tree::FocusTree, layout_cache::LayoutCache, node::{Node, NodeBuilder}, render_command::RenderCommand, render_primitive::RenderPrimitive, styles::Style, tree::Tree, Arena, Index, Widget, WidgetProps, BoxedWidget};
+use crate::{
+    focus_tree::FocusTracker,
+    focus_tree::FocusTree,
+    layout_cache::LayoutCache,
+    node::{Node, NodeBuilder},
+    render_command::RenderCommand,
+    render_primitive::RenderPrimitive,
+    styles::Style,
+    tree::Tree,
+    Arena, BoxedWidget, Index, Widget, WidgetProps,
+};
 // use as_any::Downcast;
 
 #[derive(Debug)]

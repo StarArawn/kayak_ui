@@ -1,8 +1,8 @@
 use kayak_ui::{
     core::{
-        constructor, rsx, WidgetProps,
+        constructor, rsx,
         styles::{LayoutType, Style, StyleProp, Units},
-        widget, Bound, EventType, Handler, KeyCode, OnEvent, VecTracker,
+        widget, Bound, EventType, Handler, KeyCode, OnEvent, VecTracker, WidgetProps,
     },
     widgets::Background,
 };
@@ -16,13 +16,18 @@ pub struct TabBarProps {
     pub selected: usize,
     pub on_select_tab: Handler<usize>,
     #[prop_field(Styles)]
-    pub styles: Option<Style>
+    pub styles: Option<Style>,
 }
 
 /// A widget displaying a collection of tabs in a horizontal bar
 #[widget]
 pub fn TabBar(props: TabBarProps) {
-    let TabBarProps{on_select_tab, selected, tabs, ..} = props.clone();
+    let TabBarProps {
+        on_select_tab,
+        selected,
+        tabs,
+        ..
+    } = props.clone();
     let theme = context.create_consumer::<TabTheme>().unwrap_or_default();
 
     let tabs = tabs.into_iter().enumerate().map(move |(index, tab)| {

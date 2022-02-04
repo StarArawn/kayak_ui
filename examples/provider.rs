@@ -13,17 +13,17 @@
 use bevy::prelude::{
     App as BevyApp, AssetServer, Commands, DefaultPlugins, Res, ResMut, WindowDescriptor,
 };
+use kayak_core::Children;
 use kayak_ui::{
     bevy::{BevyContext, BevyKayakUIPlugin, FontMapping, UICameraBundle},
     core::{
-        render, rsx, WidgetProps,
+        render, rsx,
         styles::{LayoutType, Style, StyleProp, Units},
-        widget, Bound, Color, EventType, Index, MutableBound, OnEvent,
+        widget, Bound, Color, EventType, Index, MutableBound, OnEvent, WidgetProps,
     },
     widgets::{App, Background, Element, If, Text, TooltipConsumer, TooltipProvider, Window},
 };
 use std::sync::Arc;
-use kayak_core::Children;
 
 /// The color theme struct we will be using across our demo widgets
 #[derive(Debug, Default, Clone, PartialEq)]
@@ -74,7 +74,10 @@ struct ThemeProviderProps {
 /// It can also be nested within itself, allowing for differing provider values.
 #[widget]
 fn ThemeProvider(props: ThemeProviderProps) {
-    let ThemeProviderProps { initial_theme, children } = props.clone();
+    let ThemeProviderProps {
+        initial_theme,
+        children,
+    } = props.clone();
     // Create the provider
     context.create_provider(initial_theme);
     rsx! { <>{children}</> }
@@ -166,7 +169,7 @@ fn ThemeSelector(props: ThemeSelectorProps) {
 
 #[derive(WidgetProps, Clone, Debug, Default, PartialEq)]
 struct ThemeDemoProps {
-    is_root: bool
+    is_root: bool,
 }
 
 /// A widget that demonstrates the theming in action

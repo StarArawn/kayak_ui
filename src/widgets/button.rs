@@ -1,8 +1,8 @@
 use crate::core::{
     render_command::RenderCommand,
-    Color, OnEvent, rsx, WidgetProps,
+    rsx,
     styles::{Style, StyleProp, Units},
-    widget, Children, Fragment,
+    widget, Children, Color, Fragment, OnEvent, WidgetProps,
 };
 
 #[derive(WidgetProps, Default, Debug, PartialEq, Clone)]
@@ -10,13 +10,10 @@ pub struct ButtonProps {
     #[prop_field(Styles)]
     pub styles: Option<Style>,
     #[prop_field(Children)]
-
     pub children: Option<Children>,
     #[prop_field(OnEvent)]
-
     pub on_event: Option<OnEvent>,
     #[prop_field(Focusable)]
-
     pub focusable: Option<bool>,
 }
 

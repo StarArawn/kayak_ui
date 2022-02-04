@@ -7,9 +7,9 @@ use kayak_core::Color;
 use kayak_render_macros::use_state;
 use kayak_ui::bevy::{BevyContext, BevyKayakUIPlugin, FontMapping, UICameraBundle};
 use kayak_ui::core::{
-    render, rsx, WidgetProps,
+    render, rsx,
     styles::{Style, StyleProp, Units},
-    widget, Index,
+    widget, Index, WidgetProps,
 };
 use kayak_ui::widgets::{App, OnChange, TextBox, Window};
 

@@ -1,9 +1,9 @@
+use crate::get_core_crate;
 use proc_macro::TokenStream;
 use proc_macro_error::emit_error;
 use quote::quote;
-use syn::{FnArg, Pat, Type};
 use syn::spanned::Spanned;
-use crate::get_core_crate;
+use syn::{FnArg, Pat, Type};
 
 pub struct WidgetArguments {
     pub focusable: bool,
@@ -25,15 +25,17 @@ pub fn create_function_widget(f: syn::ItemFn, _widget_arguments: WidgetArguments
         } else {
             f.sig.span()
         };
-        emit_error!(span, "Functional widgets expect exactly one argument (their props), but was given {}", f.sig.inputs.len());
+        emit_error!(
+            span,
+            "Functional widgets expect exactly one argument (their props), but was given {}",
+            f.sig.inputs.len()
+        );
     }
 
     let (props, prop_type) = match f.sig.inputs.first().unwrap() {
         FnArg::Typed(typed) => {
             let ident = match *typed.pat.clone() {
-                Pat::Ident(ident) => {
-                    ident.ident
-                }
+                Pat::Ident(ident) => ident.ident,
                 err => {
                     emit_error!(err.span(), "Expected identifier, but got {:?}", err);
                     return TokenStream::new();
@@ -41,9 +43,7 @@ pub fn create_function_widget(f: syn::ItemFn, _widget_arguments: WidgetArguments
             };
 
             let ty = match *typed.ty.clone() {
-                Type::Path(type_path) => {
-                    type_path.path
-                }
+                Type::Path(type_path) => type_path.path,
                 err => {
                     emit_error!(err.span(), "Invalid widget prop type: {:?}", err);
                     return TokenStream::new();
@@ -62,7 +62,6 @@ pub fn create_function_widget(f: syn::ItemFn, _widget_arguments: WidgetArguments
     let vis = f.vis;
 
     let kayak_core = get_core_crate();
-
 
     // TODO: See if this is still needed. If not, remove it
     // let mut input_names: Vec<_> = inputs

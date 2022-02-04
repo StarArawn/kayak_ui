@@ -1,8 +1,8 @@
 use crate::core::{
     render_command::RenderCommand,
-    OnEvent, rsx, WidgetProps,
+    rsx,
     styles::{Style, StyleProp, Units},
-    widget, Children,
+    widget, Children, OnEvent, WidgetProps,
 };
 
 #[derive(WidgetProps, Default, Debug, PartialEq, Clone)]
@@ -10,10 +10,8 @@ pub struct ClipProps {
     #[prop_field(Styles)]
     pub styles: Option<Style>,
     #[prop_field(Children)]
-
     pub children: Option<Children>,
     #[prop_field(OnEvent)]
-
     pub on_event: Option<OnEvent>,
 }
 

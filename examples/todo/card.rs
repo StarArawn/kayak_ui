@@ -1,7 +1,7 @@
 use kayak_ui::core::{
-    rsx, WidgetProps,
+    rsx,
     styles::{LayoutType, Style, StyleProp, Units},
-    widget, Color, EventType, Handler, OnEvent,
+    widget, Color, EventType, Handler, OnEvent, WidgetProps,
 };
 use kayak_ui::widgets::{Background, Text};
 
@@ -16,7 +16,11 @@ pub struct CardProps {
 
 #[widget]
 pub fn Card(props: CardProps) {
-    let CardProps{card_id, name, on_delete} = props.clone();
+    let CardProps {
+        card_id,
+        name,
+        on_delete,
+    } = props.clone();
     let background_styles = Style {
         layout_type: StyleProp::Value(LayoutType::Row),
         background_color: StyleProp::Value(Color::new(0.176, 0.196, 0.215, 1.0)),

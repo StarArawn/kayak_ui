@@ -1,8 +1,8 @@
 use kayak_ui::core::{
     render_command::RenderCommand,
-    rsx, WidgetProps,
+    rsx,
     styles::{Style, StyleProp},
-    use_state, widget, Bound, Fragment, Handler,
+    use_state, widget, Bound, Fragment, Handler, WidgetProps,
 };
 use std::fmt::Debug;
 
@@ -31,7 +31,9 @@ pub struct TabBoxProps {
 /// This houses both the tab bar and its content.
 #[widget]
 pub fn TabBox(props: TabBoxProps) {
-    let TabBoxProps { initial_tab, tabs, .. } = props.clone();
+    let TabBoxProps {
+        initial_tab, tabs, ..
+    } = props.clone();
     let theme = context.create_consumer::<TabTheme>().unwrap_or_default();
     let (selected, set_selected, ..) = use_state!(initial_tab);
 

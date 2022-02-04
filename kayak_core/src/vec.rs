@@ -1,4 +1,6 @@
-use crate::{context_ref::KayakContextRef, styles::Style, Index, Widget, Children, OnEvent, WidgetProps};
+use crate::{
+    context_ref::KayakContextRef, styles::Style, Children, Index, OnEvent, Widget, WidgetProps,
+};
 
 #[derive(Default, Debug, PartialEq, Clone)]
 pub struct VecTrackerProps<T> {
@@ -31,8 +33,8 @@ impl<T> VecTracker<T> {
 }
 
 impl<T, I> From<I> for VecTracker<T>
-    where
-        I: Iterator<Item=T>,
+where
+    I: Iterator<Item = T>,
 {
     fn from(iter: I) -> Self {
         Self::new(iter.collect())
@@ -40,9 +42,9 @@ impl<T, I> From<I> for VecTracker<T>
 }
 
 impl<T> WidgetProps for VecTrackerProps<T>
-    where
-        T: Widget, {
-
+where
+    T: Widget,
+{
     fn get_children(&self) -> Option<Children> {
         self.children.clone()
     }
@@ -65,12 +67,15 @@ impl<T> WidgetProps for VecTrackerProps<T>
 }
 
 impl<T> Widget for VecTracker<T>
-    where
-        T: Widget,
+where
+    T: Widget,
 {
     type Props = VecTrackerProps<T>;
 
-    fn constructor(props: Self::Props) -> Self where Self: Sized {
+    fn constructor(props: Self::Props) -> Self
+    where
+        Self: Sized,
+    {
         Self {
             id: Index::default(),
             props,

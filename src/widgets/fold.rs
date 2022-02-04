@@ -1,8 +1,8 @@
 use crate::core::{
     render_command::RenderCommand,
-    OnEvent, rsx, WidgetProps,
+    rsx,
     styles::{Style, StyleProp, Units},
-    use_state, widget, Children, EventType, Handler,
+    use_state, widget, Children, EventType, Handler, OnEvent, WidgetProps,
 };
 
 use crate::widgets::{Background, Clip, If, Text};
@@ -16,13 +16,10 @@ pub struct FoldProps {
     #[prop_field(Styles)]
     pub styles: Option<Style>,
     #[prop_field(Children)]
-
     pub children: Option<Children>,
     #[prop_field(OnEvent)]
-
     pub on_event: Option<OnEvent>,
     #[prop_field(Focusable)]
-
     pub focusable: Option<bool>,
 }
 
@@ -58,7 +55,13 @@ pub struct FoldProps {
 /// ```
 #[widget]
 pub fn Fold(props: FoldProps) {
-    let FoldProps {default_open, label, on_change, open, ..} = props.clone();
+    let FoldProps {
+        default_open,
+        label,
+        on_change,
+        open,
+        ..
+    } = props.clone();
 
     // === State === //
     let initial = default_open || open.unwrap_or_default();

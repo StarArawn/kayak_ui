@@ -1,8 +1,4 @@
-use crate::core::{
-    OnEvent, rsx, WidgetProps,
-    styles::{Style},
-    widget, Children,
-};
+use crate::core::{rsx, styles::Style, widget, Children, OnEvent, WidgetProps};
 
 #[derive(WidgetProps, Default, Debug, PartialEq, Clone)]
 pub struct IfProps {
@@ -10,13 +6,10 @@ pub struct IfProps {
     #[prop_field(Styles)]
     pub styles: Option<Style>,
     #[prop_field(Children)]
-
     pub children: Option<Children>,
     #[prop_field(OnEvent)]
-
     pub on_event: Option<OnEvent>,
     #[prop_field(Focusable)]
-
     pub focusable: Option<bool>,
 }
 

@@ -13,9 +13,9 @@ use bevy::{
 use kayak_ui::{
     bevy::{BevyContext, BevyKayakUIPlugin, FontMapping, UICameraBundle},
     core::{
-        constructor, render, rsx, WidgetProps,
+        constructor, render, rsx,
         styles::{Style, StyleProp, Units},
-        widget, Color, Index,
+        widget, Color, Index, WidgetProps,
     },
     widgets::{App, Text, Window},
 };

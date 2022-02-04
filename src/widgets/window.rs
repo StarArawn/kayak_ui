@@ -1,9 +1,9 @@
 use crate::core::{
     color::Color,
     render_command::RenderCommand,
-    rsx, WidgetProps,
+    rsx,
     styles::{PositionType, Style, StyleProp, Units},
-    use_state, widget, Children, EventType, OnEvent,
+    use_state, widget, Children, EventType, OnEvent, WidgetProps,
 };
 
 use crate::widgets::{Background, Clip, Element, Text};
@@ -17,19 +17,22 @@ pub struct WindowProps {
     #[prop_field(Styles)]
     pub styles: Option<Style>,
     #[prop_field(Children)]
-
     pub children: Option<Children>,
     #[prop_field(OnEvent)]
-
     pub on_event: Option<OnEvent>,
     #[prop_field(Focusable)]
-
     pub focusable: Option<bool>,
 }
 
 #[widget]
 pub fn Window(props: WindowProps) {
-    let WindowProps{draggable, position, size, title, ..} = props.clone();
+    let WindowProps {
+        draggable,
+        position,
+        size,
+        title,
+        ..
+    } = props.clone();
 
     let (is_dragging, set_is_dragging, ..) = use_state!(false);
     let (offset, set_offset, ..) = use_state!((0.0, 0.0));

@@ -6,9 +6,9 @@ use bevy::{
 use kayak_ui::bevy::{BevyContext, BevyKayakUIPlugin, FontMapping, ImageManager, UICameraBundle};
 use kayak_ui::core::{
     layout_cache::Space,
-    render, rsx, WidgetProps,
+    render, rsx,
     styles::{LayoutType, Style, StyleProp, Units},
-    widget, Bound, Children, EventType, Index, MutableBound, OnEvent,
+    widget, Bound, Children, EventType, Index, MutableBound, OnEvent, WidgetProps,
 };
 use kayak_ui::widgets::{App, NinePatch, Text};
 
@@ -17,7 +17,7 @@ struct BlueButtonProps {
     #[prop_field(Styles)]
     styles: Option<Style>,
     #[prop_field(Children)]
-    children: Option<Children>
+    children: Option<Children>,
 }
 
 #[widget]

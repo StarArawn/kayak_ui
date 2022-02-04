@@ -1,8 +1,8 @@
 use kayak_ui::core::{
     render_command::RenderCommand,
-    rsx, WidgetProps,
+    rsx,
     styles::{Style, StyleProp},
-    widget, Bound, Fragment, VecTracker,
+    widget, Bound, Fragment, VecTracker, WidgetProps,
 };
 use std::ops::Index;
 

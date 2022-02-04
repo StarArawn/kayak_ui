@@ -1,4 +1,6 @@
-use crate::{context_ref::KayakContextRef, styles::Style, Index, Widget, WidgetProps, Children, OnEvent};
+use crate::{
+    context_ref::KayakContextRef, styles::Style, Children, Index, OnEvent, Widget, WidgetProps,
+};
 
 #[derive(Default, Debug, PartialEq, Clone)]
 pub struct FragmentProps {
@@ -37,7 +39,10 @@ impl WidgetProps for FragmentProps {
 impl Widget for Fragment {
     type Props = FragmentProps;
 
-    fn constructor(props: Self::Props) -> Self where Self: Sized {
+    fn constructor(props: Self::Props) -> Self
+    where
+        Self: Sized,
+    {
         Self {
             id: Index::default(),
             props,

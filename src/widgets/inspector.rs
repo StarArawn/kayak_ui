@@ -2,8 +2,7 @@ use kayak_core::styles::{PositionType, Style, StyleProp, Units};
 use kayak_core::{Bound, Color, EventType, OnEvent, VecTracker};
 use kayak_render_macros::{constructor, use_state};
 
-
-use crate::core::{rsx, widget, WidgetProps, MutableBound};
+use crate::core::{rsx, widget, MutableBound, WidgetProps};
 
 use crate::widgets::{Background, Button, Text};
 

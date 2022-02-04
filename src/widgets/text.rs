@@ -3,9 +3,8 @@ use kayak_font::{CoordinateSystem, KayakFont};
 
 use crate::core::{
     render_command::RenderCommand,
-    OnEvent, WidgetProps,
     styles::{Style, StyleProp},
-    widget,
+    widget, OnEvent, WidgetProps,
 };
 
 #[derive(WidgetProps, Default, Debug, PartialEq, Clone)]
@@ -17,16 +16,20 @@ pub struct TextProps {
     #[prop_field(Styles)]
     pub styles: Option<Style>,
     #[prop_field(OnEvent)]
-
     pub on_event: Option<OnEvent>,
     #[prop_field(Focusable)]
-
     pub focusable: Option<bool>,
 }
 
 #[widget]
 pub fn Text(props: TextProps) {
-    let TextProps{content, font, line_height, size, ..} = props.clone();
+    let TextProps {
+        content,
+        font,
+        line_height,
+        size,
+        ..
+    } = props.clone();
     let font_name = font;
     let font: Binding<Option<KayakFont>> =
         context.get_asset(font_name.clone().unwrap_or("Roboto".into()));

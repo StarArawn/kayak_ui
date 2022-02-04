@@ -1,9 +1,9 @@
 use kayak_ui::core::{
     color::Color,
     render_command::RenderCommand,
-    rsx, WidgetProps,
+    rsx,
     styles::{Style, StyleProp, Units},
-    use_state, widget, EventType, OnEvent,
+    use_state, widget, EventType, OnEvent, WidgetProps,
 };
 
 use kayak_ui::widgets::{Background, Text};

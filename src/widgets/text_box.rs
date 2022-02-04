@@ -1,8 +1,8 @@
 use crate::core::{
     render_command::RenderCommand,
-    Children, rsx, WidgetProps,
+    rsx,
     styles::{Style, StyleProp, Units},
-    widget, Bound, Color, EventType, MutableBound, OnEvent,
+    widget, Bound, Children, Color, EventType, MutableBound, OnEvent, WidgetProps,
 };
 use std::sync::{Arc, RwLock};
 
@@ -16,13 +16,10 @@ pub struct TextBoxProps {
     #[prop_field(Styles)]
     pub styles: Option<Style>,
     #[prop_field(Children)]
-
     pub children: Option<Children>,
     #[prop_field(OnEvent)]
-
     pub on_event: Option<OnEvent>,
     #[prop_field(Focusable)]
-
     pub focusable: Option<bool>,
 }
 
@@ -57,7 +54,12 @@ pub struct Focus(pub bool);
 
 #[widget(focusable)]
 pub fn TextBox(props: TextBoxProps) {
-    let TextBoxProps {on_change, placeholder, value, ..} = props.clone();
+    let TextBoxProps {
+        on_change,
+        placeholder,
+        value,
+        ..
+    } = props.clone();
     let current_styles = props.styles.clone().unwrap_or_default();
     props.styles = Some(Style {
         render_command: StyleProp::Value(RenderCommand::Layout),

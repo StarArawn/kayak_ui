@@ -1,13 +1,15 @@
+use crate::{Index, KayakContextRef};
 use std::fmt::{Debug, Formatter};
 use std::sync::Arc;
-use crate::{Index, KayakContextRef};
 
 /// A container for a function that generates child widgets
 #[derive(Clone)]
 pub struct Children(Arc<dyn Fn(Option<Index>, &mut KayakContextRef) + Send + Sync>);
 
 impl Children {
-    pub fn new<F: Fn(Option<Index>, &mut KayakContextRef) + Send + Sync + 'static>(builder: F) -> Self {
+    pub fn new<F: Fn(Option<Index>, &mut KayakContextRef) + Send + Sync + 'static>(
+        builder: F,
+    ) -> Self {
         Self(Arc::new(builder))
     }
     pub fn build(&self, id: Option<Index>, context: &mut KayakContextRef) {

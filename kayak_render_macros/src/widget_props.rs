@@ -1,9 +1,9 @@
 use proc_macro::TokenStream;
 
-use proc_macro2::{Ident};
+use proc_macro2::Ident;
 use proc_macro_error::emit_error;
 use quote::quote;
-use syn::{Data, DeriveInput, Field, Meta, NestedMeta, parse_macro_input, spanned::Spanned};
+use syn::{parse_macro_input, spanned::Spanned, Data, DeriveInput, Field, Meta, NestedMeta};
 
 use crate::get_core_crate;
 
@@ -25,7 +25,10 @@ struct PropsHelpers {
 
 pub(crate) fn impl_widget_props(input: TokenStream) -> TokenStream {
     let DeriveInput {
-        ident, data, generics, ..
+        ident,
+        data,
+        generics,
+        ..
     } = parse_macro_input!(input);
 
     let helpers = process_data(data);
@@ -90,7 +93,9 @@ fn process_data(data: Data) -> PropsHelpers {
                 process_field(field, &mut helpers);
             }
         }
-        Data::Enum(data) => emit_error!(data.enum_token.span(), "Cannot derive WidgetProp for enum"),
+        Data::Enum(data) => {
+            emit_error!(data.enum_token.span(), "Cannot derive WidgetProp for enum")
+        }
     }
 
     helpers
@@ -121,7 +126,7 @@ fn process_field(field: Field, props: &mut PropsHelpers) {
                             PROP_STYLE => props.styles_ident = field.ident.clone(),
                             PROP_ON_EVENT => props.on_event_ident = field.ident.clone(),
                             PROP_FOCUSABLE => props.focusable_ident = field.ident.clone(),
-                            err => emit_error!(err.span(), "Invalid attribute: {}", err)
+                            err => emit_error!(err.span(), "Invalid attribute: {}", err),
                         }
                     }
                 }

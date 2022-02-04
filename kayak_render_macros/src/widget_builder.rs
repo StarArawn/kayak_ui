@@ -1,7 +1,6 @@
 use proc_macro2::TokenStream;
 use quote::quote;
 
-
 /// Creates a token stream for building a widget
 ///
 /// # Arguments

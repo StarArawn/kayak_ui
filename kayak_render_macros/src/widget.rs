@@ -1,14 +1,14 @@
 use proc_macro2::TokenStream;
-use quote::{format_ident, quote};
 use quote::ToTokens;
+use quote::{format_ident, quote};
 use syn::parse::{Parse, ParseStream, Result};
 use syn::Path;
 
-use crate::widget_builder::build_widget_stream;
 use crate::children::Children;
 use crate::tags::ClosingTag;
-use crate::{get_core_crate, tags::OpenTag, widget_attributes::WidgetAttributes};
 use crate::widget_attributes::CustomWidgetAttributes;
+use crate::widget_builder::build_widget_stream;
+use crate::{get_core_crate, tags::OpenTag, widget_attributes::WidgetAttributes};
 
 #[derive(Clone)]
 pub struct Widget {
@@ -87,7 +87,6 @@ impl Widget {
             declaration,
         })
     }
-
 
     /// Constructs a widget and its props
     ///

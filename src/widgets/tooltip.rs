@@ -1,8 +1,8 @@
 use crate::core::{
     render_command::RenderCommand,
-    rsx, WidgetProps,
+    rsx,
     styles::{PositionType, Style, StyleProp, Units},
-    widget, Bound, Children, Color, EventType, MutableBound, OnEvent,
+    widget, Bound, Children, Color, EventType, MutableBound, OnEvent, WidgetProps,
 };
 use std::sync::Arc;
 
@@ -27,10 +27,8 @@ pub struct TooltipProviderProps {
     #[prop_field(Styles)]
     pub styles: Option<Style>,
     #[prop_field(Children)]
-
     pub children: Option<Children>,
     #[prop_field(OnEvent)]
-
     pub on_event: Option<OnEvent>,
 }
 
@@ -42,10 +40,8 @@ pub struct TooltipConsumerProps {
     #[prop_field(Styles)]
     pub styles: Option<Style>,
     #[prop_field(Children)]
-
     pub children: Option<Children>,
     #[prop_field(OnEvent)]
-
     pub on_event: Option<OnEvent>,
 }
 
@@ -88,7 +84,7 @@ pub struct TooltipConsumerProps {
 /// ```
 #[widget]
 pub fn TooltipProvider(props: TooltipProviderProps) {
-    let TooltipProviderProps{position, size, ..} = props;
+    let TooltipProviderProps { position, size, .. } = props;
     const WIDTH: f32 = 150.0;
     const HEIGHT: f32 = 18.0;
     const PADDING: (f32, f32) = (10.0, 5.0);
@@ -197,7 +193,9 @@ pub fn TooltipProvider(props: TooltipProviderProps) {
 /// ```
 #[widget]
 pub fn TooltipConsumer(props: TooltipConsumerProps) {
-    let TooltipConsumerProps {anchor, size, text, ..} = props.clone();
+    let TooltipConsumerProps {
+        anchor, size, text, ..
+    } = props.clone();
     props.styles = Some(Style {
         render_command: StyleProp::Value(RenderCommand::Clip),
         width: StyleProp::Value(Units::Auto),

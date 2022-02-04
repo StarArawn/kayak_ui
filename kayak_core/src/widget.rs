@@ -1,7 +1,10 @@
-use std::any::Any;
 use as_any::AsAny;
+use std::any::Any;
 
-use crate::{context::KayakContext, context_ref::KayakContextRef, styles::Style, Event, Index, OnEvent, Children};
+use crate::{
+    context::KayakContext, context_ref::KayakContextRef, styles::Style, Children, Event, Index,
+    OnEvent,
+};
 
 /// An internal trait that has a blanket implementation over all implementors of [Widget]
 ///
@@ -14,7 +17,9 @@ pub trait SealedWidget {}
 /// You should _never_ implement BaseWidget manually. It is automatically implemented on
 /// all implementors of [Widget].
 pub trait BaseWidget: SealedWidget + std::fmt::Debug + Send + Sync {
-    fn constructor<P: WidgetProps>(props: P) -> Self where Self: Sized;
+    fn constructor<P: WidgetProps>(props: P) -> Self
+    where
+        Self: Sized;
     fn get_id(&self) -> Index;
     fn set_id(&mut self, id: Index);
     fn get_props(&self) -> &dyn WidgetProps;
@@ -29,7 +34,9 @@ pub trait Widget: std::fmt::Debug + Clone + Default + PartialEq + AsAny + Send +
     type Props: WidgetProps + Clone + Default + PartialEq;
 
     /// Construct the widget with the given props
-    fn constructor(props: Self::Props) -> Self where Self: Sized;
+    fn constructor(props: Self::Props) -> Self
+    where
+        Self: Sized;
 
     /// Get this widget's ID
     fn get_id(&self) -> Index;
@@ -74,8 +81,14 @@ pub trait WidgetProps: std::fmt::Debug + AsAny + Send + Sync {
     fn get_focusable(&self) -> Option<bool>;
 }
 
-impl<T> BaseWidget for T where T: Widget + Clone + PartialEq + Default  {
-    fn constructor<P: WidgetProps>(props: P) -> Self where Self: Sized {
+impl<T> BaseWidget for T
+where
+    T: Widget + Clone + PartialEq + Default,
+{
+    fn constructor<P: WidgetProps>(props: P) -> Self
+    where
+        Self: Sized,
+    {
         let props: Box<dyn Any> = Box::new(props);
         Widget::constructor(*props.downcast::<<T as Widget>::Props>().unwrap())
     }

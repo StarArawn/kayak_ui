@@ -1,5 +1,6 @@
 mod assets;
 mod binding;
+mod children;
 pub mod color;
 pub mod context;
 mod context_ref;
@@ -16,6 +17,7 @@ mod keys;
 pub mod layout_cache;
 mod multi_state;
 pub mod node;
+mod on_event;
 pub mod render_command;
 pub mod render_primitive;
 pub mod styles;
@@ -23,8 +25,6 @@ pub mod tree;
 mod vec;
 pub mod widget;
 pub mod widget_manager;
-mod children;
-mod on_event;
 
 use std::sync::{Arc, RwLock};
 

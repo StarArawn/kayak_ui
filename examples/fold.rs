@@ -7,9 +7,9 @@ use bevy::{
 use kayak_ui::{
     bevy::{BevyContext, BevyKayakUIPlugin, FontMapping, UICameraBundle},
     core::{
-        render, rsx, WidgetProps,
+        render, rsx,
         styles::{Style, StyleProp, Units},
-        use_state, widget, Color, EventType, Handler, Index, OnEvent,
+        use_state, widget, Color, EventType, Handler, Index, OnEvent, WidgetProps,
     },
     widgets::{App, Background, Button, Fold, If, Text, Window},
 };

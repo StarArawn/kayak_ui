@@ -1,9 +1,9 @@
+use crate::get_core_crate;
 use crate::widget_attributes::WidgetAttributes;
 use proc_macro_error::abort;
 use quote::quote;
 use syn::parse::{Parse, ParseStream, Result};
 use syn::spanned::Spanned;
-use crate::get_core_crate;
 
 pub struct OpenTag {
     pub name: syn::Path,

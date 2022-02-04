@@ -1,14 +1,10 @@
+use crate::{Event, KayakContext};
 use std::fmt::{Debug, Formatter};
 use std::sync::{Arc, RwLock};
-use crate::{Event, KayakContext};
 
 /// A container for a function that handles events
 #[derive(Clone)]
-pub struct OnEvent(
-    Arc<
-        RwLock<dyn FnMut(&mut KayakContext, &mut Event) + Send + Sync + 'static>,
-    >,
-);
+pub struct OnEvent(Arc<RwLock<dyn FnMut(&mut KayakContext, &mut Event) + Send + Sync + 'static>>);
 
 impl OnEvent {
     /// Create a new event handler
@@ -16,9 +12,7 @@ impl OnEvent {
     /// The handler should be a closure that takes the following arguments:
     /// 1. The current context
     /// 2. The event
-    pub fn new<F: FnMut(&mut KayakContext, &mut Event) + Send + Sync + 'static>(
-        f: F,
-    ) -> OnEvent {
+    pub fn new<F: FnMut(&mut KayakContext, &mut Event) + Send + Sync + 'static>(f: F) -> OnEvent {
         OnEvent(Arc::new(RwLock::new(f)))
     }
 

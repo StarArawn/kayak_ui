@@ -1,15 +1,15 @@
+use proc_macro2::{Ident, TokenStream};
 use proc_macro_error::emit_error;
 use quote::{quote, ToTokens};
 use std::collections::HashSet;
-use proc_macro2::{Ident, TokenStream};
 use syn::{
     ext::IdentExt,
     parse::{Parse, ParseStream, Result},
     spanned::Spanned,
 };
 
-use crate::{attribute::Attribute, children::Children, get_core_crate};
 use crate::child::Child;
+use crate::{attribute::Attribute, children::Children, get_core_crate};
 
 #[derive(Clone)]
 pub struct WidgetAttributes {
@@ -129,7 +129,6 @@ impl<'a, 'c> ToTokens for CustomWidgetAttributes<'a, 'c> {
 }
 
 impl<'a, 'c> CustomWidgetAttributes<'a, 'c> {
-
     /// Assign this widget's attributes to the given ident
     ///
     /// This takes the form: `IDENT.ATTR_NAME = ATTR_VALUE;`
@@ -183,7 +182,7 @@ impl<'a, 'c> CustomWidgetAttributes<'a, 'c> {
                     block.stmts.len() > 0
                 }
                 // Child is a widget
-                _ => true
+                _ => true,
             }
         } else {
             // Multiple children

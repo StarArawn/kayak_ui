@@ -1,10 +1,10 @@
+use crate::get_core_crate;
 use proc_macro::TokenStream;
 use proc_macro2::Ident;
 use quote::{format_ident, quote};
 use syn::parse::{Parse, ParseStream};
 use syn::punctuated::{Iter, Punctuated};
 use syn::{bracketed, Token};
-use crate::get_core_crate;
 
 pub(crate) struct UseEffect {
     pub closure: syn::ExprClosure,

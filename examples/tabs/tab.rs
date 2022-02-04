@@ -1,9 +1,9 @@
 use kayak_ui::{
     core::{
         render_command::RenderCommand,
-        rsx, WidgetProps,
+        rsx,
         styles::{LayoutType, Style, StyleProp, Units},
-        use_state, widget, Bound, EventType, OnEvent,
+        use_state, widget, Bound, EventType, OnEvent, WidgetProps,
     },
     widgets::{Background, Text},
 };
@@ -30,7 +30,9 @@ pub struct TabProps {
 /// The actual tab, displayed in a [TabBar](crate::tab_bar::TabBar)
 #[widget]
 pub fn Tab(props: TabProps) {
-    let TabProps{content, selected, ..} = props.clone();
+    let TabProps {
+        content, selected, ..
+    } = props.clone();
 
     let theme = context.create_consumer::<TabTheme>().unwrap_or_default();
     let (focus_state, set_focus_state, ..) = use_state!(false);

@@ -5,16 +5,35 @@ use crate::core::{
     widget, Children, Color, Fragment, OnEvent, WidgetProps,
 };
 
-#[derive(WidgetProps, Default, Debug, PartialEq, Clone)]
+#[derive(Default, Debug, PartialEq, Clone)]
 pub struct ButtonProps {
-    #[prop_field(Styles)]
+    pub disabled: bool,
     pub styles: Option<Style>,
-    #[prop_field(Children)]
     pub children: Option<Children>,
-    #[prop_field(OnEvent)]
     pub on_event: Option<OnEvent>,
-    #[prop_field(Focusable)]
     pub focusable: Option<bool>,
+}
+
+impl WidgetProps for ButtonProps {
+    fn get_children(&self) -> Option<Children> {
+        self.children.clone()
+    }
+
+    fn set_children(&mut self, children: Option<Children>) {
+        self.children = children;
+    }
+
+    fn get_styles(&self) -> Option<Style> {
+        self.styles.clone()
+    }
+
+    fn get_on_event(&self) -> Option<OnEvent> {
+        self.on_event.clone()
+    }
+
+    fn get_focusable(&self) -> Option<bool> {
+        Some(!self.disabled)
+    }
 }
 
 #[widget]

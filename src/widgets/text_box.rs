@@ -8,19 +8,38 @@ use std::sync::{Arc, RwLock};
 
 use crate::widgets::{Background, Clip, Text};
 
-#[derive(WidgetProps, Default, Debug, PartialEq, Clone)]
+#[derive(Default, Debug, PartialEq, Clone)]
 pub struct TextBoxProps {
+    pub disabled: bool,
     pub value: String,
     pub on_change: Option<OnChange>,
     pub placeholder: Option<String>,
-    #[prop_field(Styles)]
     pub styles: Option<Style>,
-    #[prop_field(Children)]
     pub children: Option<Children>,
-    #[prop_field(OnEvent)]
     pub on_event: Option<OnEvent>,
-    #[prop_field(Focusable)]
     pub focusable: Option<bool>,
+}
+
+impl WidgetProps for TextBoxProps {
+    fn get_children(&self) -> Option<Children> {
+        self.children.clone()
+    }
+
+    fn set_children(&mut self, children: Option<Children>) {
+        self.children = children;
+    }
+
+    fn get_styles(&self) -> Option<Style> {
+        self.styles.clone()
+    }
+
+    fn get_on_event(&self) -> Option<OnEvent> {
+        self.on_event.clone()
+    }
+
+    fn get_focusable(&self) -> Option<bool> {
+        Some(!self.disabled)
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -52,7 +71,7 @@ impl std::fmt::Debug for OnChange {
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Focus(pub bool);
 
-#[widget(focusable)]
+#[widget]
 pub fn TextBox(props: TextBoxProps) {
     let TextBoxProps {
         on_change,

@@ -1,5 +1,5 @@
 use kayak_ui::core::{
-    rsx,
+    rsx, WidgetProps,
     styles::{LayoutType, Style, StyleProp, Units},
     widget, Color, EventType, Handler, OnEvent,
 };
@@ -7,8 +7,16 @@ use kayak_ui::widgets::{Background, Text};
 
 use super::delete_button::DeleteButton;
 
+#[derive(WidgetProps, Clone, Debug, Default, PartialEq)]
+pub struct CardProps {
+    pub card_id: usize,
+    pub name: String,
+    pub on_delete: Handler<usize>,
+}
+
 #[widget]
-pub fn Card(card_id: usize, name: String, on_delete: Handler<usize>) {
+pub fn Card(props: CardProps) {
+    let CardProps{card_id, name, on_delete} = props.clone();
     let background_styles = Style {
         layout_type: StyleProp::Value(LayoutType::Row),
         background_color: StyleProp::Value(Color::new(0.176, 0.196, 0.215, 1.0)),

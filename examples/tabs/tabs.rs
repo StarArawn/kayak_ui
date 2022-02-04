@@ -13,9 +13,9 @@ use bevy::{
 use kayak_ui::{
     bevy::{BevyContext, BevyKayakUIPlugin, FontMapping, UICameraBundle},
     core::{
-        constructor, render, rsx,
+        constructor, render, rsx, WidgetProps,
         styles::{Style, StyleProp, Units},
-        widget, Children, Color, Index,
+        widget, Color, Index,
     },
     widgets::{App, Text, Window},
 };
@@ -30,8 +30,11 @@ mod tab_box;
 mod tab_content;
 mod theming;
 
+#[derive(WidgetProps, Default, Debug, PartialEq, Clone)]
+pub struct TabDemoProps {}
+
 #[widget]
-fn TabDemo() {
+fn TabDemo(props: TabDemoProps) {
     let text_style = Style {
         width: StyleProp::Value(Units::Percentage(75.0)),
         top: StyleProp::Value(Units::Stretch(0.5)),
@@ -48,8 +51,6 @@ fn TabDemo() {
         TabData {
             name: "Tab 1".to_string(),
             content: {
-                // This is a temporary hack to prevent the `constructor` macro from throwing an error
-                let children = Children::None;
                 let text_style = text_style.clone();
                 constructor! {
                     <>
@@ -61,7 +62,6 @@ fn TabDemo() {
         TabData {
             name: "Tab 2".to_string(),
             content: {
-                let children = Children::None;
                 let text_style = text_style.clone();
                 constructor! {
                     <>
@@ -73,7 +73,6 @@ fn TabDemo() {
         TabData {
             name: "Tab 3".to_string(),
             content: {
-                let children = Children::None;
                 let text_style = text_style.clone();
                 constructor! {
                     <>

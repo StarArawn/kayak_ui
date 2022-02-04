@@ -1,7 +1,7 @@
 use kayak_ui::{
     core::{
         render_command::RenderCommand,
-        rsx,
+        rsx, WidgetProps,
         styles::{LayoutType, Style, StyleProp, Units},
         use_state, widget, Bound, EventType, OnEvent,
     },
@@ -17,9 +17,21 @@ enum TabHoverState {
     Active,
 }
 
+#[derive(WidgetProps, Default, Debug, PartialEq, Clone)]
+pub struct TabProps {
+    pub content: String,
+    pub selected: bool,
+    #[prop_field(Styles)]
+    pub styles: Option<Style>,
+    #[prop_field(OnEvent)]
+    pub on_event: Option<OnEvent>,
+}
+
 /// The actual tab, displayed in a [TabBar](crate::tab_bar::TabBar)
 #[widget]
-pub fn Tab(context: &mut KayakContext, content: String, selected: bool) {
+pub fn Tab(props: TabProps) {
+    let TabProps{content, selected, ..} = props.clone();
+
     let theme = context.create_consumer::<TabTheme>().unwrap_or_default();
     let (focus_state, set_focus_state, ..) = use_state!(false);
     let (hover_state, set_hover_state, ..) = use_state!(TabHoverState::None);
@@ -93,11 +105,11 @@ pub fn Tab(context: &mut KayakContext, content: String, selected: bool) {
         ..Default::default()
     };
 
-    self.styles = Some(Style {
+    props.styles = Some(Style {
         render_command: StyleProp::Value(RenderCommand::Layout),
         height: StyleProp::Value(Units::Pixels(theme.get().tab_height)),
         max_width: StyleProp::Value(Units::Pixels(100.0)),
-        ..styles.clone().unwrap_or_default()
+        ..props.styles.clone().unwrap_or_default()
     });
 
     rsx! {

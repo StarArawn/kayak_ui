@@ -6,14 +6,22 @@ use bevy::{
 use kayak_ui::bevy::{BevyContext, BevyKayakUIPlugin, FontMapping, ImageManager, UICameraBundle};
 use kayak_ui::core::{
     layout_cache::Space,
-    render, rsx,
+    render, rsx, WidgetProps,
     styles::{LayoutType, Style, StyleProp, Units},
     widget, Bound, Children, EventType, Index, MutableBound, OnEvent,
 };
 use kayak_ui::widgets::{App, NinePatch, Text};
 
+#[derive(WidgetProps, Clone, Debug, Default, PartialEq)]
+struct BlueButtonProps {
+    #[prop_field(Styles)]
+    styles: Option<Style>,
+    #[prop_field(Children)]
+    children: Option<Children>
+}
+
 #[widget]
-fn BlueButton(context: KayakContext, children: Children, styles: Option<Style>) {
+fn BlueButton(props: BlueButtonProps) {
     let (blue_button_handle, blue_button_hover_handle) = {
         let world = context.get_global_state::<World>();
         if world.is_err() {
@@ -48,7 +56,7 @@ fn BlueButton(context: KayakContext, children: Children, styles: Option<Style>) 
         padding_right: StyleProp::Value(Units::Stretch(1.0)),
         padding_top: StyleProp::Value(Units::Stretch(1.0)),
         padding_bottom: StyleProp::Value(Units::Stretch(1.0)),
-        ..styles.clone().unwrap_or_default()
+        ..props.styles.clone().unwrap_or_default()
     };
 
     let cloned_current_button_handle = current_button_handle.clone();
@@ -62,6 +70,7 @@ fn BlueButton(context: KayakContext, children: Children, styles: Option<Style>) 
         _ => (),
     });
 
+    let children = props.get_children();
     rsx! {
         <NinePatch
             border={Space {

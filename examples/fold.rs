@@ -7,15 +7,18 @@ use bevy::{
 use kayak_ui::{
     bevy::{BevyContext, BevyKayakUIPlugin, FontMapping, UICameraBundle},
     core::{
-        render, rsx,
+        render, rsx, WidgetProps,
         styles::{Style, StyleProp, Units},
         use_state, widget, Color, EventType, Handler, Index, OnEvent,
     },
     widgets::{App, Background, Button, Fold, If, Text, Window},
 };
 
+#[derive(WidgetProps, Clone, Debug, Default, PartialEq)]
+struct FolderTreeProps {}
+
 #[widget]
-fn FolderTree(context: &mut KayakContext) {
+fn FolderTree(props: FolderTreeProps) {
     let button_text_styles = Style {
         width: StyleProp::Value(Units::Stretch(1.0)),
         height: StyleProp::Value(Units::Pixels(22.0)),

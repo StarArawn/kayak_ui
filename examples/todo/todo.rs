@@ -5,7 +5,7 @@ use bevy::{
 };
 use kayak_ui::bevy::{BevyContext, BevyKayakUIPlugin, FontMapping, UICameraBundle};
 use kayak_ui::core::{
-    render, rsx,
+    render, rsx, WidgetProps,
     styles::{LayoutType, Style, StyleProp, Units},
     use_state, widget, EventType, Handler, Index, OnEvent,
 };
@@ -23,8 +23,11 @@ pub struct Todo {
     name: String,
 }
 
+#[derive(WidgetProps, Clone, Debug, Default, PartialEq)]
+struct TodoAppProps {}
+
 #[widget]
-fn TodoApp() {
+fn TodoApp(props: TodoAppProps) {
     let (todos, set_todos, ..) = use_state!(vec![
         Todo {
             name: "Use bevy to make a game!".to_string(),

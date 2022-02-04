@@ -16,13 +16,16 @@ use bevy::{
 };
 use kayak_ui::{
     bevy::{BevyContext, BevyKayakUIPlugin, FontMapping, UICameraBundle},
-    core::{render, rsx, use_effect, use_state, widget, EventType, Index, OnEvent},
+    core::{render, rsx, use_effect, use_state, widget, WidgetProps, EventType, Index, OnEvent},
     widgets::{App, Button, Text, Window},
 };
 
+#[derive(WidgetProps, Clone, Debug, Default, PartialEq)]
+struct StateCounterProps {}
+
 /// A simple widget that tracks how many times a button is clicked using simple state data
 #[widget]
-fn StateCounter() {
+fn StateCounter(props: StateCounterProps) {
     // On its own, a widget can't track anything, since every value will just be reset when the widget is re-rendered.
     // To get around this, and keep track of a value, we have to use states. States are values that are kept across renders.
     // Additionally, anytime a state is updated with a new value, it causes the containing widget to re-render, making it
@@ -53,9 +56,12 @@ fn StateCounter() {
     }
 }
 
+#[derive(WidgetProps, Clone, Debug, Default, PartialEq)]
+struct EffectCounterProps {}
+
 /// Another widget that tracks how many times a button is clicked using side-effects
 #[widget]
-fn EffectCounter() {
+fn EffectCounter(props: EffectCounterProps) {
     // In this widget, we're going to implement another counter, but this time using side-effects.
     // To put it very simply, a side-effect is when something happens in response to something else happening.
     // In our case, we want to create a side-effect that updates a counter when another state is updated.

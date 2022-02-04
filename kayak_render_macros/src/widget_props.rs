@@ -29,8 +29,6 @@ pub(crate) fn impl_widget_props(input: TokenStream) -> TokenStream {
         ident, data, generics, ..
     } = parse_macro_input!(input);
 
-    check_naming_convention(&ident);
-
     let helpers = process_data(data);
 
     let children_return = quote_clone_field(helpers.children_ident);
@@ -62,17 +60,6 @@ pub(crate) fn impl_widget_props(input: TokenStream) -> TokenStream {
     };
 
     output.into()
-}
-
-/// Checks for the widget props naming convention (`<Widget Name>Props`), emitting a warning if not followed
-fn check_naming_convention(ident: &Ident) {
-    let name = ident.to_string();
-    if !name.ends_with("Props") {
-        emit_warning!(
-            ident.span(),
-            "Struct should be named according to the convention \"<Widget Name>Props\" when implementing WidgetProps"
-        );
-    }
 }
 
 /// Processes all fields of the given struct to collect the helper attribute data

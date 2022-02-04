@@ -1,10 +1,8 @@
 use proc_macro2::TokenStream;
-use proc_macro_error::{emit_error, emit_warning};
 use quote::{format_ident, quote};
 use quote::ToTokens;
 use syn::parse::{Parse, ParseStream, Result};
 use syn::Path;
-use syn::spanned::Spanned;
 
 use crate::widget_builder::build_widget_stream;
 use crate::children::Children;
@@ -110,7 +108,7 @@ impl Widget {
         let attrs = attrs.assign_attributes(&prop_ident);
 
         let props = quote! {
-            let mut #prop_ident = <#name as kayak_core::Widget>::Props::default();
+            let mut #prop_ident = <#name as #kayak_core::Widget>::Props::default();
             #attrs
         };
 

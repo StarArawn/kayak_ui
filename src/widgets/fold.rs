@@ -1,6 +1,5 @@
 use crate::core::{
     render_command::RenderCommand,
-    derivative::Derivative,
     OnEvent, rsx, WidgetProps,
     styles::{Style, StyleProp, Units},
     use_state, widget, Children, EventType, Handler,

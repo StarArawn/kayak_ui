@@ -3,10 +3,9 @@ use kayak_font::{CoordinateSystem, KayakFont};
 
 use crate::core::{
     render_command::RenderCommand,
-    derivative::Derivative,
-    OnEvent, rsx, WidgetProps,
+    OnEvent, WidgetProps,
     styles::{Style, StyleProp},
-    widget, Children, Fragment,
+    widget,
 };
 
 #[derive(WidgetProps, Default, Debug, PartialEq, Clone)]

@@ -1,7 +1,6 @@
 use crate::core::{
     color::Color,
     render_command::RenderCommand,
-    derivative::Derivative,
     rsx, WidgetProps,
     styles::{PositionType, Style, StyleProp, Units},
     use_state, widget, Children, EventType, OnEvent,

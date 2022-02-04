@@ -1,10 +1,9 @@
 use proc_macro::TokenStream;
 
 use proc_macro2::{Ident};
-use proc_macro_error::{emit_error, emit_warning};
+use proc_macro_error::emit_error;
 use quote::quote;
-use syn::{AttributeArgs, Data, DeriveInput, Field, Fields, ItemStruct, Meta, NestedMeta, parse_macro_input, spanned::Spanned};
-use crate::attribute::Attribute;
+use syn::{Data, DeriveInput, Field, Meta, NestedMeta, parse_macro_input, spanned::Spanned};
 
 use crate::get_core_crate;
 

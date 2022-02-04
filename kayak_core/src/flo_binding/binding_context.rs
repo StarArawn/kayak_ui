@@ -105,7 +105,7 @@ pub struct BindingContext {
     dependencies: BindingDependencies,
 
     /// None, or the binding context that this context was created within
-    nested: Option<Box<BindingContext>>,
+    _nested: Option<Box<BindingContext>>,
 }
 
 impl BindingContext {
@@ -139,7 +139,7 @@ impl BindingContext {
         let dependencies = BindingDependencies::new();
         let new_context = BindingContext {
             dependencies: dependencies.clone(),
-            nested: previous_context.clone().map(Box::new),
+            _nested: previous_context.clone().map(Box::new),
         };
 
         // Make the current context the same as the new context

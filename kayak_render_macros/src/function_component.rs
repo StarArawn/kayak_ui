@@ -1,6 +1,6 @@
 use proc_macro::TokenStream;
-use proc_macro_error::{emit_error, emit_warning};
-use quote::{quote, ToTokens};
+use proc_macro_error::emit_error;
+use quote::quote;
 use syn::{FnArg, Pat, Type};
 use syn::spanned::Spanned;
 use crate::get_core_crate;
@@ -15,7 +15,7 @@ impl Default for WidgetArguments {
     }
 }
 
-pub fn create_function_widget(f: syn::ItemFn, widget_arguments: WidgetArguments) -> TokenStream {
+pub fn create_function_widget(f: syn::ItemFn, _widget_arguments: WidgetArguments) -> TokenStream {
     let struct_name = f.sig.ident.clone();
     let (impl_generics, ty_generics, where_clause) = f.sig.generics.split_for_impl();
 
@@ -36,25 +36,25 @@ pub fn create_function_widget(f: syn::ItemFn, widget_arguments: WidgetArguments)
                 }
                 err => {
                     emit_error!(err.span(), "Expected identifier, but got {:?}", err);
-                    return TokenStream::new()
+                    return TokenStream::new();
                 }
             };
 
             let ty = match *typed.ty.clone() {
                 Type::Path(type_path) => {
                     type_path.path
-                },
+                }
                 err => {
                     emit_error!(err.span(), "Invalid widget prop type: {:?}", err);
-                    return TokenStream::new()
+                    return TokenStream::new();
                 }
             };
 
             (ident, ty)
-        },
+        }
         FnArg::Receiver(receiver) => {
             emit_error!(receiver.span(), "Functional widget cannot use 'self'");
-            return TokenStream::new()
+            return TokenStream::new();
         }
     };
 

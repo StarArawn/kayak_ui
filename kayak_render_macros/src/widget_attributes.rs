@@ -1,4 +1,4 @@
-use proc_macro_error::{emit_error, emit_warning};
+use proc_macro_error::emit_error;
 use quote::{quote, ToTokens};
 use std::collections::HashSet;
 use proc_macro2::{Ident, TokenStream};
@@ -9,7 +9,6 @@ use syn::{
 };
 
 use crate::{attribute::Attribute, children::Children, get_core_crate};
-use crate::attribute::AttributeKey;
 use crate::child::Child;
 
 #[derive(Clone)]

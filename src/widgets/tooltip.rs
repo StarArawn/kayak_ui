@@ -1,6 +1,5 @@
 use crate::core::{
     render_command::RenderCommand,
-    derivative::Derivative,
     rsx, WidgetProps,
     styles::{PositionType, Style, StyleProp, Units},
     widget, Bound, Children, Color, EventType, MutableBound, OnEvent,

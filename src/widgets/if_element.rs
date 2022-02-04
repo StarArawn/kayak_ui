@@ -1,9 +1,7 @@
 use crate::core::{
-    render_command::RenderCommand,
-    derivative::Derivative,
     OnEvent, rsx, WidgetProps,
-    styles::{Style, StyleProp},
-    widget, Children, Fragment,
+    styles::{Style},
+    widget, Children,
 };
 
 #[derive(WidgetProps, Default, Debug, PartialEq, Clone)]

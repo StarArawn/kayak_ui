@@ -68,6 +68,7 @@ pub trait Widget: std::fmt::Debug + Clone + Default + PartialEq + AsAny + Send +
 /// Trait for props passed to a widget
 pub trait WidgetProps: std::fmt::Debug + AsAny + Send + Sync {
     fn get_children(&self) -> Option<Children>;
+    fn set_children(&mut self, children: Option<Children>);
     fn get_styles(&self) -> Option<Style>;
     fn get_on_event(&self) -> Option<OnEvent>;
     fn get_focusable(&self) -> Option<bool>;

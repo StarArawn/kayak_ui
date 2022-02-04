@@ -31,6 +31,13 @@ pub(crate) fn impl_widget_props(input: TokenStream) -> TokenStream {
 
     let helpers = process_data(data);
 
+    let set_children = if let Some(ident) = helpers.children_ident.clone() {
+        quote! {
+            self.#ident = children;
+        }
+    } else {
+        quote! {}
+    };
     let children_return = quote_clone_field(helpers.children_ident);
     let styles_return = quote_clone_field(helpers.styles_ident);
     let on_event_return = quote_clone_field(helpers.on_event_ident);
@@ -42,6 +49,10 @@ pub(crate) fn impl_widget_props(input: TokenStream) -> TokenStream {
         impl #impl_generics #kayak_core::WidgetProps for #ident #ty_generics #where_clause {
             fn get_children(&self) -> Option<#kayak_core::Children> {
                 #children_return
+            }
+
+            fn set_children(&mut self, children: Option<#kayak_core::Children>) {
+                #set_children
             }
 
             fn get_styles(&self) -> Option<#kayak_core::styles::Style> {

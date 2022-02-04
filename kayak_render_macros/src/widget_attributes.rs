@@ -8,7 +8,7 @@ use syn::{
     spanned::Spanned,
 };
 
-use crate::{attribute::Attribute, children::Children};
+use crate::{attribute::Attribute, children::Children, get_core_crate};
 use crate::attribute::AttributeKey;
 use crate::child::Child;
 
@@ -156,10 +156,11 @@ impl<'a, 'c> CustomWidgetAttributes<'a, 'c> {
 
         // If this widget contains children, add it (should result in error if widget does not accept children)
         if self.should_add_children() {
+            let kayak_core = get_core_crate();
             let children_tuple = self.children.as_option_of_tuples_tokens();
             attrs.push(quote! {
                 let children = children.clone();
-                #ident.children = #children_tuple;
+                #kayak_core::WidgetProps::set_children(&mut #ident, #children_tuple);
             });
         }
 

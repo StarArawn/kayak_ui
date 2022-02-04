@@ -47,6 +47,10 @@ impl<T> WidgetProps for VecTrackerProps<T>
         self.children.clone()
     }
 
+    fn set_children(&mut self, children: Option<Children>) {
+        self.children = children;
+    }
+
     fn get_styles(&self) -> Option<Style> {
         self.styles.clone()
     }

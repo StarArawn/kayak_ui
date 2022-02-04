@@ -87,11 +87,11 @@ impl Children {
                         );
 
                         quote! {
-                            Some(#kayak_core::Children::new(std::sync::Arc::new(move |parent_id: Option<#kayak_core::Index>, context: &mut #kayak_core::KayakContextRef| {
+                            Some(#kayak_core::Children::new(move |parent_id: Option<#kayak_core::Index>, context: &mut #kayak_core::KayakContextRef| {
                                 #cloned_attrs
                                 #children_builder
                                 context.commit();
-                            })))
+                            }))
                         }
                     }
                 };
@@ -149,10 +149,10 @@ impl Children {
                 }
 
                 quote! {
-                    Some(#kayak_core::Children::new(std::sync::Arc::new(move |parent_id: Option<#kayak_core::Index>, context: &mut #kayak_core::KayakContextRef| {
+                    Some(#kayak_core::Children::new(move |parent_id: Option<#kayak_core::Index>, context: &mut #kayak_core::KayakContextRef| {
                         #(#output)*
                         context.commit();
-                    })))
+                    }))
                 }
             }
         }

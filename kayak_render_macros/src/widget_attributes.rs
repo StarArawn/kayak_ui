@@ -1,6 +1,6 @@
 use proc_macro2::{Ident, TokenStream};
 use proc_macro_error::emit_error;
-use quote::{quote, ToTokens};
+use quote::quote;
 use std::collections::HashSet;
 use syn::{
     ext::IdentExt,
@@ -68,64 +68,6 @@ impl Parse for WidgetAttributes {
 pub struct CustomWidgetAttributes<'a, 'c> {
     attributes: &'a HashSet<Attribute>,
     children: &'c Children,
-}
-
-// TODO: This impl may not be needed anymore. If so, it should be removed
-impl<'a, 'c> ToTokens for CustomWidgetAttributes<'a, 'c> {
-    fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
-        let mut attrs: Vec<_> = self
-            .attributes
-            .iter()
-            .map(|attribute| {
-                let ident = attribute.ident();
-                let value = attribute.value_tokens();
-
-                quote! {
-                    #ident: #value
-                }
-            })
-            .collect();
-
-        {
-            let children_tuple = self.children.as_option_of_tuples_tokens();
-            attrs.push(quote! {
-                children: #children_tuple
-            });
-        }
-
-        // let missing = vec![
-        //     ("styles", quote! { styles: None }),
-        //     ("on_event", quote! { on_event: None }),
-        // ];
-        //
-        // for missed in missing {
-        //     if !self.attributes.iter().any(|attribute| {
-        //         attribute
-        //             .ident()
-        //             .to_token_stream()
-        //             .to_string()
-        //             .contains(missed.0)
-        //     }) {
-        //         attrs.push(missed.1);
-        //     }
-        // }
-
-        let quoted = if attrs.len() == 0 {
-            quote!({ ..Default::default() })
-        } else {
-            if !self
-                .attributes
-                .iter()
-                .any(|attribute| attribute.ident().to_token_stream().to_string() == "styles")
-            {
-                quote!({ #(#attrs),*, ..Default::default() })
-            } else {
-                quote!({ #(#attrs),*, ..Default::default()  })
-            }
-        };
-
-        quoted.to_tokens(tokens);
-    }
 }
 
 impl<'a, 'c> CustomWidgetAttributes<'a, 'c> {

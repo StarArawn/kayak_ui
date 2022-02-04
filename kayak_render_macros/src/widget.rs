@@ -104,7 +104,7 @@ impl Widget {
     fn construct(name: &Path, attrs: &CustomWidgetAttributes) -> (TokenStream, TokenStream) {
         let kayak_core = get_core_crate();
 
-        let prop_ident = format_ident!("props");
+        let prop_ident = format_ident!("internal_rsx_props");
         let attrs = attrs.assign_attributes(&prop_ident);
 
         let props = quote! {

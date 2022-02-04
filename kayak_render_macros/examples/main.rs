@@ -1,49 +1,26 @@
-use kayak_core::{context::KayakContext, styles::Style, Children, Index};
-use kayak_core::{derivative::*, Fragment, KayakContextRef, Widget};
-use kayak_render_macros::rsx;
+use kayak_core::{context::KayakContext, styles::Style, Children};
+use kayak_core::{Fragment, KayakContextRef};
+use kayak_render_macros::{rsx, use_state, widget, WidgetProps};
 
-#[derive(Derivative)]
-#[derivative(Clone, Default, Debug, PartialEq)]
+#[derive(WidgetProps, Clone, Default, Debug, PartialEq)]
 #[allow(dead_code)]
-struct Test {
-    id: Index,
-    #[derivative(Default(value = "None"))]
-    styles: Option<Style>,
+struct TestProps {
     foo: u32,
-    #[derivative(Debug = "ignore", PartialEq = "ignore", Default(value = "None"))]
-    children: Children,
-    #[derivative(Debug = "ignore", PartialEq = "ignore", Default(value = "None"))]
-    pub on_event: Option<kayak_core::OnEvent>,
+    #[prop_field(Styles)]
+    styles: Option<Style>,
+    #[prop_field(Children)]
+    children: Option<Children>,
+    #[prop_field(OnEvent)]
+    on_event: Option<kayak_core::OnEvent>,
 }
 
-impl Widget for Test {
-    fn get_id(&self) -> Index {
-        todo!()
-    }
-
-    fn focusable(&self) -> Option<bool> {
-        None
-    }
-
-    fn set_id(&mut self, id: Index) {
-        self.id = id;
-    }
-
-    fn get_styles(&self) -> Option<Style> {
-        todo!()
-    }
-
-    fn get_name(&self) -> String {
-        todo!()
-    }
-
-    fn on_event(&mut self, _context: &mut KayakContext, _event: &mut kayak_core::Event) {
-        todo!()
-    }
-
-    fn render(&mut self, _context: &mut KayakContextRef) {
-        todo!()
-    }
+#[widget]
+fn Test(props: TestProps) {
+    let _ = use_state!(props.foo);
+    let children = props.get_children();
+    rsx! {
+        <>{children}</>
+    };
 }
 
 fn main() {

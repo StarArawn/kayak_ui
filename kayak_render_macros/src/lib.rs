@@ -23,7 +23,7 @@ use use_effect::UseEffect;
 use widget::ConstructedWidget;
 
 use crate::widget::Widget;
-use crate::widget_props::impl_widget_props;
+use crate::widget_props::{add_widget_props};
 
 #[proc_macro]
 #[proc_macro_error]
@@ -75,10 +75,16 @@ pub fn widget(args: TokenStream, item: TokenStream) -> TokenStream {
     function_component::create_function_widget(f, widget_args)
 }
 
+#[proc_macro_attribute]
+#[proc_macro_error]
+pub fn widget_props(args: TokenStream, item: TokenStream) -> TokenStream {
+    add_widget_props(args, item)
+}
+
 #[proc_macro_derive(WidgetProps, attributes(prop_field))]
 #[proc_macro_error]
 pub fn derive_widget_props(item: TokenStream) -> TokenStream {
-    impl_widget_props(item)
+    widget_props::derive_widget_props(item)
 }
 
 #[proc_macro_derive(DynPartialEq)]

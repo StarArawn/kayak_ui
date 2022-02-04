@@ -1,6 +1,6 @@
 pub mod core {
     pub use kayak_core::*;
-    pub use kayak_render_macros::{constructor, render, rsx, use_effect, use_state, widget, WidgetProps};
+    pub use kayak_render_macros::{constructor, render, rsx, use_effect, use_state, widget, WidgetProps, widget_props};
 }
 
 #[cfg(feature = "bevy_renderer")]

@@ -47,10 +47,6 @@ pub use tree::{Tree, WidgetTree};
 pub use vec::{VecTracker, VecTrackerProps};
 pub use widget::{BaseWidget, Widget, WidgetProps};
 
-pub mod derivative {
-    pub use derivative::*;
-}
-
 /// Type alias for dynamic widget objects. We use [BaseWidget] so that we can be object-safe
 type BoxedWidget = Box<dyn BaseWidget>;
 

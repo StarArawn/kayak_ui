@@ -14,6 +14,7 @@ pub enum RenderPrimitive {
     Quad {
         layout: Rect,
         background_color: Color,
+        border_color: Color,
         border: (f32, f32, f32, f32),
         border_radius: (f32, f32, f32, f32),
     },
@@ -61,6 +62,12 @@ impl From<&Style> for RenderPrimitive {
             style.background_color.resolve()
         };
 
+        let border_color = if matches!(style.border_color, StyleProp::Default) {
+            Color::TRANSPARENT
+        } else {
+            style.border_color.resolve()
+        };
+
         match render_command {
             RenderCommand::Empty => Self::Empty,
             RenderCommand::Layout => Self::Empty,
@@ -68,7 +75,8 @@ impl From<&Style> for RenderPrimitive {
                 layout: Rect::default(),
             },
             RenderCommand::Quad => Self::Quad {
-                background_color: background_color,
+                background_color,
+                border_color,
                 border_radius: style.border_radius.resolve(),
                 border: style.border.resolve(),
                 layout: Rect::default(),

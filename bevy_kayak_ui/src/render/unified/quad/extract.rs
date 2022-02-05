@@ -7,13 +7,21 @@ use crate::{
 };
 
 pub fn extract_quads(render_primitive: &RenderPrimitive, dpi: f32) -> Vec<ExtractQuadBundle> {
-    let (background_color, layout, border_radius, mut border) = match render_primitive {
+    let (background_color, border_color, layout, border_radius, mut border) = match render_primitive
+    {
         RenderPrimitive::Quad {
             background_color,
+            border_color,
             layout,
             border_radius,
             border,
-        } => (*background_color, *layout, *border_radius, *border),
+        } => (
+            *background_color,
+            *border_color,
+            *layout,
+            *border_radius,
+            *border,
+        ),
         _ => panic!(""),
     };
 
@@ -35,7 +43,7 @@ pub fn extract_quads(render_primitive: &RenderPrimitive, dpi: f32) -> Vec<Extrac
                         layout.posy + (layout.height * dpi),
                     ),
                 },
-                color: bevy::prelude::Color::rgba(0.0781, 0.0898, 0.101, 1.0),
+                color: to_bevy_color(&border_color),
                 vertex_index: 0,
                 char_id: 0,
                 z_index: layout.z_index,

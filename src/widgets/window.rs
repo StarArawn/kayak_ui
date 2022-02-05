@@ -62,6 +62,7 @@ pub fn Window(props: WindowProps) {
 
     props.styles = Some(Style {
         background_color: StyleProp::Value(Color::new(0.125, 0.125, 0.125, 1.0)),
+        border_color: StyleProp::Value(Color::new(0.0781, 0.0898, 0.101, 1.0)),
         border: StyleProp::Value((4.0, 4.0, 4.0, 4.0)),
         border_radius: StyleProp::Value((5.0, 5.0, 5.0, 5.0)),
         render_command: StyleProp::Value(RenderCommand::Quad),
@@ -97,8 +98,6 @@ pub fn Window(props: WindowProps) {
         top: StyleProp::Value(Units::Pixels(0.0)),
         bottom: StyleProp::Value(Units::Pixels(0.0)),
         padding_left: StyleProp::Value(Units::Pixels(5.0)),
-        // padding_top: StyleProp::Value(Units::Stretch(1.0)),
-        // padding_bottom: StyleProp::Value(Units::Stretch(1.0)),
         ..Style::default()
     };
 

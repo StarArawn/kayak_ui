@@ -228,11 +228,7 @@ impl<'a> KayakContextRef<'a> {
 
     /// Adds a widget to the context reference tree that will be committed to the main tree when `commit` is called.
     /// This also adds the widget to the `KayakContext` and renders the new widget.
-    pub fn add_widget<W: crate::Widget + Clone + Default + PartialEq>(
-        &mut self,
-        widget: W,
-        widget_index: usize,
-    ) {
+    pub fn add_widget<W: crate::Widget>(&mut self, widget: W, widget_index: usize) {
         let (_, child_id) =
             self.context
                 .widget_manager

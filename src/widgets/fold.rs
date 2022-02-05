@@ -2,10 +2,26 @@ use crate::core::{
     render_command::RenderCommand,
     rsx,
     styles::{Style, StyleProp, Units},
-    use_state, widget, Children, EventType, Handler, OnEvent,
+    use_state, widget, Children, EventType, Handler, OnEvent, WidgetProps,
 };
 
 use crate::widgets::{Background, Clip, If, Text};
+
+#[derive(WidgetProps, Default, Debug, PartialEq, Clone)]
+pub struct FoldProps {
+    pub label: String,
+    pub open: Option<bool>,
+    pub on_change: Option<Handler<bool>>,
+    pub default_open: bool,
+    #[prop_field(Styles)]
+    pub styles: Option<Style>,
+    #[prop_field(Children)]
+    pub children: Option<Children>,
+    #[prop_field(OnEvent)]
+    pub on_event: Option<OnEvent>,
+    #[prop_field(Focusable)]
+    pub focusable: Option<bool>,
+}
 
 /// A widget container that toggles its content between visible and hidden when clicked
 ///
@@ -38,13 +54,15 @@ use crate::widgets::{Background, Clip, If, Text};
 /// }
 /// ```
 #[widget]
-pub fn Fold(
-    label: String,
-    children: Children,
-    open: Option<bool>,
-    on_change: Option<Handler<bool>>,
-    default_open: bool,
-) {
+pub fn Fold(props: FoldProps) {
+    let FoldProps {
+        default_open,
+        label,
+        on_change,
+        open,
+        ..
+    } = props.clone();
+
     // === State === //
     let initial = default_open || open.unwrap_or_default();
     let (is_open, set_is_open, ..) = use_state!(initial);
@@ -67,10 +85,10 @@ pub fn Fold(
     });
 
     // === Styles === //
-    *styles = Some(Style {
+    props.styles = Some(Style {
         height: StyleProp::Value(Units::Auto),
         render_command: StyleProp::Value(RenderCommand::Layout),
-        ..styles.clone().unwrap_or_default()
+        ..props.styles.clone().unwrap_or_default()
     });
 
     let background_styles = Style {

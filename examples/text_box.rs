@@ -9,12 +9,15 @@ use kayak_ui::bevy::{BevyContext, BevyKayakUIPlugin, FontMapping, UICameraBundle
 use kayak_ui::core::{
     render, rsx,
     styles::{Style, StyleProp, Units},
-    widget, Index,
+    widget, Index, WidgetProps,
 };
 use kayak_ui::widgets::{App, OnChange, TextBox, Window};
 
+#[derive(WidgetProps, Clone, Debug, Default, PartialEq)]
+struct TextBoxExampleProps {}
+
 #[widget]
-fn TextBoxExample(context: &mut KayakContext) {
+fn TextBoxExample(props: TextBoxExampleProps) {
     let (value, set_value, _) = use_state!("I started with a value!".to_string());
     let (empty_value, set_empty_value, _) = use_state!("".to_string());
     let (red_value, set_red_value, _) = use_state!("This text is red".to_string());

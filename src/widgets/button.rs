@@ -1,15 +1,45 @@
 use crate::core::{
-    color::Color,
     render_command::RenderCommand,
     rsx,
     styles::{Style, StyleProp, Units},
-    widget, Children, Fragment,
+    widget, Children, Color, Fragment, OnEvent, WidgetProps,
 };
 
-#[widget(focusable)]
-pub fn Button(children: Children, styles: Option<Style>) {
-    let base_styles = styles.clone().unwrap_or_default();
-    *styles = Some(Style {
+#[derive(Default, Debug, PartialEq, Clone)]
+pub struct ButtonProps {
+    pub disabled: bool,
+    pub styles: Option<Style>,
+    pub children: Option<Children>,
+    pub on_event: Option<OnEvent>,
+    pub focusable: Option<bool>,
+}
+
+impl WidgetProps for ButtonProps {
+    fn get_children(&self) -> Option<Children> {
+        self.children.clone()
+    }
+
+    fn set_children(&mut self, children: Option<Children>) {
+        self.children = children;
+    }
+
+    fn get_styles(&self) -> Option<Style> {
+        self.styles.clone()
+    }
+
+    fn get_on_event(&self) -> Option<OnEvent> {
+        self.on_event.clone()
+    }
+
+    fn get_focusable(&self) -> Option<bool> {
+        Some(!self.disabled)
+    }
+}
+
+#[widget]
+pub fn Button(props: ButtonProps) {
+    let base_styles = props.styles.clone().unwrap_or_default();
+    props.styles = Some(Style {
         render_command: StyleProp::Value(RenderCommand::Quad),
         border_radius: StyleProp::Value((5.0, 5.0, 5.0, 5.0)),
         height: if base_styles.height == StyleProp::Default {

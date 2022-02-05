@@ -1,4 +1,4 @@
-use kayak_ui::core::{rsx, widget, Color};
+use kayak_ui::core::{rsx, widget, Children, Color, WidgetProps};
 
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct TabTheme {
@@ -19,8 +19,19 @@ pub struct ColorState {
     pub active: Color,
 }
 
+#[derive(WidgetProps, Default, Debug, PartialEq, Clone)]
+pub struct TabThemeProviderProps {
+    pub initial_theme: TabTheme,
+    #[prop_field(Children)]
+    pub children: Option<Children>,
+}
+
 #[widget]
-pub fn TabThemeProvider(initial_theme: TabTheme) {
+pub fn TabThemeProvider(props: TabThemeProviderProps) {
+    let TabThemeProviderProps {
+        initial_theme,
+        children,
+    } = props.clone();
     context.create_provider(initial_theme);
     rsx! { <>{children}</> }
 }

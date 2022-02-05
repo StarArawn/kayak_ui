@@ -106,7 +106,7 @@ pub fn extract(
                 extracted_quads.extend(image_quads);
             }
             RenderPrimitive::Quad { .. } => {
-                let quad_quads = quad::extract_quads(&render_primitive, dpi);
+                let quad_quads = quad::extract_quads(&render_primitive, 1.0);
                 extracted_quads.extend(quad_quads);
             }
             RenderPrimitive::NinePatch { .. } => {

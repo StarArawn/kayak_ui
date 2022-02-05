@@ -160,7 +160,7 @@ impl KayakFont {
         let resized_max_glyph_size = (max_glyph_size.0 * font_ratio, max_glyph_size.1 * font_ratio);
 
         // TODO: Make this configurable?
-        let split_chars = vec![' ', '\t', '-'];
+        let split_chars = vec![' ', '\t'];
         let missing_chars: Vec<char> = content
             .chars()
             .filter(|c| split_chars.iter().any(|c2| c == c2))

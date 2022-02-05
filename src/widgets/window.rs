@@ -3,20 +3,37 @@ use crate::core::{
     render_command::RenderCommand,
     rsx,
     styles::{PositionType, Style, StyleProp, Units},
-    use_state, widget, Children, EventType, OnEvent,
+    use_state, widget, Children, EventType, OnEvent, WidgetProps,
 };
 
 use crate::widgets::{Background, Clip, Element, Text};
 
+#[derive(WidgetProps, Default, Debug, PartialEq, Clone)]
+pub struct WindowProps {
+    pub draggable: bool,
+    pub position: (f32, f32),
+    pub size: (f32, f32),
+    pub title: String,
+    #[prop_field(Styles)]
+    pub styles: Option<Style>,
+    #[prop_field(Children)]
+    pub children: Option<Children>,
+    #[prop_field(OnEvent)]
+    pub on_event: Option<OnEvent>,
+    #[prop_field(Focusable)]
+    pub focusable: Option<bool>,
+}
+
 #[widget]
-pub fn Window(
-    children: Children,
-    styles: Option<Style>,
-    position: (f32, f32),
-    size: (f32, f32),
-    title: String,
-    draggable: bool,
-) {
+pub fn Window(props: WindowProps) {
+    let WindowProps {
+        draggable,
+        position,
+        size,
+        title,
+        ..
+    } = props.clone();
+
     let (is_dragging, set_is_dragging, ..) = use_state!(false);
     let (offset, set_offset, ..) = use_state!((0.0, 0.0));
     let (pos, set_pos, ..) = use_state!(position);
@@ -43,8 +60,9 @@ pub fn Window(
         None
     };
 
-    *styles = Some(Style {
+    props.styles = Some(Style {
         background_color: StyleProp::Value(Color::new(0.125, 0.125, 0.125, 1.0)),
+        border_color: StyleProp::Value(Color::new(0.0781, 0.0898, 0.101, 1.0)),
         border: StyleProp::Value((4.0, 4.0, 4.0, 4.0)),
         border_radius: StyleProp::Value((5.0, 5.0, 5.0, 5.0)),
         render_command: StyleProp::Value(RenderCommand::Quad),
@@ -55,7 +73,7 @@ pub fn Window(
         height: StyleProp::Value(Units::Pixels(size.1)),
         max_width: StyleProp::Value(Units::Pixels(size.0)),
         max_height: StyleProp::Value(Units::Pixels(size.1)),
-        ..styles.clone().unwrap_or_default()
+        ..props.styles.clone().unwrap_or_default()
     });
 
     let clip_styles = Style {
@@ -80,8 +98,6 @@ pub fn Window(
         top: StyleProp::Value(Units::Pixels(0.0)),
         bottom: StyleProp::Value(Units::Pixels(0.0)),
         padding_left: StyleProp::Value(Units::Pixels(5.0)),
-        // padding_top: StyleProp::Value(Units::Stretch(1.0)),
-        // padding_bottom: StyleProp::Value(Units::Stretch(1.0)),
         ..Style::default()
     };
 

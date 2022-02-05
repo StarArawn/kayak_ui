@@ -35,6 +35,7 @@ where
 #[derive(Debug, Clone, PartialEq)]
 pub struct Style {
     pub background_color: StyleProp<Color>,
+    pub border_color: StyleProp<Color>,
     pub border_radius: StyleProp<(f32, f32, f32, f32)>,
     pub border: StyleProp<(f32, f32, f32, f32)>,
     pub bottom: StyleProp<Units>,
@@ -66,6 +67,7 @@ impl Default for Style {
     fn default() -> Self {
         Self {
             background_color: StyleProp::Default,
+            border_color: StyleProp::Default,
             border_radius: StyleProp::Default,
             border: StyleProp::Default,
             bottom: StyleProp::Default,
@@ -100,6 +102,12 @@ impl Style {
         match self.background_color {
             StyleProp::Inherit => {
                 self.background_color = other.background_color.clone();
+            }
+            _ => (),
+        }
+        match self.border_color {
+            StyleProp::Inherit => {
+                self.border_color = other.border_color.clone();
             }
             _ => (),
         }

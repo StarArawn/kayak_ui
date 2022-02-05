@@ -1,3 +1,4 @@
+use crate::get_core_crate;
 use proc_macro::TokenStream;
 use proc_macro2::Ident;
 use quote::{format_ident, quote};
@@ -52,18 +53,7 @@ impl UseEffect {
 
     /// Build the output token stream, creating the actual use_effect code
     pub fn build(self) -> TokenStream {
-        let found_crate = proc_macro_crate::crate_name("kayak_core");
-        let kayak_core = if let Ok(found_crate) = found_crate {
-            match found_crate {
-                proc_macro_crate::FoundCrate::Itself => quote! { crate },
-                proc_macro_crate::FoundCrate::Name(name) => {
-                    let ident = syn::Ident::new(&name, proc_macro2::Span::call_site());
-                    quote!(#ident)
-                }
-            }
-        } else {
-            quote!(kayak_ui::core)
-        };
+        let kayak_core = get_core_crate();
 
         let dep_array = self.create_dep_array();
         let cloned_deps = self.create_clone_deps();

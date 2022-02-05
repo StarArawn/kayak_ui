@@ -3,17 +3,25 @@ use kayak_ui::core::{
     render_command::RenderCommand,
     rsx,
     styles::{Style, StyleProp, Units},
-    use_state, widget, Children, EventType, OnEvent,
+    use_state, widget, EventType, OnEvent, WidgetProps,
 };
 
 use kayak_ui::widgets::{Background, Text};
 
+#[derive(WidgetProps, Clone, Debug, Default, PartialEq)]
+pub struct AddButtonProps {
+    #[prop_field(Styles)]
+    pub styles: Option<Style>,
+    #[prop_field(OnEvent)]
+    pub on_event: Option<OnEvent>,
+}
+
 #[widget]
-pub fn AddButton(children: Children, styles: Option<Style>) {
+pub fn AddButton(props: AddButtonProps) {
     let (color, set_color, ..) = use_state!(Color::new(0.0781, 0.0898, 0.101, 1.0));
 
-    let base_styles = styles.clone().unwrap_or_default();
-    *styles = Some(Style {
+    let base_styles = props.styles.clone().unwrap_or_default();
+    props.styles = Some(Style {
         render_command: StyleProp::Value(RenderCommand::Layout),
         height: StyleProp::Value(Units::Pixels(32.0)),
         width: StyleProp::Value(Units::Pixels(30.0)),

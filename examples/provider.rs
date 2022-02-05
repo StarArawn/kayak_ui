@@ -13,12 +13,13 @@
 use bevy::prelude::{
     App as BevyApp, AssetServer, Commands, DefaultPlugins, Res, ResMut, WindowDescriptor,
 };
+use kayak_core::Children;
 use kayak_ui::{
     bevy::{BevyContext, BevyKayakUIPlugin, FontMapping, UICameraBundle},
     core::{
         render, rsx,
         styles::{LayoutType, Style, StyleProp, Units},
-        widget, Bound, Color, EventType, Index, MutableBound, OnEvent,
+        widget, Bound, Color, EventType, Index, MutableBound, OnEvent, WidgetProps,
     },
     widgets::{App, Background, Element, If, Text, TooltipConsumer, TooltipProvider, Window},
 };
@@ -60,15 +61,31 @@ impl Theme {
     }
 }
 
+#[derive(WidgetProps, Clone, Debug, Default, PartialEq)]
+struct ThemeProviderProps {
+    pub initial_theme: Theme,
+    #[prop_field(Children)]
+    children: Option<Children>,
+}
+
 /// This widget provides a theme to its children
 ///
 /// Any descendant of this provider can access its theme by calling [create_consumer](kayak_core::KayakContext::create_consumer).
 /// It can also be nested within itself, allowing for differing provider values.
 #[widget]
-fn ThemeProvider(context: &mut KayakContext, initial_theme: Theme) {
+fn ThemeProvider(props: ThemeProviderProps) {
+    let ThemeProviderProps {
+        initial_theme,
+        children,
+    } = props.clone();
     // Create the provider
     context.create_provider(initial_theme);
     rsx! { <>{children}</> }
+}
+
+#[derive(WidgetProps, Clone, Debug, Default, PartialEq)]
+struct ThemeButtonProps {
+    pub theme: Theme,
 }
 
 /// A widget that shows a colored box, representing the theme
@@ -76,7 +93,8 @@ fn ThemeProvider(context: &mut KayakContext, initial_theme: Theme) {
 /// This widget acts as one of our consumers of the [ThemeProvider]. It then uses the theme data to
 /// display its content and also updates the shared state when clicked.
 #[widget]
-fn ThemeButton(context: &mut KayakContext, theme: Theme) {
+fn ThemeButton(props: ThemeButtonProps) {
+    let ThemeButtonProps { theme } = props.clone();
     // Create a consumer
     // This grabs the current theme from the nearest ThemeProvider up the widget tree
     let consumer = context
@@ -120,11 +138,14 @@ fn ThemeButton(context: &mut KayakContext, theme: Theme) {
     }
 }
 
+#[derive(WidgetProps, Clone, Debug, Default, PartialEq)]
+struct ThemeSelectorProps {}
+
 /// A widget displaying a set of [ThemeButton] widgets
 ///
 /// This is just an abstracted container. Not much to see here...
 #[widget]
-fn ThemeSelector() {
+fn ThemeSelector(props: ThemeSelectorProps) {
     let vampire_theme = Theme::vampire();
     let solar_theme = Theme::solar();
     let vector_theme = Theme::vector();
@@ -146,11 +167,16 @@ fn ThemeSelector() {
     }
 }
 
+#[derive(WidgetProps, Clone, Debug, Default, PartialEq)]
+struct ThemeDemoProps {
+    is_root: bool,
+}
+
 /// A widget that demonstrates the theming in action
 ///
 /// The `is_root` prop just ensures we don't recursively render this widget to infinity
 #[widget]
-fn ThemeDemo(context: &mut KayakContext, is_root: bool) {
+fn ThemeDemo(props: ThemeDemoProps) {
     // Create a consumer
     // This grabs the current theme from the nearest ThemeProvider up the widget tree
     let consumer = context
@@ -158,7 +184,7 @@ fn ThemeDemo(context: &mut KayakContext, is_root: bool) {
         .expect("Requires ThemeProvider as an ancestor");
     let theme = consumer.get();
 
-    let select_lbl = if is_root {
+    let select_lbl = if props.is_root {
         format!("Select Theme (Current: {})", theme.name)
     } else {
         format!("Select A Different Theme (Current: {})", theme.name)
@@ -223,7 +249,7 @@ fn ThemeDemo(context: &mut KayakContext, is_root: bool) {
                     <Text content={btn_text} line_height={Some(20.0)} size={14.0} styles={Some(btn_text_style)} />
                 </Background>
 
-                <If condition={is_root}>
+                <If condition={props.is_root}>
                     <Element styles={Some(nested_style)}>
 
                         // This is one of the benefits of the provider/consumer pattern:

@@ -1,10 +1,7 @@
 use as_any::AsAny;
 use std::any::Any;
 
-use crate::{
-    context::KayakContext, context_ref::KayakContextRef, styles::Style, Children, Event, Index,
-    OnEvent,
-};
+use crate::{context_ref::KayakContextRef, styles::Style, Children, Event, Index, OnEvent};
 
 /// An internal trait that has a blanket implementation over all implementors of [Widget]
 ///
@@ -26,7 +23,7 @@ pub trait BaseWidget: SealedWidget + std::fmt::Debug + Send + Sync {
     fn get_props_mut(&mut self) -> &mut dyn WidgetProps;
     fn render(&mut self, context: &mut KayakContextRef);
     fn get_name(&self) -> &'static str;
-    fn on_event(&mut self, context: &mut KayakContext, event: &mut Event);
+    fn on_event(&mut self, context: &mut KayakContextRef, event: &mut Event);
 }
 
 pub trait Widget: std::fmt::Debug + Clone + Default + PartialEq + AsAny + Send + Sync {
@@ -65,7 +62,7 @@ pub trait Widget: std::fmt::Debug + Clone + Default + PartialEq + AsAny + Send +
     }
 
     /// Send an event to this widget
-    fn on_event(&mut self, context: &mut KayakContext, event: &mut Event) {
+    fn on_event(&mut self, context: &mut KayakContextRef, event: &mut Event) {
         if let Some(on_event) = self.get_props().get_on_event() {
             on_event.try_call(context, event);
         }
@@ -117,7 +114,7 @@ where
         Widget::get_name(self)
     }
 
-    fn on_event(&mut self, context: &mut KayakContext, event: &mut Event) {
+    fn on_event(&mut self, context: &mut KayakContextRef, event: &mut Event) {
         Widget::on_event(self, context, event);
     }
 }

@@ -4,10 +4,7 @@ use crate::cursor::CursorEvent;
 use crate::layout_cache::Rect;
 use crate::render_command::RenderCommand;
 use crate::widget_manager::WidgetManager;
-use crate::{
-    BoxedWidget, Event, EventType, Index, InputEvent, InputEventCategory, KayakContext, KeyCode,
-    KeyboardEvent, KeyboardModifiers, PointerEvents,
-};
+use crate::{BoxedWidget, Event, EventType, Index, InputEvent, InputEventCategory, KayakContext, KeyCode, KeyboardEvent, KeyboardModifiers, PointerEvents, KayakContextRef};
 use std::collections::{HashMap, HashSet};
 
 type EventMap = HashMap<Index, HashSet<EventType>>;
@@ -183,7 +180,8 @@ impl EventDispatcher {
 
                 // --- Call Event --- //
                 let mut target_widget = context.widget_manager.take(index);
-                target_widget.on_event(context, &mut node_event);
+                let mut ctx = KayakContextRef::new(context, Some(index));
+                target_widget.on_event(&mut ctx, &mut node_event);
                 context.widget_manager.repossess(target_widget);
 
                 event.default_prevented |= node_event.default_prevented;

@@ -1,10 +1,7 @@
 use as_any::AsAny;
 use std::any::Any;
 
-use crate::{
-    context_ref::KayakContextRef, styles::Style, Children, Event, Index,
-    OnEvent,
-};
+use crate::{context_ref::KayakContextRef, styles::Style, Children, Event, Index, OnEvent};
 
 /// An internal trait that has a blanket implementation over all implementors of [Widget]
 ///

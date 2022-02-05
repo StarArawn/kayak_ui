@@ -4,7 +4,10 @@ use crate::cursor::CursorEvent;
 use crate::layout_cache::Rect;
 use crate::render_command::RenderCommand;
 use crate::widget_manager::WidgetManager;
-use crate::{BoxedWidget, Event, EventType, Index, InputEvent, InputEventCategory, KayakContext, KeyCode, KeyboardEvent, KeyboardModifiers, PointerEvents, KayakContextRef};
+use crate::{
+    BoxedWidget, Event, EventType, Index, InputEvent, InputEventCategory, KayakContext,
+    KayakContextRef, KeyCode, KeyboardEvent, KeyboardModifiers, PointerEvents,
+};
 use std::collections::{HashMap, HashSet};
 
 type EventMap = HashMap<Index, HashSet<EventType>>;

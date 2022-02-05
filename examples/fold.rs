@@ -9,13 +9,16 @@ use kayak_ui::{
     core::{
         render, rsx,
         styles::{Style, StyleProp, Units},
-        use_state, widget, Color, EventType, Handler, Index, OnEvent,
+        use_state, widget, Color, EventType, Handler, Index, OnEvent, WidgetProps,
     },
     widgets::{App, Background, Button, Fold, If, Text, Window},
 };
 
+#[derive(WidgetProps, Clone, Debug, Default, PartialEq)]
+struct FolderTreeProps {}
+
 #[widget]
-fn FolderTree(context: &mut KayakContext) {
+fn FolderTree(props: FolderTreeProps) {
     let button_text_styles = Style {
         width: StyleProp::Value(Units::Stretch(1.0)),
         height: StyleProp::Value(Units::Pixels(22.0)),

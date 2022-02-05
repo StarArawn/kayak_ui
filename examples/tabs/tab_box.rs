@@ -2,7 +2,7 @@ use kayak_ui::core::{
     render_command::RenderCommand,
     rsx,
     styles::{Style, StyleProp},
-    use_state, widget, Bound, Fragment, Handler,
+    use_state, widget, Bound, Fragment, Handler, WidgetProps,
 };
 use std::fmt::Debug;
 
@@ -18,11 +18,22 @@ pub struct TabData {
     pub content: Fragment,
 }
 
+#[derive(WidgetProps, Default, Debug, PartialEq, Clone)]
+pub struct TabBoxProps {
+    pub initial_tab: usize,
+    pub tabs: Vec<TabData>,
+    #[prop_field(Styles)]
+    pub styles: Option<Style>,
+}
+
 /// The actual tab container widget.
 ///
 /// This houses both the tab bar and its content.
 #[widget]
-pub fn TabBox(context: &mut KayakContext, tabs: Vec<TabData>, initial_tab: usize) {
+pub fn TabBox(props: TabBoxProps) {
+    let TabBoxProps {
+        initial_tab, tabs, ..
+    } = props.clone();
     let theme = context.create_consumer::<TabTheme>().unwrap_or_default();
     let (selected, set_selected, ..) = use_state!(initial_tab);
 
@@ -39,7 +50,7 @@ pub fn TabBox(context: &mut KayakContext, tabs: Vec<TabData>, initial_tab: usize
         set_selected(index);
     });
 
-    self.styles = Some(Style {
+    props.styles = Some(Style {
         render_command: StyleProp::Value(RenderCommand::Quad),
         background_color: StyleProp::Value(theme.get().fg),
         ..Default::default()

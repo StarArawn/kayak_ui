@@ -1,9 +1,10 @@
 use std::collections::HashSet;
 
 use crate::{
-    arc_function::build_arc_function,
     attribute::Attribute,
     child::{walk_block_to_variable, Child},
+    get_core_crate,
+    widget_builder::build_widget_stream,
 };
 use quote::{quote, ToTokens};
 use syn::parse::{Parse, ParseStream, Result};
@@ -52,18 +53,7 @@ impl Children {
     }
 
     pub fn as_option_of_tuples_tokens(&self) -> proc_macro2::TokenStream {
-        let found_crate = proc_macro_crate::crate_name("kayak_core");
-        let kayak_core = if let Ok(found_crate) = found_crate {
-            match found_crate {
-                proc_macro_crate::FoundCrate::Itself => quote! { crate },
-                proc_macro_crate::FoundCrate::Name(name) => {
-                    let ident = syn::Ident::new(&name, proc_macro2::Span::call_site());
-                    quote!(#ident)
-                }
-            }
-        } else {
-            quote!(kayak_ui::core)
-        };
+        let kayak_core = get_core_crate();
 
         let children_quotes: Vec<_> = self
             .nodes
@@ -95,14 +85,14 @@ impl Children {
                             #(#children_quotes)*.clone()
                         }
                     } else {
-                        let children_builder = build_arc_function(
+                        let children_builder = build_widget_stream(
                             quote! { child_widget },
                             quote! { #(#children_quotes),* },
                             0,
                         );
 
                         quote! {
-                            Some(std::sync::Arc::new(move |parent_id: Option<#kayak_core::Index>, context: &mut #kayak_core::KayakContextRef| {
+                            Some(#kayak_core::Children::new(move |parent_id: Option<#kayak_core::Index>, context: &mut #kayak_core::KayakContextRef| {
                                 #cloned_attrs
                                 #children_builder
                                 context.commit();
@@ -159,12 +149,13 @@ impl Children {
                 for i in 0..children_quotes.len() {
                     output.push(quote! { #base_clones_inner });
                     let name: proc_macro2::TokenStream = format!("child{}", i).parse().unwrap();
-                    let child = build_arc_function(quote! { #name }, children_quotes[i].clone(), i);
+                    let child =
+                        build_widget_stream(quote! { #name }, children_quotes[i].clone(), i);
                     output.push(quote! { #child });
                 }
 
                 quote! {
-                    Some(std::sync::Arc::new(move |parent_id: Option<#kayak_core::Index>, context: &mut #kayak_core::KayakContextRef| {
+                    Some(#kayak_core::Children::new(move |parent_id: Option<#kayak_core::Index>, context: &mut #kayak_core::KayakContextRef| {
                         #(#output)*
                         context.commit();
                     }))

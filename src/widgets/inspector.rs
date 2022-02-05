@@ -2,8 +2,7 @@ use kayak_core::styles::{PositionType, Style, StyleProp, Units};
 use kayak_core::{Bound, Color, EventType, OnEvent, VecTracker};
 use kayak_render_macros::{constructor, use_state};
 
-use crate::core::derivative::*;
-use crate::core::{rsx, widget, MutableBound};
+use crate::core::{rsx, widget, MutableBound, WidgetProps};
 
 use crate::widgets::{Background, Button, Text};
 
@@ -13,8 +12,14 @@ pub enum InspectData {
     Data(Vec<String>),
 }
 
+#[derive(WidgetProps, Default, Debug, PartialEq, Clone)]
+pub struct InspectorProps {
+    #[prop_field(Styles)]
+    pub styles: Option<Style>,
+}
+
 #[widget]
-pub fn Inspector() {
+pub fn Inspector(props: InspectorProps) {
     let (inspect_data, set_inspect_data, _) = use_state!(Vec::<String>::new());
 
     let background_styles = Some(Style {
@@ -25,7 +30,7 @@ pub fn Inspector() {
         top: StyleProp::Value(Units::Stretch(0.0)),
         bottom: StyleProp::Value(Units::Stretch(0.0)),
         width: StyleProp::Value(Units::Pixels(200.0)),
-        ..styles.clone().unwrap_or_default()
+        ..props.styles.clone().unwrap_or_default()
     });
 
     let last_clicked = context.get_last_clicked_widget();

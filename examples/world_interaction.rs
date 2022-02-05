@@ -20,7 +20,7 @@ use kayak_ui::{
     core::{
         render, rsx,
         styles::{Style, StyleProp, Units},
-        use_state, widget, EventType, Index, OnEvent,
+        use_state, widget, EventType, Index, OnEvent, WidgetProps,
     },
     widgets::{App, Button, Text, Window},
 };
@@ -65,8 +65,11 @@ fn set_active_tile_target(
     tile.target = tile_pos;
 }
 
+#[derive(WidgetProps, Default, Debug, PartialEq, Clone)]
+pub struct ControlPanelProps {}
+
 #[widget]
-fn ControlPanel() {
+fn ControlPanel(props: ControlPanelProps) {
     let text_styles = Style {
         left: StyleProp::Value(Units::Stretch(1.0)),
         right: StyleProp::Value(Units::Stretch(1.0)),
@@ -106,7 +109,7 @@ fn ControlPanel() {
 
     rsx! {
         <>
-            <Window draggable={true} position={(50.0, 50.0)} size={(300.0, 150.0)} title={"Square Mover: The Game".to_string()}>
+            <Window draggable={true} position={(50.0, 50.0)} size={(300.0, 200.0)} title={"Square Mover: The Game".to_string()}>
                 <Text size={13.0} content={"You can check if the cursor is over the UI or on a focusable widget using the BevyContext resource.".to_string()} styles={Some(text_styles)} />
                 <Button on_event={Some(on_change_color)} styles={Some(button_styles)}>
                     <Text size={16.0} content={"Change Tile Color".to_string()} />

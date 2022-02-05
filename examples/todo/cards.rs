@@ -1,10 +1,17 @@
-use kayak_ui::core::{constructor, rsx, widget, Handler, VecTracker};
+use kayak_ui::core::{constructor, rsx, widget, Handler, VecTracker, WidgetProps};
 use kayak_ui::widgets::Element;
 
 use super::{card::Card, Todo};
 
+#[derive(WidgetProps, Clone, Debug, Default, PartialEq)]
+pub struct CardsProps {
+    pub cards: Vec<Todo>,
+    pub on_delete: Handler<usize>,
+}
+
 #[widget]
-pub fn Cards(cards: Vec<Todo>, on_delete: Handler<usize>) {
+pub fn Cards(props: CardsProps) {
+    let CardsProps { cards, on_delete } = props.clone();
     rsx! {
         <Element>
             {VecTracker::from(

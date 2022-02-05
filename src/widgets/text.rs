@@ -4,17 +4,32 @@ use kayak_font::{CoordinateSystem, KayakFont};
 use crate::core::{
     render_command::RenderCommand,
     styles::{Style, StyleProp},
-    widget,
+    widget, OnEvent, WidgetProps,
 };
 
+#[derive(WidgetProps, Default, Debug, PartialEq, Clone)]
+pub struct TextProps {
+    pub content: String,
+    pub font: Option<String>,
+    pub line_height: Option<f32>,
+    pub size: f32,
+    #[prop_field(Styles)]
+    pub styles: Option<Style>,
+    #[prop_field(OnEvent)]
+    pub on_event: Option<OnEvent>,
+    #[prop_field(Focusable)]
+    pub focusable: Option<bool>,
+}
+
 #[widget]
-pub fn Text(
-    size: f32,
-    line_height: Option<f32>,
-    content: String,
-    styles: Option<Style>,
-    font: Option<String>,
-) {
+pub fn Text(props: TextProps) {
+    let TextProps {
+        content,
+        font,
+        line_height,
+        size,
+        ..
+    } = props.clone();
     let font_name = font;
     let font: Binding<Option<KayakFont>> =
         context.get_asset(font_name.clone().unwrap_or("Roboto".into()));
@@ -53,10 +68,10 @@ pub fn Text(
         font: font_name.clone().unwrap_or("Roboto".into()),
     };
 
-    *styles = Some(Style {
+    props.styles = Some(Style {
         render_command: StyleProp::Value(render_command),
         width: StyleProp::Value(Units::Pixels(layout_size.0)),
         height: StyleProp::Value(Units::Pixels(layout_size.1)),
-        ..styles.clone().unwrap_or_default()
+        ..props.styles.clone().unwrap_or_default()
     });
 }

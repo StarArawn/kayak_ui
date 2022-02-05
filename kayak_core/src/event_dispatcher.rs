@@ -5,8 +5,8 @@ use crate::layout_cache::Rect;
 use crate::render_command::RenderCommand;
 use crate::widget_manager::WidgetManager;
 use crate::{
-    Event, EventType, Index, InputEvent, InputEventCategory, KayakContext, KeyCode, KeyboardEvent,
-    KeyboardModifiers, PointerEvents, Widget,
+    BoxedWidget, Event, EventType, Index, InputEvent, InputEventCategory, KayakContext, KeyCode,
+    KeyboardEvent, KeyboardModifiers, PointerEvents,
 };
 use std::collections::{HashMap, HashSet};
 
@@ -522,7 +522,7 @@ impl EventDispatcher {
     fn resolve_pointer_events(index: Index, widget_manager: &WidgetManager) -> PointerEvents {
         let mut pointer_events = PointerEvents::default();
         if let Some(widget) = widget_manager.current_widgets.get(index).unwrap() {
-            if let Some(styles) = widget.get_styles() {
+            if let Some(styles) = widget.get_props().get_styles() {
                 pointer_events = styles.pointer_events.resolve();
             }
         }
@@ -631,8 +631,8 @@ impl EventDispatcher {
     ///
     /// Currently a valid widget is defined as one where:
     /// * RenderCommands is neither `Empty` nor `Layout` nor `Clip`
-    fn can_contain_cursor(widget: &Box<dyn Widget>) -> bool {
-        if let Some(styles) = widget.get_styles() {
+    fn can_contain_cursor(widget: &BoxedWidget) -> bool {
+        if let Some(styles) = widget.get_props().get_styles() {
             let cmds = styles.render_command.resolve();
             !matches!(
                 cmds,

@@ -2,11 +2,45 @@ use crate::core::{
     render_command::RenderCommand,
     rsx,
     styles::{Style, StyleProp, Units},
-    widget, Bound, Color, EventType, MutableBound, OnEvent,
+    widget, Bound, Children, Color, EventType, MutableBound, OnEvent, WidgetProps,
 };
 use std::sync::{Arc, RwLock};
 
 use crate::widgets::{Background, Clip, Text};
+
+#[derive(Default, Debug, PartialEq, Clone)]
+pub struct TextBoxProps {
+    pub disabled: bool,
+    pub value: String,
+    pub on_change: Option<OnChange>,
+    pub placeholder: Option<String>,
+    pub styles: Option<Style>,
+    pub children: Option<Children>,
+    pub on_event: Option<OnEvent>,
+    pub focusable: Option<bool>,
+}
+
+impl WidgetProps for TextBoxProps {
+    fn get_children(&self) -> Option<Children> {
+        self.children.clone()
+    }
+
+    fn set_children(&mut self, children: Option<Children>) {
+        self.children = children;
+    }
+
+    fn get_styles(&self) -> Option<Style> {
+        self.styles.clone()
+    }
+
+    fn get_on_event(&self) -> Option<OnEvent> {
+        self.on_event.clone()
+    }
+
+    fn get_focusable(&self) -> Option<bool> {
+        Some(!self.disabled)
+    }
+}
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct ChangeEvent {
@@ -37,10 +71,16 @@ impl std::fmt::Debug for OnChange {
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Focus(pub bool);
 
-#[widget(focusable)]
-pub fn TextBox(value: String, on_change: Option<OnChange>, placeholder: Option<String>) {
-    let current_styles = styles.clone().unwrap_or_default();
-    *styles = Some(Style {
+#[widget]
+pub fn TextBox(props: TextBoxProps) {
+    let TextBoxProps {
+        on_change,
+        placeholder,
+        value,
+        ..
+    } = props.clone();
+    let current_styles = props.styles.clone().unwrap_or_default();
+    props.styles = Some(Style {
         render_command: StyleProp::Value(RenderCommand::Layout),
         height: StyleProp::Value(Units::Pixels(26.0)),
         top: if matches!(current_styles.top, StyleProp::Value { .. }) {
@@ -62,7 +102,7 @@ pub fn TextBox(value: String, on_change: Option<OnChange>, placeholder: Option<S
         height: StyleProp::Value(Units::Pixels(26.0)),
         padding_left: StyleProp::Value(Units::Pixels(5.0)),
         padding_right: StyleProp::Value(Units::Pixels(5.0)),
-        ..styles.clone().unwrap_or_default()
+        ..props.styles.clone().unwrap_or_default()
     };
 
     let has_focus = context.create_state(Focus(false)).unwrap();
@@ -71,7 +111,7 @@ pub fn TextBox(value: String, on_change: Option<OnChange>, placeholder: Option<S
     let cloned_on_change = on_change.clone();
     let cloned_has_focus = has_focus.clone();
 
-    self.on_event = Some(OnEvent::new(move |_, event| match event.event_type {
+    props.on_event = Some(OnEvent::new(move |_, event| match event.event_type {
         EventType::CharInput { c } => {
             if !cloned_has_focus.get().0 {
                 return;
@@ -103,7 +143,7 @@ pub fn TextBox(value: String, on_change: Option<OnChange>, placeholder: Option<S
         }
     } else {
         Style {
-            color: styles.clone().unwrap_or_default().color,
+            color: props.styles.clone().unwrap_or_default().color,
             ..Style::default()
         }
     };

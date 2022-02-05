@@ -1,5 +1,6 @@
 mod assets;
 mod binding;
+mod children;
 pub mod color;
 pub mod context;
 mod context_ref;
@@ -16,6 +17,7 @@ mod keys;
 pub mod layout_cache;
 mod multi_state;
 pub mod node;
+mod on_event;
 pub mod render_command;
 pub mod render_primitive;
 pub mod styles;
@@ -27,42 +29,26 @@ pub mod widget_manager;
 use std::sync::{Arc, RwLock};
 
 pub use binding::*;
+pub use children::Children;
 pub use color::Color;
 pub use context::*;
 pub use context_ref::KayakContextRef;
 pub use cursor::PointerEvents;
 pub use event::*;
 pub use focus_tree::FocusTree;
-pub use fragment::Fragment;
+pub use fragment::{Fragment, FragmentProps};
 pub use generational_arena::{Arena, Index};
 pub use input_event::*;
 pub use keyboard::{KeyboardEvent, KeyboardModifiers};
 pub use keys::KeyCode;
+pub use on_event::OnEvent;
 pub use resources::Resources;
 pub use tree::{Tree, WidgetTree};
-pub use vec::VecTracker;
-pub use widget::Widget;
+pub use vec::{VecTracker, VecTrackerProps};
+pub use widget::{BaseWidget, Widget, WidgetProps};
 
-pub mod derivative {
-    pub use derivative::*;
-}
-
-pub type Children = Option<Arc<dyn Fn(Option<crate::Index>, &mut KayakContextRef) + Send + Sync>>;
-
-#[derive(Clone)]
-pub struct OnEvent(
-    pub  Arc<
-        RwLock<dyn FnMut(&mut crate::context::KayakContext, &mut Event) + Send + Sync + 'static>,
-    >,
-);
-
-impl OnEvent {
-    pub fn new<F: FnMut(&mut crate::context::KayakContext, &mut Event) + Send + Sync + 'static>(
-        f: F,
-    ) -> OnEvent {
-        OnEvent(Arc::new(RwLock::new(f)))
-    }
-}
+/// Type alias for dynamic widget objects. We use [BaseWidget] so that we can be object-safe
+type BoxedWidget = Box<dyn BaseWidget>;
 
 #[derive(Clone)]
 pub struct Handler<T = ()>(pub Arc<RwLock<dyn FnMut(T) + Send + Sync + 'static>>);

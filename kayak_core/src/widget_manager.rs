@@ -13,13 +13,13 @@ use crate::{
     render_primitive::RenderPrimitive,
     styles::Style,
     tree::Tree,
-    Arena, Index, Widget,
+    Arena, BoxedWidget, Index, Widget, WidgetProps,
 };
 // use as_any::Downcast;
 
 #[derive(Debug)]
 pub struct WidgetManager {
-    pub(crate) current_widgets: Arena<Option<Box<dyn Widget>>>,
+    pub(crate) current_widgets: Arena<Option<BoxedWidget>>,
     pub(crate) dirty_render_nodes: HashSet<Index>,
     pub(crate) dirty_nodes: Arc<Mutex<HashSet<Index>>>,
     pub(crate) nodes: Arena<Option<Node>>,
@@ -67,7 +67,7 @@ impl WidgetManager {
         }
     }
 
-    pub fn create_widget<T: Widget + PartialEq + Default + Clone + 'static>(
+    pub fn create_widget<T: Widget + 'static>(
         &mut self,
         index: usize,
         mut widget: T,
@@ -95,7 +95,7 @@ impl WidgetManager {
             if self.tree.is_empty() {
                 self.set_focusable(Some(true), widget_id, true);
             } else {
-                self.set_focusable(widget.focusable(), widget_id, true);
+                self.set_focusable(widget.get_props().get_focusable(), widget_id, true);
             }
 
             // TODO: Figure a good way of diffing props passed to children of a widget
@@ -108,7 +108,7 @@ impl WidgetManager {
             //         .downcast_ref::<T>()
             //         .unwrap()
             // {
-            let boxed_widget: Box<dyn Widget> = Box::new(widget);
+            let boxed_widget: BoxedWidget = Box::new(widget);
             *self.current_widgets[widget_id].as_mut().unwrap() = boxed_widget;
             // Tell renderer that the nodes changed.
             self.dirty_render_nodes.insert(widget_id);
@@ -122,7 +122,7 @@ impl WidgetManager {
         let focusable = if self.tree.is_empty() {
             Some(true)
         } else {
-            widget.focusable()
+            widget.get_props().get_focusable()
         };
 
         // Create Flow
@@ -150,11 +150,11 @@ impl WidgetManager {
         (true, widget_id)
     }
 
-    pub fn take(&mut self, id: Index) -> Box<dyn Widget> {
+    pub fn take(&mut self, id: Index) -> BoxedWidget {
         self.current_widgets[id].take().unwrap()
     }
 
-    pub fn repossess(&mut self, widget: Box<dyn Widget>) {
+    pub fn repossess(&mut self, widget: BoxedWidget) {
         let widget_id = widget.get_id();
         self.current_widgets[widget_id] = Some(widget);
     }
@@ -165,7 +165,7 @@ impl WidgetManager {
 
     pub fn get_name(&self, id: &Index) -> Option<String> {
         if let Some(widget) = &self.current_widgets[*id] {
-            return Some(widget.get_name());
+            return Some(widget.get_name().to_string());
         }
 
         None
@@ -196,7 +196,7 @@ impl WidgetManager {
             let parent_styles =
                 if let Some(parent_widget_id) = self.tree.parents.get(&dirty_node_index) {
                     if let Some(parent) = self.current_widgets[*parent_widget_id].as_ref() {
-                        if let Some(styles) = parent.get_styles() {
+                        if let Some(styles) = parent.get_props().get_styles() {
                             styles
                         } else {
                             default_styles.clone()
@@ -230,7 +230,7 @@ impl WidgetManager {
                 }
             };
 
-            let mut styles = dirty_widget.get_styles();
+            let mut styles = dirty_widget.get_props().get_styles();
             if styles.is_some() {
                 styles.as_mut().unwrap().merge(&parent_styles);
             }
@@ -347,7 +347,7 @@ impl WidgetManager {
         self.focus_tree.add(root_node_id, &self.tree);
 
         for (widget_id, widget) in self.current_widgets.iter().skip(1) {
-            let widget_styles = widget.as_ref().unwrap().get_styles();
+            let widget_styles = widget.as_ref().unwrap().get_props().get_styles();
             if let Some(widget_styles) = widget_styles {
                 // Only add widgets who have renderable nodes.
                 if widget_styles.render_command.resolve() != RenderCommand::Empty {
@@ -380,7 +380,7 @@ impl WidgetManager {
         if let Some(node_children) = self.tree.children.get(&node_id) {
             for child_id in node_children {
                 if let Some(child_widget) = &self.current_widgets[*child_id] {
-                    if let Some(child_styles) = child_widget.get_styles() {
+                    if let Some(child_styles) = child_widget.get_props().get_styles() {
                         if child_styles.render_command.resolve() != RenderCommand::Empty {
                             children.push(*child_id);
                         } else {

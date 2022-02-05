@@ -7,12 +7,15 @@ use kayak_ui::bevy::{BevyContext, BevyKayakUIPlugin, FontMapping, UICameraBundle
 use kayak_ui::core::{
     render, rsx,
     styles::{Style, StyleProp, Units},
-    widget, Bound, EventType, Index, MutableBound, OnEvent,
+    widget, Bound, EventType, Index, MutableBound, OnEvent, WidgetProps,
 };
 use kayak_ui::widgets::{App, Button, If, Text, Window};
 
+#[derive(WidgetProps, Clone, Debug, Default, PartialEq)]
+struct RemovalProps {}
+
 #[widget]
-fn Removal(context: &mut KayakContext) {
+fn Removal(props: RemovalProps) {
     let text_styles = Style {
         bottom: StyleProp::Value(Units::Stretch(1.0)),
         left: StyleProp::Value(Units::Stretch(0.1)),

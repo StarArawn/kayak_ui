@@ -2,13 +2,23 @@ use crate::core::{
     render_command::RenderCommand,
     rsx,
     styles::{Style, StyleProp, Units},
-    widget, Children,
+    widget, Children, OnEvent, WidgetProps,
 };
 
+#[derive(WidgetProps, Default, Debug, PartialEq, Clone)]
+pub struct ClipProps {
+    #[prop_field(Styles)]
+    pub styles: Option<Style>,
+    #[prop_field(Children)]
+    pub children: Option<Children>,
+    #[prop_field(OnEvent)]
+    pub on_event: Option<OnEvent>,
+}
+
 #[widget]
-pub fn Clip(children: Children, styles: Option<Style>) {
-    let incoming_styles = styles.clone().unwrap_or_default();
-    *styles = Some(Style {
+pub fn Clip(props: ClipProps) {
+    let incoming_styles = props.styles.clone().unwrap_or_default();
+    props.styles = Some(Style {
         render_command: StyleProp::Value(RenderCommand::Clip),
         width: if matches!(incoming_styles.width, StyleProp::Value(..)) {
             incoming_styles.width

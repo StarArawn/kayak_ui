@@ -142,10 +142,10 @@ One additional feature for `WidgetProps` this RFC would like to propose is the a
 
 The derive macro would have some associated macros, which will be used to mark certain fields for use in the implementation. These are:
 
-* `#[props(OnEvent)]` - Used to mark a field as the `OnEvent` prop
-* `#[props(Styles)]` - Used to mark a field as the `Styles` prop
-* `#[props(Focusable)]` - Used to mark a field as the `Focusable` prop
-* `#[props(Children)]` - Used to mark a field as the `Children` prop
+* `#[prop_field(OnEvent)]` - Used to mark a field as the `OnEvent` prop
+* `#[prop_field(Styles)]` - Used to mark a field as the `Styles` prop
+* `#[prop_field(Focusable)]` - Used to mark a field as the `Focusable` prop
+* `#[prop_field(Children)]` - Used to mark a field as the `Children` prop
 
 There may be more added to this list in the future, but for now this is the main assortment.
 
@@ -158,11 +158,11 @@ Additionally, they should be allowed to be specified as `Optional`.
 ```rust
 #[derive(WidgetProps)]
 struct MyWidgetProps {
-  #[props(OnEvent)]
+  #[prop_field(OnEvent)]
   event_handler: OnEvent
-  #[props(Focusable)]
+  #[prop_field(Focusable)]
   focusable: Optional<bool>,
-  #[props(Children)]
+  #[prop_field(Children)]
   children: Children,
   // Defined without the marker attribute:
   styles: Styles,
@@ -237,11 +237,11 @@ For now though we can create our props struct and derive `WidgetProps` as explai
 #[derive(Debug, WidgetProps)]
 struct MyButtonProps {
   // Kayak Props
-  #[props(OnEvent)]
+  #[prop_field(OnEvent)]
   event_handler: Option<OnEvent>,
-  #[props(Styles)]
+  #[prop_field(Styles)]
   styles: Option<Style>,
-  #[props(Focusable)]
+  #[prop_field(Focusable)]
   focusable: bool,
   
   // Widget Props

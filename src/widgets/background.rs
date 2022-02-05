@@ -2,15 +2,27 @@ use crate::core::{
     render_command::RenderCommand,
     rsx,
     styles::{Style, StyleProp},
-    widget, Children, Fragment,
+    widget, Children, Fragment, OnEvent, WidgetProps,
 };
 
+#[derive(WidgetProps, Default, Debug, PartialEq, Clone)]
+pub struct BackgroundProps {
+    #[prop_field(Styles)]
+    pub styles: Option<Style>,
+    #[prop_field(Children)]
+    pub children: Option<Children>,
+    #[prop_field(OnEvent)]
+    pub on_event: Option<OnEvent>,
+    #[prop_field(Focusable)]
+    pub focusable: Option<bool>,
+}
+
 #[widget]
-pub fn Background(children: Children, styles: Option<Style>) {
-    if styles.is_none() {
-        *styles = Some(Style::default())
+pub fn Background(props: BackgroundProps) {
+    if props.styles.is_none() {
+        props.styles = Some(Style::default())
     }
-    styles.as_mut().unwrap().render_command = StyleProp::Value(RenderCommand::Quad);
+    props.styles.as_mut().unwrap().render_command = StyleProp::Value(RenderCommand::Quad);
     rsx! {
         <Fragment>
             {children}

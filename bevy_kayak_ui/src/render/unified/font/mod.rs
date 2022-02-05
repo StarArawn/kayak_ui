@@ -41,6 +41,9 @@ fn process_loaded_fonts(
     bevy_context: Option<Res<BevyContext>>,
 ) {
     if let Some(context) = bevy_context {
+        if context.is_added() {
+            font_mapping.mark_all_as_new();
+        }
         font_mapping.add_loaded_to_kayak(&fonts, &context);
     }
 }

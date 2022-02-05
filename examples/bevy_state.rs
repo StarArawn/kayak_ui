@@ -1,11 +1,12 @@
 use bevy::{
-    input::Input,
-    prelude::{App as BevyApp, AssetServer, Commands, KeyCode, Res, ResMut, State, SystemSet},
+    prelude::{App as BevyApp, AssetServer, Commands, Res, ResMut, State, SystemSet},
     window::WindowDescriptor,
     DefaultPlugins,
 };
 use kayak_ui::bevy::{BevyContext, BevyKayakUIPlugin, FontMapping, UICameraBundle};
-use kayak_ui::core::{render, Index};
+use kayak_ui::core::{
+    render, rsx, widget, Event, EventType, Index, KayakContextRef, KeyCode, OnEvent, WidgetProps,
+};
 use kayak_ui::widgets::{App, Text};
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
@@ -15,11 +16,42 @@ enum GameState {
     Play,
 }
 
+fn swap(mut state: ResMut<State<GameState>>) {
+    if *state.current() == GameState::MainMenu {
+        let _ = state.set(GameState::Options);
+    } else if *state.current() == GameState::Options {
+        let _ = state.set(GameState::Play);
+    } else {
+        let _ = state.set(GameState::MainMenu);
+    }
+}
+
+fn handle_input(context: &mut KayakContextRef, event: &mut Event) {
+    match event.event_type {
+        EventType::KeyDown(event) => {
+            if event.key() == KeyCode::Space {
+                context.query_world::<ResMut<State<GameState>>, _, _>(swap);
+            }
+        }
+        _ => {}
+    };
+}
+#[derive(WidgetProps, Default, Debug, PartialEq, Clone)]
+pub struct StateSwitcherProps;
+
+#[widget]
+fn StateSwitcher(props: StateSwitcherProps) {
+    rsx! {
+        <Text content={"Press space to switch states!".to_string()} size={32.0} />
+    }
+}
+
 fn create_main_menu(mut commands: Commands) {
     let context = BevyContext::new(|context| {
         render! {
-            <App>
+            <App on_event={Some(OnEvent::new(handle_input))}>
                 <Text content={"Main Menu".to_string()} size={32.0} />
+                <StateSwitcher />
             </App>
         }
     });
@@ -30,8 +62,9 @@ fn create_main_menu(mut commands: Commands) {
 fn create_options_menu(mut commands: Commands) {
     let context = BevyContext::new(|context| {
         render! {
-            <App>
+            <App on_event={Some(OnEvent::new(handle_input))}>
                 <Text content={"Options".to_string()} size={32.0} />
+                <StateSwitcher />
             </App>
         }
     });
@@ -42,8 +75,9 @@ fn create_options_menu(mut commands: Commands) {
 fn create_play_menu(mut commands: Commands) {
     let context = BevyContext::new(|context| {
         render! {
-            <App>
+            <App on_event={Some(OnEvent::new(handle_input))}>
                 <Text content={"Play".to_string()} size={32.0} />
+                <StateSwitcher />
             </App>
         }
     });
@@ -64,19 +98,6 @@ fn startup(
 fn destroy(mut commands: Commands) {
     commands.remove_resource::<BevyContext>();
 }
-
-fn swap(mut state: ResMut<State<GameState>>, keys: Res<Input<KeyCode>>) {
-    if keys.just_pressed(KeyCode::Space) {
-        if *state.current() == GameState::MainMenu {
-            let _ = state.set(GameState::Options);
-        } else if *state.current() == GameState::Options {
-            let _ = state.set(GameState::Play);
-        } else {
-            let _ = state.set(GameState::MainMenu);
-        }
-    }
-}
-
 fn main() {
     BevyApp::new()
         .insert_resource(WindowDescriptor {
@@ -95,6 +116,5 @@ fn main() {
         .add_system_set(SystemSet::on_exit(GameState::Options).with_system(destroy))
         .add_system_set(SystemSet::on_enter(GameState::Play).with_system(create_play_menu))
         .add_system_set(SystemSet::on_exit(GameState::Play).with_system(destroy))
-        .add_system(swap)
         .run();
 }

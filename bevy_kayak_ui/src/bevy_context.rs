@@ -2,6 +2,8 @@ use std::sync::{Arc, RwLock};
 
 use kayak_core::context::KayakContext;
 
+use crate::FontMapping;
+
 pub struct BevyContext {
     pub kayak_context: Arc<RwLock<KayakContext>>,
 }

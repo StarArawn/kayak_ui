@@ -1,7 +1,6 @@
 use std::sync::{Arc, RwLock};
 
 use kayak_core::context::KayakContext;
-
 pub struct BevyContext {
     pub kayak_context: Arc<RwLock<KayakContext>>,
 }

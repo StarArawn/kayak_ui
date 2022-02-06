@@ -32,6 +32,11 @@ impl FontMapping {
         }
     }
 
+    pub(crate) fn mark_all_as_new(&mut self) {
+        self.new_fonts
+            .extend(self.font_handles.keys().map(|key| key.clone()));
+    }
+
     pub fn get_handle(&self, id: String) -> Option<Handle<KayakFont>> {
         self.font_handles
             .get(&id)

@@ -36,6 +36,8 @@ pub fn Text(props: TextProps) {
 
     context.bind(&font);
 
+    let mut should_render = true;
+
     // TODO: It might be worth caching the measurement here until content changes.
     let (layout_size, parent_size) =
         if let Some(parent_id) = context.get_valid_parent(parent_id.unwrap()) {
@@ -48,30 +50,36 @@ pub fn Text(props: TextProps) {
                         line_height.unwrap_or(size * 1.2),
                         (layout.width, layout.height),
                     );
-
                     (measurement, (layout.width, layout.height))
                 } else {
+                    should_render = false;
                     ((0.0, 0.0), (layout.width, layout.height))
                 }
             } else {
+                should_render = false;
                 ((0.0, 0.0), (0.0, 0.0))
             }
         } else {
+            should_render = false;
             ((0.0, 0.0), (0.0, 0.0))
         };
 
-    let render_command = RenderCommand::Text {
-        content: content.clone(),
-        size,
-        parent_size,
-        line_height: line_height.unwrap_or(size * 1.2),
-        font: font_name.clone().unwrap_or("Roboto".into()),
-    };
+    if should_render {
+        let render_command = RenderCommand::Text {
+            content: content.clone(),
+            size,
+            parent_size,
+            line_height: line_height.unwrap_or(size * 1.2),
+            font: font_name.clone().unwrap_or("Roboto".into()),
+        };
 
-    props.styles = Some(Style {
-        render_command: StyleProp::Value(render_command),
-        width: StyleProp::Value(Units::Pixels(layout_size.0)),
-        height: StyleProp::Value(Units::Pixels(layout_size.1)),
-        ..props.styles.clone().unwrap_or_default()
-    });
+        props.styles = Some(Style {
+            render_command: StyleProp::Value(render_command),
+            width: StyleProp::Value(Units::Pixels(layout_size.0)),
+            height: StyleProp::Value(Units::Pixels(layout_size.1)),
+            ..props.styles.clone().unwrap_or_default()
+        });
+    } else {
+        context.mark_dirty();
+    }
 }

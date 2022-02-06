@@ -80,6 +80,6 @@ pub fn Text(props: TextProps) {
             ..props.styles.clone().unwrap_or_default()
         });
     } else {
-        context.mark_dirty(&self.get_id());
+        context.mark_dirty();
     }
 }

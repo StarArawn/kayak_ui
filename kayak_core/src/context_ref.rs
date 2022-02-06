@@ -263,9 +263,9 @@ impl<'a> KayakContextRef<'a> {
 
     /// This function is specifically for text rendering which needs to re-render when
     /// it's parent layout is calculated.
-    pub fn mark_dirty(&mut self, widget_id: &Index) {
+    pub fn mark_dirty(&mut self) {
         if let Ok(mut dirty_nodes) = self.context.widget_manager.dirty_nodes.lock() {
-            dirty_nodes.insert(*widget_id);
+            dirty_nodes.insert(self.current_id.unwrap_or_default());
         }
     }
 }

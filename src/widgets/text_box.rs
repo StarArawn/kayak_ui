@@ -88,7 +88,7 @@ pub fn TextBox(props: TextBoxProps) {
                 ..Default::default()
             })
             // Apply any prop-given styles
-            .with_style(props.styles)
+            .with_style(&props.styles)
             // If not set by props, apply these styles
             .with_style(Style {
                 top: Units::Pixels(0.0).into(),

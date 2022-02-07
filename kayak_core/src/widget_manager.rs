@@ -172,25 +172,8 @@ impl WidgetManager {
     }
 
     pub fn render(&mut self) {
-        let default_styles = Style {
-            background_color: crate::styles::StyleProp::Default,
-            border_radius: crate::styles::StyleProp::Default,
-            bottom: crate::styles::StyleProp::Default,
-            color: crate::styles::StyleProp::Default,
-            height: crate::styles::StyleProp::Default,
-            layout_type: crate::styles::StyleProp::Default,
-            left: crate::styles::StyleProp::Default,
-            padding_bottom: crate::styles::StyleProp::Default,
-            padding_left: crate::styles::StyleProp::Default,
-            padding_right: crate::styles::StyleProp::Default,
-            padding_top: crate::styles::StyleProp::Default,
-            position_type: crate::styles::StyleProp::Default,
-            render_command: crate::styles::StyleProp::Default,
-            right: crate::styles::StyleProp::Default,
-            top: crate::styles::StyleProp::Default,
-            width: crate::styles::StyleProp::Default,
-            ..Style::default()
-        };
+        let initial_styles = Style::initial();
+        let default_styles = Style::defaulted();
         for dirty_node_index in self.dirty_render_nodes.drain() {
             let dirty_widget = self.current_widgets[dirty_node_index].as_ref().unwrap();
             let parent_styles =
@@ -230,21 +213,23 @@ impl WidgetManager {
                 }
             };
 
-            let mut styles = dirty_widget.get_props().get_styles();
-            if styles.is_some() {
-                styles.as_mut().unwrap().merge(&parent_styles);
-            }
+            let raw_styles = dirty_widget.get_props().get_styles();
+            let mut styles = raw_styles.clone().unwrap_or_default();
+            // Fill in all `initial` values
+            styles.merge(&initial_styles);
+            // Fill in all `inherited` values
+            styles.inherit(&parent_styles);
+
             let children = self
                 .tree
                 .children
                 .get(&dirty_node_index)
                 .cloned()
                 .unwrap_or(vec![]);
-            let styles = styles.unwrap_or(default_styles.clone());
 
             let mut node = NodeBuilder::empty()
                 .with_id(dirty_node_index)
-                .with_styles(styles)
+                .with_styles(styles, raw_styles)
                 .with_children(children)
                 .build();
             node.z = current_z;
@@ -271,7 +256,7 @@ impl WidgetManager {
 
         if let Some(node) = nodes.get(current_node).unwrap() {
             if let Some(layout) = layout_cache.rect.get(&current_node) {
-                let mut render_primitive: RenderPrimitive = (&node.styles).into();
+                let mut render_primitive: RenderPrimitive = (&node.resolved_styles).into();
                 let mut layout = *layout;
                 let new_z_index = if matches!(render_primitive, RenderPrimitive::Clip { .. }) {
                     main_z_index - 0.1
@@ -403,7 +388,7 @@ impl WidgetManager {
     pub fn get_valid_parent(&self, node_id: Index) -> Option<Index> {
         if let Some(parent_id) = self.tree.parents.get(&node_id) {
             if let Some(parent_widget) = &self.nodes[*parent_id] {
-                if parent_widget.styles.render_command.resolve() != RenderCommand::Empty {
+                if parent_widget.resolved_styles.render_command.resolve() != RenderCommand::Empty {
                     return Some(*parent_id);
                 }
             }

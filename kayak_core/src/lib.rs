@@ -25,6 +25,7 @@ pub mod tree;
 mod vec;
 pub mod widget;
 pub mod widget_manager;
+mod cursor_icon;
 
 use std::sync::{Arc, RwLock};
 
@@ -34,6 +35,7 @@ pub use color::Color;
 pub use context::*;
 pub use context_ref::KayakContextRef;
 pub use cursor::PointerEvents;
+pub use cursor_icon::CursorIcon;
 pub use event::*;
 pub use focus_tree::FocusTree;
 pub use fragment::{Fragment, FragmentProps};

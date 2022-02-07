@@ -10,12 +10,14 @@ mod bevy_context;
 mod camera;
 mod key;
 mod render;
+mod cursor;
 
 pub use bevy_context::BevyContext;
 pub use camera::*;
 use kayak_core::{bind, Binding, InputEvent, MutableBound};
 pub use render::unified::font::FontMapping;
 pub use render::unified::image::ImageManager;
+use crate::cursor::convert_cursor_icon;
 
 #[derive(Default)]
 pub struct BevyKayakUIPlugin;
@@ -40,8 +42,15 @@ pub fn update(world: &mut World) {
         if let Ok(mut context) = bevy_context.kayak_context.write() {
             context.set_global_state(std::mem::take(world));
             context.render();
-            *world = context.take_global_state::<World>().unwrap()
+            *world = context.take_global_state::<World>().unwrap();
+
+            if let Some(ref mut windows) = world.get_resource_mut::<Windows>() {
+                if let Some(window) = windows.get_primary_mut() {
+                    window.set_cursor_icon(convert_cursor_icon(context.cursor_icon()));
+                }
+            }
         }
+
         world.insert_resource(bevy_context);
     }
 }

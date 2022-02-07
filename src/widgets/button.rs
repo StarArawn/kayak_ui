@@ -1,3 +1,4 @@
+use kayak_core::CursorIcon;
 use crate::core::{
     render_command::RenderCommand,
     rsx,
@@ -51,6 +52,7 @@ pub fn Button(props: ButtonProps) {
                 height: StyleProp::Value(Units::Pixels(45.0)),
                 padding_left: StyleProp::Value(Units::Stretch(1.0)),
                 padding_right: StyleProp::Value(Units::Stretch(1.0)),
+                cursor: CursorIcon::Hand.into(),
                 ..Default::default()
             }),
     );

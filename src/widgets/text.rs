@@ -1,4 +1,4 @@
-use kayak_core::{styles::Units, Binding, Bound};
+use kayak_core::{styles::Units, Binding, Bound, CursorIcon};
 use kayak_font::{CoordinateSystem, KayakFont};
 
 use crate::core::{
@@ -73,11 +73,13 @@ pub fn Text(props: TextProps) {
             font: font_name.clone().unwrap_or("Roboto".into()),
         };
 
+        let styles = props.styles.clone().unwrap_or_default();
         props.styles = Some(Style {
             render_command: StyleProp::Value(render_command),
             width: StyleProp::Value(Units::Pixels(layout_size.0)),
             height: StyleProp::Value(Units::Pixels(layout_size.1)),
-            ..props.styles.clone().unwrap_or_default()
+            cursor: StyleProp::select(&[&styles.cursor, &StyleProp::Value(CursorIcon::Text)]).clone(),
+            ..styles
         });
     } else {
         context.mark_dirty();

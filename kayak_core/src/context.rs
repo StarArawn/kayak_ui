@@ -1,5 +1,5 @@
 use crate::assets::AssetStorage;
-use crate::{Binding, Changeable, KayakContextRef};
+use crate::{Binding, Changeable, CursorIcon, KayakContextRef};
 use std::collections::HashMap;
 use std::path::PathBuf;
 
@@ -27,6 +27,7 @@ pub struct KayakContext {
     widget_state_lifetimes:
         HashMap<crate::Index, HashMap<crate::flo_binding::Uuid, Box<dyn crate::Releasable>>>,
     widget_states: HashMap<crate::Index, resources::Resources>,
+    cursor_icon: CursorIcon
 }
 
 impl std::fmt::Debug for KayakContext {
@@ -42,6 +43,7 @@ impl KayakContext {
             assets: resources::Resources::default(),
             current_effect_index: 0,
             current_state_index: 0,
+            cursor_icon: CursorIcon::Default,
             event_dispatcher: EventDispatcher::new(),
             global_bindings: HashMap::new(),
             global_state: resources::Resources::default(),
@@ -394,6 +396,7 @@ impl KayakContext {
         // self.widget_manager.dirty_nodes.clear();
         self.widget_manager.render();
         self.widget_manager.calculate_layout();
+        self.update_cursor();
     }
 
     /// Processes the given input events
@@ -556,5 +559,27 @@ impl KayakContext {
     /// use the standard [`release_cursor`](Self::release_cursor) method instead.
     pub fn force_release_cursor(&mut self) -> Option<Index> {
         self.event_dispatcher.force_release_cursor()
+    }
+
+    pub fn cursor_icon(&self) -> CursorIcon {
+        self.cursor_icon
+    }
+
+    pub(crate) fn set_cursor_icon(&mut self, icon: CursorIcon) {
+        self.cursor_icon = icon;
+    }
+
+    fn update_cursor(&mut self) {
+        if self.event_dispatcher.hovered.is_none() {
+            return;
+        }
+
+        let hovered = self.event_dispatcher.hovered.unwrap();
+        if let Some(node) = self.widget_manager.nodes.get(hovered) {
+            if let Some(node) = node {
+                    let icon = node.resolved_styles.cursor.resolve();
+                    self.cursor_icon = icon;
+            }
+        }
     }
 }

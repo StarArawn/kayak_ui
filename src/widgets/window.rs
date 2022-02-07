@@ -1,3 +1,4 @@
+use kayak_core::CursorIcon;
 use crate::core::{
     color::Color,
     render_command::RenderCommand,
@@ -88,9 +89,16 @@ pub fn Window(props: WindowProps) {
         ..Style::default()
     };
 
+    let cursor = if is_dragging {
+        CursorIcon::Grabbing
+    } else {
+        CursorIcon::Grab
+    };
+
     let title_background_styles = Style {
         background_color: StyleProp::Value(Color::new(0.0781, 0.0898, 0.101, 1.0)),
         border_radius: StyleProp::Value((5.0, 0.0, 0.0, 5.0)),
+        cursor: cursor.into(),
         height: StyleProp::Value(Units::Pixels(24.0)),
         width: StyleProp::Value(Units::Stretch(1.0)),
         left: StyleProp::Value(Units::Pixels(0.0)),
@@ -103,6 +111,7 @@ pub fn Window(props: WindowProps) {
 
     let title_text_styles = Style {
         height: StyleProp::Value(Units::Pixels(25.0)),
+        cursor: StyleProp::Inherit,
         ..Style::default()
     };
 

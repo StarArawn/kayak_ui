@@ -15,7 +15,7 @@ pub struct Node {
 impl Node {}
 
 pub struct NodeBuilder {
-    node: Node
+    node: Node,
 }
 
 impl NodeBuilder {
@@ -26,8 +26,8 @@ impl NodeBuilder {
                 id: Index::default(),
                 resolved_styles: Style::default(),
                 raw_styles: None,
-                z: 0.0
-            }
+                z: 0.0,
+            },
         }
     }
 
@@ -38,8 +38,8 @@ impl NodeBuilder {
                 id,
                 resolved_styles: styles,
                 raw_styles: None,
-                z: 0.0
-            }
+                z: 0.0,
+            },
         }
     }
 

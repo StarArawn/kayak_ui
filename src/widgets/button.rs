@@ -52,7 +52,7 @@ pub fn Button(props: ButtonProps) {
                 padding_left: StyleProp::Value(Units::Stretch(1.0)),
                 padding_right: StyleProp::Value(Units::Stretch(1.0)),
                 ..Default::default()
-            })
+            }),
     );
 
     rsx! {

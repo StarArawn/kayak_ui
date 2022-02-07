@@ -111,13 +111,17 @@ pub fn TooltipProvider(props: TooltipProviderProps) {
                 width: StyleProp::Value(Units::Pixels(size.0)),
                 height: StyleProp::Value(Units::Pixels(size.1)),
                 ..Default::default()
-            })
+            }),
     );
 
     let base_styles = props.styles.clone().unwrap();
     let mut tooltip_styles = Style {
         position_type: StyleProp::Value(PositionType::SelfDirected),
-        background_color: StyleProp::select(&[&base_styles.background_color, &Color::new(0.13, 0.15, 0.17, 0.85).into()]).clone(),
+        background_color: StyleProp::select(&[
+            &base_styles.background_color,
+            &Color::new(0.13, 0.15, 0.17, 0.85).into(),
+        ])
+        .clone(),
         width: StyleProp::Value(Units::Pixels(tooltip_size.0)),
         height: StyleProp::Value(Units::Pixels(tooltip_size.1)),
         ..Style::default()
@@ -206,7 +210,7 @@ pub fn TooltipConsumer(props: TooltipConsumerProps) {
                 width: StyleProp::Value(Units::Auto),
                 height: StyleProp::Value(Units::Auto),
                 ..Default::default()
-            })
+            }),
     );
 
     let data = context

@@ -95,7 +95,7 @@ pub fn TextBox(props: TextBoxProps) {
                 bottom: Units::Pixels(0.0).into(),
                 height: Units::Pixels(26.0).into(),
                 ..Default::default()
-            })
+            }),
     );
 
     let background_styles = Style {

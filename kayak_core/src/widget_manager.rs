@@ -1,7 +1,5 @@
-use std::{
-    sync::{Arc, Mutex},
-};
 use indexmap::IndexSet;
+use std::sync::{Arc, Mutex};
 
 use crate::layout_cache::Rect;
 use crate::{

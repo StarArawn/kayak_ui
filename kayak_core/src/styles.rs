@@ -21,8 +21,8 @@ pub enum StyleProp<T: Default + Clone> {
 }
 
 impl<T> Default for StyleProp<T>
-    where
-        T: Default + Clone,
+where
+    T: Default + Clone,
 {
     fn default() -> Self {
         Self::Unset
@@ -30,8 +30,8 @@ impl<T> Default for StyleProp<T>
 }
 
 impl<T> StyleProp<T>
-    where
-        T: Default + Clone,
+where
+    T: Default + Clone,
 {
     pub fn resolve(&self) -> T {
         match self {
@@ -48,7 +48,7 @@ impl<T> StyleProp<T>
     pub fn select<'a>(props: &'_ [&'a StyleProp<T>]) -> &'a Self {
         for prop in props {
             if !matches!(prop, StyleProp::Unset) {
-                return prop
+                return prop;
             }
         }
 

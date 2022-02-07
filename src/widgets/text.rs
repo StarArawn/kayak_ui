@@ -78,7 +78,8 @@ pub fn Text(props: TextProps) {
             render_command: StyleProp::Value(render_command),
             width: StyleProp::Value(Units::Pixels(layout_size.0)),
             height: StyleProp::Value(Units::Pixels(layout_size.1)),
-            cursor: StyleProp::select(&[&styles.cursor, &StyleProp::Value(CursorIcon::Text)]).clone(),
+            cursor: StyleProp::select(&[&styles.cursor, &StyleProp::Value(CursorIcon::Text)])
+                .clone(),
             ..styles
         });
     } else {

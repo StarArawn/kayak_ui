@@ -4,8 +4,8 @@ use crate::core::{
     styles::{Style, Units},
     widget, Bound, Children, Color, EventType, MutableBound, OnEvent, WidgetProps,
 };
-use std::sync::{Arc, RwLock};
 use kayak_core::CursorIcon;
+use std::sync::{Arc, RwLock};
 
 use crate::widgets::{Background, Clip, Text};
 

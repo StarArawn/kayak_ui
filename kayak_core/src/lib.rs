@@ -5,6 +5,7 @@ pub mod color;
 pub mod context;
 mod context_ref;
 mod cursor;
+mod cursor_icon;
 pub mod event;
 mod event_dispatcher;
 mod flo_binding;
@@ -25,7 +26,6 @@ pub mod tree;
 mod vec;
 pub mod widget;
 pub mod widget_manager;
-mod cursor_icon;
 
 use std::sync::{Arc, RwLock};
 

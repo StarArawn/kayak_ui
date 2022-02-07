@@ -1,7 +1,7 @@
 pub use morphorm::{LayoutType, PositionType, Units};
 
 use crate::cursor::PointerEvents;
-use crate::{color::Color, CursorIcon, render_command::RenderCommand};
+use crate::{color::Color, render_command::RenderCommand, CursorIcon};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum StyleProp<T: Default + Clone> {

@@ -1,4 +1,3 @@
-use kayak_core::CursorIcon;
 use crate::core::{
     color::Color,
     render_command::RenderCommand,
@@ -6,6 +5,7 @@ use crate::core::{
     styles::{PositionType, Style, StyleProp, Units},
     use_state, widget, Children, EventType, OnEvent, WidgetProps,
 };
+use kayak_core::CursorIcon;
 
 use crate::widgets::{Background, Clip, Element, Text};
 

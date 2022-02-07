@@ -27,7 +27,7 @@ pub struct KayakContext {
     widget_state_lifetimes:
         HashMap<crate::Index, HashMap<crate::flo_binding::Uuid, Box<dyn crate::Releasable>>>,
     widget_states: HashMap<crate::Index, resources::Resources>,
-    cursor_icon: CursorIcon
+    cursor_icon: CursorIcon,
 }
 
 impl std::fmt::Debug for KayakContext {
@@ -577,8 +577,8 @@ impl KayakContext {
         let hovered = self.event_dispatcher.hovered.unwrap();
         if let Some(node) = self.widget_manager.nodes.get(hovered) {
             if let Some(node) = node {
-                    let icon = node.resolved_styles.cursor.resolve();
-                    self.cursor_icon = icon;
+                let icon = node.resolved_styles.cursor.resolve();
+                self.cursor_icon = icon;
             }
         }
     }

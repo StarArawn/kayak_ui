@@ -8,16 +8,16 @@ use bevy::{
 
 mod bevy_context;
 mod camera;
+mod cursor;
 mod key;
 mod render;
-mod cursor;
 
+use crate::cursor::convert_cursor_icon;
 pub use bevy_context::BevyContext;
 pub use camera::*;
 use kayak_core::{bind, Binding, InputEvent, MutableBound};
 pub use render::unified::font::FontMapping;
 pub use render::unified::image::ImageManager;
-use crate::cursor::convert_cursor_icon;
 
 #[derive(Default)]
 pub struct BevyKayakUIPlugin;

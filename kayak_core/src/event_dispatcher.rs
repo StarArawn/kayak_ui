@@ -48,7 +48,7 @@ pub(crate) struct EventDispatcher {
     wants_cursor: Option<bool>,
     has_cursor: Option<Index>,
     pub cursor_capture: Option<Index>,
-    pub hovered: Option<Index>
+    pub hovered: Option<Index>,
 }
 
 impl EventDispatcher {
@@ -65,7 +65,7 @@ impl EventDispatcher {
             wants_cursor: None,
             has_cursor: None,
             cursor_capture: None,
-            hovered: None
+            hovered: None,
         }
     }
 

@@ -8,7 +8,7 @@ pub enum StyleProp<T: Default + Clone> {
     /// This prop is unset, meaning its actual value is not determined until style resolution,
     /// wherein it will be set to the property's default value.
     ///
-    /// When [merging](Style::apply) styles, only style properties of this type may be
+    /// When [applying](Style::apply) styles, only style properties of this type may be
     /// overwritten.
     Unset,
     /// Like [StyleProp::Unset], properties of this type wait until style resolution for their
@@ -40,6 +40,19 @@ impl<T> StyleProp<T>
             StyleProp::Value(value) => value.clone(),
             StyleProp::Inherit => panic!("All styles should be merged before resolving!"),
         }
+    }
+
+    /// Returns the first property to not be [unset](StyleProp::Unset)
+    ///
+    /// If none found, returns [`StyleProp::Unset`]
+    pub fn select<'a>(props: &'_ [&'a StyleProp<T>]) -> &'a Self {
+        for prop in props {
+            if !matches!(prop, StyleProp::Unset) {
+                return prop
+            }
+        }
+
+        &StyleProp::Unset
     }
 }
 
@@ -81,7 +94,7 @@ macro_rules! define_styles {
             ///
             /// This should only be used when default properties are required or desired. Otherwise, you
             /// may be better off using `Style::default` (which sets all properties to [`StyleProp::Unset`]).
-            pub(crate) fn new_default() -> Self {
+            pub fn new_default() -> Self {
                 Self {
                     $($field: StyleProp::Default),*
                 }
@@ -158,7 +171,7 @@ impl Style {
     ///
     /// This is the actual "default" to apply over any field marked as [`StyleProp::Unset`] before
     /// resolving the style.
-    pub(crate) fn initial() -> Self {
+    pub fn initial() -> Self {
         Self {
             background_color: StyleProp::Default,
             border: StyleProp::Default,
@@ -214,8 +227,8 @@ impl AsRefOption<Style> for Option<Style> {
     }
 }
 
-impl AsRefOption<Style> for Option<&Style> {
+impl AsRefOption<Style> for &Option<Style> {
     fn as_ref_option(&self) -> Option<&Style> {
-        self.clone()
+        self.as_ref()
     }
 }

@@ -8,7 +8,7 @@ pub enum StyleProp<T: Default + Clone> {
     /// This prop is unset, meaning its actual value is not determined until style resolution,
     /// wherein it will be set to the property's default value.
     ///
-    /// When [merging](Style::merge) styles, only style properties of this type may be
+    /// When [merging](Style::apply) styles, only style properties of this type may be
     /// overwritten.
     Unset,
     /// Like [StyleProp::Unset], properties of this type wait until style resolution for their
@@ -78,7 +78,10 @@ macro_rules! define_styles {
         impl $name {
 
             /// Returns a `Style` object where all fields are set to [`StyleProp::Default`]
-            pub(crate) fn defaulted() -> Self {
+            ///
+            /// This should only be used when default properties are required or desired. Otherwise, you
+            /// may be better off using `Style::default` (which sets all properties to [`StyleProp::Unset`]).
+            pub(crate) fn new_default() -> Self {
                 Self {
                     $($field: StyleProp::Default),*
                 }
@@ -93,15 +96,25 @@ macro_rules! define_styles {
                  )*
             }
 
-            /// Merges two `Style` objects
+            /// Applies a `Style` over this one
             ///
-            /// Values from `other` are applied to any field that is marked as [`StyleProp::Unset`]
-            pub fn merge(&mut self, other: &Self) {
-                 $(
-                     if matches!(self.$field, StyleProp::Unset) {
-                         self.$field = other.$field.clone();
-                     }
-                 )*
+            /// Values from `other` are applied to any field in this one that is marked as [`StyleProp::Unset`]
+            pub fn apply<T: AsRefOption<Style>>(&mut self, other: T) {
+                 if let Some(other) = other.as_ref_option() {
+                     $(
+                         if matches!(self.$field, StyleProp::Unset) {
+                             self.$field = other.$field.clone();
+                         }
+                     )*
+                 }
+            }
+
+            /// Applies the given style and returns the updated style
+            ///
+            /// This is simply a builder-like wrapper around the [`Style::apply`] method.
+            pub fn with_style<T: AsRefOption<Style>>(mut self, other: T) -> Self {
+                self.apply(other);
+                self
             }
         }
     };
@@ -175,5 +188,34 @@ impl Style {
             top: StyleProp::Default,
             width: StyleProp::Default,
         }
+    }
+}
+
+/// A trait used to allow reading a value as an `Option<&T>`
+pub trait AsRefOption<T> {
+    fn as_ref_option(&self) -> Option<&T>;
+}
+
+impl AsRefOption<Style> for Style {
+    fn as_ref_option(&self) -> Option<&Style> {
+        Some(&self)
+    }
+}
+
+impl AsRefOption<Style> for &Style {
+    fn as_ref_option(&self) -> Option<&Style> {
+        Some(self)
+    }
+}
+
+impl AsRefOption<Style> for Option<Style> {
+    fn as_ref_option(&self) -> Option<&Style> {
+        self.as_ref()
+    }
+}
+
+impl AsRefOption<Style> for Option<&Style> {
+    fn as_ref_option(&self) -> Option<&Style> {
+        self.clone()
     }
 }

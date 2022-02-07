@@ -1,7 +1,7 @@
 use std::{
-    collections::HashSet,
     sync::{Arc, Mutex},
 };
+use indexmap::IndexSet;
 
 use crate::layout_cache::Rect;
 use crate::{
@@ -20,8 +20,8 @@ use crate::{
 #[derive(Debug)]
 pub struct WidgetManager {
     pub(crate) current_widgets: Arena<Option<BoxedWidget>>,
-    pub(crate) dirty_render_nodes: HashSet<Index>,
-    pub(crate) dirty_nodes: Arc<Mutex<HashSet<Index>>>,
+    pub(crate) dirty_render_nodes: IndexSet<Index>,
+    pub(crate) dirty_nodes: Arc<Mutex<IndexSet<Index>>>,
     pub(crate) nodes: Arena<Option<Node>>,
     /// A tree containing all widgets in the hierarchy.
     pub tree: Tree,
@@ -38,8 +38,8 @@ impl WidgetManager {
     pub fn new() -> Self {
         Self {
             current_widgets: Arena::new(),
-            dirty_render_nodes: HashSet::new(),
-            dirty_nodes: Arc::new(Mutex::new(HashSet::new())),
+            dirty_render_nodes: IndexSet::new(),
+            dirty_nodes: Arc::new(Mutex::new(IndexSet::new())),
             nodes: Arena::new(),
             tree: Tree::default(),
             node_tree: Tree::default(),
@@ -173,12 +173,18 @@ impl WidgetManager {
 
     pub fn render(&mut self) {
         let initial_styles = Style::initial();
-        let default_styles = Style::defaulted();
-        for dirty_node_index in self.dirty_render_nodes.drain() {
+        let default_styles = Style::new_default();
+        for dirty_node_index in self.dirty_render_nodes.drain(..) {
             let dirty_widget = self.current_widgets[dirty_node_index].as_ref().unwrap();
+            // Get the parent styles. Will be one of the following:
+            // 1. Already-resolved node styles (best)
+            // 2. Unresolved widget prop styles
+            // 3. Unresolved default styles
             let parent_styles =
                 if let Some(parent_widget_id) = self.tree.parents.get(&dirty_node_index) {
-                    if let Some(parent) = self.current_widgets[*parent_widget_id].as_ref() {
+                    if let Some(parent) = self.nodes[*parent_widget_id].as_ref() {
+                        parent.resolved_styles.clone()
+                    } else if let Some(parent) = self.current_widgets[*parent_widget_id].as_ref() {
                         if let Some(styles) = parent.get_props().get_styles() {
                             styles
                         } else {
@@ -215,9 +221,9 @@ impl WidgetManager {
 
             let raw_styles = dirty_widget.get_props().get_styles();
             let mut styles = raw_styles.clone().unwrap_or_default();
-            // Fill in all `initial` values
-            styles.merge(&initial_styles);
-            // Fill in all `inherited` values
+            // Fill in all `initial` values for any unset property
+            styles.apply(&initial_styles);
+            // Fill in all `inherited` values for any `inherit` property
             styles.inherit(&parent_styles);
 
             let children = self

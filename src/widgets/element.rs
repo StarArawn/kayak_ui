@@ -19,10 +19,14 @@ pub struct ElementProps {
 
 #[widget]
 pub fn Element(props: ElementProps) {
-    props.styles = Some(Style {
-        render_command: StyleProp::Value(RenderCommand::Layout),
-        ..props.styles.clone().unwrap_or_default()
-    });
+    props.styles = Some(
+        Style::default()
+            .with_style(&props.styles)
+            .with_style(Style {
+                render_command: StyleProp::Value(RenderCommand::Layout),
+                ..Default::default()
+            })
+    );
 
     rsx! {
         <>

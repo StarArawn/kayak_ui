@@ -1,12 +1,14 @@
 use crate::core::{
     render_command::RenderCommand,
-    rsx,
+    Binding, rsx,
     styles::{Style, Units},
     widget, Bound, Children, Color, EventType, MutableBound, OnEvent, WidgetProps,
 };
 use std::sync::{Arc, RwLock};
+use kayak_core::styles::PositionType;
+use kayak_font::{CoordinateSystem, KayakFont};
 
-use crate::widgets::{Background, Clip, Text};
+use crate::widgets::{Background, Clip, Element, If, Text};
 
 #[derive(Default, Debug, PartialEq, Clone)]
 pub struct TextBoxProps {
@@ -138,6 +140,37 @@ pub fn TextBox(props: TextBoxProps) {
         _ => {}
     }));
 
+    let font_name = Some("Roboto");
+    let font: Binding<Option<KayakFont>> = context.get_asset(font_name.clone().unwrap_or("Roboto".into()));
+    context.bind(&font);
+    let mut should_render = true;
+    let (layout_size, parent_size) =
+        if let Some(parent_id) = context.get_valid_parent(parent_id.unwrap()) {
+            if let Some(layout) = context.get_layout(&parent_id) {
+                if let Some(font) = font.get() {
+                    let measurement = font.measure(
+                        CoordinateSystem::PositiveYDown,
+                        &value,
+                        14.0,
+                        22.0,
+                        (layout.width, layout.height),
+                    );
+                    (measurement, (layout.width, layout.height))
+                } else {
+                    should_render = false;
+                    ((0.0, 0.0), (layout.width, layout.height))
+                }
+            } else {
+                should_render = false;
+                ((0.0, 0.0), (0.0, 0.0))
+            }
+        } else {
+            should_render = false;
+            ((0.0, 0.0), (0.0, 0.0))
+        };
+
+    println!("Layout: {:?}", layout_size);
+
     let text_styles = if value.is_empty() || (has_focus.get().0 && value.is_empty()) {
         Style {
             color: Color::new(0.5, 0.5, 0.5, 1.0).into(),
@@ -147,23 +180,41 @@ pub fn TextBox(props: TextBoxProps) {
         Style::default()
     };
 
+    let cursor_styles = Style {
+        background_color: Color::new(0.0, 1.0, 1.0, 1.0).into(),
+        position_type: PositionType::SelfDirected.into(),
+        render_command: RenderCommand::Quad.into(),
+        left: Units::Pixels(layout_size.0 + 5.0).into(),
+        top: Units::Pixels(3.0).into(),
+        bottom: Units::Pixels(3.0).into(),
+        width: Units::Pixels(1.0).into(),
+        height: Units::Stretch(1.0).into(),
+        ..Default::default()
+    };
+
     let value = if value.is_empty() {
         placeholder.unwrap_or_else(|| value.clone())
     } else {
         value
     };
 
+    let has_focus = has_focus.get();
     rsx! {
-        <Background styles={Some(background_styles)}>
-            <Clip>
-                <Text
-                    content={value}
-                    size={14.0}
-                    line_height={Some(22.0)}
-                    styles={Some(text_styles)}
-                />
-            </Clip>
-        </Background>
+        <>
+            <Background styles={Some(background_styles)}>
+                <Clip>
+                    <Text
+                        content={value}
+                        size={14.0}
+                        line_height={Some(22.0)}
+                        styles={Some(text_styles)}
+                    />
+                </Clip>
+            </Background>
+            <If condition={has_focus.0 && should_render}>
+                <Element styles={Some(cursor_styles)} />
+            </If>
+        </>
     }
 }
 

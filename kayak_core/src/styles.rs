@@ -5,9 +5,18 @@ use crate::{color::Color, render_command::RenderCommand};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum StyleProp<T: Default + Clone> {
+    /// This prop is unset, meaning its actual value is not determined until style resolution,
+    /// wherein it will be set to the property's default value.
+    ///
+    /// When [merging](Style::merge) styles, only style properties of this type may be
+    /// overwritten.
     Unset,
+    /// Like [StyleProp::Unset], properties of this type wait until style resolution for their
+    /// actual values to be determined, wherein it will be set to the property's default value.
     Default,
+    /// Properties of this type inherit their value from their parent (determined at style resolution).
     Inherit,
+    /// Set a specific value for this property
     Value(T),
 }
 
@@ -31,6 +40,12 @@ impl<T> StyleProp<T>
             StyleProp::Value(value) => value.clone(),
             StyleProp::Inherit => panic!("All styles should be merged before resolving!"),
         }
+    }
+}
+
+impl<T: Default + Clone> From<T> for StyleProp<T> {
+    fn from(value: T) -> Self {
+        StyleProp::Value(value)
     }
 }
 

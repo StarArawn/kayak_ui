@@ -89,10 +89,14 @@ pub fn Window(props: WindowProps) {
         ..Style::default()
     };
 
-    let cursor = if is_dragging {
-        CursorIcon::Grabbing
+    let cursor = if draggable {
+        if is_dragging {
+            CursorIcon::Grabbing
+        } else {
+            CursorIcon::Grab
+        }
     } else {
-        CursorIcon::Grab
+        CursorIcon::Default
     };
 
     let title_background_styles = Style {

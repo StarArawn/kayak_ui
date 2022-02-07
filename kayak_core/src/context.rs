@@ -565,6 +565,7 @@ impl KayakContext {
         self.cursor_icon
     }
 
+    #[allow(dead_code)]
     pub(crate) fn set_cursor_icon(&mut self, icon: CursorIcon) {
         self.cursor_icon = icon;
     }

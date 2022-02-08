@@ -10,8 +10,13 @@ Pretend we want to create a `Health` widget that displays a player's health poin
 
 ```rust,noplayground
 #[widget]
-fn Health(hp: i32) {
+fn Health(props: HealthProps) {
   // ...
+}
+
+#[derive(WidgetProps, Debug, Default, Clone, PartialEq)]
+struct HealthProps {
+  pub hp: i32
 }
 ```
 
@@ -21,7 +26,7 @@ Now say you want to allow the user to toggle between actual value and percentage
 
 ```rust,noplayground
 #[widget]
-fn Health(hp: i32) {
+fn Health(props: HealthProps) {
 	// DON'T DO THIS
   let mut is_percent = false;
   let event_handler = OnEvent::new(move |_, event| match event.event_type {
@@ -75,7 +80,7 @@ So now we can update our `Health` widget to look something like this:
 ```rust,noplayground
 use kayak_ui::core::{Bound, MutableBound};
 #[widget]
-pub fn Health(hp: i32) {
+pub fn Health(props: HealthProps) {
   let is_percent = context.create_state(false).unwrap();
   let event_handler = OnEvent::new(move |_, event| match event.event_type {
 		EventType::Click(..) => {
@@ -110,7 +115,7 @@ Again, we can update our `Health` widget:
 
 ```rust,noplayground
 #[widget]
-fn Health(hp: i32) {
+fn Health(props: HealthProps) {
   let (is_percent, set_is_percent, ..) = use_state!(false);
   let event_handler = OnEvent::new(move |_, event| match event.event_type {
 		EventType::Click => {
@@ -137,7 +142,7 @@ Recall that the only way for us to set change values is by using state. This mig
 
 ```rust,noplayground
 #[widget]
-fn Health(hp: i32) {
+fn Health(props: HealthProps) {
   // ...
 }
 
@@ -183,8 +188,14 @@ To `KayakContextRef` this looks something like:
 Why is it important to know about this? Well, consider the following:
 
 ```rust,noplayground
+# #[derive(WidgetProps, Debug, Default, Clone, PartialEq)]
+# struct MyWidgetProps {
+#   pub some_conditional: bool
+# }
+#
 # #[widget]
-# fn MyWidget(some_conditional: bool) {
+# fn MyWidget(props: MyWidgetProps) {
+#  let some_conditional = props.some_conditional;
   if some_conditional {
     let state_1 = context.create_state(0).unwrap();
     // ...

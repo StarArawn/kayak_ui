@@ -42,7 +42,7 @@ You'll often use this with things like `VecTracker`.
 
 ```rust,noplayground
 #[widget]
-fn PlayerNames(names: Vec<String>) {
+fn PlayerNames() {
   rsx! {
     {VecTracker::from(names.iter().map(|name| {
       constructor! {
@@ -50,6 +50,11 @@ fn PlayerNames(names: Vec<String>) {
       }
     }))}
   }
+}
+
+#[derive(WidgetProps, Debug, Default, Clone, PartialEq)]
+struct PlayerNamesProps {
+  pub names: Vec<String>
 }
 ```
 

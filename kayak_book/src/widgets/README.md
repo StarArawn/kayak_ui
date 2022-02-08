@@ -1,8 +1,7 @@
 # Widgets
 
 A widget can be defined as any object that lives in the UI tree. Typically a widget will have some sort of visual
-appearance, however that doesn't necessarily have to be the case. You might have widgets that manage state or just wrap
-other widgets.
+appearance, however that doesn't necessarily have to be the case. You might have widgets that manage state or just wrap other widgets.
 
 ## Core Concepts
 
@@ -36,8 +35,7 @@ another important topic when talking about widgets: modularity.
 ### Modularity
 
 Widgets are meant to be modular. It's rarely a good idea to have a widget with hundreds and hundreds of lines of code.
-Kayak UI instead suggests breaking parts of your UI down into individual components. This could be as simple as breaking
-up logical parts of a single UI into multiple files in order to make things easier to read/maintain.
+Kayak UI instead suggests breaking parts of your UI down into individual components. This could be as simple as breaking up logical parts of a single UI into multiple files in order to make things easier to read/maintain.
 
 This modularity allows for widgets to be abstracted to cover more generic use-cases. Rather than having two different
 widgets for a player's health points and a teammates, you could just create one reusable `Health` widget. Want to keep
@@ -46,9 +44,7 @@ enough to fit your needs.
 
 ### State
 
-To make widgets even more modular, provide greater functionality, and be reactive, widgets may contain their own state.
-While props can be used to pass data to widgets, state allows data to be retained. This is important because non-state
-data, such as props, are lost between renders. Without state, what goes in is all the widget has at its disposal.
+To make widgets even more modular, provide greater functionality, and be reactive, widgets may contain their own state. While props can be used to pass data to widgets, state allows data to be retained. This is important because non-state data, such as props, are lost between renders. Without state, what goes in is all the widget has at its disposal.
 
 This book has a [section](./state.md) dedicated to widget state so check that out for more on state!
 
@@ -70,7 +66,7 @@ Widgets are typically defined using the angle bracket tagging system (similar to
 
 ```rust,noplayground
 # #[widget]
-# fn PlayerManager {
+# fn PlayerManager() {
 # rsx! {
 <PlayerHud>
   <Health />
@@ -78,13 +74,23 @@ Widgets are typically defined using the angle bracket tagging system (similar to
 # }
 # }
 #
-# #[widget]
-# fn PlayerHud(data: PlayerData) {
-# // ...
+# #[derive(WidgetProps, Debug, Default, Clone, PartialEq)]
+# struct PlayerHudProps {
+#   pub data: PlayerData
 # }
 #
 # #[widget]
-# fn Health(hp: i32) {
+# fn PlayerHud(props: PlayerHudProps) {
+# // ...
+# }
+#
+# #[derive(WidgetProps, Debug, Default, Clone, PartialEq)]
+# struct HealthProps {
+#   pub hp: i32
+# }
+#
+# #[widget]
+# fn Health(props: HealthProps) {
 # // ...
 # }
 #
@@ -105,7 +111,7 @@ Props are passed to widgets using the `prop_name={value}` syntax:
 
 ```rust,noplayground
 # #[widget]
-# fn PlayerManager {
+# fn PlayerManager() {
 # let dummy_data = PlayerData {
 #   hp: 10
 # };
@@ -115,18 +121,28 @@ Props are passed to widgets using the `prop_name={value}` syntax:
 # }
 # }
 #
-# #[widget]
-# fn PlayerHud(data: PlayerData) {
+# #[derive(WidgetProps, Debug, Default, Clone, PartialEq)]
+# struct PlayerHudProps {
+#   pub data: PlayerData
+# }
 #
-# let current_hp = data.hp;
+# #[widget]
+# fn PlayerHud(props: PlayerHudProps) {
+#
+# let current_hp = props.data.hp;
 #
 # rsx! {
   <Health hp={current_hp} />
 # }
 # }
 #
+# #[derive(WidgetProps, Debug, Default, Clone, PartialEq)]
+# struct HealthProps {
+#   pub hp: i32
+# }
+#
 # #[widget]
-# fn Health(hp: i32) {
+# fn Health(props: HealthProps) {
 # // ...
 # }
 #
@@ -140,5 +156,5 @@ Props are passed to widgets using the `prop_name={value}` syntax:
 
 There are some requirements that need to be met in order for widgets to work properly. These are:
 
-1. All props must derive or otherwise implement `Default`, `Debug`, `PartialEq`, and `Clone`.
-2. All widgets must derive or otherwise implement `Default`, `Debug`, `PartialEq`, and `Clone`.
+1. All props must derive or otherwise implement `WidgetProps`, `Default`, `Debug`, `PartialEq`, and `Clone`.
+2. All widgets must derive or otherwise implement `Widget`,  `Default`, `Debug`, `PartialEq`, and `Clone`.

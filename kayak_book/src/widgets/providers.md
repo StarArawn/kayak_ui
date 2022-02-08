@@ -12,16 +12,23 @@ You can create a provider by calling `KayakContextRef::create_provider(...)` wit
 
 ```rust,noplayground
 #[widget]
-fn ThemeProvider(children: Children) {
-    context.create_provider(Theme::default());
-    rsx! { <>{children}</> }
+fn ThemeProvider(props: ThemeProviderProps) {
+  let children = props.get_children();
+  context.create_provider(Theme::default());
+  rsx! { <>{children}</> }
 }
 #
 # #[derive(Debug, Default, Clone, PartialEq)]
 # struct Theme {
-#     primary: Color,
-#     secondary: Color,
-#     background: Color,
+#   primary: Color,
+#   secondary: Color,
+#   background: Color,
+# }
+#
+# #[derive(WidgetProps, Debug, Default, Clone, PartialEq)]
+# struct ThemeProviderProps {
+#   #[prop_field(Children)]
+#   pub children: Option<Children>
 # }
 ```
 
@@ -70,19 +77,25 @@ Globals might seem like a better alternative—I mean, they allow everyone acces
 This is best explained with an example. Say you have a GUI that displays a player's game results in such a way that passing that data as props isn't ideal (though, in most cases it probably is). So you write something like this:
 
 ```rust,noplayground
+#[derive(WidgetProps, Debug, Default, Clone, PartialEq)]
+pub struct ResultProps {
+  pub player: Player
+}
+
 #[widget]
-fn GameResults(player: Player) {
+fn GameResults(props: ResultProps) {
+  let player = props.player.clone();
   rsx! {
     <Results player={player} />
   }
 }
 
 #[widget]
-fn Results(player: Player) {
+fn Results(props: ResultProps) {
   // Create our globals
   let world = context.get_global_state::<World>().unwrap();
-  world.insert_resource(PlayerName::from(player));
-  world.insert_resource(PlayerScore::from(player));
+  world.insert_resource(PlayerName::from(props.player.clone()));
+  world.insert_resource(PlayerScore::from(props.player.clone()));
   
   rsx! {
     <>
@@ -124,9 +137,17 @@ Adding multiplayer seems like a huge hassle since you now need to deal with two 
 With providers, you could add a level of specificity to the shared player data so that all descendant widgets use the correct data. To do this, we first need to update the widgets that manage the data:
 
 ```rust,noplayground
-#[widget]
-fn GameResults(player_1: Player, player_2: Player) {
+#[derive(WidgetProps, Debug, Default, Clone, PartialEq)]
+pub struct GameResultProps {
   // For simplicity, let's just consider two players
+  pub player_1: Player,
+  pub player_2: Player
+}
+
+#[widget]
+fn GameResults(props: GameResultProps) {
+  let player_1 = props.player_1.clone();
+  let player_2 = props.player_2.clone();
   rsx! {
     <>
       <Results player={player_1} />
@@ -135,10 +156,15 @@ fn GameResults(player_1: Player, player_2: Player) {
   }
 }
 
+#[derive(WidgetProps, Debug, Default, Clone, PartialEq)]
+pub struct ResultsProps {
+  pub player: Player,
+}
+
 #[widget]
-fn Results(player: Player) {
-  context.create_provider(PlayerName::from(player));
-  context.create_provider(PlayerScore::from(player));
+fn Results(props: ResultsProps) {
+  context.create_provider(PlayerName::from(props.player.clone()));
+  context.create_provider(PlayerScore::from(props.player.clone()));
   
   rsx! {
     <>

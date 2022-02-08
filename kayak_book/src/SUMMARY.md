@@ -4,6 +4,7 @@
 # Usage
 
 - [Widgets](./widgets/README.md)
+  - [Creating Props](./widgets/creating_props.md)
   - [Creating Widgets](./widgets/creating_widgets.md)
   - [Common Props](./widgets/common_props.md)
   - [State](./widgets/state.md)

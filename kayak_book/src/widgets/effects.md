@@ -131,8 +131,14 @@ Much like the [`use_state!` macro](./state.md#use_state), whether you use the ma
 Effects work much like state in that the order in which they are registered matters. This means you should almost always avoid conditionally registering an effect as it can lead to unintended behavior. For example, you should not do this:
 
 ```rust,noplayground
+# #[derive(WidgetProps, Debug, Default, Clone, PartialEq)]
+# struct MyWidgetProps {
+#   pub some_conditional: bool
+# }
+#
 # #[widget]
-# fn MyWidget(some_conditional: bool) {
+# fn MyWidget(props: MyWidgetProps) {
+#   let some_conditional = props.some_conditional;
 #   let some_state = context.create_state(0).unwrap();
   if some_conditional {
     use_effect(|| {

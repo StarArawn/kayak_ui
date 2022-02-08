@@ -12,8 +12,17 @@ should get better!
 Here is a simple example of creating your own widget:
 
 ```rust,noplayground
+#[derive(WidgetProps, Debug, Default, Clone, PartialEq)]
+struct MyWidgetProps {
+  some_value: i32,
+	#[prop_field(Children)]
+	children: Option<Children>
+}
+
 #[widget]
-pub fn MyWidget(children: Children) {
+pub fn MyWidget(props: MyWidgetProps) {
+	println!("Contains Value: {}", props.some_value);
+  let children = props.children.clone();
 	rsx! {
 		<>
 			{children}
@@ -24,19 +33,53 @@ pub fn MyWidget(children: Children) {
 
 > The empty tags (`<>` and `</>`) are shorthand for the built-in `Fragment` widget
 
-In this example, we have created a widget named `MyWidget` that accepts a `children` prop (for details on this prop
-check out the [Common Props](./common_props.md) section). It simply passes its children without doing much else.
+In this example, we have created a widget named `MyWidget` that accepts the `MyWidgetProps` struct. This struct contains a `children` prop (for details on this prop check out the [Common Props](./common_props.md) section) and a `some_value` prop. And ultimately, it just passes its children without doing much else.
 
 Notice that the contents of the `rsx` macro are not returned. The `widget` macro takes the content of this function and
-adds code to the beginning and end of it. Returning after the `rsx!` will cause the render to exit early, which is
-generally not desired.
+adds code to the beginning and end of it. Returning after the `rsx!` will cause the render to exit early, which is generally not desired.
+
+### Props
+
+As discussed in the section on [creating props](./creating_props.md), you'll need to define a struct that contains all expected props for your widget. The name of your props (both the struct and the argument) doesn't matter. If you choose to not supply any props (your function has zero arguments), then it's automatically given props of type `()`, meaning this widget takes no props.
+
+#### Mutability
+
+Props are mutable. All changes applied to the props variable (and only that variable) are saved to the widget. Generally, you should only use this for common props, such as `styles` and `on_event`. However, it's recommended you instead don't mutate props at all (if you can help it). The alternative would be to apply your mutations to props passed on to a child widget.
+
+For example, you can turn this:
+
+```rust,noplayground
+#[derive(WidgetProps, Debug, Default, Clone, PartialEq)]
+struct MyWidgetProps {
+  /// Private event handler, only settable within this module
+  #[prop_field(OnEvent)]
+  on_event: Option<OnEvent>
+}
+
+#[widget]
+pub fn MyWidget(props: MyWidgetProps) {
+  props.on_event = Some(OnEvent::new(/* ... */));
+}
+```
+
+Into this:
+
+```rust,noplayground
+#[widget]
+pub fn MyWidget() {
+  let on_event = Some(OnEvent::new(/* ... */));
+  
+  rsx! {
+    <Element on_event={on_event} />
+  }
+}
+```
+
+So instead of having the widget itself handle the event, the child element will be the one to take care of it. This also helps prevent overriding props specified by a parent. However, you may need to make sure the child widget takes up the same space as the widget itself (otherwise it might miss events or have odd styling).
 
 ### Hidden Code
 
-There's a secret hidden from you by the `widget` macro— the details of which will be explained in the next section. But
-this secret allows you to access seemingly non-existent code, and may even lead to confusing errors if you're not
-careful. Note that this may change in the future to allow for a simpler API (
-see [RFC 1](https://github.com/StarArawn/kayak_ui/blob/book/rfcs/widget-restructure-rfc-1.md)).
+There's a secret hidden from you by the `#[widget]` macro— the details of which will be explained in the next section. But this secret allows you to access seemingly non-existent code, and may even lead to confusing errors if you're not careful. Note that this may change in the future to allow for a simpler API.
 
 #### Context
 
@@ -54,12 +97,40 @@ pub fn MyWidget() {
 }
 ```
 
+#### Shadowing Props
+
+One important thing to understand is that the `#[widget]` macro gives you a *clone* of your props— and any changes to this variable are collected at the *end* of the function. This means you *cannot* shadow your props type if you wish for its changes to be saved.
+
+```rust,noplayground
+# #[derive(WidgetProps, Debug, Default, Clone, PartialEq)]
+# struct MyWidgetProps {
+#   some_value: i32,
+# 	#[prop_field(Children)]
+# 	children: Option<Children>
+# }
+# 
+// Good
+#[widget]
+pub fn MyWidget(my_props: MyWidgetProps) {
+	my_props.styles = Some(Style::default());
+}
+
+// Bad
+#[widget]
+pub fn MyWidget(my_props: MyWidgetProps) {
+	my_props.styles = Some(Style::default());
+	// ...
+	let my_props = 123;
+}
+```
+
+By shadowing `my_props`, we essentially lose the change to `my_props.styles`. Again, it might be more advisable to not change props directly, but be aware of this in case you do.
+
 #### Self
 
-In addition to `context`, you also have access to `self`, providing access to the underlying struct generated by
-the `widget` macro.
+In addition to `context`, you also have access to `self`, providing access to the underlying struct generated by the `widget` macro.
 
-> Be careful when using `self`. While it is a mutable reference to the widget, it should generally not be used to update any of the widget's fields (except for maybe `styles` and `on_event`). Doing so may result in undefined behavior.
+> Be careful when using `self`. While it is a mutable reference to the widget, it should generally not be used to update any of the widget's fields. Doing so may result in undefined behavior.
 >
 > It's best to use `self` when you need immutable access to a field, such as the ID of the widget. Even then, you may run into issues with Rust's borrow checker.
 
@@ -73,130 +144,168 @@ pub fn MyWidget() {
 }
 ```
 
-#### Styles
-
-Lastly, you are also given direct access to one of the common props: `styles`. This allows you to more elegantly edit
-your widget's style, without having to write `self.styles` or `let styles = self.styles`.
-
-```rust,noplayground
-#[widget]
-pub fn MyWidget() {
-
-	*styles = Some(Style {
-		padding_left: StyleProp::Value(Units::Pixels(12.0)),
-		..styles.clone().unwrap_or_default() // Maintain parent-defined styles
-	});
-	
-	// ...
-}
-```
-
 ## Manually Implementing `Widget`
 
-You might be wondering: *Why does the `widget` macro work?* *What boilerplate is it actually hiding from us?* I*s there
-a way to create a widget manually if we really want to?*
+You might be wondering: *Why does the `widget` macro work? What boilerplate is it actually hiding from us? Is there a way to create a widget manually if we really want to?*
 
-To answer this we'll break down a functional widget and see what it generates. By running `cargo expand` on
-the `Element` widget:
+To answer this, we'll recreate a simple widget, the `Element` widget.
+
+First we define the widget's props:
 
 ```rust,noplayground
-#[widget]
-pub fn Element(children: Children) {
-    *styles = Some(Style {
-        render_command: StyleProp::Value(RenderCommand::Layout),
-        ..styles.clone().unwrap_or_default()
-    });
-
-    rsx! {
-        <>
-            {children}
-        </>
-    }
+#[derive(WidgetProps, Default, Debug, PartialEq, Clone)]
+pub struct ElementProps {
+  #[prop_field(Styles)]
+  pub styles: Option<Style>,
+  #[prop_field(Children)]
+  pub children: Option<Children>,
+  #[prop_field(OnEvent)]
+  pub on_event: Option<OnEvent>,
+  #[prop_field(Focusable)]
+  pub focusable: Option<bool>,
 }
 ```
 
-we end up with the generated output:
+Next, we define the widget struct itself:
 
 ```rust,noplayground
 #[derivative(Default, Debug, PartialEq, Clone)]
 pub struct Element {
-    pub id: kayak_core::Index,
-    #[derivative(Debug = "ignore", PartialEq = "ignore")]
-    pub children: Children,
-    #[derivative(Default(value = "None"))]
-    pub styles: Option<kayak_core::styles::Style>,
-    #[derivative(Default(value = "None"), Debug = "ignore", PartialEq = "ignore")]
-    pub on_event: Option<kayak_core::OnEvent>,
-    #[derivative(Default(value = "None"))]
-    pub focusable: Option<bool>,
+  pub id: Index,
+  pub props: ElementProps,
+}
+```
+
+Great! The last thing to do is actually implement `Widget`. This is done simply by:
+
+```rust
+impl kayak_core::Widget for Element {
+  // Define the type of our props
+  type Props = ElementProps;
+  
+  fn constructor(props: Self::Props) -> Self where Self: Sized {
+      // We can do optional initialization here
+    
+      Self {
+          id: Index::default(),
+          props: props,
+      }
+  }
+  
+  fn get_id(&self) -> Index {
+      self.id
+  }
+  
+  fn set_id(&mut self, id: Index) {
+      self.id = id;
+  }
+  
+  fn get_props(&self) -> &Self::Props {
+      &self.props
+  }
+  
+  fn get_props_mut(&mut self) -> &mut Self::Props {
+      &mut self.props
+  }
+  
+  fn render(&mut self, context: &mut KayakContextRef) {
+    
+    // Update our styles
+    let mut props = self.props.clone();
+    props.styles = Some(Style {
+      render_command: StyleProp::Value(RenderCommand::Layout),
+      ..props.styles.clone().unwrap_or_default()
+    });
+    
+    // Creates a new fragment widget to render the children
+    let mut fragment_props = FragmentProps::default();
+    fragment_props.set_children(self.props.get_children());
+    let fragment = <Fragment as Widget>::constructor(fragment_props);
+    
+    // Adds the fragment widget to the widget tree
+    context.add_widget(built_widget, 0usize);
+    
+    // Updates props to match any changes
+    self.props = props;
+    
+    // Commits the sub tree to the main tree
+    context.commit();
+  }
+  
+}
+```
+
+Done! If we run `cargo expand` on the `Element` widget, we see that we actually got pretty close to the generated output:
+
+```rust,noplayground
+#[derivative(Default, Debug, PartialEq, Clone)]
+pub struct Element {
+  pub id: Index,
+  pub props: ElementProps,
 }
 
- impl kayak_core::Widget for Element {
-    fn get_id(&self) -> kayak_core::Index {
-        self.id
+impl Widget for Element {
+  type Props = ElementProps;
+  
+  fn constructor(props: Self::Props) -> Self where Self: Sized {
+      Self {
+          id: Index::default(),
+          props: props,
+      }
+  }
+  fn get_id(&self) -> Index {
+      self.id
+  }
+  fn set_id(&mut self, id: Index) {
+      self.id = id;
+  }
+  fn get_props(&self) -> &Self::Props {
+      &self.props
+  }
+  fn get_props_mut(&mut self) -> &mut Self::Props {
+      &mut self.props
+  }
+  
+  fn render(&mut self, context: &mut KayakContextRef) {
+    use kayak_core::WidgetProps;
+    let parent_id = Some(self.get_id());
+    let children = self.props.get_children();
+    let mut props = self.props.clone();
+    
+    // This block is actually where the code from a functional widget is placed
+    {
+    
+      // Update our styles
+      props.styles = Some(Style {
+        render_command: StyleProp::Value(RenderCommand::Layout),
+        ..props.styles.clone().unwrap_or_default()
+      });
+      
+      {
+          // Creates a new fragment widget which renders the children
+          let mut internal_rsx_props = <Fragment as Widget>::Props::default();
+          let children = children.clone();
+          WidgetProps::set_children(
+              &mut internal_rsx_props,
+              children.clone(),
+          );
+          let built_widget = <Fragment as Widget>::constructor(internal_rsx_props);
+          
+          // Adds the fragment widget to the widget tree
+          context.add_widget(built_widget, 0usize);
+      }
     }
-    fn focusable(&self) -> Option<bool> {
-        self.focusable
-    }
-    fn set_id(&mut self, id: kayak_core::Index) {
-        self.id = id;
-    }
-    fn get_styles(&self) -> Option<kayak_core::styles::Style> {
-        self.styles.clone()
-    }
-    fn get_name(&self) -> String {
-        String::from("Element")
-    }
-    fn on_event(
-        &mut self,
-        context: &mut kayak_core::context::KayakContext,
-        event: &mut kayak_core::Event,
-    ) {
-        if let Some(on_event) = self.on_event.as_ref() {
-            if let Ok(mut on_event) = on_event.0.write() {
-                on_event(context, event);
-            }
-        }
-    }
-    fn render(&mut self, context: &mut kayak_core::context::KayakContextRef) {
-        // It's important to set the current ID this is how we track state management.
-        let parent_id = Some(self.get_id());
-
-        // We pull out the props(struct fields) from the widget here.
-        let Element {
-            children, ..
-        } = self;
-
-        let children = children.clone();
-        
-        // This block is actually where the code from a functional widget is placed
-        {
-            // Creates a new fragment widget which renders the children. 
-            let built_widget = ::kayak_core::Fragment {
-                children: children.clone(),
-                styles: None,
-                on_event: None,
-                ..Default::default()
-            };
-
-            // Creates the fragment widget.
-            context.add_widget(built_widget, 0);
-        }
-        
-        // Commits the sub tree to the main tree
-        context.commit();
-    }
+    
+    // Updates props to match any changes
+    self.props = props;
+    
+    // Commits the sub tree to the main tree
+    context.commit();
+  }
 }
 ```
 
 As you can see, we really only need to implement `Widget` for a struct to actually be considered a widget.
 
-However, the trouble with this comes from the `render` method. This method contains a lot of code that should exist
-on almost every widget, such as setting the current ID and diffing/merging the tree. This is why the functional widget
-approach is generally preferred. However, doing this allows for finer control over the widget, its props, and how it's
-rendered.
-
-And actually, a lot of the complexity here is to be replaced by a simpler system (please
-see: [RFC 1](https://github.com/StarArawn/kayak_ui/blob/book/rfcs/widget-restructure-rfc-1.md)). This will allow people
-to make struct-based widgets in a much more user-friendly way.
+However, the trouble with this comes from the `render` method. This method contains a lot of code that should exist on almost every widget, such as setting the current ID and diffing/merging tree. This is why the functional widget approach is generally preferred. However, doing this allows for finer control over the widget, its props, and how it's rendered.
 

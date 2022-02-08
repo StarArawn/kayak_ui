@@ -1,27 +1,22 @@
 # Common Props
 
 You may have seen some props like `Children` and `Option<Style>` in this book or in one of
-the [examples](https://github.com/StarArawn/kayak_ui/tree/main/examples). These are examples of some of Kayak UI's *
-common props*. Such props allow Kayak UI to work seamlessly with your custom widgets, providing all the functionality it
-has to offer.
+the [examples](https://github.com/StarArawn/kayak_ui/tree/main/examples). These are examples of some of Kayak UI's *common props*. Such props allow Kayak UI to work seamlessly with your custom widgets, providing all the functionality it has to offer.
 
-Functional widgets are generated with these props by default. Manually implemented widgets do not necessarily need to
-include all of these props, but if they do, it's recommended to follow the naming convention set by the functional
-widgets.
+Functional widgets are generated with these props by default. Manually implemented widgets do not necessarily need to include all of these props, but if they do, it's recommended to follow the naming convention set by the functional widgets.
 
 ## Children
 
-*Functional Signature: `children: Children`*
+*Prop Signature: `children: Option<Children>`*
 
-This is the *most* common of the common props, as well as the most unique. It is used to pass the optional child widget(
-s) that should be attached to this widget.
+*Prop Attribute: `#[prop_field(Children)]`*
 
-The type `Children` is actually an alias:
+This is the *most* common of the common props, as well as the most unique. It is used to pass the optional child widget(s) that should be attached to this widget.
+
+The type `Children` is a struct wrapping a closure:
 
 ```rust,noplayground
-pub type Children = Option<
-	Arc<dyn Fn(Option<Index>, &mut KayakContextRef) + Send + Sync>
->
+pub struct Children(Arc<dyn Fn(Option<Index>, &mut KayakContextRef) + Send + Sync>)
 ```
 
 ### Usage
@@ -30,8 +25,14 @@ This prop is unique in that it is rarely used as a standard prop; rather, it is 
 You've probably seen it before:
 
 ```rust,noplayground
+# struct ParentProps {
+#   #[prop_field(Children)]
+#   children: Option<Children>
+# }
+# 
 # #[widget]
-# fn Parent(children: Children) {
+# fn Parent(props: ParentProps) {
+# let children = props.get_children();
 #	rsx! { <>{children}</> }
 # }
 #
@@ -52,12 +53,13 @@ You've probably seen it before:
 # }
 ```
 
-By placing our `Child` widgets between the opening and closing tags of our `Parent` widget, we're actually passing all
-three of them into the `children` prop.
+By placing our `Child` widgets between the opening and closing tags of our `Parent` widget, we're actually passing all three of them into the `children` prop.
 
 ## Styles
 
 *Functional Signature: `styles: Option<Style>`*
+
+*Prop Attribute: `#[prop_field(Styles)]`*
 
 As its name suggests, this prop is used to pass along styles.
 
@@ -82,6 +84,8 @@ As its name suggests, this prop is used to pass along styles.
 ## OnEvent
 
 *Functional Signature: `on_event: Option<OnEvent>`*
+
+*Prop Attribute: `#[prop_field(OnEvent)]`*
 
 This prop allows an event listener to be attached to a widget.
 
@@ -110,6 +114,8 @@ This prop allows an event listener to be attached to a widget.
 ## Focusable
 
 *Functional Signature: `focusable: Option<bool>`*
+
+*Prop Attribute: `#[prop_field(Focusable)]`*
 
 This prop allows you to set the focusability of a widget. For more details on focusability check out the [Focus Events](../events/focus.md) section.
 

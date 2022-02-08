@@ -48,6 +48,7 @@ pub(crate) struct EventDispatcher {
     wants_cursor: Option<bool>,
     has_cursor: Option<Index>,
     pub cursor_capture: Option<Index>,
+    pub hovered: Option<Index>,
 }
 
 impl EventDispatcher {
@@ -64,6 +65,7 @@ impl EventDispatcher {
             wants_cursor: None,
             has_cursor: None,
             cursor_capture: None,
+            hovered: None,
         }
     }
 
@@ -142,6 +144,12 @@ impl EventDispatcher {
     #[allow(dead_code)]
     pub fn has_cursor(&self) -> bool {
         self.has_cursor.is_some()
+    }
+
+    /// The currently hovered node
+    #[allow(dead_code)]
+    pub fn hovered(&self) -> Option<Index> {
+        self.hovered
     }
 
     /// Process and dispatch an [InputEvent](crate::InputEvent)
@@ -252,8 +260,10 @@ impl EventDispatcher {
         };
 
         // === Setup Cursor States === //
+        let old_hovered = self.hovered;
         let old_contains_cursor = self.contains_cursor;
         let old_wants_cursor = self.wants_cursor;
+        self.hovered = None;
         self.contains_cursor = None;
         self.wants_cursor = None;
         self.next_mouse_position = self.current_mouse_position;
@@ -375,6 +385,9 @@ impl EventDispatcher {
                         }
                         widget_manager.focus_tree.focus(node);
                     }
+                    EventType::Hover(..) => {
+                        self.hovered = Some(node);
+                    }
                     _ => {}
                 }
             }
@@ -393,6 +406,10 @@ impl EventDispatcher {
         self.current_mouse_position = self.next_mouse_position;
         self.is_mouse_pressed = self.next_mouse_pressed;
 
+        if self.hovered.is_none() {
+            // No change -> revert
+            self.hovered = old_hovered;
+        }
         if self.contains_cursor.is_none() {
             // No change -> revert
             self.contains_cursor = old_contains_cursor;
@@ -700,6 +717,7 @@ impl EventDispatcher {
         self.contains_cursor = from.contains_cursor;
         self.wants_cursor = from.wants_cursor;
         self.has_cursor = from.has_cursor;
+        self.hovered = from.hovered;
 
         // Do not include:
         // self.cursor_capture = from.cursor_capture;

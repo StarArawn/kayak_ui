@@ -138,14 +138,11 @@ fn ThemeButton(props: ThemeButtonProps) {
     }
 }
 
-#[derive(WidgetProps, Clone, Debug, Default, PartialEq)]
-struct ThemeSelectorProps {}
-
 /// A widget displaying a set of [ThemeButton] widgets
 ///
 /// This is just an abstracted container. Not much to see here...
 #[widget]
-fn ThemeSelector(props: ThemeSelectorProps) {
+fn ThemeSelector() {
     let vampire_theme = Theme::vampire();
     let solar_theme = Theme::solar();
     let vector_theme = Theme::vector();

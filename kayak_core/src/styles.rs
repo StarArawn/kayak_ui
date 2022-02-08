@@ -1,7 +1,7 @@
 pub use morphorm::{LayoutType, PositionType, Units};
 
 use crate::cursor::PointerEvents;
-use crate::{color::Color, render_command::RenderCommand};
+use crate::{color::Color, render_command::RenderCommand, CursorIcon};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum StyleProp<T: Default + Clone> {
@@ -142,6 +142,7 @@ define_styles! {
         pub border: StyleProp<(f32, f32, f32, f32)>,
         pub bottom: StyleProp<Units>,
         pub color: StyleProp<Color>,
+        pub cursor: StyleProp<CursorIcon>,
         pub height: StyleProp<Units>,
         pub layout_type: StyleProp<LayoutType>,
         pub left: StyleProp<Units>,
@@ -179,6 +180,7 @@ impl Style {
             border_radius: StyleProp::Default,
             bottom: StyleProp::Default,
             color: StyleProp::Inherit,
+            cursor: StyleProp::Inherit,
             height: StyleProp::Default,
             layout_type: StyleProp::Default,
             left: StyleProp::Default,

@@ -7,7 +7,7 @@ use kayak_ui::bevy::{BevyContext, BevyKayakUIPlugin, FontMapping, UICameraBundle
 use kayak_ui::core::{
     render, rsx,
     styles::{LayoutType, Style, StyleProp, Units},
-    use_state, widget, EventType, Handler, Index, OnEvent, WidgetProps,
+    use_state, widget, EventType, Handler, Index, OnEvent,
 };
 use kayak_ui::widgets::{App, Element, OnChange, TextBox, Window};
 
@@ -23,11 +23,8 @@ pub struct Todo {
     name: String,
 }
 
-#[derive(WidgetProps, Clone, Debug, Default, PartialEq)]
-struct TodoAppProps {}
-
 #[widget]
-fn TodoApp(props: TodoAppProps) {
+fn TodoApp() {
     let (todos, set_todos, ..) = use_state!(vec![
         Todo {
             name: "Use bevy to make a game!".to_string(),
@@ -83,7 +80,7 @@ fn TodoApp(props: TodoAppProps) {
     });
 
     rsx! {
-        <Window position={(415.0, 50.0)} size={(450.0, 600.0)} title={"Todo!".to_string()}>
+        <Window draggable={true} position={(415.0, 50.0)} size={(450.0, 600.0)} title={"Todo!".to_string()}>
             <Element styles={Some(top_area_styles)}>
                 <TextBox
                     styles={Some(text_box_styles)}

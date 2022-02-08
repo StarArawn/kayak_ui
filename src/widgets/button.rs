@@ -4,6 +4,7 @@ use crate::core::{
     styles::{Style, StyleProp, Units},
     widget, Children, Color, Fragment, OnEvent, WidgetProps,
 };
+use kayak_core::CursorIcon;
 
 #[derive(Default, Debug, PartialEq, Clone)]
 pub struct ButtonProps {
@@ -51,6 +52,7 @@ pub fn Button(props: ButtonProps) {
                 height: StyleProp::Value(Units::Pixels(45.0)),
                 padding_left: StyleProp::Value(Units::Stretch(1.0)),
                 padding_right: StyleProp::Value(Units::Stretch(1.0)),
+                cursor: CursorIcon::Hand.into(),
                 ..Default::default()
             }),
     );

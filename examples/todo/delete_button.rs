@@ -1,3 +1,4 @@
+use kayak_core::CursorIcon;
 use kayak_ui::core::{
     color::Color,
     render_command::RenderCommand,
@@ -32,7 +33,13 @@ pub fn DeleteButton(props: DeleteButtonProps) {
     let background_styles = Some(Style {
         border_radius: StyleProp::Value((5.0, 5.0, 5.0, 5.0)),
         background_color: StyleProp::Value(color),
+        cursor: CursorIcon::Hand.into(),
         padding_left: StyleProp::Value(Units::Pixels(8.0)),
+        ..Style::default()
+    });
+
+    let text_styles = Some(Style {
+        cursor: StyleProp::Inherit,
         ..Style::default()
     });
 
@@ -48,7 +55,7 @@ pub fn DeleteButton(props: DeleteButtonProps) {
 
     rsx! {
         <Background styles={background_styles} on_event={Some(on_event)}>
-            <Text content={"X".to_string()} size={20.0} />
+            <Text content={"X".to_string()} size={20.0} styles={text_styles} />
         </Background>
     }
 }

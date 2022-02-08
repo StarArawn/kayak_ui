@@ -120,3 +120,23 @@ where
 }
 
 impl<T> SealedWidget for T where T: Widget {}
+
+impl WidgetProps for () {
+    fn get_children(&self) -> Option<Children> {
+        None
+    }
+
+    fn set_children(&mut self, _children: Option<Children>) {}
+
+    fn get_styles(&self) -> Option<Style> {
+        None
+    }
+
+    fn get_on_event(&self) -> Option<OnEvent> {
+        None
+    }
+
+    fn get_focusable(&self) -> Option<bool> {
+        None
+    }
+}

@@ -5,6 +5,7 @@ use crate::core::{
     styles::{PositionType, Style, StyleProp, Units},
     use_state, widget, Children, EventType, OnEvent, WidgetProps,
 };
+use kayak_core::CursorIcon;
 
 use crate::widgets::{Background, Clip, Element, Text};
 
@@ -88,9 +89,20 @@ pub fn Window(props: WindowProps) {
         ..Style::default()
     };
 
+    let cursor = if draggable {
+        if is_dragging {
+            CursorIcon::Grabbing
+        } else {
+            CursorIcon::Grab
+        }
+    } else {
+        CursorIcon::Default
+    };
+
     let title_background_styles = Style {
         background_color: StyleProp::Value(Color::new(0.0781, 0.0898, 0.101, 1.0)),
         border_radius: StyleProp::Value((5.0, 0.0, 0.0, 5.0)),
+        cursor: cursor.into(),
         height: StyleProp::Value(Units::Pixels(24.0)),
         width: StyleProp::Value(Units::Stretch(1.0)),
         left: StyleProp::Value(Units::Pixels(0.0)),
@@ -103,6 +115,7 @@ pub fn Window(props: WindowProps) {
 
     let title_text_styles = Style {
         height: StyleProp::Value(Units::Pixels(25.0)),
+        cursor: StyleProp::Inherit,
         ..Style::default()
     };
 

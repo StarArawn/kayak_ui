@@ -7,15 +7,12 @@ use kayak_ui::bevy::{BevyContext, BevyKayakUIPlugin, FontMapping, UICameraBundle
 use kayak_ui::core::{
     render, rsx,
     styles::{Style, StyleProp, Units},
-    use_state, widget, EventType, Index, OnEvent, WidgetProps,
+    use_state, widget, EventType, Index, OnEvent,
 };
 use kayak_ui::widgets::{App, Button, Text, Window};
 
-#[derive(WidgetProps, Default, Debug, PartialEq, Clone)]
-pub struct CounterProps {}
-
 #[widget]
-fn Counter(props: CounterProps) {
+fn Counter() {
     let text_styles = Style {
         bottom: StyleProp::Value(Units::Stretch(1.0)),
         left: StyleProp::Value(Units::Stretch(0.1)),

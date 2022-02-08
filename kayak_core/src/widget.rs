@@ -15,8 +15,8 @@ pub trait SealedWidget {}
 /// all implementors of [Widget].
 pub trait BaseWidget: SealedWidget + std::fmt::Debug + Send + Sync {
     fn constructor<P: WidgetProps>(props: P) -> Self
-    where
-        Self: Sized;
+        where
+            Self: Sized;
     fn get_id(&self) -> Index;
     fn set_id(&mut self, id: Index);
     fn get_props(&self) -> &dyn WidgetProps;
@@ -32,8 +32,8 @@ pub trait Widget: std::fmt::Debug + Clone + Default + PartialEq + AsAny + Send +
 
     /// Construct the widget with the given props
     fn constructor(props: Self::Props) -> Self
-    where
-        Self: Sized;
+        where
+            Self: Sized;
 
     /// Get this widget's ID
     fn get_id(&self) -> Index;
@@ -79,12 +79,12 @@ pub trait WidgetProps: std::fmt::Debug + AsAny + Send + Sync {
 }
 
 impl<T> BaseWidget for T
-where
-    T: Widget + Clone + PartialEq + Default,
+    where
+        T: Widget + Clone + PartialEq + Default,
 {
     fn constructor<P: WidgetProps>(props: P) -> Self
-    where
-        Self: Sized,
+        where
+            Self: Sized,
     {
         let props: Box<dyn Any> = Box::new(props);
         Widget::constructor(*props.downcast::<<T as Widget>::Props>().unwrap())
@@ -120,3 +120,23 @@ where
 }
 
 impl<T> SealedWidget for T where T: Widget {}
+
+impl WidgetProps for () {
+    fn get_children(&self) -> Option<Children> {
+        None
+    }
+
+    fn set_children(&mut self, _children: Option<Children>) {}
+
+    fn get_styles(&self) -> Option<Style> {
+        None
+    }
+
+    fn get_on_event(&self) -> Option<OnEvent> {
+        None
+    }
+
+    fn get_focusable(&self) -> Option<bool> {
+        None
+    }
+}

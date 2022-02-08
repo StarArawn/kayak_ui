@@ -20,7 +20,7 @@ use kayak_ui::{
     core::{
         render, rsx,
         styles::{Style, StyleProp, Units},
-        use_state, widget, EventType, Index, OnEvent, WidgetProps,
+        use_state, widget, EventType, Index, OnEvent,
     },
     widgets::{App, Button, Text, Window},
 };
@@ -65,11 +65,8 @@ fn set_active_tile_target(
     tile.target = tile_pos;
 }
 
-#[derive(WidgetProps, Default, Debug, PartialEq, Clone)]
-pub struct ControlPanelProps {}
-
 #[widget]
-fn ControlPanel(props: ControlPanelProps) {
+fn ControlPanel() {
     let text_styles = Style {
         left: StyleProp::Value(Units::Stretch(1.0)),
         right: StyleProp::Value(Units::Stretch(1.0)),

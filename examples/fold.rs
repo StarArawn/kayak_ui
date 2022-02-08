@@ -9,13 +9,10 @@ use kayak_ui::{
     core::{
         render, rsx,
         styles::{Style, StyleProp, Units},
-        use_state, widget, Color, EventType, Handler, Index, OnEvent, WidgetProps,
+        use_state, widget, Color, EventType, Handler, Index, OnEvent,
     },
     widgets::{App, Background, Button, Fold, If, Text, Window},
 };
-
-#[derive(WidgetProps, Clone, Debug, Default, PartialEq)]
-struct FolderTreeProps {}
 
 #[widget]
 fn FolderTree(props: FolderTreeProps) {

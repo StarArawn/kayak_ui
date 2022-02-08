@@ -55,9 +55,9 @@ pub fn Inspector(props: InspectorProps) {
             data.push(format!("Height: {}", layout.height));
             data.push(format!(
                 "RenderCommand: \n{:#?}",
-                node.styles.render_command
+                node.resolved_styles.render_command
             ));
-            data.push(format!("Height: \n{:#?}", node.styles.height));
+            data.push(format!("Height: \n{:#?}", node.resolved_styles.height));
 
             if let Some(parent_id) = context.get_valid_parent(last_clicked_value) {
                 parent_id_move = Some(parent_id);

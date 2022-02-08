@@ -379,7 +379,7 @@ impl KayakContext {
     pub fn render(&mut self) {
         let dirty_nodes: Vec<_> =
             if let Ok(mut dirty_nodes) = self.widget_manager.dirty_nodes.lock() {
-                dirty_nodes.drain().collect()
+                dirty_nodes.drain(..).collect()
             } else {
                 panic!("Couldn't get lock on dirty nodes!")
             };

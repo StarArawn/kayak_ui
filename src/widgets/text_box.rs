@@ -1,7 +1,7 @@
 use crate::core::{
     render_command::RenderCommand,
     rsx,
-    styles::{Style, StyleProp, Units},
+    styles::{Style, Units},
     widget, Bound, Children, Color, EventType, MutableBound, OnEvent, WidgetProps,
 };
 use std::sync::{Arc, RwLock};
@@ -79,30 +79,32 @@ pub fn TextBox(props: TextBoxProps) {
         value,
         ..
     } = props.clone();
-    let current_styles = props.styles.clone().unwrap_or_default();
-    props.styles = Some(Style {
-        render_command: StyleProp::Value(RenderCommand::Layout),
-        height: StyleProp::Value(Units::Pixels(26.0)),
-        top: if matches!(current_styles.top, StyleProp::Value { .. }) {
-            current_styles.top.clone()
-        } else {
-            StyleProp::Value(Units::Pixels(0.0))
-        },
-        bottom: if matches!(current_styles.bottom, StyleProp::Value { .. }) {
-            current_styles.top.clone()
-        } else {
-            StyleProp::Value(Units::Pixels(0.0))
-        },
-        ..current_styles
-    });
+
+    props.styles = Some(
+        Style::default()
+            // Required styles
+            .with_style(Style {
+                render_command: RenderCommand::Layout.into(),
+                ..Default::default()
+            })
+            // Apply any prop-given styles
+            .with_style(&props.styles)
+            // If not set by props, apply these styles
+            .with_style(Style {
+                top: Units::Pixels(0.0).into(),
+                bottom: Units::Pixels(0.0).into(),
+                height: Units::Pixels(26.0).into(),
+                ..Default::default()
+            }),
+    );
 
     let background_styles = Style {
-        background_color: StyleProp::Value(Color::new(0.176, 0.196, 0.215, 1.0)),
-        border_radius: StyleProp::Value((5.0, 5.0, 5.0, 5.0)),
-        height: StyleProp::Value(Units::Pixels(26.0)),
-        padding_left: StyleProp::Value(Units::Pixels(5.0)),
-        padding_right: StyleProp::Value(Units::Pixels(5.0)),
-        ..props.styles.clone().unwrap_or_default()
+        background_color: Color::new(0.176, 0.196, 0.215, 1.0).into(),
+        border_radius: (5.0, 5.0, 5.0, 5.0).into(),
+        height: Units::Pixels(26.0).into(),
+        padding_left: Units::Pixels(5.0).into(),
+        padding_right: Units::Pixels(5.0).into(),
+        ..Default::default()
     };
 
     let has_focus = context.create_state(Focus(false)).unwrap();
@@ -138,14 +140,11 @@ pub fn TextBox(props: TextBoxProps) {
 
     let text_styles = if value.is_empty() || (has_focus.get().0 && value.is_empty()) {
         Style {
-            color: StyleProp::Value(Color::new(0.5, 0.5, 0.5, 1.0)),
+            color: Color::new(0.5, 0.5, 0.5, 1.0).into(),
             ..Style::default()
         }
     } else {
-        Style {
-            color: props.styles.clone().unwrap_or_default().color,
-            ..Style::default()
-        }
+        Style::default()
     };
 
     let value = if value.is_empty() {

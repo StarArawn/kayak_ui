@@ -99,22 +99,29 @@ pub fn TooltipProvider(props: TooltipProviderProps) {
     } = tooltip.get();
     let tooltip_size = tooltip_size.unwrap_or((WIDTH, HEIGHT));
 
-    props.styles = Some(Style {
-        left: StyleProp::Value(Units::Pixels(position.0)),
-        top: StyleProp::Value(Units::Pixels(position.1)),
-        width: StyleProp::Value(Units::Pixels(size.0)),
-        height: StyleProp::Value(Units::Pixels(size.1)),
-        ..props.styles.clone().unwrap_or_default()
-    });
+    props.styles = Some(
+        Style::default()
+            .with_style(Style {
+                left: StyleProp::Value(Units::Pixels(position.0)),
+                top: StyleProp::Value(Units::Pixels(position.1)),
+                ..Default::default()
+            })
+            .with_style(&props.styles)
+            .with_style(Style {
+                width: StyleProp::Value(Units::Pixels(size.0)),
+                height: StyleProp::Value(Units::Pixels(size.1)),
+                ..Default::default()
+            }),
+    );
 
     let base_styles = props.styles.clone().unwrap();
     let mut tooltip_styles = Style {
         position_type: StyleProp::Value(PositionType::SelfDirected),
-        background_color: if matches!(base_styles.background_color, StyleProp::Default) {
-            StyleProp::Value(Color::new(0.13, 0.15, 0.17, 0.85))
-        } else {
-            base_styles.background_color
-        },
+        background_color: StyleProp::select(&[
+            &base_styles.background_color,
+            &Color::new(0.13, 0.15, 0.17, 0.85).into(),
+        ])
+        .clone(),
         width: StyleProp::Value(Units::Pixels(tooltip_size.0)),
         height: StyleProp::Value(Units::Pixels(tooltip_size.1)),
         ..Style::default()
@@ -137,11 +144,7 @@ pub fn TooltipProvider(props: TooltipProviderProps) {
     let text_styles = Style {
         width: StyleProp::Value(Units::Pixels(tooltip_size.0)),
         height: StyleProp::Value(Units::Pixels(tooltip_size.1)),
-        color: if matches!(base_styles.color, StyleProp::Default) {
-            StyleProp::Value(Color::WHITE)
-        } else {
-            base_styles.color
-        },
+        color: StyleProp::select(&[&base_styles.color, &Color::WHITE.into()]).clone(),
         ..Style::default()
     };
 
@@ -196,12 +199,19 @@ pub fn TooltipConsumer(props: TooltipConsumerProps) {
     let TooltipConsumerProps {
         anchor, size, text, ..
     } = props.clone();
-    props.styles = Some(Style {
-        render_command: StyleProp::Value(RenderCommand::Clip),
-        width: StyleProp::Value(Units::Auto),
-        height: StyleProp::Value(Units::Auto),
-        ..props.styles.clone().unwrap_or_default()
-    });
+    props.styles = Some(
+        Style::default()
+            .with_style(Style {
+                render_command: StyleProp::Value(RenderCommand::Clip),
+                ..Default::default()
+            })
+            .with_style(&props.styles)
+            .with_style(Style {
+                width: StyleProp::Value(Units::Auto),
+                height: StyleProp::Value(Units::Auto),
+                ..Default::default()
+            }),
+    );
 
     let data = context
         .create_consumer::<TooltipData>()

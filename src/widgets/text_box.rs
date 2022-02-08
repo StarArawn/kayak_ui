@@ -142,6 +142,8 @@ pub fn TextBox(props: TextBoxProps) {
         _ => {}
     }));
 
+    // === Temporary Code === //
+    // TODO: Clean/Remove this code
     let font_name = Some("Roboto");
     let font: Binding<Option<KayakFont>> = context.get_asset(font_name.clone().unwrap_or("Roboto".into()));
     context.bind(&font);
@@ -170,8 +172,7 @@ pub fn TextBox(props: TextBoxProps) {
             should_render = false;
             ((0.0, 0.0), (0.0, 0.0))
         };
-
-    println!("Layout: {:?}", layout_size);
+    // /== Temporary Code === //
 
     let text_styles = if value.is_empty() || (has_focus.get().0 && value.is_empty()) {
         Style {

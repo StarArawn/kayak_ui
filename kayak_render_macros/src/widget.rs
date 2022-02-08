@@ -112,7 +112,7 @@ impl Widget {
         };
 
         let constructor = quote! {
-            <#name as kayak_core::Widget>::constructor(#prop_ident)
+            <#name as #kayak_core::Widget>::constructor(#prop_ident)
         };
 
         (props, constructor)

@@ -15,7 +15,7 @@ use kayak_ui::{
 };
 
 #[widget]
-fn FolderTree(props: FolderTreeProps) {
+fn FolderTree() {
     let button_text_styles = Style {
         width: StyleProp::Value(Units::Stretch(1.0)),
         height: StyleProp::Value(Units::Pixels(22.0)),

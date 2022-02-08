@@ -4,7 +4,7 @@ use proc_macro2::Ident;
 use proc_macro_error::emit_error;
 use quote::{format_ident, quote};
 use syn::spanned::Spanned;
-use syn::{FnArg, parse_quote, Pat, Signature, Type};
+use syn::{parse_quote, FnArg, Pat, Signature, Type};
 
 const DEFAULT_PROP_IDENT: &str = "__props";
 
@@ -100,7 +100,7 @@ fn get_props(signature: &Signature) -> Option<(Ident, Type)> {
 
     if signature.inputs.len() == 0 {
         let ident = format_ident!("{}", DEFAULT_PROP_IDENT);
-        let ty: Type = parse_quote!{()};
+        let ty: Type = parse_quote! {()};
         return Some((ident, ty));
     }
 
@@ -116,7 +116,7 @@ fn get_props(signature: &Signature) -> Option<(Ident, Type)> {
 
             let ty = *typed.ty.clone();
             match &ty {
-                Type::Path(..) => {},
+                Type::Path(..) => {}
                 err => {
                     emit_error!(err.span(), "Invalid widget prop type: {:?}", err);
                     return None;

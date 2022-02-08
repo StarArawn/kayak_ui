@@ -5,7 +5,7 @@ use bevy::{
 };
 use kayak_ui::bevy::{BevyContext, BevyKayakUIPlugin, FontMapping, UICameraBundle};
 use kayak_ui::core::{
-    render, rsx, widget, Event, EventType, Index, KayakContextRef, KeyCode, OnEvent, WidgetProps,
+    render, rsx, widget, Event, EventType, Index, KayakContextRef, KeyCode, OnEvent,
 };
 use kayak_ui::widgets::{App, Text};
 
@@ -36,11 +36,9 @@ fn handle_input(context: &mut KayakContextRef, event: &mut Event) {
         _ => {}
     };
 }
-#[derive(WidgetProps, Default, Debug, PartialEq, Clone)]
-pub struct StateSwitcherProps;
 
 #[widget]
-fn StateSwitcher(props: StateSwitcherProps) {
+fn StateSwitcher() {
     rsx! {
         <Text content={"Press space to switch states!".to_string()} size={32.0} />
     }

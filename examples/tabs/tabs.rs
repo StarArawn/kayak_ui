@@ -15,7 +15,7 @@ use kayak_ui::{
     core::{
         constructor, render, rsx,
         styles::{Style, StyleProp, Units},
-        widget, Color, Index, WidgetProps,
+        widget, Color, Index,
     },
     widgets::{App, Text, Window},
 };
@@ -30,11 +30,8 @@ mod tab_box;
 mod tab_content;
 mod theming;
 
-#[derive(WidgetProps, Default, Debug, PartialEq, Clone)]
-pub struct TabDemoProps {}
-
 #[widget]
-fn TabDemo(props: TabDemoProps) {
+fn TabDemo() {
     let text_style = Style {
         width: StyleProp::Value(Units::Percentage(75.0)),
         top: StyleProp::Value(Units::Stretch(0.5)),

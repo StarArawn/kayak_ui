@@ -1,9 +1,12 @@
 use crate::get_core_crate;
 use proc_macro::TokenStream;
+use proc_macro2::Ident;
 use proc_macro_error::emit_error;
-use quote::quote;
+use quote::{format_ident, quote};
 use syn::spanned::Spanned;
-use syn::{FnArg, Pat, Type};
+use syn::{parse_quote, FnArg, Pat, Signature, Type};
+
+const DEFAULT_PROP_IDENT: &str = "__props";
 
 pub struct WidgetArguments {
     pub focusable: bool,
@@ -19,43 +22,10 @@ pub fn create_function_widget(f: syn::ItemFn, _widget_arguments: WidgetArguments
     let struct_name = f.sig.ident.clone();
     let (impl_generics, ty_generics, where_clause) = f.sig.generics.split_for_impl();
 
-    if f.sig.inputs.len() != 1 {
-        let span = if f.sig.inputs.len() > 0 {
-            f.sig.inputs.span()
-        } else {
-            f.sig.span()
-        };
-        emit_error!(
-            span,
-            "Functional widgets expect exactly one argument (their props), but was given {}",
-            f.sig.inputs.len()
-        );
-    }
-
-    let (props, prop_type) = match f.sig.inputs.first().unwrap() {
-        FnArg::Typed(typed) => {
-            let ident = match *typed.pat.clone() {
-                Pat::Ident(ident) => ident.ident,
-                err => {
-                    emit_error!(err.span(), "Expected identifier, but got {:?}", err);
-                    return TokenStream::new();
-                }
-            };
-
-            let ty = match *typed.ty.clone() {
-                Type::Path(type_path) => type_path.path,
-                err => {
-                    emit_error!(err.span(), "Invalid widget prop type: {:?}", err);
-                    return TokenStream::new();
-                }
-            };
-
-            (ident, ty)
-        }
-        FnArg::Receiver(receiver) => {
-            emit_error!(receiver.span(), "Functional widget cannot use 'self'");
-            return TokenStream::new();
-        }
+    let (props, prop_type) = if let Some(parsed) = get_props(&f.sig) {
+        parsed
+    } else {
+        return TokenStream::new();
     };
 
     let block = f.block;
@@ -111,4 +81,53 @@ pub fn create_function_widget(f: syn::ItemFn, _widget_arguments: WidgetArguments
             }
         }
     })
+}
+
+fn get_props(signature: &Signature) -> Option<(Ident, Type)> {
+    if signature.inputs.len() > 1 {
+        let span = if signature.inputs.len() > 0 {
+            signature.inputs.span()
+        } else {
+            signature.span()
+        };
+        emit_error!(
+            span,
+            "Functional widgets expect at most one argument (their props), but was given {}",
+            signature.inputs.len()
+        );
+        return None;
+    }
+
+    if signature.inputs.len() == 0 {
+        let ident = format_ident!("{}", DEFAULT_PROP_IDENT);
+        let ty: Type = parse_quote! {()};
+        return Some((ident, ty));
+    }
+
+    match signature.inputs.first().unwrap() {
+        FnArg::Typed(typed) => {
+            let ident = match *typed.pat.clone() {
+                Pat::Ident(ident) => ident.ident,
+                err => {
+                    emit_error!(err.span(), "Expected identifier, but got {:?}", err);
+                    return None;
+                }
+            };
+
+            let ty = *typed.ty.clone();
+            match &ty {
+                Type::Path(..) => {}
+                err => {
+                    emit_error!(err.span(), "Invalid widget prop type: {:?}", err);
+                    return None;
+                }
+            };
+
+            Some((ident, ty))
+        }
+        FnArg::Receiver(receiver) => {
+            emit_error!(receiver.span(), "Functional widget cannot use 'self'");
+            return None;
+        }
+    }
 }

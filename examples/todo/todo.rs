@@ -83,7 +83,7 @@ fn TodoApp(props: TodoAppProps) {
     });
 
     rsx! {
-        <Window position={(415.0, 50.0)} size={(450.0, 600.0)} title={"Todo!".to_string()}>
+        <Window draggable={true} position={(415.0, 50.0)} size={(450.0, 600.0)} title={"Todo!".to_string()}>
             <Element styles={Some(top_area_styles)}>
                 <TextBox
                     styles={Some(text_box_styles)}

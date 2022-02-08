@@ -4,6 +4,7 @@ use crate::core::{
     styles::{Style, Units},
     widget, Bound, Children, Color, EventType, MutableBound, OnEvent, WidgetProps,
 };
+use kayak_core::CursorIcon;
 use std::sync::{Arc, RwLock};
 
 use crate::widgets::{Background, Clip, Text};
@@ -94,6 +95,7 @@ pub fn TextBox(props: TextBoxProps) {
                 top: Units::Pixels(0.0).into(),
                 bottom: Units::Pixels(0.0).into(),
                 height: Units::Pixels(26.0).into(),
+                cursor: CursorIcon::Text.into(),
                 ..Default::default()
             }),
     );

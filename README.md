@@ -20,7 +20,7 @@ Kayak UI is in the very early stages of development. Important features are miss
 - Basic widget and global state management
 - Input events (Mouse, Keyboard, Char)
 - Fast and accurate layouts using morphorm: https://github.com/geom3trik/morphorm
-- A few default widgets check out [src/widgets](./src/widgets)!
+- A few default widgets (check out Kayak's [built-in widgets](./src/widgets)!)
 - Style system built to kind of mimic CSS styles.
 - Image and Nine patch rendering.
 - Vec widgets see vec_widget example!
@@ -69,6 +69,7 @@ You can easily declare your own custom widgets:
 ```rust
 #[widget]
 pub fn MyCustomWidget(props: MyCustomWidgetProps) {
+    let children = props.get_children();
     rsx! {
         <>
             {children}

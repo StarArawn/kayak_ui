@@ -22,7 +22,7 @@ use kayak_ui::{
 
 /// A simple widget that tracks how many times a button is clicked using simple state data
 #[widget]
-fn StateCounter(props: StateCounterProps) {
+fn StateCounter() {
     // On its own, a widget can't track anything, since every value will just be reset when the widget is re-rendered.
     // To get around this, and keep track of a value, we have to use states. States are values that are kept across renders.
     // Additionally, anytime a state is updated with a new value, it causes the containing widget to re-render, making it

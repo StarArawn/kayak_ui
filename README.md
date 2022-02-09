@@ -20,7 +20,7 @@ Kayak UI is in the very early stages of development. Important features are miss
 - Basic widget and global state management
 - Input events (Mouse, Keyboard, Char)
 - Fast and accurate layouts using morphorm: https://github.com/geom3trik/morphorm
-- A few default widgets check out [kayak_widgets](./kayak_widgets)!
+- A few default widgets (check out Kayak's [built-in widgets](./src/widgets)!)
 - Style system built to kind of mimic CSS styles.
 - Image and Nine patch rendering.
 - Vec widgets see vec_widget example!
@@ -43,17 +43,12 @@ Kayak UI is in the very early stages of development. Important features are miss
 <img src="images/screen1.png" alt="Kayak UI" width="600" />
 
 ## Usage
-Because bevy's new renderer is not released yet there is no crate on crates.io yet. For now please use the following:
+Use bevy 0.6!
 
 ```rust
-kayak_ui = { git="https://github.com/StarArawn/kayak_ui", rev="{INSERT_COMMIT_SHA_HERE}" }
-kayak_widgets = { git="https://github.com/StarArawn/kayak_ui", rev="{INSERT_COMMIT_SHA_HERE}" }
-bevy = { git="https://github.com/bevyengine/bevy", rev="{INSERT_COMMIT_SHA_HERE}" }
+kayak_ui = { git="https://github.com/StarArawn/kayak_ui", rev="{INSERT_COMMIT_SHA_HERE}", features = ["bevy_renderer"] }
+bevy = "0.6.0"
 ```
-
-It's also worth mentioning that you will need to use the same bevy revision that this library uses which is currently: `1d0d8a3397bd6fc2c14d42ffd0668d2443748912`.
-
-This is temporary and will change when bevy 0.6 is released.
 
 ## Declarative
 Kayak UI makes it painless to build out complex UI's using custom or pre-built widgets. Custom widgets are layed out in a XML like syntax that allows you to more easily visualize the widget tree. Here's an example of that syntax:
@@ -73,7 +68,8 @@ rsx! {
 You can easily declare your own custom widgets:
 ```rust
 #[widget]
-pub fn MyCustomWidget(children: Children) {
+pub fn MyCustomWidget(props: MyCustomWidgetProps) {
+    let children = props.get_children();
     rsx! {
         <>
             {children}
@@ -87,7 +83,7 @@ pub fn MyCustomWidget(children: Children) {
 Widget's can create their own state and will re-render when that state changes.
 ```rust
 #[widget]
-fn Counter(context: &mut KayakContext) {
+fn Counter() {
     let (count, set_count, ..) = use_state!(0i32);
     let on_event = OnEvent::new(move |_, event| match event.event_type {
         EventType::Click(..) => set_count(count + 1),
@@ -111,7 +107,7 @@ fn Counter(context: &mut KayakContext) {
 Widget's can also access global state and when the global state is bound to the widget it will auto re-render:
 ```rust
 #[widget]
-fn Counter(context: &mut KayakContext) {
+fn Counter() {
     let global_count = {
         if let Ok(world) = context.get_global_state::<World>() {
             if let Some(global_count) = world.get_resource::<Binding<GlobalCount>>() {

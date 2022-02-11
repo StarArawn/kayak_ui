@@ -23,7 +23,7 @@ struct BlueButtonProps {
 #[widget]
 fn BlueButton(props: BlueButtonProps) {
     let (blue_button_handle, blue_button_hover_handle) = {
-        let world = context.get_global_state::<World>();
+        let world = context.get_global::<World>();
         if world.is_err() {
             return;
         }

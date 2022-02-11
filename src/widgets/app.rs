@@ -26,7 +26,7 @@ pub fn App(props: AppProps) {
         use crate::bevy::WindowSize;
         use crate::core::styles::Units;
         use crate::core::{Binding, Bound};
-        let window_size = if let Ok(world) = context.get_global_state::<bevy::prelude::World>() {
+        let window_size = if let Ok(world) = context.get_global::<bevy::prelude::World>() {
             if let Some(window_size) = world.get_resource::<Binding<WindowSize>>() {
                 window_size.clone()
             } else {

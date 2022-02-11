@@ -40,9 +40,9 @@ pub(crate) fn to_bevy_color(color: &kayak_core::color::Color) -> Color {
 pub fn update(world: &mut World) {
     if let Some(bevy_context) = world.remove_resource::<BevyContext>() {
         if let Ok(mut context) = bevy_context.kayak_context.write() {
-            context.set_global_state(std::mem::take(world));
+            context.set_global(std::mem::take(world));
             context.render();
-            *world = context.take_global_state::<World>().unwrap();
+            *world = context.remove_global::<World>().unwrap();
 
             if let Some(ref mut windows) = world.get_resource_mut::<Windows>() {
                 if let Some(window) = windows.get_primary_mut() {
@@ -70,7 +70,7 @@ pub fn process_events(world: &mut World) {
         if let Ok(mut context) = bevy_context.kayak_context.write() {
             let mut input_events = Vec::new();
 
-            context.set_global_state(std::mem::take(world));
+            context.set_global(std::mem::take(world));
             context.query_world::<(
                 EventReader<CursorMoved>,
                 EventReader<MouseButtonInput>,
@@ -121,7 +121,7 @@ pub fn process_events(world: &mut World) {
             );
 
             context.process_events(input_events);
-            *world = context.take_global_state::<World>().unwrap()
+            *world = context.remove_global::<World>().unwrap()
         }
 
         world.insert_resource(bevy_context);

@@ -364,17 +364,23 @@ impl KayakContext {
         }
     }
 
-    pub fn set_global_state<T: resources::Resource>(&mut self, state: T) {
-        self.global_state.insert(state);
+    pub fn set_global<T: resources::Resource>(&mut self, value: T) {
+        self.global_state.insert(value);
     }
 
-    pub fn get_global_state<T: resources::Resource>(
+    pub fn get_global_mut<T: resources::Resource>(
         &mut self,
     ) -> Result<resources::RefMut<T>, resources::CantGetResource> {
         self.global_state.get_mut::<T>()
     }
 
-    pub fn take_global_state<T: resources::Resource>(&mut self) -> Option<T> {
+    pub fn get_global<T: resources::Resource>(
+        &mut self,
+    ) -> Result<resources::Ref<T>, resources::CantGetResource> {
+        self.global_state.get::<T>()
+    }
+
+    pub fn remove_global<T: resources::Resource>(&mut self) -> Option<T> {
         self.global_state.remove::<T>()
     }
 
@@ -462,7 +468,7 @@ impl KayakContext {
     where
         F: FnMut(<T::Fetch as bevy::ecs::system::SystemParamFetch<'_, '_>>::Item) -> R,
     {
-        let mut world = self.get_global_state::<bevy::prelude::World>().unwrap();
+        let mut world = self.get_global_mut::<bevy::prelude::World>().unwrap();
         let mut system_state = bevy::ecs::system::SystemState::<T>::new(&mut world);
         let r = {
             let test = system_state.get_mut(&mut world);

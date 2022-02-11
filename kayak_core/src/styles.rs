@@ -142,6 +142,8 @@ define_styles! {
         pub border: StyleProp<(f32, f32, f32, f32)>,
         pub bottom: StyleProp<Units>,
         pub color: StyleProp<Color>,
+        /// The spacing between child widgets along the horizontal axis
+        pub col_gap: StyleProp<Units>,
         pub cursor: StyleProp<CursorIcon>,
         pub height: StyleProp<Units>,
         pub layout_type: StyleProp<LayoutType>,
@@ -158,6 +160,8 @@ define_styles! {
         pub position_type: StyleProp<PositionType>,
         pub render_command: StyleProp<RenderCommand>,
         pub right: StyleProp<Units>,
+        /// The spacing between child widgets along the vertical axis
+        pub row_gap: StyleProp<Units>,
         pub top: StyleProp<Units>,
         pub width: StyleProp<Units>,
     }
@@ -177,6 +181,7 @@ impl Style {
             bottom: StyleProp::Default,
             color: StyleProp::Inherit,
             cursor: StyleProp::Inherit,
+            col_gap: StyleProp::Default,
             height: StyleProp::Default,
             layout_type: StyleProp::Default,
             left: StyleProp::Default,
@@ -192,6 +197,7 @@ impl Style {
             position_type: StyleProp::Default,
             render_command: StyleProp::Value(RenderCommand::Empty),
             right: StyleProp::Default,
+            row_gap: StyleProp::Default,
             top: StyleProp::Default,
             width: StyleProp::Default,
         }

@@ -143,7 +143,7 @@ define_styles! {
     pub struct Style {
         pub background_color : StyleProp<Color>,
         pub border_color: StyleProp<Color>,
-        pub border_radius: StyleProp<Edge<f32>>,
+        pub border_radius: StyleProp<(f32, f32, f32, f32)>,
         pub border: StyleProp<Edge<f32>>,
         pub bottom: StyleProp<Units>,
         pub color: StyleProp<Color>,

@@ -16,7 +16,7 @@ pub enum RenderPrimitive {
         background_color: Color,
         border_color: Color,
         border: Edge<f32>,
-        border_radius: Edge<f32>,
+        border_radius: (f32, f32, f32, f32),
     },
     Text {
         color: Color,
@@ -28,7 +28,7 @@ pub enum RenderPrimitive {
         size: f32,
     },
     Image {
-        border_radius: Edge<f32>,
+        border_radius: (f32, f32, f32, f32),
         layout: Rect,
         handle: u16,
     },

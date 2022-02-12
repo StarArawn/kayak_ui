@@ -5,7 +5,6 @@ use bevy::{
     sprite::Rect,
 };
 use kayak_core::render_primitive::RenderPrimitive;
-use kayak_core::styles::Edge;
 
 use crate::{
     render::unified::pipeline::{ExtractQuadBundle, ExtractedQuad, UIQuadType},
@@ -61,7 +60,7 @@ pub fn extract_nine_patch(
         font_handle: None,
         quad_type: UIQuadType::Image,
         type_index: 0,
-        border_radius: Edge::default(),
+        border_radius: (0.0, 0.0, 0.0, 0.0),
         image: image_handle,
         uv_max: None,
         uv_min: None,

@@ -4,7 +4,6 @@ use bevy::{
     sprite::Rect,
 };
 use kayak_core::render_primitive::RenderPrimitive;
-use kayak_core::styles::Edge;
 use kayak_font::{Alignment, CoordinateSystem, KayakFont};
 
 use crate::{
@@ -78,7 +77,7 @@ pub fn extract_texts(
                 z_index: layout.z_index,
                 quad_type: UIQuadType::Text,
                 type_index: 0,
-                border_radius: Edge::default(),
+                border_radius: (0.0, 0.0, 0.0, 0.0),
                 image: None,
                 uv_max: None,
                 uv_min: None,

@@ -1,7 +1,10 @@
+mod option_ref;
+
 pub use morphorm::{LayoutType, PositionType, Units};
 
 use crate::cursor::PointerEvents;
 use crate::{color::Color, render_command::RenderCommand, CursorIcon};
+use option_ref::AsRefOption;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum StyleProp<T: Default + Clone> {
@@ -21,8 +24,8 @@ pub enum StyleProp<T: Default + Clone> {
 }
 
 impl<T> Default for StyleProp<T>
-where
-    T: Default + Clone,
+    where
+        T: Default + Clone,
 {
     fn default() -> Self {
         Self::Unset
@@ -30,8 +33,8 @@ where
 }
 
 impl<T> StyleProp<T>
-where
-    T: Default + Clone,
+    where
+        T: Default + Clone,
 {
     pub fn resolve(&self) -> T {
         match self {
@@ -201,34 +204,5 @@ impl Style {
             top: StyleProp::Default,
             width: StyleProp::Default,
         }
-    }
-}
-
-/// A trait used to allow reading a value as an `Option<&T>`
-pub trait AsRefOption<T> {
-    fn as_ref_option(&self) -> Option<&T>;
-}
-
-impl AsRefOption<Style> for Style {
-    fn as_ref_option(&self) -> Option<&Style> {
-        Some(&self)
-    }
-}
-
-impl AsRefOption<Style> for &Style {
-    fn as_ref_option(&self) -> Option<&Style> {
-        Some(self)
-    }
-}
-
-impl AsRefOption<Style> for Option<Style> {
-    fn as_ref_option(&self) -> Option<&Style> {
-        self.as_ref()
-    }
-}
-
-impl AsRefOption<Style> for &Option<Style> {
-    fn as_ref_option(&self) -> Option<&Style> {
-        self.as_ref()
     }
 }

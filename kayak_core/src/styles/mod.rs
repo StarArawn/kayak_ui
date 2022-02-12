@@ -157,6 +157,15 @@ define_styles! {
         pub max_width: StyleProp<Units>,
         pub min_height: StyleProp<Units>,
         pub min_width: StyleProp<Units>,
+        /// The inner padding between the edges of this widget and its children
+        ///
+        /// This property has lower precedence than its more specific counterparts
+        /// (`padding_top`, `padding_right`, `padding_bottom`, and `padding_left`), allowing it
+        /// to be overridden.
+        ///
+        /// A child with their own padding properties set to anything other than `Units::Auto` will
+        /// override the padding set by this widget.
+        pub padding: StyleProp<Edge<Units>>,
         pub padding_bottom: StyleProp<Units>,
         pub padding_left: StyleProp<Units>,
         pub padding_right: StyleProp<Units>,
@@ -194,6 +203,7 @@ impl Style {
             max_width: StyleProp::Default,
             min_height: StyleProp::Default,
             min_width: StyleProp::Default,
+            padding: StyleProp::Default,
             padding_bottom: StyleProp::Default,
             padding_left: StyleProp::Default,
             padding_right: StyleProp::Default,

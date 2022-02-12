@@ -32,10 +32,7 @@ fn startup(
             right: StyleProp::Value(Units::Stretch(1.0)),
             top: StyleProp::Value(Units::Stretch(1.0)),
             bottom: StyleProp::Value(Units::Stretch(1.0)),
-            padding_left: StyleProp::Value(Units::Pixels(25.0)),
-            padding_right: StyleProp::Value(Units::Pixels(25.0)),
-            padding_top: StyleProp::Value(Units::Pixels(25.0)),
-            padding_bottom: StyleProp::Value(Units::Pixels(25.0)),
+            padding: StyleProp::Value(Edge::all(Units::Pixels(25.0))),
             ..Style::default()
         };
 

@@ -18,7 +18,7 @@ use kayak_ui::{
     bevy::{BevyContext, BevyKayakUIPlugin, FontMapping, UICameraBundle},
     core::{
         render, rsx,
-        styles::{LayoutType, Style, StyleProp, Units},
+        styles::{Edge, LayoutType, Style, StyleProp, Units},
         widget, Bound, Color, EventType, Index, MutableBound, OnEvent, WidgetProps,
     },
     widgets::{App, Background, Element, If, Text, TooltipConsumer, TooltipProvider, Window},
@@ -219,10 +219,7 @@ fn ThemeDemo(props: ThemeDemoProps) {
         top: StyleProp::Value(Units::Pixels(5.0)),
         left: StyleProp::Value(Units::Stretch(1.0)),
         right: StyleProp::Value(Units::Stretch(1.0)),
-        padding_bottom: StyleProp::Value(Units::Stretch(1.0)),
-        padding_left: StyleProp::Value(Units::Stretch(1.0)),
-        padding_right: StyleProp::Value(Units::Stretch(1.0)),
-        padding_top: StyleProp::Value(Units::Stretch(1.0)),
+        padding: StyleProp::Value(Edge::all(Units::Stretch(1.0))),
         ..Default::default()
     };
 

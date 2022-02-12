@@ -19,7 +19,7 @@ use kayak_ui::{
     bevy::{BevyContext, BevyKayakUIPlugin, FontMapping, UICameraBundle},
     core::{
         render, rsx,
-        styles::{Style, StyleProp, Units},
+        styles::{Edge, Style, StyleProp, Units},
         use_state, widget, EventType, Index, OnEvent,
     },
     widgets::{App, Button, Text, Window},
@@ -80,10 +80,7 @@ fn ControlPanel() {
         right: StyleProp::Value(Units::Stretch(1.0)),
         top: StyleProp::Value(Units::Pixels(16.0)),
         bottom: StyleProp::Value(Units::Pixels(8.0)),
-        padding_top: StyleProp::Value(Units::Pixels(8.0)),
-        padding_bottom: StyleProp::Value(Units::Pixels(8.0)),
-        padding_left: StyleProp::Value(Units::Pixels(48.0)),
-        padding_right: StyleProp::Value(Units::Pixels(48.0)),
+        padding: StyleProp::Value(Edge::axis(Units::Pixels(8.0), Units::Pixels(48.0))),
         ..Default::default()
     };
 

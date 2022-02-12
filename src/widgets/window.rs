@@ -78,10 +78,7 @@ pub fn Window(props: WindowProps) {
     });
 
     let clip_styles = Style {
-        padding_left: StyleProp::Value(Units::Pixels(5.0)),
-        padding_right: StyleProp::Value(Units::Pixels(5.0)),
-        padding_top: StyleProp::Value(Units::Pixels(5.0)),
-        padding_bottom: StyleProp::Value(Units::Pixels(5.0)),
+        padding: StyleProp::Value(Edge::all(Units::Pixels(5.0))),
         width: StyleProp::Value(Units::Stretch(1.0)),
         height: StyleProp::Value(Units::Stretch(1.0)),
         max_width: StyleProp::Value(Units::Pixels(size.0)),
@@ -120,10 +117,7 @@ pub fn Window(props: WindowProps) {
     };
 
     let content_styles = Style {
-        padding_left: StyleProp::Value(Units::Pixels(10.0)),
-        padding_right: StyleProp::Value(Units::Pixels(10.0)),
-        padding_top: StyleProp::Value(Units::Pixels(10.0)),
-        padding_bottom: StyleProp::Value(Units::Pixels(10.0)),
+        padding: StyleProp::Value(Edge::all(Units::Pixels(10.0))),
         ..Style::default()
     };
 

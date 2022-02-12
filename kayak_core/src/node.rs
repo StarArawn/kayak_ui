@@ -259,7 +259,11 @@ impl<'a> morphorm::Node<'a> for Index {
         if let Some(node) = store.get(*self) {
             if let Some(node) = node {
                 return match node.resolved_styles.padding_left {
-                    StyleProp::Default => Some(morphorm::Units::Auto),
+                    StyleProp::Default => match node.resolved_styles.padding {
+                        StyleProp::Default => Some(morphorm::Units::Auto),
+                        StyleProp::Value(prop) => Some(prop.left),
+                        _ => Some(morphorm::Units::Auto),
+                    },
                     StyleProp::Value(prop) => Some(prop),
                     _ => Some(morphorm::Units::Auto),
                 };
@@ -272,7 +276,11 @@ impl<'a> morphorm::Node<'a> for Index {
         if let Some(node) = store.get(*self) {
             if let Some(node) = node {
                 return match node.resolved_styles.padding_right {
-                    StyleProp::Default => Some(morphorm::Units::Auto),
+                    StyleProp::Default => match node.resolved_styles.padding {
+                        StyleProp::Default => Some(morphorm::Units::Auto),
+                        StyleProp::Value(prop) => Some(prop.right),
+                        _ => Some(morphorm::Units::Auto),
+                    },
                     StyleProp::Value(prop) => Some(prop),
                     _ => Some(morphorm::Units::Auto),
                 };
@@ -285,7 +293,11 @@ impl<'a> morphorm::Node<'a> for Index {
         if let Some(node) = store.get(*self) {
             if let Some(node) = node {
                 return match node.resolved_styles.padding_top {
-                    StyleProp::Default => Some(morphorm::Units::Auto),
+                    StyleProp::Default => match node.resolved_styles.padding {
+                        StyleProp::Default => Some(morphorm::Units::Auto),
+                        StyleProp::Value(prop) => Some(prop.top),
+                        _ => Some(morphorm::Units::Auto),
+                    },
                     StyleProp::Value(prop) => Some(prop),
                     _ => Some(morphorm::Units::Auto),
                 };
@@ -298,7 +310,11 @@ impl<'a> morphorm::Node<'a> for Index {
         if let Some(node) = store.get(*self) {
             if let Some(node) = node {
                 return match node.resolved_styles.padding_bottom {
-                    StyleProp::Default => Some(morphorm::Units::Auto),
+                    StyleProp::Default => match node.resolved_styles.padding {
+                        StyleProp::Default => Some(morphorm::Units::Auto),
+                        StyleProp::Value(prop) => Some(prop.bottom),
+                        _ => Some(morphorm::Units::Auto),
+                    },
                     StyleProp::Value(prop) => Some(prop),
                     _ => Some(morphorm::Units::Auto),
                 };

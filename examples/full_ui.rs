@@ -51,10 +51,7 @@ fn BlueButton(props: BlueButtonProps) {
     let button_styles = Style {
         width: StyleProp::Value(Units::Pixels(200.0)),
         height: StyleProp::Value(Units::Pixels(50.0)),
-        padding_left: StyleProp::Value(Units::Stretch(1.0)),
-        padding_right: StyleProp::Value(Units::Stretch(1.0)),
-        padding_top: StyleProp::Value(Units::Stretch(1.0)),
-        padding_bottom: StyleProp::Value(Units::Stretch(1.0)),
+        padding: StyleProp::Value(Edge::all(Units::Stretch(1.0))),
         ..props.styles.clone().unwrap_or_default()
     };
 
@@ -106,10 +103,7 @@ fn startup(
             right: StyleProp::Value(Units::Stretch(1.0)),
             top: StyleProp::Value(Units::Stretch(1.0)),
             bottom: StyleProp::Value(Units::Stretch(1.0)),
-            padding_left: StyleProp::Value(Units::Stretch(1.0)),
-            padding_right: StyleProp::Value(Units::Stretch(1.0)),
-            padding_top: StyleProp::Value(Units::Stretch(1.0)),
-            padding_bottom: StyleProp::Value(Units::Stretch(1.0)),
+            padding: StyleProp::Value(Edge::all(Units::Stretch(1.0))),
             ..Style::default()
         };
 

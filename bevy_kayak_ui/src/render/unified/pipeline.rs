@@ -32,6 +32,7 @@ use bevy::{
     utils::HashMap,
 };
 use bytemuck::{Pod, Zeroable};
+use kayak_core::styles::Edge;
 use kayak_font::{
     bevy::{FontRenderingPipeline, FontTextureCache},
     KayakFont,
@@ -320,7 +321,7 @@ pub struct ExtractedQuad {
     pub font_handle: Option<Handle<KayakFont>>,
     pub quad_type: UIQuadType,
     pub type_index: u32,
-    pub border_radius: (f32, f32, f32, f32),
+    pub border_radius: Edge<f32>,
     pub image: Option<Handle<Image>>,
     pub uv_min: Option<Vec2>,
     pub uv_max: Option<Vec2>,
@@ -413,25 +414,25 @@ pub fn prepare_quads(
             uv_min.x,
             uv_max.y,
             extracted_sprite.char_id as f32,
-            extracted_sprite.border_radius.0,
+            extracted_sprite.border_radius.top,
         );
         let top_left = Vec4::new(
             uv_min.x,
             uv_min.y,
             extracted_sprite.char_id as f32,
-            extracted_sprite.border_radius.1,
+            extracted_sprite.border_radius.right,
         );
         let top_right = Vec4::new(
             uv_max.x,
             uv_min.y,
             extracted_sprite.char_id as f32,
-            extracted_sprite.border_radius.2,
+            extracted_sprite.border_radius.bottom,
         );
         let bottom_right = Vec4::new(
             uv_max.x,
             uv_max.y,
             extracted_sprite.char_id as f32,
-            extracted_sprite.border_radius.3,
+            extracted_sprite.border_radius.left,
         );
 
         let uvs: [[f32; 4]; 6] = [

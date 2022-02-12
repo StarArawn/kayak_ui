@@ -3,7 +3,7 @@ use kayak_ui::core::{
     color::Color,
     render_command::RenderCommand,
     rsx,
-    styles::{Style, StyleProp, Units},
+    styles::{Edge, Style, StyleProp, Units},
     use_state, widget, EventType, OnEvent, WidgetProps,
 };
 
@@ -30,7 +30,7 @@ pub fn AddButton(props: AddButtonProps) {
     });
 
     let background_styles = Some(Style {
-        border_radius: StyleProp::Value((5.0, 5.0, 5.0, 5.0)),
+        border_radius: StyleProp::Value(Edge::all(5.0)),
         background_color: StyleProp::Value(color),
         cursor: CursorIcon::Hand.into(),
         padding_left: StyleProp::Value(Units::Pixels(9.0)),

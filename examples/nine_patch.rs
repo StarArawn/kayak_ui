@@ -5,9 +5,8 @@ use bevy::{
 };
 use kayak_ui::bevy::{BevyContext, BevyKayakUIPlugin, ImageManager, UICameraBundle};
 use kayak_ui::core::{
-    layout_cache::Space,
     render,
-    styles::{Style, StyleProp, Units},
+    styles::{Edge, Style, StyleProp, Units},
     Index,
 };
 use kayak_ui::widgets::{App, NinePatch};
@@ -56,12 +55,7 @@ fn startup(
             <App>
                 <NinePatch
                     styles={Some(nine_patch_styles)}
-                    border={Space {
-                        left: 15.0,
-                        right: 15.0,
-                        top: 15.0,
-                        bottom: 15.0,
-                    }}
+                    border={Edge::all(15.0)}
                     handle={ui_image_handle}
                 />
             </App>

@@ -1,15 +1,14 @@
 use crate::core::{
-    layout_cache::Space,
     render_command::RenderCommand,
     rsx,
-    styles::{Style, StyleProp},
+    styles::{Edge, Style, StyleProp},
     widget, Children, OnEvent, WidgetProps,
 };
 
 #[derive(WidgetProps, Default, Debug, PartialEq, Clone)]
 pub struct NinePatchProps {
     pub handle: u16,
-    pub border: Space,
+    pub border: Edge<f32>,
     #[prop_field(Styles)]
     pub styles: Option<Style>,
     #[prop_field(Children)]

@@ -5,9 +5,8 @@ use bevy::{
 };
 use kayak_ui::bevy::{BevyContext, BevyKayakUIPlugin, FontMapping, ImageManager, UICameraBundle};
 use kayak_ui::core::{
-    layout_cache::Space,
     render,
-    styles::{Style, StyleProp, Units},
+    styles::{Edge, Style, StyleProp, Units},
     Index,
 };
 use kayak_ui::widgets::{App, Clip, NinePatch, Text};
@@ -58,12 +57,7 @@ Vestibulum rutrum imperdiet nisl, et consequat massa porttitor vel. Ut velit jus
             <App>
                 <NinePatch
                     styles={Some(nine_patch_styles)}
-                    border={Space {
-                        left: 30.0,
-                        right: 30.0,
-                        top: 30.0,
-                        bottom: 30.0,
-                    }}
+                    border={Edge::all(30.0)}
                     handle={panel_brown_handle}
                 >
                     <Clip styles={Some(clip_styles)}>

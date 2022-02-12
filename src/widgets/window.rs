@@ -2,7 +2,7 @@ use crate::core::{
     color::Color,
     render_command::RenderCommand,
     rsx,
-    styles::{PositionType, Style, StyleProp, Units},
+    styles::{Edge, PositionType, Style, StyleProp, Units},
     use_state, widget, Children, EventType, OnEvent, WidgetProps,
 };
 use kayak_core::CursorIcon;
@@ -64,8 +64,8 @@ pub fn Window(props: WindowProps) {
     props.styles = Some(Style {
         background_color: StyleProp::Value(Color::new(0.125, 0.125, 0.125, 1.0)),
         border_color: StyleProp::Value(Color::new(0.0781, 0.0898, 0.101, 1.0)),
-        border: StyleProp::Value((4.0, 4.0, 4.0, 4.0)),
-        border_radius: StyleProp::Value((5.0, 5.0, 5.0, 5.0)),
+        border: StyleProp::Value(Edge::all(4.0)),
+        border_radius: StyleProp::Value(Edge::all(5.0)),
         render_command: StyleProp::Value(RenderCommand::Quad),
         position_type: StyleProp::Value(PositionType::SelfDirected),
         left: StyleProp::Value(Units::Pixels(pos.0)),
@@ -101,7 +101,7 @@ pub fn Window(props: WindowProps) {
 
     let title_background_styles = Style {
         background_color: StyleProp::Value(Color::new(0.0781, 0.0898, 0.101, 1.0)),
-        border_radius: StyleProp::Value((5.0, 0.0, 0.0, 5.0)),
+        border_radius: StyleProp::Value(Edge::all(5.0)),
         cursor: cursor.into(),
         height: StyleProp::Value(Units::Pixels(24.0)),
         width: StyleProp::Value(Units::Stretch(1.0)),

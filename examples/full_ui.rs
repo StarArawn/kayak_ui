@@ -5,9 +5,8 @@ use bevy::{
 };
 use kayak_ui::bevy::{BevyContext, BevyKayakUIPlugin, FontMapping, ImageManager, UICameraBundle};
 use kayak_ui::core::{
-    layout_cache::Space,
     render, rsx,
-    styles::{LayoutType, Style, StyleProp, Units},
+    styles::{Edge, LayoutType, Style, StyleProp, Units},
     widget, Bound, Children, EventType, Index, MutableBound, OnEvent, WidgetProps,
 };
 use kayak_ui::widgets::{App, NinePatch, Text};
@@ -73,12 +72,7 @@ fn BlueButton(props: BlueButtonProps) {
     let children = props.get_children();
     rsx! {
         <NinePatch
-            border={Space {
-                left: 10.0,
-                right: 10.0,
-                top: 10.0,
-                bottom: 10.0,
-            }}
+            border={Edge::all(10.0)}
             handle={current_button_handle.get()}
             styles={Some(button_styles)}
             on_event={Some(on_event)}
@@ -135,12 +129,7 @@ fn startup(
             <App>
                 <NinePatch
                     styles={Some(nine_patch_styles)}
-                    border={Space {
-                        left: 30.0,
-                        right: 30.0,
-                        top: 30.0,
-                        bottom: 30.0,
-                    }}
+                    border={Edge::all(30.0)}
                     handle={panel_brown_handle}
                 >
                     <Text

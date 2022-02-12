@@ -362,7 +362,7 @@ impl<'a> morphorm::Node<'a> for Index {
             if let Some(node) = node {
                 return match node.resolved_styles.border {
                     StyleProp::Default => Some(morphorm::Units::Auto),
-                    StyleProp::Value(prop) => Some(morphorm::Units::Pixels(prop.3)),
+                    StyleProp::Value(prop) => Some(morphorm::Units::Pixels(prop.left)),
                     _ => Some(morphorm::Units::Auto),
                 };
             }
@@ -375,7 +375,7 @@ impl<'a> morphorm::Node<'a> for Index {
             if let Some(node) = node {
                 return match node.resolved_styles.border {
                     StyleProp::Default => Some(morphorm::Units::Auto),
-                    StyleProp::Value(prop) => Some(morphorm::Units::Pixels(prop.1)),
+                    StyleProp::Value(prop) => Some(morphorm::Units::Pixels(prop.right)),
                     _ => Some(morphorm::Units::Auto),
                 };
             }
@@ -388,7 +388,7 @@ impl<'a> morphorm::Node<'a> for Index {
             if let Some(node) = node {
                 return match node.resolved_styles.border {
                     StyleProp::Default => Some(morphorm::Units::Auto),
-                    StyleProp::Value(prop) => Some(morphorm::Units::Pixels(prop.0)),
+                    StyleProp::Value(prop) => Some(morphorm::Units::Pixels(prop.top)),
                     _ => Some(morphorm::Units::Auto),
                 };
             }
@@ -401,7 +401,7 @@ impl<'a> morphorm::Node<'a> for Index {
             if let Some(node) = node {
                 return match node.resolved_styles.border {
                     StyleProp::Default => Some(morphorm::Units::Auto),
-                    StyleProp::Value(prop) => Some(morphorm::Units::Pixels(prop.2)),
+                    StyleProp::Value(prop) => Some(morphorm::Units::Pixels(prop.bottom)),
                     _ => Some(morphorm::Units::Auto),
                 };
             }

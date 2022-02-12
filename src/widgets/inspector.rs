@@ -1,4 +1,4 @@
-use kayak_core::styles::{PositionType, Style, StyleProp, Units};
+use kayak_core::styles::{Edge, PositionType, Style, StyleProp, Units};
 use kayak_core::{Bound, Color, EventType, OnEvent, VecTracker};
 use kayak_render_macros::{constructor, use_state};
 
@@ -24,7 +24,7 @@ pub fn Inspector(props: InspectorProps) {
 
     let background_styles = Some(Style {
         background_color: StyleProp::Value(Color::new(0.125, 0.125, 0.125, 1.0)),
-        border_radius: StyleProp::Value((0.0, 0.0, 0.0, 0.0)),
+        border_radius: StyleProp::Value(Edge::all(0.0)),
         position_type: StyleProp::Value(PositionType::SelfDirected),
         left: StyleProp::Value(Units::Stretch(1.0)),
         top: StyleProp::Value(Units::Stretch(0.0)),

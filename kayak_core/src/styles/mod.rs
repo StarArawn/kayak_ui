@@ -1,6 +1,8 @@
+mod edge;
 mod option_ref;
 
 pub use morphorm::{LayoutType, PositionType, Units};
+pub use edge::Edge;
 
 use crate::cursor::PointerEvents;
 use crate::{color::Color, render_command::RenderCommand, CursorIcon};
@@ -141,8 +143,8 @@ define_styles! {
     pub struct Style {
         pub background_color : StyleProp<Color>,
         pub border_color: StyleProp<Color>,
-        pub border_radius: StyleProp<(f32, f32, f32, f32)>,
-        pub border: StyleProp<(f32, f32, f32, f32)>,
+        pub border_radius: StyleProp<Edge<f32>>,
+        pub border: StyleProp<Edge<f32>>,
         pub bottom: StyleProp<Units>,
         pub color: StyleProp<Color>,
         /// The spacing between child widgets along the horizontal axis

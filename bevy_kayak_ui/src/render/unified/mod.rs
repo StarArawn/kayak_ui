@@ -10,6 +10,7 @@ use bevy::{
     window::Windows,
 };
 use kayak_core::{render_primitive::RenderPrimitive, Binding, Bound};
+use kayak_core::styles::Edge;
 use kayak_font::KayakFont;
 
 use crate::{
@@ -129,7 +130,7 @@ pub fn extract(
                         font_handle: None,
                         quad_type: UIQuadType::Clip,
                         type_index: 0,
-                        border_radius: (0.0, 0.0, 0.0, 0.0),
+                        border_radius: Edge::default(),
                         image: None,
                         uv_min: None,
                         uv_max: None,

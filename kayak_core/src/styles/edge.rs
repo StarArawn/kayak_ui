@@ -161,4 +161,18 @@ mod tests {
         let edge: Edge<f32> = expected.0.into();
         assert_eq!(expected, edge.into_tuple());
     }
+
+    #[test]
+    fn multiplication_should_work_on_edges() {
+        let expected = (10.0, 20.0, 30.0, 40.0);
+        let mut corner= Edge::new(1.0, 2.0, 3.0, 4.0);
+
+        // Basic multiplication
+        let multiplied = corner * 10.0;
+        assert_eq!(expected, multiplied.into_tuple());
+
+        // Multiply and assign
+        corner *= 10.0;
+        assert_eq!(expected, corner.into_tuple());
+    }
 }

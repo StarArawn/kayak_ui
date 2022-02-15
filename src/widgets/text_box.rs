@@ -1,7 +1,7 @@
 use crate::core::{
     render_command::RenderCommand,
     rsx,
-    styles::{Style, Units},
+    styles::{Corner, Style, Units},
     widget, Bound, Children, Color, EventType, MutableBound, OnEvent, WidgetProps,
 };
 use kayak_core::CursorIcon;
@@ -102,7 +102,7 @@ pub fn TextBox(props: TextBoxProps) {
 
     let background_styles = Style {
         background_color: Color::new(0.176, 0.196, 0.215, 1.0).into(),
-        border_radius: (5.0, 5.0, 5.0, 5.0).into(),
+        border_radius: Corner::all(5.0).into(),
         height: Units::Pixels(26.0).into(),
         padding_left: Units::Pixels(5.0).into(),
         padding_right: Units::Pixels(5.0).into(),

@@ -7,7 +7,7 @@ use kayak_core::styles::PositionType;
 use kayak_ui::bevy::{BevyContext, BevyKayakUIPlugin, ImageManager, UICameraBundle};
 use kayak_ui::core::{
     render,
-    styles::{Style, StyleProp, Units},
+    styles::{Corner, Style, StyleProp, Units},
     Index,
 };
 use kayak_ui::widgets::{App, Image};
@@ -27,7 +27,7 @@ fn startup(
             position_type: StyleProp::Value(PositionType::SelfDirected),
             left: StyleProp::Value(Units::Pixels(10.0)),
             top: StyleProp::Value(Units::Pixels(10.0)),
-            border_radius: StyleProp::Value((500.0, 500.0, 500.0, 500.0)),
+            border_radius: StyleProp::Value(Corner::all(500.0)),
             width: StyleProp::Value(Units::Pixels(200.0)),
             height: StyleProp::Value(Units::Pixels(182.0)),
             ..Style::default()

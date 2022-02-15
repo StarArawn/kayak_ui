@@ -326,7 +326,7 @@ impl<'a> morphorm::Node<'a> for Index {
     fn row_between(&self, store: &'_ Self::Data) -> Option<morphorm::Units> {
         if let Some(node) = store.get(*self) {
             if let Some(node) = node {
-                return match node.resolved_styles.row_gap {
+                return match node.resolved_styles.row_between {
                     StyleProp::Default => Some(morphorm::Units::Auto),
                     StyleProp::Value(prop) => Some(prop),
                     _ => Some(morphorm::Units::Auto),
@@ -339,7 +339,7 @@ impl<'a> morphorm::Node<'a> for Index {
     fn col_between(&self, store: &'_ Self::Data) -> Option<morphorm::Units> {
         if let Some(node) = store.get(*self) {
             if let Some(node) = node {
-                return match node.resolved_styles.col_gap {
+                return match node.resolved_styles.col_between {
                     StyleProp::Default => Some(morphorm::Units::Auto),
                     StyleProp::Value(prop) => Some(prop),
                     _ => Some(morphorm::Units::Auto),

@@ -1,8 +1,10 @@
 mod edge;
 mod option_ref;
+mod corner;
 
 pub use morphorm::{LayoutType, PositionType, Units};
 pub use edge::Edge;
+pub use corner::Corner;
 
 use crate::cursor::PointerEvents;
 use crate::{color::Color, render_command::RenderCommand, CursorIcon};

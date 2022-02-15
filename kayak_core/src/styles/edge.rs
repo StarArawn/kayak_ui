@@ -4,7 +4,10 @@ use std::ops::{Mul, MulAssign};
 ///
 /// This is useful for things like borders, padding, etc.
 #[derive(Debug, Default, Copy, Clone, PartialEq)]
-pub struct Edge<T> where T: Copy + Default + PartialEq {
+pub struct Edge<T>
+where
+    T: Copy + Default + PartialEq,
+{
     /// The value of the top edge
     pub top: T,
     /// The value of the right edge
@@ -15,7 +18,10 @@ pub struct Edge<T> where T: Copy + Default + PartialEq {
     pub left: T,
 }
 
-impl<T> Edge<T> where T: Copy + Default + PartialEq {
+impl<T> Edge<T>
+where
+    T: Copy + Default + PartialEq,
+{
     /// Creates a new `Edge` with values individually specified for each edge
     ///
     /// # Arguments
@@ -71,31 +77,46 @@ impl<T> Edge<T> where T: Copy + Default + PartialEq {
     }
 }
 
-impl<T> From<Edge<T>> for (T, T, T, T) where T: Copy + Default + PartialEq {
+impl<T> From<Edge<T>> for (T, T, T, T)
+where
+    T: Copy + Default + PartialEq,
+{
     fn from(edge: Edge<T>) -> Self {
         edge.into_tuple()
     }
 }
 
-impl<T> From<T> for Edge<T> where T: Copy + Default + PartialEq {
+impl<T> From<T> for Edge<T>
+where
+    T: Copy + Default + PartialEq,
+{
     fn from(value: T) -> Self {
         Edge::all(value)
     }
 }
 
-impl<T> From<(T, T)> for Edge<T> where T: Copy + Default + PartialEq {
+impl<T> From<(T, T)> for Edge<T>
+where
+    T: Copy + Default + PartialEq,
+{
     fn from(value: (T, T)) -> Self {
         Edge::axis(value.0, value.1)
     }
 }
 
-impl<T> From<(T, T, T, T)> for Edge<T> where T: Copy + Default + PartialEq {
+impl<T> From<(T, T, T, T)> for Edge<T>
+where
+    T: Copy + Default + PartialEq,
+{
     fn from(value: (T, T, T, T)) -> Self {
         Edge::new(value.0, value.1, value.2, value.3)
     }
 }
 
-impl<T> Mul<T> for Edge<T> where T: Copy + Default + PartialEq + Mul<Output=T> {
+impl<T> Mul<T> for Edge<T>
+where
+    T: Copy + Default + PartialEq + Mul<Output = T>,
+{
     type Output = Self;
 
     fn mul(self, rhs: T) -> Self::Output {
@@ -108,7 +129,10 @@ impl<T> Mul<T> for Edge<T> where T: Copy + Default + PartialEq + Mul<Output=T> {
     }
 }
 
-impl<T> Mul<Edge<T>> for Edge<T> where T: Copy + Default + PartialEq + Mul<Output=T> {
+impl<T> Mul<Edge<T>> for Edge<T>
+where
+    T: Copy + Default + PartialEq + Mul<Output = T>,
+{
     type Output = Self;
 
     fn mul(self, rhs: Edge<T>) -> Self::Output {
@@ -121,7 +145,10 @@ impl<T> Mul<Edge<T>> for Edge<T> where T: Copy + Default + PartialEq + Mul<Outpu
     }
 }
 
-impl<T> MulAssign<T> for Edge<T> where T: Copy + Default + PartialEq + MulAssign {
+impl<T> MulAssign<T> for Edge<T>
+where
+    T: Copy + Default + PartialEq + MulAssign,
+{
     fn mul_assign(&mut self, rhs: T) {
         self.top *= rhs;
         self.right *= rhs;
@@ -130,7 +157,10 @@ impl<T> MulAssign<T> for Edge<T> where T: Copy + Default + PartialEq + MulAssign
     }
 }
 
-impl<T> MulAssign<Edge<T>> for Edge<T> where T: Copy + Default + PartialEq + MulAssign {
+impl<T> MulAssign<Edge<T>> for Edge<T>
+where
+    T: Copy + Default + PartialEq + MulAssign,
+{
     fn mul_assign(&mut self, rhs: Edge<T>) {
         self.top *= rhs.top;
         self.right *= rhs.right;
@@ -165,7 +195,7 @@ mod tests {
     #[test]
     fn multiplication_should_work_on_edges() {
         let expected = (10.0, 20.0, 30.0, 40.0);
-        let mut corner= Edge::new(1.0, 2.0, 3.0, 4.0);
+        let mut corner = Edge::new(1.0, 2.0, 3.0, 4.0);
 
         // Basic multiplication
         let multiplied = corner * 10.0;

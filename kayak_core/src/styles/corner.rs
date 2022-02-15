@@ -4,7 +4,10 @@ use std::ops::{Mul, MulAssign};
 ///
 /// This is useful for things like border radii, etc.
 #[derive(Debug, Default, Copy, Clone, PartialEq)]
-pub struct Corner<T> where T: Copy + Default + PartialEq {
+pub struct Corner<T>
+where
+    T: Copy + Default + PartialEq,
+{
     /// The value of the top-left corner
     pub top_left: T,
     /// The value of the top-right corner
@@ -15,7 +18,10 @@ pub struct Corner<T> where T: Copy + Default + PartialEq {
     pub bottom_right: T,
 }
 
-impl<T> Corner<T> where T: Copy + Default + PartialEq {
+impl<T> Corner<T>
+where
+    T: Copy + Default + PartialEq,
+{
     /// Creates a new `Corner` with values individually specified for each corner
     ///
     /// # Arguments
@@ -99,31 +105,48 @@ impl<T> Corner<T> where T: Copy + Default + PartialEq {
 
     /// Converts this `Corner` into a tuple matching `(Top Left, Top Right, Bottom Left, Bottom Right)`
     pub fn into_tuple(self) -> (T, T, T, T) {
-        (self.top_left, self.top_right, self.bottom_left, self.bottom_right)
+        (
+            self.top_left,
+            self.top_right,
+            self.bottom_left,
+            self.bottom_right,
+        )
     }
 }
 
-impl<T> From<Corner<T>> for (T, T, T, T) where T: Copy + Default + PartialEq {
+impl<T> From<Corner<T>> for (T, T, T, T)
+where
+    T: Copy + Default + PartialEq,
+{
     /// Creates a tuple matching the pattern: `(Top Left, Top Right, Bottom Left, Bottom Right)`
     fn from(edge: Corner<T>) -> Self {
         edge.into_tuple()
     }
 }
 
-impl<T> From<T> for Corner<T> where T: Copy + Default + PartialEq {
+impl<T> From<T> for Corner<T>
+where
+    T: Copy + Default + PartialEq,
+{
     fn from(value: T) -> Self {
         Corner::all(value)
     }
 }
 
-impl<T> From<(T, T, T, T)> for Corner<T> where T: Copy + Default + PartialEq {
+impl<T> From<(T, T, T, T)> for Corner<T>
+where
+    T: Copy + Default + PartialEq,
+{
     /// Converts the tuple according to the pattern: `(Top Left, Top Right, Bottom Left, Bottom Right)`
     fn from(value: (T, T, T, T)) -> Self {
         Corner::new(value.0, value.1, value.2, value.3)
     }
 }
 
-impl<T> Mul<T> for Corner<T> where T: Copy + Default + PartialEq + Mul<Output=T> {
+impl<T> Mul<T> for Corner<T>
+where
+    T: Copy + Default + PartialEq + Mul<Output = T>,
+{
     type Output = Self;
 
     fn mul(self, rhs: T) -> Self::Output {
@@ -136,7 +159,10 @@ impl<T> Mul<T> for Corner<T> where T: Copy + Default + PartialEq + Mul<Output=T>
     }
 }
 
-impl<T> Mul<Corner<T>> for Corner<T> where T: Copy + Default + PartialEq + Mul<Output=T> {
+impl<T> Mul<Corner<T>> for Corner<T>
+where
+    T: Copy + Default + PartialEq + Mul<Output = T>,
+{
     type Output = Self;
 
     fn mul(self, rhs: Corner<T>) -> Self::Output {
@@ -149,7 +175,10 @@ impl<T> Mul<Corner<T>> for Corner<T> where T: Copy + Default + PartialEq + Mul<O
     }
 }
 
-impl<T> MulAssign<T> for Corner<T> where T: Copy + Default + PartialEq + MulAssign {
+impl<T> MulAssign<T> for Corner<T>
+where
+    T: Copy + Default + PartialEq + MulAssign,
+{
     fn mul_assign(&mut self, rhs: T) {
         self.top_left *= rhs;
         self.top_right *= rhs;
@@ -158,7 +187,10 @@ impl<T> MulAssign<T> for Corner<T> where T: Copy + Default + PartialEq + MulAssi
     }
 }
 
-impl<T> MulAssign<Corner<T>> for Corner<T> where T: Copy + Default + PartialEq + MulAssign {
+impl<T> MulAssign<Corner<T>> for Corner<T>
+where
+    T: Copy + Default + PartialEq + MulAssign,
+{
     fn mul_assign(&mut self, rhs: Corner<T>) {
         self.top_left *= rhs.top_left;
         self.top_right *= rhs.top_right;
@@ -189,7 +221,7 @@ mod tests {
     #[test]
     fn multiplication_should_work_on_corners() {
         let expected = (10.0, 20.0, 30.0, 40.0);
-        let mut corner= Corner::new(1.0, 2.0, 3.0, 4.0);
+        let mut corner = Corner::new(1.0, 2.0, 3.0, 4.0);
 
         // Basic multiplication
         let multiplied = corner * 10.0;

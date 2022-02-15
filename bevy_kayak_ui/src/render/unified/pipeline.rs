@@ -37,9 +37,9 @@ use kayak_font::{
     KayakFont,
 };
 
-use kayak_core::styles::Corner;
 use super::{Dpi, UNIFIED_SHADER_HANDLE};
 use crate::{render::ui_pass::TransparentUI, WindowSize};
+use kayak_core::styles::Corner;
 
 pub struct UnifiedPipeline {
     view_layout: BindGroupLayout,

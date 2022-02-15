@@ -1,10 +1,10 @@
+mod corner;
 mod edge;
 mod option_ref;
-mod corner;
 
-pub use morphorm::{LayoutType, PositionType, Units};
-pub use edge::Edge;
 pub use corner::Corner;
+pub use edge::Edge;
+pub use morphorm::{LayoutType, PositionType, Units};
 
 use crate::cursor::PointerEvents;
 use crate::{color::Color, render_command::RenderCommand, CursorIcon};
@@ -28,8 +28,8 @@ pub enum StyleProp<T: Default + Clone> {
 }
 
 impl<T> Default for StyleProp<T>
-    where
-        T: Default + Clone,
+where
+    T: Default + Clone,
 {
     fn default() -> Self {
         Self::Unset
@@ -37,8 +37,8 @@ impl<T> Default for StyleProp<T>
 }
 
 impl<T> StyleProp<T>
-    where
-        T: Default + Clone,
+where
+    T: Default + Clone,
 {
     pub fn resolve(&self) -> T {
         match self {

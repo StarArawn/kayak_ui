@@ -37,9 +37,9 @@ use kayak_font::{
     KayakFont,
 };
 
+use kayak_core::styles::Corner;
 use super::{Dpi, UNIFIED_SHADER_HANDLE};
 use crate::{render::ui_pass::TransparentUI, WindowSize};
-use kayak_core::styles::Corner;
 
 pub struct UnifiedPipeline {
     view_layout: BindGroupLayout,
@@ -52,12 +52,12 @@ pub struct UnifiedPipeline {
 }
 
 const QUAD_VERTEX_POSITIONS: &[Vec3] = &[
-    const_vec3!([0.0, 0.0, 0.0]),
-    const_vec3!([1.0, 1.0, 0.0]),
     const_vec3!([0.0, 1.0, 0.0]),
-    const_vec3!([0.0, 0.0, 0.0]),
     const_vec3!([1.0, 0.0, 0.0]),
+    const_vec3!([0.0, 0.0, 0.0]),
+    const_vec3!([0.0, 1.0, 0.0]),
     const_vec3!([1.0, 1.0, 0.0]),
+    const_vec3!([1.0, 0.0, 0.0]),
 ];
 
 impl FontRenderingPipeline for UnifiedPipeline {
@@ -412,27 +412,27 @@ pub fn prepare_quads(
 
         let bottom_left = Vec4::new(
             uv_min.x,
-            uv_max.y,
-            extracted_sprite.char_id as f32,
-            extracted_sprite.border_radius.top_left,
-        );
-        let top_left = Vec4::new(
-            uv_min.x,
             uv_min.y,
             extracted_sprite.char_id as f32,
             extracted_sprite.border_radius.bottom_left,
         );
-        let top_right = Vec4::new(
-            uv_max.x,
-            uv_min.y,
+        let top_left = Vec4::new(
+            uv_min.x,
+            uv_max.y,
             extracted_sprite.char_id as f32,
-            extracted_sprite.border_radius.bottom_right,
+            extracted_sprite.border_radius.top_left,
         );
-        let bottom_right = Vec4::new(
+        let top_right = Vec4::new(
             uv_max.x,
             uv_max.y,
             extracted_sprite.char_id as f32,
             extracted_sprite.border_radius.top_right,
+        );
+        let bottom_right = Vec4::new(
+            uv_max.x,
+            uv_min.y,
+            extracted_sprite.char_id as f32,
+            extracted_sprite.border_radius.bottom_right,
         );
 
         let uvs: [[f32; 4]; 6] = [

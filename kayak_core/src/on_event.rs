@@ -3,6 +3,10 @@ use std::fmt::{Debug, Formatter};
 use std::sync::{Arc, RwLock};
 
 /// A container for a function that handles events
+///
+/// This differs from a standard [`Handler`](crate::Handler) in that it's sent directly
+/// from the [`KayakContext`](crate::KayakContext) and gives the [`KayakContextRef`]
+/// as a parameter.
 #[derive(Clone)]
 pub struct OnEvent(
     Arc<RwLock<dyn FnMut(&mut KayakContextRef, &mut Event) + Send + Sync + 'static>>,

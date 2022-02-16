@@ -28,8 +28,8 @@ pub enum StyleProp<T: Default + Clone> {
 }
 
 impl<T> Default for StyleProp<T>
-where
-    T: Default + Clone,
+    where
+        T: Default + Clone,
 {
     fn default() -> Self {
         Self::Unset
@@ -37,8 +37,8 @@ where
 }
 
 impl<T> StyleProp<T>
-where
-    T: Default + Clone,
+    where
+        T: Default + Clone,
 {
     pub fn resolve(&self) -> T {
         match self {
@@ -159,13 +159,24 @@ define_styles! {
         pub max_width: StyleProp<Units>,
         pub min_height: StyleProp<Units>,
         pub min_width: StyleProp<Units>,
+        /// The positional offset from this widget's default position
+        ///
+        /// This property has lower precedence than its more specific counterparts
+        /// ([`top`](Self::top), [`right`](Self::right), [`bottom`](Self::bottom), and [`left`](Self::left)),
+        /// allowing it to be overridden.
+        ///
+        /// For widgets with a [`position_type`](Self::position_type) of [`PositionType`](PositionType::ParentDirected)
+        /// this acts like margin around the widget. For [`PositionType`](PositionType::SelfDirected) this
+        /// acts as the actual position from the parent.
+        pub offset: StyleProp<Edge<Units>>,
         /// The inner padding between the edges of this widget and its children
         ///
         /// This property has lower precedence than its more specific counterparts
-        /// (`padding_top`, `padding_right`, `padding_bottom`, and `padding_left`), allowing it
+        /// ([`padding_top`](Self::padding_top), [`padding_right`](Self::padding_right),
+        /// [`padding_bottom`](Self::padding_bottom), and [`padding_left`](Self::padding_left)), allowing it
         /// to be overridden.
         ///
-        /// A child with their own padding properties set to anything other than `Units::Auto` will
+        /// A child with their own padding properties set to anything other than [`Units::Auto`] will
         /// override the padding set by this widget.
         pub padding: StyleProp<Edge<Units>>,
         pub padding_bottom: StyleProp<Units>,
@@ -205,6 +216,7 @@ impl Style {
             max_width: StyleProp::Default,
             min_height: StyleProp::Default,
             min_width: StyleProp::Default,
+            offset: StyleProp::Default,
             padding: StyleProp::Default,
             padding_bottom: StyleProp::Default,
             padding_left: StyleProp::Default,

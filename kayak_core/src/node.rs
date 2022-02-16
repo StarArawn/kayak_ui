@@ -3,22 +3,28 @@ use crate::{
     Arena, Index,
 };
 
+/// A widget node used for building the layout tree
 #[derive(Debug, Clone, PartialEq)]
 pub struct Node {
+    /// The list of children directly under this node
     pub children: Vec<Index>,
+    /// The ID of this node's widget
     pub id: Index,
+    /// The fully resolved styles for this node
     pub resolved_styles: Style,
+    /// The raw styles for this node, before style resolution
     pub raw_styles: Option<Style>,
+    /// The z-index of this node, used for controlling layering
     pub z: f32,
 }
 
-impl Node {}
-
+/// A struct used for building a [`Node`]
 pub struct NodeBuilder {
     node: Node,
 }
 
 impl NodeBuilder {
+    /// Defines a basic node without children, styles, etc.
     pub fn empty() -> Self {
         Self {
             node: Node {
@@ -31,6 +37,7 @@ impl NodeBuilder {
         }
     }
 
+    /// Defines a node with the given id and styles
     pub fn new(id: Index, styles: Style) -> Self {
         Self {
             node: Node {
@@ -43,22 +50,26 @@ impl NodeBuilder {
         }
     }
 
+    /// Sets the ID of the node being built
     pub fn with_id(mut self, id: Index) -> Self {
         self.node.id = id;
         self
     }
 
+    /// Sets the children of the node being built
     pub fn with_children(mut self, children: Vec<Index>) -> Self {
         self.node.children.extend(children);
         self
     }
 
+    /// Sets the resolved and raw styles, respectively, of the node being built
     pub fn with_styles(mut self, resolved_styles: Style, raw_styles: Option<Style>) -> Self {
         self.node.resolved_styles = resolved_styles;
         self.node.raw_styles = raw_styles;
         self
     }
 
+    /// Completes and builds the actual [`Node`]
     pub fn build(self) -> Node {
         self.node
     }

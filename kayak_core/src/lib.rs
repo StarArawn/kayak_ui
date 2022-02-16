@@ -52,6 +52,21 @@ pub use widget::{BaseWidget, Widget, WidgetProps};
 /// Type alias for dynamic widget objects. We use [BaseWidget] so that we can be object-safe
 type BoxedWidget = Box<dyn BaseWidget>;
 
+/// A simple handler object used for passing callbacks as props
+///
+/// # Examples
+///
+/// ```
+/// # use kayak_core::Handler;
+///
+/// // Create a handler we can pass around
+/// let on_select = Handler::new(|selected_index: usize| {
+///   println!("Selected: {}", selected_index);
+/// });
+///
+/// // Calling the handler can simply be done like
+/// on_select.call(123);
+/// ```
 #[derive(Clone)]
 pub struct Handler<T = ()>(pub Arc<RwLock<dyn FnMut(T) + Send + Sync + 'static>>);
 
@@ -62,10 +77,17 @@ impl<T> Default for Handler<T> {
 }
 
 impl<T> Handler<T> {
+    /// Create a new handler callback
     pub fn new<F: FnMut(T) + Send + Sync + 'static>(f: F) -> Handler<T> {
         Handler(Arc::new(RwLock::new(f)))
     }
 
+    /// Call the handler
+    ///
+    /// # Panics
+    ///
+    /// Since the handler internally uses a `RwLock`, it can panic if the lock for the callback
+    /// is already held by the current thread.
     pub fn call(&self, data: T) {
         if let Ok(mut handler) = self.0.write() {
             handler(data);

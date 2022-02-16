@@ -2,7 +2,7 @@ use kayak_ui::{
     core::{
         render_command::RenderCommand,
         rsx,
-        styles::{LayoutType, Style, StyleProp, Units},
+        styles::{Edge, LayoutType, Style, StyleProp, Units},
         use_state, widget, Bound, EventType, OnEvent, WidgetProps,
     },
     widgets::{Background, Text},
@@ -86,10 +86,7 @@ pub fn Tab(props: TabProps) {
         } else {
             StyleProp::Value(tab_color)
         },
-        padding_left: StyleProp::Value(border_width),
-        padding_right: StyleProp::Value(border_width),
-        padding_top: StyleProp::Value(border_width),
-        padding_bottom: StyleProp::Value(border_width),
+        padding: StyleProp::Value(Edge::all(border_width)),
         layout_type: StyleProp::Value(LayoutType::Row),
         ..Default::default()
     };

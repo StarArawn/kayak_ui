@@ -5,9 +5,8 @@ use bevy::{
 };
 use kayak_ui::bevy::{BevyContext, BevyKayakUIPlugin, FontMapping, ImageManager, UICameraBundle};
 use kayak_ui::core::{
-    layout_cache::Space,
     render,
-    styles::{Style, StyleProp, Units},
+    styles::{Edge, Style, StyleProp, Units},
     Index,
 };
 use kayak_ui::widgets::{App, Clip, NinePatch, Text};
@@ -29,14 +28,8 @@ fn startup(
         let nine_patch_styles = Style {
             width: StyleProp::Value(Units::Pixels(512.0)),
             height: StyleProp::Value(Units::Pixels(512.0)),
-            left: StyleProp::Value(Units::Stretch(1.0)),
-            right: StyleProp::Value(Units::Stretch(1.0)),
-            top: StyleProp::Value(Units::Stretch(1.0)),
-            bottom: StyleProp::Value(Units::Stretch(1.0)),
-            padding_left: StyleProp::Value(Units::Pixels(25.0)),
-            padding_right: StyleProp::Value(Units::Pixels(25.0)),
-            padding_top: StyleProp::Value(Units::Pixels(25.0)),
-            padding_bottom: StyleProp::Value(Units::Pixels(25.0)),
+            offset: StyleProp::Value(Edge::all(Units::Stretch(1.0))),
+            padding: StyleProp::Value(Edge::all(Units::Pixels(25.0))),
             ..Style::default()
         };
 
@@ -58,12 +51,7 @@ Vestibulum rutrum imperdiet nisl, et consequat massa porttitor vel. Ut velit jus
             <App>
                 <NinePatch
                     styles={Some(nine_patch_styles)}
-                    border={Space {
-                        left: 30.0,
-                        right: 30.0,
-                        top: 30.0,
-                        bottom: 30.0,
-                    }}
+                    border={Edge::all(30.0)}
                     handle={panel_brown_handle}
                 >
                     <Clip styles={Some(clip_styles)}>

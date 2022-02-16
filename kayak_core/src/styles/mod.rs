@@ -1,7 +1,14 @@
+mod corner;
+mod edge;
+mod option_ref;
+
+pub use corner::Corner;
+pub use edge::Edge;
 pub use morphorm::{LayoutType, PositionType, Units};
 
 use crate::cursor::PointerEvents;
 use crate::{color::Color, render_command::RenderCommand, CursorIcon};
+use option_ref::AsRefOption;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum StyleProp<T: Default + Clone> {
@@ -138,22 +145,40 @@ define_styles! {
     pub struct Style {
         pub background_color : StyleProp<Color>,
         pub border_color: StyleProp<Color>,
-        pub border_radius: StyleProp<(f32, f32, f32, f32)>,
-        pub border: StyleProp<(f32, f32, f32, f32)>,
+        pub border_radius: StyleProp<Corner<f32>>,
+        pub border: StyleProp<Edge<f32>>,
         pub bottom: StyleProp<Units>,
         pub color: StyleProp<Color>,
+        /// The spacing between child widgets along the horizontal axis
+        pub col_between: StyleProp<Units>,
         pub cursor: StyleProp<CursorIcon>,
         pub height: StyleProp<Units>,
         pub layout_type: StyleProp<LayoutType>,
         pub left: StyleProp<Units>,
-        pub margin_bottom: StyleProp<Units>,
-        pub margin_left: StyleProp<Units>,
-        pub margin_right: StyleProp<Units>,
-        pub margin_top: StyleProp<Units>,
         pub max_height: StyleProp<Units>,
         pub max_width: StyleProp<Units>,
         pub min_height: StyleProp<Units>,
         pub min_width: StyleProp<Units>,
+        /// The positional offset from this widget's default position
+        ///
+        /// This property has lower precedence than its more specific counterparts
+        /// ([`top`](Self::top), [`right`](Self::right), [`bottom`](Self::bottom), and [`left`](Self::left)),
+        /// allowing it to be overridden.
+        ///
+        /// For widgets with a [`position_type`](Self::position_type) of [`PositionType`](PositionType::ParentDirected)
+        /// this acts like margin around the widget. For [`PositionType`](PositionType::SelfDirected) this
+        /// acts as the actual position from the parent.
+        pub offset: StyleProp<Edge<Units>>,
+        /// The inner padding between the edges of this widget and its children
+        ///
+        /// This property has lower precedence than its more specific counterparts
+        /// ([`padding_top`](Self::padding_top), [`padding_right`](Self::padding_right),
+        /// [`padding_bottom`](Self::padding_bottom), and [`padding_left`](Self::padding_left)), allowing it
+        /// to be overridden.
+        ///
+        /// A child with their own padding properties set to anything other than [`Units::Auto`] will
+        /// override the padding set by this widget.
+        pub padding: StyleProp<Edge<Units>>,
         pub padding_bottom: StyleProp<Units>,
         pub padding_left: StyleProp<Units>,
         pub padding_right: StyleProp<Units>,
@@ -162,6 +187,8 @@ define_styles! {
         pub position_type: StyleProp<PositionType>,
         pub render_command: StyleProp<RenderCommand>,
         pub right: StyleProp<Units>,
+        /// The spacing between child widgets along the vertical axis
+        pub row_between: StyleProp<Units>,
         pub top: StyleProp<Units>,
         pub width: StyleProp<Units>,
     }
@@ -181,17 +208,16 @@ impl Style {
             bottom: StyleProp::Default,
             color: StyleProp::Inherit,
             cursor: StyleProp::Inherit,
+            col_between: StyleProp::Default,
             height: StyleProp::Default,
             layout_type: StyleProp::Default,
             left: StyleProp::Default,
-            margin_bottom: StyleProp::Default,
-            margin_left: StyleProp::Default,
-            margin_right: StyleProp::Default,
-            margin_top: StyleProp::Default,
             max_height: StyleProp::Default,
             max_width: StyleProp::Default,
             min_height: StyleProp::Default,
             min_width: StyleProp::Default,
+            offset: StyleProp::Default,
+            padding: StyleProp::Default,
             padding_bottom: StyleProp::Default,
             padding_left: StyleProp::Default,
             padding_right: StyleProp::Default,
@@ -200,37 +226,9 @@ impl Style {
             position_type: StyleProp::Default,
             render_command: StyleProp::Value(RenderCommand::Empty),
             right: StyleProp::Default,
+            row_between: StyleProp::Default,
             top: StyleProp::Default,
             width: StyleProp::Default,
         }
-    }
-}
-
-/// A trait used to allow reading a value as an `Option<&T>`
-pub trait AsRefOption<T> {
-    fn as_ref_option(&self) -> Option<&T>;
-}
-
-impl AsRefOption<Style> for Style {
-    fn as_ref_option(&self) -> Option<&Style> {
-        Some(&self)
-    }
-}
-
-impl AsRefOption<Style> for &Style {
-    fn as_ref_option(&self) -> Option<&Style> {
-        Some(self)
-    }
-}
-
-impl AsRefOption<Style> for Option<Style> {
-    fn as_ref_option(&self) -> Option<&Style> {
-        self.as_ref()
-    }
-}
-
-impl AsRefOption<Style> for &Option<Style> {
-    fn as_ref_option(&self) -> Option<&Style> {
-        self.as_ref()
     }
 }

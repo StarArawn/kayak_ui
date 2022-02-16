@@ -1,4 +1,4 @@
-use crate::layout_cache::Space;
+use crate::styles::Edge;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum RenderCommand {
@@ -18,7 +18,7 @@ pub enum RenderCommand {
         handle: u16,
     },
     NinePatch {
-        border: Space,
+        border: Edge<f32>,
         handle: u16,
     },
 }

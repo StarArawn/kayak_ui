@@ -1,8 +1,8 @@
 use crate::{
     color::Color,
-    layout_cache::{Rect, Space},
+    layout_cache::Rect,
     render_command::RenderCommand,
-    styles::{Style, StyleProp},
+    styles::{Corner, Edge, Style, StyleProp},
 };
 
 #[derive(Debug, Clone, PartialEq)]
@@ -15,8 +15,8 @@ pub enum RenderPrimitive {
         layout: Rect,
         background_color: Color,
         border_color: Color,
-        border: (f32, f32, f32, f32),
-        border_radius: (f32, f32, f32, f32),
+        border: Edge<f32>,
+        border_radius: Corner<f32>,
     },
     Text {
         color: Color,
@@ -28,12 +28,12 @@ pub enum RenderPrimitive {
         size: f32,
     },
     Image {
-        border_radius: (f32, f32, f32, f32),
+        border_radius: Corner<f32>,
         layout: Rect,
         handle: u16,
     },
     NinePatch {
-        border: Space,
+        border: Edge<f32>,
         layout: Rect,
         handle: u16,
     },

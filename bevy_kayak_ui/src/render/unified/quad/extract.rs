@@ -25,12 +25,7 @@ pub fn extract_quads(render_primitive: &RenderPrimitive, dpi: f32) -> Vec<Extrac
         _ => panic!(""),
     };
 
-    border = (
-        border.0 * dpi,
-        border.1 * dpi,
-        border.2 * dpi,
-        border.3 * dpi,
-    );
+    border *= dpi;
 
     vec![
         // Border
@@ -59,10 +54,10 @@ pub fn extract_quads(render_primitive: &RenderPrimitive, dpi: f32) -> Vec<Extrac
         ExtractQuadBundle {
             extracted_quad: ExtractedQuad {
                 rect: Rect {
-                    min: Vec2::new(layout.posx + border.3, layout.posy + border.0),
+                    min: Vec2::new(layout.posx + border.left, layout.posy + border.top),
                     max: Vec2::new(
-                        (layout.posx + (layout.width * dpi)) - border.1,
-                        (layout.posy + (layout.height * dpi)) - border.2,
+                        (layout.posx + (layout.width * dpi)) - border.right,
+                        (layout.posy + (layout.height * dpi)) - border.bottom,
                     ),
                 },
                 color: to_bevy_color(&background_color),

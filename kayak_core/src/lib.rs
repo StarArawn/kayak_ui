@@ -27,6 +27,7 @@ mod vec;
 pub mod widget;
 pub mod widget_manager;
 
+use std::any::Any;
 use std::sync::{Arc, RwLock};
 
 pub use binding::*;
@@ -95,9 +96,11 @@ impl<T> Handler<T> {
     }
 }
 
+/// Compares only the _types_ of the handler
+/// (i.e. a handler of a given type will always equal a handler of the same type)
 impl<T> PartialEq for Handler<T> {
-    fn eq(&self, _other: &Self) -> bool {
-        true
+    fn eq(&self, other: &Self) -> bool {
+        self.type_id() == other.type_id()
     }
 }
 

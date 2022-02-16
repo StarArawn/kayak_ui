@@ -86,8 +86,8 @@ pub enum EventType {
 impl Eq for EventType {}
 
 impl PartialEq for EventType {
-    fn eq(&self, _other: &Self) -> bool {
-        matches!(self, _other)
+    fn eq(&self, other: &Self) -> bool {
+        std::mem::discriminant(self) == std::mem::discriminant(other)
     }
 }
 

@@ -284,7 +284,7 @@ impl<'a> KayakContextRef<'a> {
     /// |---------------|------------------------------------------|
     /// | `Some(true)`  | The widget is focusable                  |
     /// | `Some(false)` | The widget is not focusable              |
-    /// | `None`        | The widget can be focused or not focused |
+    /// | `None`        | The widget's focusability is unspecified |
     ///
     pub fn get_focusable(&self, id: Index) -> Option<bool> {
         self.context.get_focusable(id)
@@ -298,7 +298,7 @@ impl<'a> KayakContextRef<'a> {
     /// |---------------|------------------------------------------|
     /// | `Some(true)`  | The widget is focusable                  |
     /// | `Some(false)` | The widget is not focusable              |
-    /// | `None`        | The widget can be focused or not focused |
+    /// | `None`        | The widget's focusability is unspecified |
     ///
     pub fn set_focusable(&mut self, focusable: Option<bool>) {
         if let Some(id) = self.current_id {

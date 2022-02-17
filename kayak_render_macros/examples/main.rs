@@ -15,8 +15,8 @@ struct TestProps {
     on_event: Option<kayak_core::OnEvent>,
 }
 
-/// A test widget
 #[widget]
+/// A test widget
 fn Test(props: TestProps) {
     let _ = use_state!(props.foo);
     let children = props.get_children();

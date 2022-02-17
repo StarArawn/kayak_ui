@@ -28,12 +28,14 @@ pub fn create_function_widget(f: syn::ItemFn, _widget_arguments: WidgetArguments
         return TokenStream::new();
     };
 
+    let attrs = f.attrs;
     let block = f.block;
     let vis = f.vis;
 
     let kayak_core = get_core_crate();
 
     TokenStream::from(quote! {
+        #(#attrs)*
         #[derive(Default, Debug, PartialEq, Clone)]
         #vis struct #struct_name #impl_generics {
             pub id: #kayak_core::Index,

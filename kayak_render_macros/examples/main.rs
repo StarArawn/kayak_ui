@@ -5,6 +5,7 @@ use kayak_render_macros::{rsx, use_state, widget, WidgetProps};
 #[derive(WidgetProps, Clone, Default, Debug, PartialEq)]
 #[allow(dead_code)]
 struct TestProps {
+    /// A test prop
     foo: u32,
     #[prop_field(Styles)]
     styles: Option<Style>,
@@ -14,6 +15,7 @@ struct TestProps {
     on_event: Option<kayak_core::OnEvent>,
 }
 
+/// A test widget
 #[widget]
 fn Test(props: TestProps) {
     let _ = use_state!(props.foo);

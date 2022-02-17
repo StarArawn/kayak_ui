@@ -25,6 +25,8 @@ use widget::ConstructedWidget;
 use crate::widget::Widget;
 use crate::widget_props::impl_widget_props;
 
+/// A top level macro that works the same as [`rsx`] but provides some additional
+/// context for building the root widget.
 #[proc_macro]
 #[proc_macro_error]
 pub fn render(input: TokenStream) -> TokenStream {
@@ -43,7 +45,8 @@ pub fn render(input: TokenStream) -> TokenStream {
     TokenStream::from(result)
 }
 
-/// Generate a renderable widget tree, before rendering it
+/// A proc macro that turns RSX syntax into structure constructors and calls the
+/// context to create the widgets.
 #[proc_macro]
 #[proc_macro_error]
 pub fn rsx(input: TokenStream) -> TokenStream {
@@ -52,6 +55,7 @@ pub fn rsx(input: TokenStream) -> TokenStream {
     TokenStream::from(result)
 }
 
+/// A proc macro that turns RSX syntax into structure constructors only.
 #[proc_macro]
 #[proc_macro_error]
 pub fn constructor(input: TokenStream) -> TokenStream {
@@ -61,6 +65,15 @@ pub fn constructor(input: TokenStream) -> TokenStream {
     TokenStream::from(result)
 }
 
+/// This attribute macro is what allows Rust functions to be generated into
+/// valid widgets structs.
+///
+/// # Examples
+///
+/// ```
+/// #[widget]
+/// fn MyWidget() { /* ... */ }
+/// ```
 #[proc_macro_attribute]
 #[proc_macro_error]
 pub fn widget(args: TokenStream, item: TokenStream) -> TokenStream {
@@ -75,6 +88,7 @@ pub fn widget(args: TokenStream, item: TokenStream) -> TokenStream {
     function_component::create_function_widget(f, widget_args)
 }
 
+/// A derive macro for the `WidgetProps` trait
 #[proc_macro_derive(WidgetProps, attributes(prop_field))]
 #[proc_macro_error]
 pub fn derive_widget_props(item: TokenStream) -> TokenStream {
@@ -222,6 +236,21 @@ pub fn use_effect(input: TokenStream) -> TokenStream {
     effect.build()
 }
 
+/// Helper method for getting the core crate
+///
+/// Depending on the usage of the macro, this will become `crate`, `kayak_core`,
+/// or `kayak_ui::core`.
+///
+/// # Examples
+///
+/// ```
+/// fn my_macro() -> proc_macro2::TokenStream {
+///   let kayak_core = get_core_crate();
+///   quote! {
+///     let foo = #kayak_core::Foo;
+///   }
+/// }
+/// ```
 fn get_core_crate() -> proc_macro2::TokenStream {
     let found_crate = proc_macro_crate::crate_name("kayak_core");
     if let Ok(found_crate) = found_crate {

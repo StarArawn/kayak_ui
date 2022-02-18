@@ -126,10 +126,7 @@ impl KayakContext {
     ) {
         if self.global_bindings.contains_key(&widget_id) {
             let global_binding_ids = self.global_bindings.get_mut(&widget_id).unwrap();
-            if let Some(index) = global_binding_ids
-                .iter()
-                .position(|id| *id == binding.id)
-            {
+            if let Some(index) = global_binding_ids.iter().position(|id| *id == binding.id) {
                 global_binding_ids.remove(index);
 
                 Self::remove_state_lifetime(

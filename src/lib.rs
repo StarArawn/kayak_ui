@@ -1,5 +1,3 @@
-#![feature(doc_auto_cfg)]
-
 /// The core of Kayak UI, containing all required code
 pub mod core {
     pub use kayak_core::*;

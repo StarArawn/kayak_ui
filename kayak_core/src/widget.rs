@@ -15,8 +15,8 @@ pub trait SealedWidget {}
 /// all implementors of [`Widget`].
 pub trait BaseWidget: SealedWidget + std::fmt::Debug + Send + Sync {
     fn constructor<P: WidgetProps>(props: P) -> Self
-        where
-            Self: Sized;
+    where
+        Self: Sized;
     fn get_id(&self) -> Index;
     fn set_id(&mut self, id: Index);
     fn get_props(&self) -> &dyn WidgetProps;
@@ -33,8 +33,8 @@ pub trait Widget: std::fmt::Debug + Clone + Default + PartialEq + AsAny + Send +
 
     /// Construct the widget with the given props
     fn constructor(props: Self::Props) -> Self
-        where
-            Self: Sized;
+    where
+        Self: Sized;
 
     /// Get this widget's ID
     fn get_id(&self) -> Index;
@@ -101,12 +101,12 @@ pub trait WidgetProps: std::fmt::Debug + AsAny + Send + Sync {
 
 /// Automatically implements the `BaseWidget` trait for all implementors of [`Widget`]
 impl<T> BaseWidget for T
-    where
-        T: Widget + Clone + PartialEq + Default,
+where
+    T: Widget + Clone + PartialEq + Default,
 {
     fn constructor<P: WidgetProps>(props: P) -> Self
-        where
-            Self: Sized,
+    where
+        Self: Sized,
     {
         let props: Box<dyn Any> = Box::new(props);
         Widget::constructor(*props.downcast::<<T as Widget>::Props>().unwrap())

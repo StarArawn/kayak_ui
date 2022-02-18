@@ -15,7 +15,6 @@ pub struct KayakContextRef<'a> {
 }
 
 impl<'a> KayakContextRef<'a> {
-
     /// Creates a new `KayakContextRef`
     ///
     /// # Arguments
@@ -51,7 +50,6 @@ impl<'a> KayakContextRef<'a> {
         self.context
             .bind(self.current_id.unwrap_or_default(), binding);
     }
-
 
     /// Unbinds the current widget from a `Binding<T>` value
     ///
@@ -329,8 +327,8 @@ impl<'a> KayakContextRef<'a> {
     /// ```
     #[cfg(feature = "bevy_renderer")]
     pub fn query_world<T: bevy::ecs::system::SystemParam, F, R>(&mut self, f: F) -> R
-        where
-            F: FnMut(<T::Fetch as bevy::ecs::system::SystemParamFetch<'_, '_>>::Item) -> R,
+    where
+        F: FnMut(<T::Fetch as bevy::ecs::system::SystemParamFetch<'_, '_>>::Item) -> R,
     {
         self.context.query_world::<T, F, R>(f)
     }

@@ -1,8 +1,7 @@
 use crate::core::{
-    layout_cache::Space,
     render_command::RenderCommand,
     rsx,
-    styles::{Style, StyleProp},
+    styles::{Edge, Style, StyleProp},
     widget, Children, OnEvent, WidgetProps,
 };
 
@@ -12,8 +11,7 @@ pub struct NinePatchProps {
     /// The handle to image
     pub handle: u16,
     /// The size of each edge (in pixels)
-    // TODO: Convert to Edge<f32>
-    pub border: Space,
+    pub border: Edge<f32>,
     #[prop_field(Styles)]
     pub styles: Option<Style>,
     #[prop_field(Children)]

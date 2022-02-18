@@ -186,7 +186,11 @@ impl<'a> morphorm::Node<'a> for Index {
         if let Some(node) = store.get(*self) {
             if let Some(node) = node {
                 return match node.resolved_styles.left {
-                    StyleProp::Default => Some(morphorm::Units::Auto),
+                    StyleProp::Default => match node.resolved_styles.offset {
+                        StyleProp::Default => Some(morphorm::Units::Auto),
+                        StyleProp::Value(prop) => Some(prop.left),
+                        _ => Some(morphorm::Units::Auto),
+                    },
                     StyleProp::Value(prop) => Some(prop),
                     _ => Some(morphorm::Units::Auto),
                 };
@@ -199,7 +203,11 @@ impl<'a> morphorm::Node<'a> for Index {
         if let Some(node) = store.get(*self) {
             if let Some(node) = node {
                 return match node.resolved_styles.right {
-                    StyleProp::Default => Some(morphorm::Units::Auto),
+                    StyleProp::Default => match node.resolved_styles.offset {
+                        StyleProp::Default => Some(morphorm::Units::Auto),
+                        StyleProp::Value(prop) => Some(prop.right),
+                        _ => Some(morphorm::Units::Auto),
+                    },
                     StyleProp::Value(prop) => Some(prop),
                     _ => Some(morphorm::Units::Auto),
                 };
@@ -212,7 +220,11 @@ impl<'a> morphorm::Node<'a> for Index {
         if let Some(node) = store.get(*self) {
             if let Some(node) = node {
                 return match node.resolved_styles.top {
-                    StyleProp::Default => Some(morphorm::Units::Auto),
+                    StyleProp::Default => match node.resolved_styles.offset {
+                        StyleProp::Default => Some(morphorm::Units::Auto),
+                        StyleProp::Value(prop) => Some(prop.top),
+                        _ => Some(morphorm::Units::Auto),
+                    },
                     StyleProp::Value(prop) => Some(prop),
                     _ => Some(morphorm::Units::Auto),
                 };
@@ -225,7 +237,11 @@ impl<'a> morphorm::Node<'a> for Index {
         if let Some(node) = store.get(*self) {
             if let Some(node) = node {
                 return match node.resolved_styles.bottom {
-                    StyleProp::Default => Some(morphorm::Units::Auto),
+                    StyleProp::Default => match node.resolved_styles.offset {
+                        StyleProp::Default => Some(morphorm::Units::Auto),
+                        StyleProp::Value(prop) => Some(prop.bottom),
+                        _ => Some(morphorm::Units::Auto),
+                    },
                     StyleProp::Value(prop) => Some(prop),
                     _ => Some(morphorm::Units::Auto),
                 };
@@ -270,7 +286,11 @@ impl<'a> morphorm::Node<'a> for Index {
         if let Some(node) = store.get(*self) {
             if let Some(node) = node {
                 return match node.resolved_styles.padding_left {
-                    StyleProp::Default => Some(morphorm::Units::Auto),
+                    StyleProp::Default => match node.resolved_styles.padding {
+                        StyleProp::Default => Some(morphorm::Units::Auto),
+                        StyleProp::Value(prop) => Some(prop.left),
+                        _ => Some(morphorm::Units::Auto),
+                    },
                     StyleProp::Value(prop) => Some(prop),
                     _ => Some(morphorm::Units::Auto),
                 };
@@ -283,7 +303,11 @@ impl<'a> morphorm::Node<'a> for Index {
         if let Some(node) = store.get(*self) {
             if let Some(node) = node {
                 return match node.resolved_styles.padding_right {
-                    StyleProp::Default => Some(morphorm::Units::Auto),
+                    StyleProp::Default => match node.resolved_styles.padding {
+                        StyleProp::Default => Some(morphorm::Units::Auto),
+                        StyleProp::Value(prop) => Some(prop.right),
+                        _ => Some(morphorm::Units::Auto),
+                    },
                     StyleProp::Value(prop) => Some(prop),
                     _ => Some(morphorm::Units::Auto),
                 };
@@ -296,7 +320,11 @@ impl<'a> morphorm::Node<'a> for Index {
         if let Some(node) = store.get(*self) {
             if let Some(node) = node {
                 return match node.resolved_styles.padding_top {
-                    StyleProp::Default => Some(morphorm::Units::Auto),
+                    StyleProp::Default => match node.resolved_styles.padding {
+                        StyleProp::Default => Some(morphorm::Units::Auto),
+                        StyleProp::Value(prop) => Some(prop.top),
+                        _ => Some(morphorm::Units::Auto),
+                    },
                     StyleProp::Value(prop) => Some(prop),
                     _ => Some(morphorm::Units::Auto),
                 };
@@ -309,7 +337,11 @@ impl<'a> morphorm::Node<'a> for Index {
         if let Some(node) = store.get(*self) {
             if let Some(node) = node {
                 return match node.resolved_styles.padding_bottom {
-                    StyleProp::Default => Some(morphorm::Units::Auto),
+                    StyleProp::Default => match node.resolved_styles.padding {
+                        StyleProp::Default => Some(morphorm::Units::Auto),
+                        StyleProp::Value(prop) => Some(prop.bottom),
+                        _ => Some(morphorm::Units::Auto),
+                    },
                     StyleProp::Value(prop) => Some(prop),
                     _ => Some(morphorm::Units::Auto),
                 };
@@ -318,11 +350,29 @@ impl<'a> morphorm::Node<'a> for Index {
         return Some(morphorm::Units::Auto);
     }
 
-    fn row_between(&self, _store: &'_ Self::Data) -> Option<morphorm::Units> {
+    fn row_between(&self, store: &'_ Self::Data) -> Option<morphorm::Units> {
+        if let Some(node) = store.get(*self) {
+            if let Some(node) = node {
+                return match node.resolved_styles.row_between {
+                    StyleProp::Default => Some(morphorm::Units::Auto),
+                    StyleProp::Value(prop) => Some(prop),
+                    _ => Some(morphorm::Units::Auto),
+                };
+            }
+        }
         Some(morphorm::Units::Auto)
     }
 
-    fn col_between(&self, _store: &'_ Self::Data) -> Option<morphorm::Units> {
+    fn col_between(&self, store: &'_ Self::Data) -> Option<morphorm::Units> {
+        if let Some(node) = store.get(*self) {
+            if let Some(node) = node {
+                return match node.resolved_styles.col_between {
+                    StyleProp::Default => Some(morphorm::Units::Auto),
+                    StyleProp::Value(prop) => Some(prop),
+                    _ => Some(morphorm::Units::Auto),
+                };
+            }
+        }
         Some(morphorm::Units::Auto)
     }
 
@@ -355,7 +405,7 @@ impl<'a> morphorm::Node<'a> for Index {
             if let Some(node) = node {
                 return match node.resolved_styles.border {
                     StyleProp::Default => Some(morphorm::Units::Auto),
-                    StyleProp::Value(prop) => Some(morphorm::Units::Pixels(prop.3)),
+                    StyleProp::Value(prop) => Some(morphorm::Units::Pixels(prop.left)),
                     _ => Some(morphorm::Units::Auto),
                 };
             }
@@ -368,7 +418,7 @@ impl<'a> morphorm::Node<'a> for Index {
             if let Some(node) = node {
                 return match node.resolved_styles.border {
                     StyleProp::Default => Some(morphorm::Units::Auto),
-                    StyleProp::Value(prop) => Some(morphorm::Units::Pixels(prop.1)),
+                    StyleProp::Value(prop) => Some(morphorm::Units::Pixels(prop.right)),
                     _ => Some(morphorm::Units::Auto),
                 };
             }
@@ -381,7 +431,7 @@ impl<'a> morphorm::Node<'a> for Index {
             if let Some(node) = node {
                 return match node.resolved_styles.border {
                     StyleProp::Default => Some(morphorm::Units::Auto),
-                    StyleProp::Value(prop) => Some(morphorm::Units::Pixels(prop.0)),
+                    StyleProp::Value(prop) => Some(morphorm::Units::Pixels(prop.top)),
                     _ => Some(morphorm::Units::Auto),
                 };
             }
@@ -394,7 +444,7 @@ impl<'a> morphorm::Node<'a> for Index {
             if let Some(node) = node {
                 return match node.resolved_styles.border {
                     StyleProp::Default => Some(morphorm::Units::Auto),
-                    StyleProp::Value(prop) => Some(morphorm::Units::Pixels(prop.2)),
+                    StyleProp::Value(prop) => Some(morphorm::Units::Pixels(prop.bottom)),
                     _ => Some(morphorm::Units::Auto),
                 };
             }

@@ -1,9 +1,16 @@
 //! Contains code related to the styling of widgets
 
+mod corner;
+mod edge;
+mod option_ref;
+
+pub use corner::Corner;
+pub use edge::Edge;
 pub use morphorm::{LayoutType, PositionType, Units};
 
 use crate::cursor::PointerEvents;
 use crate::{color::Color, render_command::RenderCommand, CursorIcon};
+use option_ref::AsRefOption;
 
 /// The base container of all style properties
 ///
@@ -201,13 +208,13 @@ define_styles! {
         /// The order is (Top, Right, Bottom, Left).
         ///
         /// Only applies to widgets marked [`RenderCommand::Quad`] and [`RenderCommand::Image`]
-        pub border_radius: StyleProp<(f32, f32, f32, f32)>,
+        pub border_radius: StyleProp<Corner<f32>>,
         /// The widths of the borders (in pixels)
         ///
         /// The order is (Top, Right, Bottom, Left).
         ///
         /// Only applies to widgets marked [`RenderCommand::Quad`]
-        pub border: StyleProp<(f32, f32, f32, f32)>,
+        pub border: StyleProp<Edge<f32>>,
         /// The distance between the bottom edge of this widget and the bottom edge of its containing widget
         pub bottom: StyleProp<Units>,
         /// The text color for this widget
@@ -217,6 +224,8 @@ define_styles! {
         ///
         /// Only applies to widgets marked [`RenderCommand::Text`]
         pub color: StyleProp<Color>,
+        /// The spacing between child widgets along the horizontal axis
+        pub col_between: StyleProp<Units>,
         /// The cursor icon to display when hovering this widget
         pub cursor: StyleProp<CursorIcon>,
         /// The height of this widget
@@ -225,15 +234,6 @@ define_styles! {
         pub layout_type: StyleProp<LayoutType>,
         /// The distance between the left edge of this widget and the left edge of its containing widget
         pub left: StyleProp<Units>,
-        // TODO: Remove
-        pub margin_bottom: StyleProp<Units>,
-        // TODO: Remove
-        pub margin_left: StyleProp<Units>,
-        // TODO: Remove
-        pub margin_right: StyleProp<Units>,
-        // TODO: Remove
-        pub margin_top: StyleProp<Units>,
-        /// The maximum height of this widget
         pub max_height: StyleProp<Units>,
         /// The maximum width of this widget
         pub max_width: StyleProp<Units>,
@@ -241,6 +241,26 @@ define_styles! {
         pub min_height: StyleProp<Units>,
         /// The minimum width of this widget
         pub min_width: StyleProp<Units>,
+        /// The positional offset from this widget's default position
+        ///
+        /// This property has lower precedence than its more specific counterparts
+        /// ([`top`](Self::top), [`right`](Self::right), [`bottom`](Self::bottom), and [`left`](Self::left)),
+        /// allowing it to be overridden.
+        ///
+        /// For widgets with a [`position_type`](Self::position_type) of [`PositionType`](PositionType::ParentDirected)
+        /// this acts like margin around the widget. For [`PositionType`](PositionType::SelfDirected) this
+        /// acts as the actual position from the parent.
+        pub offset: StyleProp<Edge<Units>>,
+        /// The inner padding between the edges of this widget and its children
+        ///
+        /// This property has lower precedence than its more specific counterparts
+        /// ([`padding_top`](Self::padding_top), [`padding_right`](Self::padding_right),
+        /// [`padding_bottom`](Self::padding_bottom), and [`padding_left`](Self::padding_left)), allowing it
+        /// to be overridden.
+        ///
+        /// A child with their own padding properties set to anything other than [`Units::Auto`] will
+        /// override the padding set by this widget.
+        pub padding: StyleProp<Edge<Units>>,
         /// The inner padding between the bottom edge of this widget and its children
         ///
         /// A child with their own `bottom` property set to anything other than `Units::Auto` will
@@ -274,6 +294,8 @@ define_styles! {
         pub render_command: StyleProp<RenderCommand>,
         /// The distance between the right edge of this widget and the right edge of its containing widget
         pub right: StyleProp<Units>,
+        /// The spacing between child widgets along the vertical axis
+        pub row_between: StyleProp<Units>,
         /// The distance between the top edge of this widget and the top edge of its containing widget
         pub top: StyleProp<Units>,
         /// The width of this widget
@@ -295,17 +317,16 @@ impl Style {
             bottom: StyleProp::Default,
             color: StyleProp::Inherit,
             cursor: StyleProp::Inherit,
+            col_between: StyleProp::Default,
             height: StyleProp::Default,
             layout_type: StyleProp::Default,
             left: StyleProp::Default,
-            margin_bottom: StyleProp::Default,
-            margin_left: StyleProp::Default,
-            margin_right: StyleProp::Default,
-            margin_top: StyleProp::Default,
             max_height: StyleProp::Default,
             max_width: StyleProp::Default,
             min_height: StyleProp::Default,
             min_width: StyleProp::Default,
+            offset: StyleProp::Default,
+            padding: StyleProp::Default,
             padding_bottom: StyleProp::Default,
             padding_left: StyleProp::Default,
             padding_right: StyleProp::Default,
@@ -314,44 +335,16 @@ impl Style {
             position_type: StyleProp::Default,
             render_command: StyleProp::Value(RenderCommand::Empty),
             right: StyleProp::Default,
+            row_between: StyleProp::Default,
             top: StyleProp::Default,
             width: StyleProp::Default,
         }
     }
 }
 
-/// A trait used to allow reading a value as an `Option<&T>`
-pub trait AsRefOption<T> {
-    fn as_ref_option(&self) -> Option<&T>;
-}
-
-impl AsRefOption<Style> for Style {
-    fn as_ref_option(&self) -> Option<&Style> {
-        Some(&self)
-    }
-}
-
-impl AsRefOption<Style> for &Style {
-    fn as_ref_option(&self) -> Option<&Style> {
-        Some(self)
-    }
-}
-
-impl AsRefOption<Style> for Option<Style> {
-    fn as_ref_option(&self) -> Option<&Style> {
-        self.as_ref()
-    }
-}
-
-impl AsRefOption<Style> for &Option<Style> {
-    fn as_ref_option(&self) -> Option<&Style> {
-        self.as_ref()
-    }
-}
-
 #[cfg(test)]
 mod tests {
-    use super::{Style, StyleProp, Units};
+    use super::{Edge, Style, StyleProp, Units};
 
     #[test]
     fn styles_should_equal() {
@@ -366,7 +359,7 @@ mod tests {
 
     #[test]
     fn style_should_inherit_property() {
-        let border = (1.0, 2.0, 3.0, 4.0);
+        let border = Edge::new(1.0, 2.0, 3.0, 4.0);
 
         let parent = Style {
             border: StyleProp::Value(border),

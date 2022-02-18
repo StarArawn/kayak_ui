@@ -6,9 +6,13 @@ use crate::core::{
     widget, Children, OnEvent, WidgetProps,
 };
 
+/// Props used by the [`NinePatch`] widget
 #[derive(WidgetProps, Default, Debug, PartialEq, Clone)]
 pub struct NinePatchProps {
+    /// The handle to image
     pub handle: u16,
+    /// The size of each edge (in pixels)
+    // TODO: Convert to Edge<f32>
     pub border: Space,
     #[prop_field(Styles)]
     pub styles: Option<Style>,
@@ -21,6 +25,33 @@ pub struct NinePatchProps {
 }
 
 #[widget]
+/// A widget that renders a nine-patch image background
+///
+/// A nine-patch is a special type of image that's broken into nine parts:
+///
+/// * Edges - Top, Bottom, Left, Right
+/// * Corners - Top-Left, Top-Right, Bottom-Left, Bottom-Right
+/// * Center
+///
+/// Using these parts of an image, we can construct a scalable background and border
+/// all from a single image. This is done by:
+///
+/// * Stretching the edges (vertically for left/right and horizontally for top/bottom)
+/// * Preserving the corners
+/// * Scaling the center to fill the remaining space
+///
+///
+/// # Props
+///
+/// __Type:__ [`NinePatchProps`]
+///
+/// | Common Prop | Accepted |
+/// | :---------: | :------: |
+/// | `children`  | ✅        |
+/// | `styles`    | ✅        |
+/// | `on_event`  | ✅        |
+/// | `focusable` | ✅        |
+///
 pub fn NinePatch(props: NinePatchProps) {
     props.styles = Some(Style {
         render_command: StyleProp::Value(RenderCommand::NinePatch {

@@ -2,14 +2,31 @@ use crate::{
     context_ref::KayakContextRef, styles::Style, Children, Index, OnEvent, Widget, WidgetProps,
 };
 
+/// Props used by the [`VecTracker`] widget
 #[derive(Default, Debug, PartialEq, Clone)]
 pub struct VecTrackerProps<T> {
+    /// The data to display in sequence
+    ///
+    /// The type of [T] should be implement the [`Widget`] trait
     pub data: Vec<T>,
     pub styles: Option<Style>,
     pub children: Option<Children>,
     pub on_event: Option<OnEvent>,
 }
 
+/// A widget that renders a `Vec` of widgets
+///
+/// # Props
+///
+/// __Type:__ [`VecTrackerProps`]
+///
+/// | Common Prop | Accepted |
+/// | :---------: | :------: |
+/// | `children`  | ✅        |
+/// | `styles`    | ✅        |
+/// | `on_event`  | ✅        |
+/// | `focusable` | ❌        |
+///
 #[derive(Debug, PartialEq, Clone, Default)]
 pub struct VecTracker<T> {
     pub id: Index,

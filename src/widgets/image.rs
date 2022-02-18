@@ -5,6 +5,7 @@ use crate::core::{
     widget, Children, OnEvent, WidgetProps,
 };
 
+/// Props used by the [`Image`] widget
 #[derive(WidgetProps, Default, Debug, PartialEq, Clone)]
 pub struct ImageProps {
     pub handle: u16,
@@ -19,6 +20,19 @@ pub struct ImageProps {
 }
 
 #[widget]
+/// A widget that renders an image background
+///
+/// # Props
+///
+/// __Type:__ [`ImageProps`]
+///
+/// | Common Prop | Accepted |
+/// | :---------: | :------: |
+/// | `children`  | ✅        |
+/// | `styles`    | ✅        |
+/// | `on_event`  | ✅        |
+/// | `focusable` | ✅        |
+///
 pub fn Image(props: ImageProps) {
     props.styles = Some(Style {
         render_command: StyleProp::Value(RenderCommand::Image {

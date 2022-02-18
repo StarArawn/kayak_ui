@@ -7,6 +7,7 @@ use crate::core::{
 
 use crate::widgets::Clip;
 
+/// Props used by the [`App`] widget
 #[derive(WidgetProps, Default, Debug, PartialEq, Clone)]
 pub struct AppProps {
     #[prop_field(Styles)]
@@ -20,6 +21,23 @@ pub struct AppProps {
 }
 
 #[widget]
+/// The most common root widget
+///
+/// # Props
+///
+/// __Type:__ [`AppProps`]
+///
+/// | Common Prop | Accepted |
+/// | :---------: | :------: |
+/// | `children`  | ✅        |
+/// | `styles`    | ✅        |
+/// | `on_event`  | ✅        |
+/// | `focusable` | ✅        |
+///
+/// # Using the `bevy_renderer` feature
+///
+/// When the `bevy_renderer` feature is enabled, this widget will automatically bind to the window size
+/// of the Bevy app. This allows it to update on window resize in order to match the width and height of the window.
 pub fn App(props: AppProps) {
     #[cfg(feature = "bevy_renderer")]
     {

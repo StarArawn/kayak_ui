@@ -1,3 +1,5 @@
+#![feature(doc_auto_cfg)]
+
 pub mod core {
     pub use kayak_core::*;
     pub use kayak_render_macros::{

@@ -16,6 +16,7 @@ use crate::{
 use self::pipeline::ImageBindGroups;
 
 pub mod pipeline;
+mod text;
 
 pub const UNIFIED_SHADER_HANDLE: HandleUntyped =
     HandleUntyped::weak_from_u64(Shader::TYPE_UUID, 7604018236855288450);
@@ -27,6 +28,8 @@ impl Plugin for UnifiedRenderPlugin {
         let mut shaders = app.world.get_resource_mut::<Assets<Shader>>().unwrap();
         let unified_shader = Shader::from_wgsl(include_str!("shader.wgsl"));
         shaders.set_untracked(UNIFIED_SHADER_HANDLE, unified_shader);
+
+        app.add_plugin(text::TextRendererPlugin);
 
         let render_app = app.sub_app_mut(RenderApp);
         render_app

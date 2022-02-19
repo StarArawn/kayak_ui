@@ -17,7 +17,7 @@ mod font_mapping;
 
 use crate::BevyContext;
 
-use super::pipeline::UnifiedPipeline;
+use bevy_kayak_renderer::render::unified::pipeline::UnifiedPipeline;
 pub use extract::extract_texts;
 pub use font_mapping::*;
 

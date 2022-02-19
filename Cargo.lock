@@ -443,10 +443,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "bevy_kayak_renderer"
+version = "0.0.1"
+dependencies = [
+ "bevy",
+ "bytemuck",
+ "kayak_font",
+ "serde",
+ "serde_json",
+ "serde_path_to_error",
+]
+
+[[package]]
 name = "bevy_kayak_ui"
 version = "0.0.1"
 dependencies = [
  "bevy",
+ "bevy_kayak_renderer",
  "bytemuck",
  "kayak_core",
  "kayak_font",

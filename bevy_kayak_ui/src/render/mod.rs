@@ -1,93 +1,109 @@
+use crate::{BevyContext, FontMapping, ImageManager};
 use bevy::{
-    core_pipeline::node::MAIN_PASS_DRIVER,
-    prelude::{Commands, Plugin, Res},
-    render::{
-        camera::ActiveCameras,
-        render_graph::{EmptyNode, RenderGraph, SlotInfo, SlotType},
-        render_phase::{DrawFunctions, RenderPhase},
-        RenderApp, RenderStage,
-    },
+    math::Vec2,
+    prelude::{Assets, Commands, Plugin, Res},
+    render::{color::Color, texture::Image, RenderApp, RenderStage},
+    sprite::Rect,
+    window::Windows,
 };
-
-use crate::{
-    render::{
-        ui_pass::MainPassUINode, ui_pass_driver::UIPassDriverNode, unified::UnifiedRenderPlugin,
-    },
-    UICameraBundle,
+use bevy_kayak_renderer::{
+    render::unified::pipeline::{ExtractQuadBundle, ExtractedQuad, UIQuadType},
+    Corner,
 };
+use kayak_core::render_primitive::RenderPrimitive;
+use kayak_font::KayakFont;
 
-use self::ui_pass::TransparentUI;
+pub mod font;
+pub mod image;
+mod nine_patch;
+mod quad;
 
-mod ui_pass;
-mod ui_pass_driver;
-pub mod unified;
+pub struct BevyKayakUIExtractPlugin;
 
-pub mod node {
-    pub const UI_PASS_DEPENDENCIES: &str = "kayak_ui_pass_dependencies";
-    pub const UI_PASS_DRIVER: &str = "kayak_ui_pass_driver";
-}
-
-pub mod draw_ui_graph {
-    pub const NAME: &str = "kayak_draw_ui";
-    pub mod input {
-        pub const VIEW_ENTITY: &str = "kayak_view_entity";
-    }
-    pub mod node {
-        pub const MAIN_PASS: &str = "kayak_ui_pass";
-    }
-}
-
-pub struct BevyKayakUIRenderPlugin;
-
-impl Plugin for BevyKayakUIRenderPlugin {
+impl Plugin for BevyKayakUIExtractPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
+        app.add_plugin(font::TextRendererPlugin)
+            .add_plugin(image::ImageRendererPlugin);
+
         let render_app = app.sub_app_mut(RenderApp);
-        render_app
-            .init_resource::<DrawFunctions<TransparentUI>>()
-            .add_system_to_stage(RenderStage::Extract, extract_core_pipeline_camera_phases);
-        // .add_system_to_stage(RenderStage::PhaseSort, sort_phase_system::<TransparentUI>);
-
-        let pass_node_ui = MainPassUINode::new(&mut render_app.world);
-        let mut graph = render_app.world.get_resource_mut::<RenderGraph>().unwrap();
-
-        let mut draw_ui_graph = RenderGraph::default();
-        draw_ui_graph.add_node(draw_ui_graph::node::MAIN_PASS, pass_node_ui);
-        let input_node_id = draw_ui_graph.set_input(vec![SlotInfo::new(
-            draw_ui_graph::input::VIEW_ENTITY,
-            SlotType::Entity,
-        )]);
-        draw_ui_graph
-            .add_slot_edge(
-                input_node_id,
-                draw_ui_graph::input::VIEW_ENTITY,
-                draw_ui_graph::node::MAIN_PASS,
-                MainPassUINode::IN_VIEW,
-            )
-            .unwrap();
-        graph.add_sub_graph(draw_ui_graph::NAME, draw_ui_graph);
-
-        graph.add_node(node::UI_PASS_DEPENDENCIES, EmptyNode);
-        graph.add_node(node::UI_PASS_DRIVER, UIPassDriverNode);
-        graph
-            .add_node_edge(node::UI_PASS_DEPENDENCIES, node::UI_PASS_DRIVER)
-            .unwrap();
-        graph
-            .add_node_edge(MAIN_PASS_DRIVER, node::UI_PASS_DRIVER)
-            .unwrap();
-
-        app.add_plugin(UnifiedRenderPlugin);
+        render_app.add_system_to_stage(RenderStage::Extract, extract);
     }
 }
 
-pub fn extract_core_pipeline_camera_phases(
+pub fn extract(
     mut commands: Commands,
-    active_cameras: Res<ActiveCameras>,
+    context: Option<Res<BevyContext>>,
+    fonts: Res<Assets<KayakFont>>,
+    font_mapping: Res<FontMapping>,
+    image_manager: Res<ImageManager>,
+    images: Res<Assets<Image>>,
+    windows: Res<Windows>,
 ) {
-    if let Some(camera_2d) = active_cameras.get(UICameraBundle::UI_CAMERA) {
-        if let Some(entity) = camera_2d.entity {
-            commands
-                .get_or_spawn(entity)
-                .insert(RenderPhase::<TransparentUI>::default());
+    if context.is_none() {
+        return;
+    }
+
+    let context = context.unwrap();
+
+    let render_primitives = if let Ok(context) = context.kayak_context.read() {
+        context.widget_manager.build_render_primitives()
+    } else {
+        vec![]
+    };
+
+    // dbg!(&render_primitives);
+
+    let dpi = if let Some(window) = windows.get_primary() {
+        window.scale_factor() as f32
+    } else {
+        1.0
+    };
+
+    let mut extracted_quads = Vec::new();
+    for render_primitive in render_primitives {
+        match render_primitive {
+            RenderPrimitive::Text { .. } => {
+                let text_quads = font::extract_texts(&render_primitive, &fonts, &font_mapping, dpi);
+                extracted_quads.extend(text_quads);
+            }
+            RenderPrimitive::Image { .. } => {
+                let image_quads = image::extract_images(&render_primitive, &image_manager, dpi);
+                extracted_quads.extend(image_quads);
+            }
+            RenderPrimitive::Quad { .. } => {
+                let quad_quads = quad::extract_quads(&render_primitive, 1.0);
+                extracted_quads.extend(quad_quads);
+            }
+            RenderPrimitive::NinePatch { .. } => {
+                let nine_patch_quads =
+                    nine_patch::extract_nine_patch(&render_primitive, &image_manager, &images, dpi);
+                extracted_quads.extend(nine_patch_quads);
+            }
+            RenderPrimitive::Clip { layout } => {
+                extracted_quads.push(ExtractQuadBundle {
+                    extracted_quad: ExtractedQuad {
+                        rect: Rect {
+                            min: Vec2::new(layout.posx, layout.posy) * dpi,
+                            max: Vec2::new(layout.posx + layout.width, layout.posy + layout.height)
+                                * dpi,
+                        },
+                        color: Color::default(),
+                        vertex_index: 0,
+                        char_id: 0,
+                        z_index: layout.z_index,
+                        font_handle: None,
+                        quad_type: UIQuadType::Clip,
+                        type_index: 0,
+                        border_radius: Corner::default(),
+                        image: None,
+                        uv_min: None,
+                        uv_max: None,
+                    },
+                });
+            }
+            _ => {}
         }
     }
+
+    commands.spawn_batch(extracted_quads);
 }

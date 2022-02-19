@@ -1,16 +1,15 @@
+use crate::ImageManager;
 use bevy::{
     math::Vec2,
     prelude::{Assets, Res},
     render::{color::Color, texture::Image},
     sprite::Rect,
 };
-use kayak_core::render_primitive::RenderPrimitive;
-use kayak_core::styles::Corner;
-
-use crate::{
+use bevy_kayak_renderer::{
     render::unified::pipeline::{ExtractQuadBundle, ExtractedQuad, UIQuadType},
-    ImageManager,
+    Corner,
 };
+use kayak_core::render_primitive::RenderPrimitive;
 
 pub fn extract_nine_patch(
     render_primitive: &RenderPrimitive,

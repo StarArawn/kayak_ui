@@ -1,9 +1,10 @@
 use bevy::{math::Vec2, prelude::Res, render::color::Color, sprite::Rect};
 use kayak_core::render_primitive::RenderPrimitive;
 
-use crate::{
+use crate::ImageManager;
+use bevy_kayak_renderer::{
     render::unified::pipeline::{ExtractQuadBundle, ExtractedQuad, UIQuadType},
-    ImageManager,
+    Corner,
 };
 
 pub fn extract_images(
@@ -33,7 +34,12 @@ pub fn extract_images(
             font_handle: None,
             quad_type: UIQuadType::Image,
             type_index: 0,
-            border_radius,
+            border_radius: Corner {
+                top_left: border_radius.top_left,
+                top_right: border_radius.top_right,
+                bottom_left: border_radius.bottom_left,
+                bottom_right: border_radius.bottom_right,
+            },
             image: image_manager
                 .get_handle(handle)
                 .and_then(|a| Some(a.clone_weak())),

@@ -5,6 +5,7 @@ mod scroll_context;
 
 pub use scroll_bar::*;
 pub use scroll_box::*;
+use scroll_content::*;
 pub use scroll_context::*;
 
 /// Maps a value from one range to another range

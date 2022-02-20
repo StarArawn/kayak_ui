@@ -1,5 +1,9 @@
 use bevy::{
-    input::{keyboard::KeyboardInput, mouse::{MouseButtonInput, MouseScrollUnit, MouseWheel}, ElementState},
+    input::{
+        keyboard::KeyboardInput,
+        mouse::{MouseButtonInput, MouseScrollUnit, MouseWheel},
+        ElementState,
+    },
     math::Vec2,
     prelude::{EventReader, IntoExclusiveSystem, MouseButton, Plugin, Res, World},
     render::color::Color,
@@ -79,12 +83,12 @@ pub fn process_events(world: &mut World) {
                 EventReader<KeyboardInput>,
             ), _, _>(
                 |(
-                     mut cursor_moved_events,
-                     mut mouse_button_input_events,
-                     mut mouse_wheel_events,
-                     mut char_input_events,
-                     mut keyboard_input_events,
-                 )| {
+                    mut cursor_moved_events,
+                    mut mouse_button_input_events,
+                    mut mouse_wheel_events,
+                    mut char_input_events,
+                    mut keyboard_input_events,
+                )| {
                     if let Some(event) = cursor_moved_events.iter().last() {
                         // Currently, we can only handle a single MouseMoved event at a time so everything but the last needs to be skipped
                         input_events.push(InputEvent::MouseMoved((

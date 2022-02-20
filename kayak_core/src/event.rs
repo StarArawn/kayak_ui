@@ -80,7 +80,9 @@ pub enum EventType {
     Scroll(ScrollEvent),
     Focus,
     Blur,
-    CharInput { c: char },
+    CharInput {
+        c: char,
+    },
     KeyUp(KeyboardEvent),
     KeyDown(KeyboardEvent),
 }

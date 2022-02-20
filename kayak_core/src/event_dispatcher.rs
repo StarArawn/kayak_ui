@@ -226,10 +226,10 @@ impl EventDispatcher {
             // Mouse is currently within this node
             if events.contains(&EventType::MouseIn(Default::default()))
                 && !Self::contains_event(
-                &next_events,
-                index,
-                &EventType::MouseOut(Default::default()),
-            )
+                    &next_events,
+                    index,
+                    &EventType::MouseOut(Default::default()),
+                )
             {
                 // Make sure this event isn't removed while mouse is still within node
                 Self::insert_event(
@@ -544,7 +544,7 @@ impl EventDispatcher {
                                     ScrollUnit::Line { x: *dx, y: *dy }
                                 } else {
                                     ScrollUnit::Pixel { x: *dx, y: *dy }
-                                }
+                                },
                             }),
                         );
                     }

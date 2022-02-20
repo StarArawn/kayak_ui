@@ -6,9 +6,18 @@ pub enum InputEvent {
     MouseLeftPress,
     MouseLeftRelease,
     /// An event that occurs when the user scrolls
-    Scroll { dx: f32, dy: f32, is_line: bool },
-    CharEvent { c: char },
-    Keyboard { key: KeyCode, is_pressed: bool },
+    Scroll {
+        dx: f32,
+        dy: f32,
+        is_line: bool,
+    },
+    CharEvent {
+        c: char,
+    },
+    Keyboard {
+        key: KeyCode,
+        is_pressed: bool,
+    },
 }
 
 pub enum InputEventCategory {

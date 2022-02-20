@@ -5,13 +5,12 @@ use crate::core::{
     use_state, widget, Bound, Children, EventType, MutableBound, OnEvent, ScrollUnit, WidgetProps,
 };
 
-use kayak_core::styles::{LayoutType};
-use kayak_core::{Color};
-
+use kayak_core::styles::LayoutType;
+use kayak_core::Color;
 
 use crate::widgets::{Clip, Element, If};
 
-use super::{ScrollContext, ScrollBar, ScrollContent, ScrollMode};
+use super::{ScrollBar, ScrollContent, ScrollContext, ScrollMode};
 
 /// Props used by the [`ScrollBox`] widget
 #[derive(WidgetProps, Default, Debug, PartialEq, Clone)]
@@ -133,7 +132,7 @@ pub fn ScrollBox(props: ScrollBoxProps) {
                 layout_type: LayoutType::Row.into(),
                 ..Default::default()
             })
-            .with_style(&props.styles)
+            .with_style(&props.styles),
     );
 
     let hbox_styles = Style::default().with_style(Style {

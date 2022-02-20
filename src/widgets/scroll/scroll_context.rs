@@ -1,11 +1,3 @@
-
-
-
-
-
-
-
-
 /// Context data provided by a [`ScrollBox`](crate::ScrollBox) widget
 #[derive(Default, Debug, Copy, Clone, PartialEq)]
 pub struct ScrollContext {
@@ -86,7 +78,7 @@ impl ScrollContext {
         let min = -self.scrollable_width();
         self.scroll_x = match self.mode {
             ScrollMode::Clamped => ScrollContext::clamped(x, min, 0.0),
-            ScrollMode::Infinite => x
+            ScrollMode::Infinite => x,
         }
     }
 
@@ -97,7 +89,7 @@ impl ScrollContext {
         let min = -self.scrollable_height();
         self.scroll_y = match self.mode {
             ScrollMode::Clamped => ScrollContext::clamped(y, min, 0.0),
-            ScrollMode::Infinite => y
+            ScrollMode::Infinite => y,
         };
     }
 

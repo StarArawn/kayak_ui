@@ -6,12 +6,11 @@ use crate::core::{
 };
 use kayak_core::layout_cache::Rect;
 use kayak_core::styles::{Corner, Edge};
-use kayak_core::{Color};
+use kayak_core::Color;
 
+use crate::widgets::Background;
 
-use crate::widgets::{Background};
-
-use super::{ScrollContext, map_range};
+use super::{map_range, ScrollContext};
 
 /// Props used by the [`ScrollBar`] widget
 #[derive(WidgetProps, Default, Debug, PartialEq, Clone)]
@@ -88,22 +87,28 @@ pub fn ScrollBar(props: ScrollBarProps) {
     let horizontal = props.horizontal;
     let _thickness = props.thickness;
     let thickness = props.thickness;
-    let thumb_color = props.thumb_color.unwrap_or_else(|| Color::new(0.2981, 0.3098, 0.321, 0.95));
+    let thumb_color = props
+        .thumb_color
+        .unwrap_or_else(|| Color::new(0.2981, 0.3098, 0.321, 0.95));
     let thumb_styles = props.thumb_styles.clone();
-    let track_color = props.track_color.unwrap_or_else(|| Color::new(0.1581, 0.1758, 0.191, 0.15));
+    let track_color = props
+        .track_color
+        .unwrap_or_else(|| Color::new(0.1581, 0.1758, 0.191, 0.15));
     let track_styles = props.track_styles.clone();
     /// The size of the thumb as a percentage
     let thumb_size_percent = (if props.horizontal {
         layout.width / (content_width - thickness).max(1.0)
     } else {
         layout.height / (content_height - thickness).max(1.0)
-    }).clamp(0.1, 1.0);
+    })
+    .clamp(0.1, 1.0);
     /// The size of the thumb in pixels
-    let thumb_size_pixels = thumb_size_percent * if props.horizontal {
-        layout.width
-    } else {
-        layout.height
-    };
+    let thumb_size_pixels = thumb_size_percent
+        * if props.horizontal {
+            layout.width
+        } else {
+            layout.height
+        };
     let thumb_extents = thumb_size_pixels / 2.0;
     let percent_scrolled = if props.horizontal {
         scroll.percent_x()
@@ -111,32 +116,39 @@ pub fn ScrollBar(props: ScrollBarProps) {
         scroll.percent_y()
     };
     // The thumb's offset as a percentage
-    let thumb_offset = map_range(percent_scrolled * 100.0, (0.0, 100.0), (0.0, 100.0 - thumb_size_percent * 100.0));
+    let thumb_offset = map_range(
+        percent_scrolled * 100.0,
+        (0.0, 100.0),
+        (0.0, 100.0 - thumb_size_percent * 100.0),
+    );
 
     // === Styles === //
-    props.styles = Some(Style::default().with_style(Style {
-        render_command: RenderCommand::Layout.into(),
-        width: if horizontal {
-            Units::Stretch(1.0)
-        } else {
-            Units::Pixels(thickness)
-        }.into(),
-        height: if horizontal {
-            Units::Pixels(thickness)
-        } else {
-            Units::Stretch(1.0)
-        }.into(),
-        ..Default::default()
-    }));
+    props.styles = Some(
+        Style::default().with_style(Style {
+            render_command: RenderCommand::Layout.into(),
+            width: if horizontal {
+                Units::Stretch(1.0)
+            } else {
+                Units::Pixels(thickness)
+            }
+            .into(),
+            height: if horizontal {
+                Units::Pixels(thickness)
+            } else {
+                Units::Stretch(1.0)
+            }
+            .into(),
+            ..Default::default()
+        }),
+    );
 
-    let mut track_style =
-        Style::default()
-            .with_style(&track_styles)
-            .with_style(Style {
-                background_color: track_color.into(),
-                border_radius: Corner::all(thickness / 2.0).into(),
-                ..Default::default()
-            });
+    let mut track_style = Style::default()
+        .with_style(&track_styles)
+        .with_style(Style {
+            background_color: track_color.into(),
+            border_radius: Corner::all(thickness / 2.0).into(),
+            ..Default::default()
+        });
 
     let mut border_color = thumb_color;
     border_color.a = (border_color.a - 0.2).max(0.0);
@@ -262,7 +274,7 @@ pub fn ScrollBar(props: ScrollBarProps) {
             // Positional difference (scaled by thumb size)
             let pos_diff = (
                 (start_pos.0 - data.position.0) / thumb_size_percent,
-                (start_pos.1 - data.position.1) / thumb_size_percent
+                (start_pos.1 - data.position.1) / thumb_size_percent,
             );
             let mut old = scroll_ctx.get();
             if horizontal {
@@ -280,11 +292,7 @@ pub fn ScrollBar(props: ScrollBarProps) {
         _ => {}
     });
 
-    let on_track_event = if disabled {
-        None
-    } else {
-        Some(on_track_event)
-    };
+    let on_track_event = if disabled { None } else { Some(on_track_event) };
 
     // === Render === //
     rsx! {

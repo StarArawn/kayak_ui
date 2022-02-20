@@ -1,15 +1,13 @@
 use crate::core::{
-    render_command::RenderCommand,
     rsx,
-    styles::{PositionType, Style, StyleProp, Units},
-    use_state, widget, Bound, Children, EventType, MutableBound, OnEvent, ScrollUnit, WidgetProps,
+    styles::{Style}, widget, Bound, Children, MutableBound, WidgetProps,
 };
-use kayak_core::layout_cache::Rect;
-use kayak_core::styles::{Corner, Edge, LayoutType};
-use kayak_core::{Color, ScrollEvent};
-use kayak_render_macros::use_effect;
 
-use crate::widgets::{Background, Clip, Element, If};
+
+
+
+
+
 
 use super::ScrollContext;
 

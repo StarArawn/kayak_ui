@@ -1,15 +1,15 @@
 use crate::core::{
     render_command::RenderCommand,
     rsx,
-    styles::{PositionType, Style, StyleProp, Units},
+    styles::{PositionType, Style, Units},
     use_state, widget, Bound, Children, EventType, MutableBound, OnEvent, ScrollUnit, WidgetProps,
 };
-use kayak_core::layout_cache::Rect;
-use kayak_core::styles::{Corner, Edge, LayoutType};
-use kayak_core::{Color, ScrollEvent};
-use kayak_render_macros::use_effect;
 
-use crate::widgets::{Background, Clip, Element, If};
+use kayak_core::styles::{LayoutType};
+use kayak_core::{Color};
+
+
+use crate::widgets::{Clip, Element, If};
 
 use super::{ScrollContext, ScrollBar, ScrollContent, ScrollMode};
 
@@ -79,7 +79,7 @@ pub fn ScrollBox(props: ScrollBoxProps) {
     let track_styles = props.track_styles.clone();
 
     // === States === //
-    let (scroll_offset, set_scroll_offset, ..) = use_state!((0.0, 0.0));
+    let (_scroll_offset, set_scroll_offset, ..) = use_state!((0.0, 0.0));
     let (is_ready, set_is_ready, ..) = use_state!(false);
 
     // === Scroll === //
@@ -158,7 +158,7 @@ pub fn ScrollBox(props: ScrollBoxProps) {
     });
 
     // === Events === //
-    let set_offset = set_scroll_offset.clone();
+    let _set_offset = set_scroll_offset;
     let event_handler = OnEvent::new(move |_, event| match event.event_type {
         EventType::Scroll(evt) => {
             match evt.delta {

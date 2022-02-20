@@ -1,15 +1,15 @@
 use crate::core::{
     render_command::RenderCommand,
     rsx,
-    styles::{PositionType, Style, StyleProp, Units},
-    use_state, widget, Bound, Children, EventType, MutableBound, OnEvent, ScrollUnit, WidgetProps,
+    styles::{PositionType, Style, Units},
+    use_state, widget, Bound, EventType, MutableBound, OnEvent, WidgetProps,
 };
 use kayak_core::layout_cache::Rect;
-use kayak_core::styles::{Corner, Edge, LayoutType};
-use kayak_core::{Color, ScrollEvent};
-use kayak_render_macros::use_effect;
+use kayak_core::styles::{Corner, Edge};
+use kayak_core::{Color};
 
-use crate::widgets::{Background, Clip, Element, If};
+
+use crate::widgets::{Background};
 
 use super::{ScrollContext, map_range};
 
@@ -86,7 +86,7 @@ pub fn ScrollBar(props: ScrollBarProps) {
     // === Configuration === //
     let disabled = props.disabled;
     let horizontal = props.horizontal;
-    let thickness = props.thickness;
+    let _thickness = props.thickness;
     let thickness = props.thickness;
     let thumb_color = props.thumb_color.unwrap_or_else(|| Color::new(0.2981, 0.3098, 0.321, 0.95));
     let thumb_styles = props.thumb_styles.clone();
@@ -138,7 +138,7 @@ pub fn ScrollBar(props: ScrollBarProps) {
                 ..Default::default()
             });
 
-    let mut border_color = thumb_color.clone();
+    let mut border_color = thumb_color;
     border_color.a = (border_color.a - 0.2).max(0.0);
     border_color.r = (border_color.r + 0.1).min(1.0);
     border_color.g = (border_color.g + 0.1).min(1.0);

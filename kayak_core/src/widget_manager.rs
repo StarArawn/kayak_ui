@@ -368,7 +368,7 @@ impl WidgetManager {
         tree
     }
 
-    fn get_valid_node_children(&self, node_id: Index) -> Vec<Index> {
+    pub fn get_valid_node_children(&self, node_id: Index) -> Vec<Index> {
         let mut children = Vec::new();
         if let Some(node_children) = self.tree.children.get(&node_id) {
             for child_id in node_children {

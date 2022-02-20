@@ -34,7 +34,7 @@ pub use children::Children;
 pub use color::Color;
 pub use context::*;
 pub use context_ref::KayakContextRef;
-pub use cursor::PointerEvents;
+pub use cursor::*;
 pub use cursor_icon::CursorIcon;
 pub use event::*;
 pub use focus_tree::FocusTree;

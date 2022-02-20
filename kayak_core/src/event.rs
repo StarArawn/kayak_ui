@@ -1,4 +1,4 @@
-use crate::cursor::CursorEvent;
+use crate::cursor::{CursorEvent, ScrollEvent};
 use crate::{Index, KeyboardEvent};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -76,6 +76,8 @@ pub enum EventType {
     MouseOut(CursorEvent),
     MouseDown(CursorEvent),
     MouseUp(CursorEvent),
+    /// An event that occurs when the user scrolls over a widget
+    Scroll(ScrollEvent),
     Focus,
     Blur,
     CharInput { c: char },
@@ -116,6 +118,7 @@ impl EventType {
             Self::Click(..) => true,
             Self::MouseDown(..) => true,
             Self::MouseUp(..) => true,
+            Self::Scroll(..) => true,
             Self::CharInput { .. } => true,
             Self::KeyUp(..) => true,
             Self::KeyDown(..) => true,
@@ -137,6 +140,7 @@ impl EventType {
             Self::MouseUp(..) => EventCategory::Mouse,
             Self::MouseIn(..) => EventCategory::Mouse,
             Self::MouseOut(..) => EventCategory::Mouse,
+            Self::Scroll(..) => EventCategory::Mouse,
             // Keyboard
             Self::CharInput { .. } => EventCategory::Keyboard,
             Self::KeyUp(..) => EventCategory::Keyboard,

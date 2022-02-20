@@ -1,5 +1,5 @@
 use bevy::{
-    input::{keyboard::KeyboardInput, mouse::MouseButtonInput, ElementState},
+    input::{keyboard::KeyboardInput, mouse::{MouseButtonInput, MouseScrollUnit, MouseWheel}, ElementState},
     math::Vec2,
     prelude::{EventReader, IntoExclusiveSystem, MouseButton, Plugin, Res, World},
     render::color::Color,
@@ -74,15 +74,17 @@ pub fn process_events(world: &mut World) {
             context.query_world::<(
                 EventReader<CursorMoved>,
                 EventReader<MouseButtonInput>,
+                EventReader<MouseWheel>,
                 EventReader<ReceivedCharacter>,
                 EventReader<KeyboardInput>,
             ), _, _>(
                 |(
-                    mut cursor_moved_events,
-                    mut mouse_button_input_events,
-                    mut char_input_events,
-                    mut keyboard_input_events,
-                )| {
+                     mut cursor_moved_events,
+                     mut mouse_button_input_events,
+                     mut mouse_wheel_events,
+                     mut char_input_events,
+                     mut keyboard_input_events,
+                 )| {
                     if let Some(event) = cursor_moved_events.iter().last() {
                         // Currently, we can only handle a single MouseMoved event at a time so everything but the last needs to be skipped
                         input_events.push(InputEvent::MouseMoved((
@@ -102,6 +104,14 @@ pub fn process_events(world: &mut World) {
                             }
                             _ => {}
                         }
+                    }
+
+                    for MouseWheel { x, y, unit } in mouse_wheel_events.iter() {
+                        input_events.push(InputEvent::Scroll {
+                            dx: *x,
+                            dy: *y,
+                            is_line: matches!(unit, MouseScrollUnit::Line),
+                        })
                     }
 
                     for event in char_input_events.iter() {

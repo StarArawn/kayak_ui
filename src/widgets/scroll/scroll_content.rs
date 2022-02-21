@@ -1,3 +1,5 @@
+use kayak_core::render_command::RenderCommand;
+use kayak_core::styles::LayoutType;
 use crate::core::{rsx, styles::Style, widget, Bound, Children, MutableBound, WidgetProps};
 
 use super::ScrollContext;
@@ -26,19 +28,21 @@ pub(super) fn ScrollContent(props: ScrollContentProps) {
     // === Layout === //
     let id = self.get_id();
     let child_ids = context.get_valid_children(id);
-    let mut width = 0.0000;
-    let mut height = 0.0000;
+    // Since we default to Column layout, we only need the maximum width of all children
+    let mut max_width: f32 = 0.0;
+    // Since we default to Column layout, we need the sum of all child heights
+    let mut height: f32 = 0.0;
     for child_id in &child_ids {
         if let Some(layout) = context.get_layout(child_id) {
-            width += layout.width;
+            max_width = max_width.max(layout.width);
             height += layout.height;
         }
     }
 
-    let should_update_size = width != content_width || height != content_height;
+    let should_update_size = max_width != content_width || height != content_height;
     if should_update_size {
         // Size changed since last render -> Notify provider
-        scroll.content_width = width;
+        scroll.content_width = max_width;
         scroll.content_height = height;
         scroll_ctx.set(scroll);
     }
@@ -47,6 +51,16 @@ pub(super) fn ScrollContent(props: ScrollContentProps) {
     if child_ids.is_empty() && !children.is_none() {
         context.mark_dirty();
     }
+
+    // === Styles === //
+    props.styles = Some(Style::default()
+        .with_style(Style {
+            render_command: RenderCommand::Layout.into(),
+            layout_type: LayoutType::Column.into(),
+            ..Default::default()
+        })
+        .with_style(&props.styles)
+    );
 
     // === Render === //
     rsx! {

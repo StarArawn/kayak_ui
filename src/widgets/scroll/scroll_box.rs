@@ -129,7 +129,6 @@ pub fn ScrollBox(props: ScrollBoxProps) {
         Style::default()
             .with_style(Style {
                 render_command: RenderCommand::Layout.into(),
-                layout_type: LayoutType::Row.into(),
                 ..Default::default()
             })
             .with_style(&props.styles),
@@ -148,7 +147,6 @@ pub fn ScrollBox(props: ScrollBoxProps) {
 
     let content_styles = Style::default().with_style(Style {
         position_type: PositionType::SelfDirected.into(),
-        render_command: RenderCommand::Layout.into(),
         top: Units::Pixels(scroll_y).into(),
         left: Units::Pixels(scroll_x).into(),
         height: Units::Percentage(100.0).into(),

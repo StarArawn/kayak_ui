@@ -179,6 +179,8 @@ impl LayoutEventDispatcher {
       .collect();
     
     for node_index in dirty_nodes {
+      // We should be able to just get layout from WidgetManager here
+      // since the layouts will be calculated by this point
       let mut layout_event = /* ... */
       
       let mut widget = context.widget_manager.take(node_index);

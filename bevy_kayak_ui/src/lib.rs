@@ -7,17 +7,16 @@ use bevy::{
 };
 
 mod bevy_context;
-mod camera;
 mod cursor;
 mod key;
 mod render;
 
 use crate::cursor::convert_cursor_icon;
 pub use bevy_context::BevyContext;
-pub use camera::*;
+pub use bevy_kayak_renderer::camera::*;
 use kayak_core::{bind, Binding, InputEvent, MutableBound};
-pub use render::unified::font::FontMapping;
-pub use render::unified::image::ImageManager;
+pub use render::font::FontMapping;
+pub use render::image::ImageManager;
 
 #[derive(Default)]
 pub struct BevyKayakUIPlugin;
@@ -25,8 +24,8 @@ pub struct BevyKayakUIPlugin;
 impl Plugin for BevyKayakUIPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
         app.insert_resource(bind(WindowSize::default()))
-            .add_plugin(render::BevyKayakUIRenderPlugin)
-            .add_plugin(camera::KayakUICameraPlugin)
+            .add_plugin(bevy_kayak_renderer::BevyKayakRendererPlugin)
+            .add_plugin(render::BevyKayakUIExtractPlugin)
             .add_system(update_window_size)
             .add_system(process_events.exclusive_system())
             .add_system(update.exclusive_system());

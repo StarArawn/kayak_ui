@@ -654,13 +654,19 @@ impl KayakContext {
     /// # Examples
     ///
     /// ```ignore
-    /// use bevy::prelude::Res;
+    /// use bevy::prelude::{Query, Res, Transform};
     ///
     /// struct MyCount(i32);
     ///
-    ///#[widget]
+    /// #[widget]
     /// fn MyWidget() {
-    ///   let value = context.query_world::<Res<MyCount>, '_, '_>(|count| count.0);
+    ///   // Query a single item
+    ///   let value = context.query_world::<Res<MyCount>, _, _>(|count| count.0);
+    ///
+    ///   // Or query multiple using a tuple
+    ///   context.query_world::<(Res<MyCount>, Query<&mut Transform>), _, _>(|(count, query)| {
+    ///     // ...
+    ///   });
     /// }
     /// ```
     #[cfg(feature = "bevy_renderer")]
@@ -681,10 +687,33 @@ impl KayakContext {
 
     /// Get a stored asset with the given asset key
     ///
+    /// The type of the asset [T] must implement `Clone` and `PartialEq` so that a `Binding<Option<T>>`
+    /// can be returned. By calling [bind](Self::bind) over the binding, you can react to all changes to
+    /// the asset, including when it's added or removed.
+    ///
+    /// If no asset in storage matches both the asset key _and_ the asset type, a value of
+    /// `Binding<None>` is returned. Again, binding to this value will allow you to detect when a matching
+    /// asset is added to storage.
+    ///
     /// # Arguments
     ///
     /// * `key`: The asset key
     ///
+    /// # Examples
+    ///
+    /// ```ignore
+    /// #[derive(Clone, PartialEq)]
+    /// struct MyAsset(pub String);
+    ///
+    /// #[widget]
+    /// fn MyWidget() {
+    ///   let asset = context.get_asset::<MyAsset>("foo");
+    ///   context.bind(&asset);
+    ///   if let Some(asset) = asset.get() {
+    ///     // ...
+    ///   }
+    /// }
+    /// ```
     pub fn get_asset<T: 'static + Send + Sync + Clone + PartialEq>(
         &mut self,
         key: impl Into<PathBuf>,

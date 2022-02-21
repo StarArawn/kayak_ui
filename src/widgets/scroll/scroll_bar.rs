@@ -95,14 +95,14 @@ pub fn ScrollBar(props: ScrollBarProps) {
         .track_color
         .unwrap_or_else(|| Color::new(0.1581, 0.1758, 0.191, 0.15));
     let track_styles = props.track_styles.clone();
-    /// The size of the thumb as a percentage
+    // The size of the thumb as a percentage
     let thumb_size_percent = (if props.horizontal {
         layout.width / (content_width - thickness).max(1.0)
     } else {
         layout.height / (content_height - thickness).max(1.0)
     })
     .clamp(0.1, 1.0);
-    /// The size of the thumb in pixels
+    // The size of the thumb in pixels
     let thumb_size_pixels = thumb_size_percent
         * if props.horizontal {
             layout.width

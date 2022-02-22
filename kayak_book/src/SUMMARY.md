@@ -19,7 +19,7 @@
 - [Bevy Integration](./bevy/README.md)
   - [Setup](./bevy/setup.md)
   - [Using Resources](./bevy/resources.md)
-  - [Managing Input]()
+  - [Managing Input](./bevy/input.md)
 - [Appendix](./appendix/README.md)
   - [A - Built-in Widgets](./appendix/basic_widgets.md)
   - [B - Creating Fonts]()

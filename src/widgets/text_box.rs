@@ -9,12 +9,20 @@ use std::sync::{Arc, RwLock};
 
 use crate::widgets::{Background, Clip, Text};
 
+/// Props used by the [`TextBox`] widget
 #[derive(Default, Debug, PartialEq, Clone)]
 pub struct TextBoxProps {
+    /// If true, prevents the widget from being focused (and consequently edited)
     pub disabled: bool,
-    pub value: String,
+    /// A callback for when the text value was changed
     pub on_change: Option<OnChange>,
+    /// The text to display when the user input is empty
     pub placeholder: Option<String>,
+    /// The user input
+    ///
+    /// This is a controlled state. You _must_ set this to the value to you wish to be displayed.
+    /// You can use the [`on_change`] callback to update this prop as the user types.
+    pub value: String,
     pub styles: Option<Style>,
     pub children: Option<Children>,
     pub on_event: Option<OnEvent>,
@@ -73,6 +81,19 @@ impl std::fmt::Debug for OnChange {
 pub struct Focus(pub bool);
 
 #[widget]
+/// A widget that displays a text input field
+///
+/// # Props
+///
+/// __Type:__ [`TextBoxProps`]
+///
+/// | Common Prop | Accepted |
+/// | :---------: | :------: |
+/// | `children`  | ✅        |
+/// | `styles`    | ✅        |
+/// | `on_event`  | ✅        |
+/// | `focusable` | ✅        |
+///
 pub fn TextBox(props: TextBoxProps) {
     let TextBoxProps {
         on_change,

@@ -2,7 +2,7 @@
 //! to multiple descendants.
 //!
 //! The problem we'll be solving here is adding support for theming. Theming can generally be
-//! added by using something like [set_global_state](kayak_core::KayakContext::set_global_state)
+//! added by using something like [set_global](kayak_core::KayakContext::set_global)
 //! or [query_world](kayak_core::KayakContext::query_world). However, this example will demonstrate
 //! an implementation using providers and consumers.
 //!

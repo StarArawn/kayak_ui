@@ -9,11 +9,16 @@ use kayak_core::CursorIcon;
 
 use crate::widgets::{Background, Clip, Element, Text};
 
+/// Props used by the [`Window`] widget
 #[derive(WidgetProps, Default, Debug, PartialEq, Clone)]
 pub struct WindowProps {
+    /// If true, allows the window to be draggable by its title bar
     pub draggable: bool,
+    /// The position at which to display the window in pixels
     pub position: (f32, f32),
+    /// The size of the window in pixels
     pub size: (f32, f32),
+    /// The text to display in the window's title bar
     pub title: String,
     #[prop_field(Styles)]
     pub styles: Option<Style>,
@@ -26,6 +31,19 @@ pub struct WindowProps {
 }
 
 #[widget]
+/// A widget that renders a window-like container element
+///
+/// # Props
+///
+/// __Type:__ [`WindowProps`]
+///
+/// | Common Prop | Accepted |
+/// | :---------: | :------: |
+/// | `children`  | ✅        |
+/// | `styles`    | ✅        |
+/// | `on_event`  | ✅        |
+/// | `focusable` | ✅        |
+///
 pub fn Window(props: WindowProps) {
     let WindowProps {
         draggable,

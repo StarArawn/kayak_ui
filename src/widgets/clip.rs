@@ -5,6 +5,7 @@ use crate::core::{
     widget, Children, OnEvent, WidgetProps,
 };
 
+/// Props used by the [`Clip`] widget
 #[derive(WidgetProps, Default, Debug, PartialEq, Clone)]
 pub struct ClipProps {
     #[prop_field(Styles)]
@@ -16,6 +17,20 @@ pub struct ClipProps {
 }
 
 #[widget]
+/// A widget that clips its contents to fit the parent container or its designated
+/// [`width`](Style::width) and [`height`](Style::height) styling
+///
+/// # Props
+///
+/// __Type:__ [`ClipProps`]
+///
+/// | Common Prop | Accepted |
+/// | :---------: | :------: |
+/// | `children`  | ✅        |
+/// | `styles`    | ✅        |
+/// | `on_event`  | ✅        |
+/// | `focusable` | ❌        |
+///
 pub fn Clip(props: ClipProps) {
     let incoming_styles = props.styles.clone().unwrap_or_default();
     props.styles = Some(Style {

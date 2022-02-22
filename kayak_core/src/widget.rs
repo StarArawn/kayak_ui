@@ -3,16 +3,16 @@ use std::any::Any;
 
 use crate::{context_ref::KayakContextRef, styles::Style, Children, Event, Index, OnEvent};
 
-/// An internal trait that has a blanket implementation over all implementors of [Widget]
+/// An internal trait that has a blanket implementation over all implementors of [`Widget`]
 ///
-/// This ensures that [BaseWidget] can never be implemented manually outside of this crate, even
+/// This ensures that [`BaseWidget`] can never be implemented manually outside of this crate, even
 /// if it is exported out (as long as this one isn't).
 pub trait SealedWidget {}
 
 /// The base widget trait, used internally
 ///
 /// You should _never_ implement BaseWidget manually. It is automatically implemented on
-/// all implementors of [Widget].
+/// all implementors of [`Widget`].
 pub trait BaseWidget: SealedWidget + std::fmt::Debug + Send + Sync {
     fn constructor<P: WidgetProps>(props: P) -> Self
     where
@@ -26,6 +26,7 @@ pub trait BaseWidget: SealedWidget + std::fmt::Debug + Send + Sync {
     fn on_event(&mut self, context: &mut KayakContextRef, event: &mut Event);
 }
 
+/// The main trait for defining a widget
 pub trait Widget: std::fmt::Debug + Clone + Default + PartialEq + AsAny + Send + Sync {
     /// The props associated with this widget
     type Props: WidgetProps + Clone + Default + PartialEq;
@@ -52,8 +53,8 @@ pub trait Widget: std::fmt::Debug + Clone + Default + PartialEq + AsAny + Send +
     /// The render function for this widget
     ///
     /// This method will be called whenever the widget needs to be re-rendered. It should build its
-    /// own [WidgetTree](crate::WidgetTree) using [KayakContextRef](crate::KayakContextRef) and finalize
-    /// the tree using [KayakContextRef::commit](crate::KayakContextRef::commit).
+    /// own [`WidgetTree`](crate::WidgetTree) using [`KayakContextRef`](crate::KayakContextRef) and finalize
+    /// the tree using [`KayakContextRef::commit`](crate::KayakContextRef::commit).
     fn render(&mut self, context: &mut KayakContextRef);
 
     /// Get the name of this widget
@@ -71,13 +72,34 @@ pub trait Widget: std::fmt::Debug + Clone + Default + PartialEq + AsAny + Send +
 
 /// Trait for props passed to a widget
 pub trait WidgetProps: std::fmt::Debug + AsAny + Send + Sync {
+    /// Gets the children of this widget
+    ///
+    /// Returns `None` if this widget doesn't contain children
     fn get_children(&self) -> Option<Children>;
+    /// Sets the children of this widget
     fn set_children(&mut self, children: Option<Children>);
+    /// Gets the custom styles of this widget
+    ///
+    /// Returns `None` if this widget doesn't have any custom styles
     fn get_styles(&self) -> Option<Style>;
+    /// Gets the custom event handler of this widget
+    ///
+    /// Returns `None` if this widget doesn't contain a custom event handler
     fn get_on_event(&self) -> Option<OnEvent>;
+    /// Gets the focusability of this widget
+    ///
+    /// The meanings of the returned values are:
+    ///
+    /// | Value         | Description                              |
+    /// |---------------|------------------------------------------|
+    /// | `Some(true)`  | The widget is focusable                  |
+    /// | `Some(false)` | The widget is not focusable              |
+    /// | `None`        | The widget's focusability is unspecified |
+    ///
     fn get_focusable(&self) -> Option<bool>;
 }
 
+/// Automatically implements the `BaseWidget` trait for all implementors of [`Widget`]
 impl<T> BaseWidget for T
 where
     T: Widget + Clone + PartialEq + Default,
@@ -119,8 +141,14 @@ where
     }
 }
 
+/// Automatically implements the `SealedWidget` trait for all implementors of [`Widget`]
 impl<T> SealedWidget for T where T: Widget {}
 
+/// Implements [`WidgetProps`] for the unit type, allowing for "empty" props to
+/// be defined as a simple `()`
+///
+/// This just reduces the amount of code and imports needed to state that a widget contains
+/// no adjustable props (i.e., it's top-level or fully contained).
 impl WidgetProps for () {
     fn get_children(&self) -> Option<Children> {
         None

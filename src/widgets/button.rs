@@ -6,8 +6,13 @@ use crate::core::{
 };
 use kayak_core::CursorIcon;
 
+/// Props used by the [`Button`] widget
 #[derive(Default, Debug, PartialEq, Clone)]
 pub struct ButtonProps {
+    /// If true, disables this widget not allowing it to be focusable
+    ///
+    // TODO: Update this documentation when the disabled issue is fixed
+    /// Currently, this does not actually disable the button from being clicked.
     pub disabled: bool,
     pub styles: Option<Style>,
     pub children: Option<Children>,
@@ -38,7 +43,25 @@ impl WidgetProps for ButtonProps {
 }
 
 #[widget]
+/// A widget that is styled like a button
+///
+/// # Props
+///
+/// __Type:__ [`ButtonProps`]
+///
+/// | Common Prop | Accepted |
+/// | :---------: | :------: |
+/// | `children`  | ✅        |
+/// | `styles`    | ✅        |
+/// | `on_event`  | ✅        |
+/// | `focusable` | ✅        |
+///
 pub fn Button(props: ButtonProps) {
+    // TODO: This should probably do more than just provide basic styling.
+    //       Ideally, we could add a `Handler` prop for `on_click` and other common cursor
+    //       events. Giving it the additional purpose of being a compact way to define a button.
+    //       This also allows us to make `disable` trule disable the button.
+    //       Also, styles need to reflect disabled status.
     props.styles = Some(
         Style::default()
             .with_style(Style {

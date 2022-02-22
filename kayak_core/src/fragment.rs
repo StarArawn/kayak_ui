@@ -2,12 +2,26 @@ use crate::{
     context_ref::KayakContextRef, styles::Style, Children, Index, OnEvent, Widget, WidgetProps,
 };
 
+/// Props used by the [`Fragment`] widget
 #[derive(Default, Debug, PartialEq, Clone)]
 pub struct FragmentProps {
     pub styles: Option<Style>,
     pub children: Option<crate::Children>,
 }
 
+/// The base widget, used to actually build and render children
+///
+/// # Props
+///
+/// __Type:__ [`FragmentProps`]
+///
+/// | Common Prop | Accepted |
+/// | :---------: | :------: |
+/// | `children`  | ✅        |
+/// | `styles`    | ✅        |
+/// | `on_event`  | ❌        |
+/// | `focusable` | ❌        |
+///
 #[derive(Default, Debug, PartialEq, Clone)]
 pub struct Fragment {
     pub id: Index,

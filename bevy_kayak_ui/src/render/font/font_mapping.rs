@@ -6,6 +6,35 @@ use kayak_font::KayakFont;
 
 use crate::BevyContext;
 
+/// A resource used to manage fonts for use in a `KayakContext`
+///
+/// # Example
+///
+/// ```
+/// use bevy::prelude::*;
+/// use bevy_kayak_ui::FontMapping;
+///
+/// fn setup_ui(
+///   # mut commands: Commands,
+///   asset_server: Res<AssetServer>,
+///   mut font_mapping: ResMut<FontMapping>
+/// ) {
+///   # commands.spawn_bundle(UICameraBundle::new());
+///   #
+///   font_mapping.add("Roboto", asset_server.load("roboto.kayak_font"));
+///   // ...
+///   #
+///   # let context = BevyContext::new(|context| {
+///   #   render! {
+///   #     <App>
+///   #       <Text content={"Hello World!".to_string()} />
+///   #     </App>
+///   #   }
+///   # });
+///   #
+///   # commands.insert_resource(context);
+/// }
+/// ```
 pub struct FontMapping {
     font_ids: HashMap<Handle<KayakFont>, String>,
     font_handles: HashMap<String, Handle<KayakFont>>,
@@ -23,6 +52,7 @@ impl Default for FontMapping {
 }
 
 impl FontMapping {
+    /// Add a `KayakFont` to be tracked
     pub fn add(&mut self, key: impl Into<String>, handle: Handle<KayakFont>) {
         let key = key.into();
         if !self.font_ids.contains_key(&handle) {
@@ -37,12 +67,14 @@ impl FontMapping {
             .extend(self.font_handles.keys().map(|key| key.clone()));
     }
 
+    /// Get the handle for the given font name
     pub fn get_handle(&self, id: String) -> Option<Handle<KayakFont>> {
         self.font_handles
             .get(&id)
             .and_then(|item| Some(item.clone()))
     }
 
+    /// Get the font name for the given handle
     pub fn get(&self, font: &Handle<KayakFont>) -> Option<String> {
         self.font_ids
             .get(font)

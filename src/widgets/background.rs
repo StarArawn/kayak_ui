@@ -5,6 +5,7 @@ use crate::core::{
     widget, Children, Fragment, OnEvent, WidgetProps,
 };
 
+/// Props used by the [`Background`] widget
 #[derive(WidgetProps, Default, Debug, PartialEq, Clone)]
 pub struct BackgroundProps {
     #[prop_field(Styles)]
@@ -18,6 +19,19 @@ pub struct BackgroundProps {
 }
 
 #[widget]
+/// A widget that provides a simple, rectangular background
+///
+/// # Props
+///
+/// __Type:__ [`BackgroundProps`]
+///
+/// | Common Prop | Accepted |
+/// | :---------: | :------: |
+/// | `children`  | ✅        |
+/// | `styles`    | ✅        |
+/// | `on_event`  | ✅        |
+/// | `focusable` | ✅        |
+///
 pub fn Background(props: BackgroundProps) {
     if props.styles.is_none() {
         props.styles = Some(Style::default())

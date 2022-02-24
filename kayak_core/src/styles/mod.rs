@@ -300,6 +300,8 @@ define_styles! {
         pub top: StyleProp<Units>,
         /// The width of this widget
         pub width: StyleProp<Units>,
+        /// The font style of the widget
+        pub font: StyleProp<String>,
     }
 }
 
@@ -338,6 +340,7 @@ impl Style {
             row_between: StyleProp::Default,
             top: StyleProp::Default,
             width: StyleProp::Default,
+            font: StyleProp::Default,
         }
     }
 }

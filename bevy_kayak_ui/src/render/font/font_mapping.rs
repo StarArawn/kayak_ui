@@ -62,6 +62,11 @@ impl FontMapping {
         }
     }
 
+    /// Set a default `KayakFont`
+    pub fn set_default(&mut self, handle: Handle<KayakFont>) {
+        self.add("", handle);
+    }
+
     pub(crate) fn mark_all_as_new(&mut self) {
         self.new_fonts
             .extend(self.font_handles.keys().map(|key| key.clone()));

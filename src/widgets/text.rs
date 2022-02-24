@@ -51,11 +51,11 @@ pub fn Text(props: TextProps) {
         ..
     } = props.clone();
     let font_name = font;
+    let default_style = props.clone().styles.unwrap_or_default().font.resolve();
     let font: Binding<Option<KayakFont>> =
-        context.get_asset(font_name.clone().unwrap_or("Roboto".into()));
-
+        context.get_asset(font_name.clone()
+            .unwrap_or(default_style.clone()));
     context.bind(&font);
-
     let mut should_render = true;
 
     // TODO: It might be worth caching the measurement here until content changes.
@@ -84,13 +84,15 @@ pub fn Text(props: TextProps) {
             ((0.0, 0.0), (0.0, 0.0))
         };
 
+
+
     if should_render {
         let render_command = RenderCommand::Text {
             content: content.clone(),
             size,
             parent_size,
             line_height: line_height.unwrap_or(size * 1.2),
-            font: font_name.clone().unwrap_or("Roboto".into()),
+            font: font_name.clone().unwrap_or(default_style),
         };
 
         let styles = props.styles.clone().unwrap_or_default();

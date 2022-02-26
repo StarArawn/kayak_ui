@@ -300,7 +300,9 @@ define_styles! {
         pub top: StyleProp<Units>,
         /// The width of this widget
         pub width: StyleProp<Units>,
-        /// The font style of the widget
+        /// The font name of the widget
+        ///
+        /// Only applies to [`RenderCommand::Text`]
         pub font: StyleProp<String>,
     }
 }

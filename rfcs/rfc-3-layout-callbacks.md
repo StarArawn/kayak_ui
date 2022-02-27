@@ -58,7 +58,7 @@ At a basic level, this API would need the following types: `Layout`, `LayoutEven
 
 #### `Layout`
 
-While we could just use morphorm's `Rect` type here, it might be best to create our own `Layout` type to replace it. This allows us to define our own methods and impls on it in ways we couldn't do with morphorm. It also means that a breaking change in morphorm's `Rect` wouldn't affect our end-users.
+While we already have a `Rect` struct that carries this type of data, it might be better to split away from using this struct directly in case we need to add/remove fields. So we'll create a `Layout` type instead.
 
 ```rust
 pub struct Layout {
@@ -74,7 +74,7 @@ impl Layout {
   pub fn pos(&self) -> (f32, f32) {/* ... */}
 }
 
-impl Into<Rect> for Layout {/* ... */}
+impl From<Layout> for Rect {/* ... */}
 impl From<Rect> for Layout {/* ... */}
 ```
 
@@ -155,11 +155,15 @@ As for which dispatcher to use, it might be worth creating a custom `LayoutEvent
 
 ##### Logic
 
-One complication with the logic is determining which widgets to notify. To keep it simple, we can just notify all widgets that have been re-rendered. 
+One complication with the logic is determining which widgets to notify. ~~To keep it simple, we can just notify all widgets that have been re-rendered.~~ To be consistent with similar frameworks (specifically React Native), we'll only notify widgets whose layout has *changed*.
 
 Another additional complication is that we can't just dispatch the event over all indices in `WidgetManager::dirty_nodes` since those only contain widgets that requested a re-render (i.e., their state updated or a binding marked them dirty). Iterating over only those would skip out on all the children, which may have had their own layouts changed after rendering.
 
 This means we actually need to use `WidgetManager::dirty_render_nodes` in order to get all re-rendered nodes. So instead of draining this collection in `WidgetManager::render()`, we'll need to keep them around and drain them after calculating the layout in `KayakContext::render()`— which we'll do in `LayoutEventDispatcher::dispatch(...)`.
+
+Lastly, we need to notify the parent of the affected subtree that their children have had their layout changed in some way. To do this, we'll add the widget's parent to an `IndexSet` that will be processed after all the dirty nodes. In doing so, we will need to consider two things: (1) there may be more than one sub-tree in being rendered and (2) parents only care if their immediate children change.
+
+The first consideration is especially important when dealing with parents because it affects *how* we process them. Since there can be more than one sub-tree (two unrelated parts of the entire widget tree), we can't optimize by only getting the parent of the last dirty node. Though it would be faster, this might skip a sub-tree!
 
 ##### `LayoutEventDispatcher`
 
@@ -178,19 +182,38 @@ impl LayoutEventDispatcher {
       .drain(..)
       .collect();
     
-    for node_index in dirty_nodes {
-      // We should be able to just get layout from WidgetManager here
-      // since the layouts will be calculated by this point
-      let mut layout_event = /* ... */
-      
-      let mut widget = context.widget_manager.take(node_index);
-      let mut context_ref = KayakContextRef::new(context, Some(node_index));
-      widget.on_layout(&mut context_ref, &mut layout_event);
-      context.widget_manager.repossess(widget);
-    }
+    // Use IndexSet to prevent duplicates and maintain speed
+    let mut parents: IndexSet<Index> = IndexSet::default();
     
-  }
+    for node_index in dirty_nodes) {
+      // If layout is not changed -> skip
+      
+      // Add parent to set
+      let parent_index = /* ... */
+      parents.insert(parent_index);
+      
+      // Process and dispatch
+      Self::process(node_index, context);
+    }
   
+  	// Finally, process all parents
+    for parent_index in parents) {
+      // Process and dispatch
+      Self::process(parent_index, context);
+    }
+  }
+
+	fn process(index: Index, context: &mut KayakContext) {
+    // We should be able to just get layout from WidgetManager here
+    // since the layouts will be calculated by this point
+    let mut layout_event = /* ... */
+
+    let mut widget = context.widget_manager.take(node_index);
+    let mut context_ref = KayakContextRef::new(context, Some(node_index));
+    widget.on_layout(&mut context_ref, &mut layout_event);
+    context.widget_manager.repossess(widget);
+  }
+
 }
 ```
 
@@ -214,6 +237,8 @@ impl KayakContext {
   }
 }
 ```
+
+> Note: The code snippets above are *not* exact outlines for the actual implementation. They're guides to show how this might be accomplished.
 
 ## TL;DR
 

@@ -18,6 +18,8 @@ use kayak_core::{bind, Binding, InputEvent, MutableBound};
 pub use render::font::FontMapping;
 pub use render::image::ImageManager;
 
+pub const DEFAULT_FONT : &'static str = "DefaultFont";
+
 #[derive(Default)]
 pub struct BevyKayakUIPlugin;
 

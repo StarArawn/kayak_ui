@@ -7,8 +7,8 @@ use crate::core::{
     widget, OnEvent, WidgetProps,
 };
 
-/// PRops used by the [`Text`] widget
-#[derive(WidgetProps, Default, Debug, PartialEq, Clone)]
+/// Props used by the [`Text`] widget
+#[derive(WidgetProps, Debug, PartialEq, Clone)]
 pub struct TextProps {
     /// The string to display
     pub content: String,
@@ -26,6 +26,20 @@ pub struct TextProps {
     pub on_event: Option<OnEvent>,
     #[prop_field(Focusable)]
     pub focusable: Option<bool>,
+}
+
+impl Default for TextProps {
+    fn default() -> Self {
+        TextProps {
+            content: "".to_string(),
+            font: Some(bevy_kayak_ui::DEFAULT_FONT.into()),
+            line_height: None,
+            size: 0.0,
+            styles: None,
+            on_event: None,
+            focusable: None
+        }
+    }
 }
 
 #[widget]

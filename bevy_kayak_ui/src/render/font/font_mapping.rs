@@ -64,7 +64,7 @@ impl FontMapping {
 
     /// Set a default `KayakFont`
     pub fn set_default(&mut self, handle: Handle<KayakFont>) {
-        self.add("", handle);
+        self.add(crate::DEFAULT_FONT, handle);
     }
 
     pub(crate) fn mark_all_as_new(&mut self) {

@@ -26,6 +26,7 @@ pub mod tree;
 mod vec;
 pub mod widget;
 pub mod widget_manager;
+mod lifetime;
 
 use std::sync::{Arc, RwLock};
 
@@ -48,6 +49,9 @@ pub use resources::Resources;
 pub use tree::{Tree, WidgetTree};
 pub use vec::{VecTracker, VecTrackerProps};
 pub use widget::{BaseWidget, Widget, WidgetProps};
+
+/// The default font name used by Kayak
+pub const DEFAULT_FONT: &str = "Kayak-Default";
 
 /// Type alias for dynamic widget objects. We use [BaseWidget] so that we can be object-safe
 type BoxedWidget = Box<dyn BaseWidget>;

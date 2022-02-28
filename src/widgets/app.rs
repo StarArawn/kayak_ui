@@ -56,12 +56,15 @@ pub fn App(props: AppProps) {
 
         context.bind(&window_size);
         let window_size = window_size.get();
-        props.styles = Some(Style {
-            render_command: StyleProp::Value(RenderCommand::Layout),
-            width: StyleProp::Value(Units::Pixels(window_size.0)),
-            height: StyleProp::Value(Units::Pixels(window_size.1)),
-            ..props.styles.clone().unwrap_or_default()
-        });
+        props.styles = Some(Style::default()
+            .with_style(&props.styles)
+            .with_style(Style {
+                render_command: StyleProp::Value(RenderCommand::Layout),
+                width: StyleProp::Value(Units::Pixels(window_size.0)),
+                height: StyleProp::Value(Units::Pixels(window_size.1)),
+                ..props.styles.clone().unwrap_or_default()
+            })
+        );
     }
 
     rsx! {

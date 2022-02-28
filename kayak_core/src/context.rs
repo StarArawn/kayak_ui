@@ -1,4 +1,4 @@
-use crate::assets::AssetStorage;
+use crate::assets::Assets;
 use crate::{Binding, Changeable, CursorIcon, KayakContextRef};
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -18,7 +18,7 @@ use crate::{
 /// the other hand, will likely need to work with this struct directly so they can
 /// control when to render, dispatch events, load assets, etc.
 pub struct KayakContext {
-    assets: resources::Resources,
+    assets: Assets,
     pub(crate) current_effect_index: usize,
     pub(crate) current_state_index: usize,
     /// Processes and dispatches all events
@@ -41,7 +41,7 @@ pub struct KayakContext {
     /// Maps the type of the data to a mapping of the provider node's ID to the state data
     widget_providers: HashMap<std::any::TypeId, HashMap<crate::Index, resources::Resources>>,
     widget_state_lifetimes:
-        HashMap<crate::Index, HashMap<crate::flo_binding::Uuid, Box<dyn crate::Releasable>>>,
+    HashMap<crate::Index, HashMap<crate::flo_binding::Uuid, Box<dyn crate::Releasable>>>,
     widget_states: HashMap<crate::Index, resources::Resources>,
     cursor_icon: CursorIcon,
 }
@@ -56,7 +56,7 @@ impl KayakContext {
     /// Creates a new [`KayakContext`].
     pub fn new() -> Self {
         Self {
-            assets: resources::Resources::default(),
+            assets: Assets::default(),
             current_effect_index: 0,
             current_state_index: 0,
             cursor_icon: CursorIcon::Default,
@@ -557,7 +557,7 @@ impl KayakContext {
         }
 
         // self.widget_manager.dirty_nodes.clear();
-        self.widget_manager.render();
+        self.widget_manager.render(&mut self.assets);
         self.widget_manager.calculate_layout();
         self.update_cursor();
     }
@@ -671,8 +671,8 @@ impl KayakContext {
     /// ```
     #[cfg(feature = "bevy_renderer")]
     pub fn query_world<T: bevy::ecs::system::SystemParam, F, R>(&mut self, mut f: F) -> R
-    where
-        F: FnMut(<T::Fetch as bevy::ecs::system::SystemParamFetch<'_, '_>>::Item) -> R,
+        where
+            F: FnMut(<T::Fetch as bevy::ecs::system::SystemParamFetch<'_, '_>>::Item) -> R,
     {
         let mut world = self.get_global_mut::<bevy::prelude::World>().unwrap();
         let mut system_state = bevy::ecs::system::SystemState::<T>::new(&mut world);
@@ -718,12 +718,7 @@ impl KayakContext {
         &mut self,
         key: impl Into<PathBuf>,
     ) -> Binding<Option<T>> {
-        self.create_asset_storage::<T>();
-        if let Ok(mut asset_storage) = self.assets.get_mut::<AssetStorage<T>>() {
-            asset_storage.get_asset(key).clone()
-        } else {
-            panic!("Couldn't find asset storage but it should exist!");
-        }
+        self.assets.get_asset(key)
     }
 
     /// Stores an asset along with a key to access it
@@ -738,18 +733,7 @@ impl KayakContext {
         key: impl Into<PathBuf>,
         asset: T,
     ) {
-        self.create_asset_storage::<T>();
-        if let Ok(mut asset_storage) = self.assets.get_mut::<AssetStorage<T>>() {
-            asset_storage.set_asset(key, asset);
-        } else {
-            panic!("Couldn't find asset storage but it should exist!");
-        }
-    }
-
-    fn create_asset_storage<T: 'static + Send + Sync + Clone + PartialEq>(&mut self) {
-        if !self.assets.contains::<AssetStorage<T>>() {
-            self.assets.insert(AssetStorage::<T>::new());
-        }
+        self.assets.set_asset(key, asset);
     }
 
     /// Get the ID of the widget that was last clicked

@@ -1,5 +1,4 @@
-use kayak_core::{styles::Units, Binding, Bound, CursorIcon};
-use kayak_font::{CoordinateSystem, KayakFont};
+use kayak_core::CursorIcon;
 
 use crate::core::{
     render_command::RenderCommand,
@@ -19,6 +18,8 @@ pub struct TextProps {
     /// The height of a line of text (currently in pixels)
     pub line_height: Option<f32>,
     /// The font size (in pixels)
+    ///
+    /// Negative values have no effect
     pub size: f32,
     #[prop_field(Styles)]
     pub styles: Option<Style>,
@@ -31,13 +32,13 @@ pub struct TextProps {
 impl Default for TextProps {
     fn default() -> Self {
         TextProps {
-            content: "".to_string(),
-            font: Some(bevy_kayak_ui::DEFAULT_FONT.into()),
+            content: String::new(),
+            font: None,
             line_height: None,
-            size: 0.0,
+            size: -1.0,
             styles: None,
             on_event: None,
-            focusable: None
+            focusable: None,
         }
     }
 }
@@ -57,68 +58,28 @@ impl Default for TextProps {
 /// | `focusable` | ✅        |
 ///
 pub fn Text(props: TextProps) {
-    let TextProps {
-        content,
-        font,
-        line_height,
-        size,
-        ..
-    } = props.clone();
-    let font_name = font;
-    let default_style = props.clone().styles.unwrap_or_default().font.resolve();
-    let font: Binding<Option<KayakFont>> =
-        context.get_asset(font_name.clone()
-            .unwrap_or(default_style.clone()));
-    context.bind(&font);
-    let mut should_render = true;
+    let mut styles = Style {
+        render_command: StyleProp::Value(RenderCommand::Text {
+            content: props.content.clone(),
+        }),
+        ..Default::default()
+    };
 
-    // TODO: It might be worth caching the measurement here until content changes.
-    let (layout_size, parent_size) =
-        if let Some(parent_id) = context.get_valid_parent(parent_id.unwrap()) {
-            if let Some(layout) = context.get_layout(&parent_id) {
-                if let Some(font) = font.get() {
-                    let measurement = font.measure(
-                        CoordinateSystem::PositiveYDown,
-                        &content,
-                        size,
-                        line_height.unwrap_or(size * 1.2),
-                        (layout.width, layout.height),
-                    );
-                    (measurement, (layout.width, layout.height))
-                } else {
-                    should_render = false;
-                    ((0.0, 0.0), (layout.width, layout.height))
-                }
-            } else {
-                should_render = false;
-                ((0.0, 0.0), (0.0, 0.0))
-            }
-        } else {
-            should_render = false;
-            ((0.0, 0.0), (0.0, 0.0))
-        };
-
-
-
-    if should_render {
-        let render_command = RenderCommand::Text {
-            content: content.clone(),
-            size,
-            parent_size,
-            line_height: line_height.unwrap_or(size * 1.2),
-            font: font_name.clone().unwrap_or(default_style),
-        };
-
-        let styles = props.styles.clone().unwrap_or_default();
-        props.styles = Some(Style {
-            render_command: StyleProp::Value(render_command),
-            width: StyleProp::Value(Units::Pixels(layout_size.0)),
-            height: StyleProp::Value(Units::Pixels(layout_size.1)),
-            cursor: StyleProp::select(&[&styles.cursor, &StyleProp::Value(CursorIcon::Text)])
-                .clone(),
-            ..styles
-        });
-    } else {
-        context.mark_dirty();
+    if let Some(ref font) = props.font {
+        styles.font = StyleProp::Value(font.clone());
     }
+    if props.size >= 0.0 {
+        styles.font_size = StyleProp::Value(props.size);
+    }
+    if let Some(line_height) = props.line_height {
+        styles.line_height = StyleProp::Value(line_height);
+    }
+
+    props.styles = Some(styles
+        .with_style(&props.styles)
+        .with_style(Style {
+            cursor: StyleProp::Value(CursorIcon::Text),
+            ..Default::default()
+        })
+    );
 }

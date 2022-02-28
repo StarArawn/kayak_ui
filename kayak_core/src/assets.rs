@@ -41,7 +41,8 @@ impl<T: Clone + PartialEq + Send + Sync + 'static> AssetStorage<T> {
 
 /// A collection for storing assets in Kayak
 ///
-/// This
+/// This handles getting and setting assets in such a way as to allow them to
+/// be bindable by widgets.
 #[derive(Default)]
 pub struct Assets {
     assets: resources::Resources,

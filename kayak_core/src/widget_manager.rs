@@ -1,14 +1,24 @@
-use std::collections::HashMap;
 use indexmap::IndexSet;
-use std::sync::{Arc, Mutex};
-use morphorm::Units;
 use kayak_font::{CoordinateSystem, KayakFont};
+use morphorm::Units;
+use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
 
-use crate::layout_cache::Rect;
-use crate::{focus_tree::FocusTracker, focus_tree::FocusTree, layout_cache::LayoutCache, node::{Node, NodeBuilder}, render_command::RenderCommand, render_primitive::RenderPrimitive, styles::Style, tree::Tree, Arena, BoxedWidget, Index, Widget, WidgetProps, Binding, Bound};
 use crate::assets::Assets;
+use crate::layout_cache::Rect;
 use crate::lifetime::WidgetLifetime;
 use crate::styles::StyleProp;
+use crate::{
+    focus_tree::FocusTracker,
+    focus_tree::FocusTree,
+    layout_cache::LayoutCache,
+    node::{Node, NodeBuilder},
+    render_command::RenderCommand,
+    render_primitive::RenderPrimitive,
+    styles::Style,
+    tree::Tree,
+    Arena, Binding, Bound, BoxedWidget, Index, Widget, WidgetProps,
+};
 // use as_any::Downcast;
 
 #[derive(Debug)]
@@ -251,13 +261,25 @@ impl WidgetManager {
         morphorm::layout(&mut self.layout_cache, &self.node_tree, &self.nodes);
     }
 
-    fn create_primitive(&mut self, id: Index, styles: &mut Style, assets: &mut Assets) -> RenderPrimitive {
+    fn create_primitive(
+        &mut self,
+        id: Index,
+        styles: &mut Style,
+        assets: &mut Assets,
+    ) -> RenderPrimitive {
         let mut render_primitive = RenderPrimitive::from(&styles.clone());
 
         match &mut render_primitive {
-            RenderPrimitive::Text { parent_size, content, font, size, line_height, .. } => {
+            RenderPrimitive::Text {
+                parent_size,
+                content,
+                font,
+                size,
+                line_height,
+                ..
+            } => {
                 // --- Bind to Font Asset --- //
-                let asset= assets.get_asset::<KayakFont, _>(font.clone());
+                let asset = assets.get_asset::<KayakFont, _>(font.clone());
                 self.bind(id, &asset);
 
                 if let Some(font) = asset.get() {
@@ -449,7 +471,6 @@ impl WidgetManager {
         self.nodes[*id].clone()
     }
 
-
     /// Bind a widget so that it re-renders when the binding changes
     ///
     /// # Arguments
@@ -457,7 +478,10 @@ impl WidgetManager {
     /// * `id`: The ID of the widget
     /// * `binding`: the binding to watch
     ///
-    pub(crate) fn bind<T>(&mut self, id: Index, binding: &Binding<T>) where T: resources::Resource + Clone + PartialEq {
+    pub(crate) fn bind<T>(&mut self, id: Index, binding: &Binding<T>)
+    where
+        T: resources::Resource + Clone + PartialEq,
+    {
         let dirty_nodes = self.dirty_nodes.clone();
         let lifetime = self.widget_lifetimes.entry(id).or_default();
         lifetime.add(binding, move || {

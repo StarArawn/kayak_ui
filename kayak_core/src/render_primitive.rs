@@ -99,9 +99,7 @@ impl From<&Style> for RenderPrimitive {
                 border: style.border.resolve(),
                 layout: Rect::default(),
             },
-            RenderCommand::Text {
-                content,
-            } => Self::Text {
+            RenderCommand::Text { content } => Self::Text {
                 color: style.color.resolve(),
                 content,
                 font,

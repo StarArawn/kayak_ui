@@ -75,11 +75,8 @@ pub fn Text(props: TextProps) {
         styles.line_height = StyleProp::Value(line_height);
     }
 
-    props.styles = Some(styles
-        .with_style(&props.styles)
-        .with_style(Style {
-            cursor: StyleProp::Value(CursorIcon::Text),
-            ..Default::default()
-        })
-    );
+    props.styles = Some(styles.with_style(&props.styles).with_style(Style {
+        cursor: StyleProp::Value(CursorIcon::Text),
+        ..Default::default()
+    }));
 }

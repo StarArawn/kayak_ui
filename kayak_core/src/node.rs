@@ -1,8 +1,8 @@
+use crate::render_primitive::RenderPrimitive;
 use crate::{
     styles::{Style, StyleProp},
     Arena, Index,
 };
-use crate::render_primitive::RenderPrimitive;
 
 /// A widget node used for building the layout tree
 #[derive(Debug, Clone, PartialEq)]

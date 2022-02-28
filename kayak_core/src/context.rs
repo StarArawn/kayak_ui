@@ -41,7 +41,7 @@ pub struct KayakContext {
     /// Maps the type of the data to a mapping of the provider node's ID to the state data
     widget_providers: HashMap<std::any::TypeId, HashMap<crate::Index, resources::Resources>>,
     widget_state_lifetimes:
-    HashMap<crate::Index, HashMap<crate::flo_binding::Uuid, Box<dyn crate::Releasable>>>,
+        HashMap<crate::Index, HashMap<crate::flo_binding::Uuid, Box<dyn crate::Releasable>>>,
     widget_states: HashMap<crate::Index, resources::Resources>,
     cursor_icon: CursorIcon,
 }
@@ -671,8 +671,8 @@ impl KayakContext {
     /// ```
     #[cfg(feature = "bevy_renderer")]
     pub fn query_world<T: bevy::ecs::system::SystemParam, F, R>(&mut self, mut f: F) -> R
-        where
-            F: FnMut(<T::Fetch as bevy::ecs::system::SystemParamFetch<'_, '_>>::Item) -> R,
+    where
+        F: FnMut(<T::Fetch as bevy::ecs::system::SystemParamFetch<'_, '_>>::Item) -> R,
     {
         let mut world = self.get_global_mut::<bevy::prelude::World>().unwrap();
         let mut system_state = bevy::ecs::system::SystemState::<T>::new(&mut world);

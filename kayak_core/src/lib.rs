@@ -16,6 +16,7 @@ mod input_event;
 mod keyboard;
 mod keys;
 pub mod layout_cache;
+mod lifetime;
 mod multi_state;
 pub mod node;
 mod on_event;
@@ -26,7 +27,6 @@ pub mod tree;
 mod vec;
 pub mod widget;
 pub mod widget_manager;
-mod lifetime;
 
 use std::sync::{Arc, RwLock};
 

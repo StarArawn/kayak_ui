@@ -1,6 +1,6 @@
-use std::collections::HashMap;
 use crate::flo_binding::Uuid;
 use crate::{Binding, Changeable, Releasable};
+use std::collections::HashMap;
 
 /// A container for storing callbacks tied to the lifetime of a widget
 #[derive(Default)]
@@ -22,9 +22,10 @@ impl WidgetLifetime {
     /// * `callback`: The callback to invoke when the binding changes
     ///
     pub fn add<TBinding, TCallback>(&mut self, binding: &Binding<TBinding>, callback: TCallback)
-        where
-            TBinding: resources::Resource + Clone + PartialEq,
-            TCallback: FnMut() -> () + Send + 'static  {
+    where
+        TBinding: resources::Resource + Clone + PartialEq,
+        TCallback: FnMut() -> () + Send + 'static,
+    {
         let id = binding.id;
         if self.bindings.contains_key(&id) {
             // Binding already exists
@@ -49,6 +50,8 @@ impl WidgetLifetime {
 
 impl std::fmt::Debug for WidgetLifetime {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("WidgetLifetime").field("bindings", &self.bindings.keys()).finish()
+        f.debug_struct("WidgetLifetime")
+            .field("bindings", &self.bindings.keys())
+            .finish()
     }
 }

@@ -1,5 +1,5 @@
-use std::{collections::HashMap, path::PathBuf};
 use resources::RefMut;
+use std::{collections::HashMap, path::PathBuf};
 
 use crate::{Binding, MutableBound};
 
@@ -88,6 +88,8 @@ impl Assets {
 
     /// Get a mutable reference to the asset storage
     fn get_mut<T: 'static + Send + Sync + Clone + PartialEq>(&mut self) -> RefMut<AssetStorage<T>> {
-        self.assets.entry().or_insert_with(|| AssetStorage::<T>::new())
+        self.assets
+            .entry()
+            .or_insert_with(|| AssetStorage::<T>::new())
     }
 }

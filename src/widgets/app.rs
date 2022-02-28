@@ -40,32 +40,32 @@ pub struct AppProps {
 /// of the Bevy app. This allows it to update on window resize in order to match the width and height of the window.
 pub fn App(props: AppProps) {
     #[cfg(feature = "bevy_renderer")]
-    {
-        use crate::bevy::WindowSize;
-        use crate::core::styles::Units;
-        use crate::core::{Binding, Bound};
-        let window_size = if let Ok(world) = context.get_global::<bevy::prelude::World>() {
-            if let Some(window_size) = world.get_resource::<Binding<WindowSize>>() {
-                window_size.clone()
+        {
+            use crate::bevy::WindowSize;
+            use crate::core::styles::Units;
+            use crate::core::{Binding, Bound};
+            let window_size = if let Ok(world) = context.get_global::<bevy::prelude::World>() {
+                if let Some(window_size) = world.get_resource::<Binding<WindowSize>>() {
+                    window_size.clone()
+                } else {
+                    return;
+                }
             } else {
                 return;
-            }
-        } else {
-            return;
-        };
+            };
 
-        context.bind(&window_size);
-        let window_size = window_size.get();
-        props.styles = Some(Style::default()
-            .with_style(&props.styles)
-            .with_style(Style {
-                render_command: StyleProp::Value(RenderCommand::Layout),
-                width: StyleProp::Value(Units::Pixels(window_size.0)),
-                height: StyleProp::Value(Units::Pixels(window_size.1)),
-                ..props.styles.clone().unwrap_or_default()
-            })
-        );
-    }
+            context.bind(&window_size);
+            let window_size = window_size.get();
+            props.styles = Some(Style::default()
+                .with_style(Style {
+                    render_command: StyleProp::Value(RenderCommand::Layout),
+                    width: StyleProp::Value(Units::Pixels(window_size.0)),
+                    height: StyleProp::Value(Units::Pixels(window_size.1)),
+                    ..Default::default()
+                })
+                .with_style(&props.styles)
+            );
+        }
 
     rsx! {
         <Clip>

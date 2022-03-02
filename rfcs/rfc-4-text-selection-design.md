@@ -50,73 +50,7 @@ For the purposes of text selection, a <em>**range**</em> is a set of two positio
 
 ### 1. Retrieving Text
 
-// TODO: Address issue where content differs from visual content and how that affects selection
-
-Before we start discussing how we select text and all that, we need to discuss how we even process our widgets textually. It might seem obvious that if we want to extract text content from a widget, it's going to have to come from a text widget. In other words, a widget marked `RenderCommand::Text`.
-
-This might actually be all we need, at least at a basic level. However, what if a widget wanted to display text that was purely visual and not actually part of the content. This could be the numbers on a list, or the contents of a footnote or tooltip. This might not be a common occurrence, but is something to consider.
-
-#### 1.1. Alternative #1 - Widget
-
-In such cases, it might be worth adding a new default method to `Widget`:
-
-```rust
-pub trait Widget: /* ... */ {
-  // ...
-  fn get_content(&self) -> Option<&str> {
-    // ...
-  }
-}
-```
-
-This method would return the actual content of the widget, or `None` if it contains no textual content.
-
-There are two issues with this that should be discussed first:
-
-1. If a user wants to make a custom text widget, they need to somehow update the return value of this method as well
-2. Since this is often a dynamic property, functional widgets will have a harder time updating this value
-
-To prevent the footgunning from the first point, we can instead return the content of `RenderCommand::Text` be default:
-
-```rust
-fn get_content(&self) -> Option<&str> {
-  let styles = self.get_props().get_styles();
-  let command = styles.render_command;
-  
-  if let StyleProp::Value(RenderCommand::Text {content}) = command {
-    Some(content)
-  } else {
-    None
-  }
-}
-```
-
-With this, a user would only need to manually edit this method if they specifically need to control the returned content.
-
-The second issue, unfortunately, would be much more involved. We could easily generate the widget struct to store a content value no problem. This is not the issue, though. The real issue is that this forces users to use the secret variables that we'd rather them not have to use.
-
-This can be avoided if `WidgetContext` from RFC 1.1 can be implemented. The reason this wasn't implemented was that it came with its own issues (requiring the `WidgetContext` actually be named `context`) and didn't do much beyond wrap props. However, if we want to go that route, we can implement it and add a method to update the widget content, which could be used like so:
-
-```rust
-context.set_content(Some("My lovely content..."));
-```
-
-#### 1.2. Alternative #2 - External Storage
-
-If we'd rather not store this information on widgets directly, we could instead store the content in a separate data structure on `KayakContext` (probably nested in whatever struct we create to house all the text selection logic). This structure would likely just store the content of each widget by their ID and only contain actual content (no need for `Option<String>`). So if a widget has data, it can be found there.
-
-Setting the content can be done through `KayakContextRef`:
-
-```rust
-context.set_content("My lovely content...");
-context.remove_content();
-```
-
-This solution, however, faces the same issue the `FocusTree` does: we lack proper widget cleanup. If a widget is removed from the tree, we don't have a good way of adjusting for that. If this is implemented, we'd probably need to solve [widget cleanup](https://github.com/StarArawn/kayak_ui/issues/46) first (which has the added benefit of solving the `FocusTree` issue).
-
-#### 1.3. Discussion
-
-> 💬 Which solution sounds like the best option for storing/retrieving content? Basic `RenderCommand`? New method on `Widget`? Storing in `KayakContext`? Other options?
+Before we start discussing how we select text and all that, we need to discuss how we even process our widgets textually. Thankfully we already have a system in place to determine if a widget displays text and what text content it displays. All we need to do is check if a widget has a `RenderCommand::Text` render command.
 
 ### 2. Defining the Range
 

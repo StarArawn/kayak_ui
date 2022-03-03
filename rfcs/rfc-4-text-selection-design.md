@@ -68,7 +68,7 @@ As long as we have the answer to those two questions we'll know exactly where th
 This can succinctly be stored in a struct like:
 
 ```rust
-struct RangeBound {
+pub struct RangeBound {
   node: Index,
   offset: usize
 }
@@ -79,15 +79,24 @@ struct RangeBound {
 Given any two `RangeBound` objects, we can define an actual range like so:
 
 ```rust
-struct Range {
+pub struct Range {
   start: RangeBound,
   end: RangeBound
 }
 ```
 
-If we allow ourselves to jump ahead for a moment, we might wonder if text selection will always have a start and end. Could one exist without the other?
+If we allow ourselves to jump ahead for a moment, we might wonder if text selection will always have a start and end. Could one exist without the other? It might be possible that we only know the start or end of a range and not both. However, recall that a range is perfectly valid even if its start and end are the same point. Therefore, if we can only define the range with a single point, we can simply set both the start *and* end to that point.
 
-It might be possible that we only know the start or end of a range and not both. However, recall that a range is perfectly valid even if its start and end are the same point. Therefore, if we can only define the range with a single point, we can simply set both the start *and* end to that point.
+When both the start and end are equal, it's known as a *collapsed* range. We can specify a method that gives quick access to whether or not a range is collapsed:
+
+```rust
+impl Range {
+  // ...
+  pub fn is_collapsed(&self) -> bool {
+    self.start == self.end
+  }
+}
+```
 
 #### 2.2. The In-Between
 
@@ -227,7 +236,7 @@ The DOM standard makes a [distinction](https://dom.spec.whatwg.org/#introduction
 
 One of the biggest challenges text selection faces is determining the actual boundary points. The basic idea is: *click here, set boundary point(s)*. We can pretty easily get the clicked node, but how do we determine the offset of the boundary?
 
-There are two cases to consider: non-text nodes, text nodes, and mixed nodes.
+There are two cases to consider: non-text nodes and text nodes.
 
 #### 3.1. Non-Text Nodes
 
@@ -360,9 +369,118 @@ Obviously, this is only a single example and can't show all the edge cases and a
 
 > 💬 Which method should we use to calculate character offset? Are there alternatives? And are there any challenges that haven't been considered?
 
+### 4. Selection
 
+With all the setup out of the way, we can now look into actually handling text selection. Again, I'm not going to dive into the implementation details too much. This is meant to just give a broad overview of text selection.
 
+#### 4.1. The Selection API
 
+At its core, a selection is just a fancy range. One thing it does differently from a normal range, however, is keep track of an *anchor* and a *head* (the web uses the term ["focus,"](https://developer.mozilla.org/en-US/docs/Web/API/Selection#focus_of_a_selection) but I'd like to avoid that term in order to prevent confusion with widget focus). 
+
+The *anchor* is the part of the selection that doesn't change while the *head* is the part that can be moved. When clicking and dragging, for example, the initial click sets the anchor while the drag moves the head. While it doesn't matter which bound is which (start or end), we may as well follow the web conventions:
+
+* If the selection direction is *forwards*— the anchor comes before the head— we set the anchor as the start and the head as the end
+* If the selection direction is *backwards*— the anchor comes after the head— we set the anchor as the end and the head as the start
+* If the selection direction is *directionless*— the anchor and the head are the same (a collapsed range)— it doesn't matter which is set to which
+
+##### 4.1.1. `Selection` Methods
+
+Here is a list of potential methods we may want to include on the selection object (not exhaustive):
+
+```rust
+impl Selection {
+  /// Get the anchor
+  pub fn anchor(&self) -> RangeBound {/* ... */}
+  /// Set the anchor
+  pub fn set_anchor(&mut self, id: Index, offset: usize) {/* ... */}
+  /// Get the head bound
+  pub fn head(&self) -> RangeBound {/* ... */}
+  /// Set the head
+  pub fn set_head(&mut self, id: Index, offset: usize) {/* ... */}
+  /// Get the range
+  pub fn range(&self) -> Range {/* ... */}
+  /// Set the range
+  pub fn set_range(&mut self, range: Range) {/* ... */}
+  /// Shift the offset by the given amount
+  pub fn shift_offset(&mut self, offset: isize) {/* ... */}
+  // etc.
+}
+```
+
+> We'll also likely want to expose some methods on `Range` in `Selection` for convenience.
+
+##### 4.1.2. Interfacing with `KayakContext`
+
+One big issue the API will need to address is handling retrieving and mutating the selection. The reason this is difficult is because we need access to not only the widget tree, but the selection itself. Since we might mutate the selection or the tree, we need mutable access to both. This is obviously a challenge when it comes to Rust's borrow rules.
+
+To solve this, I think we need to diverge from web tech a bit. Whereas in Javascript, the selection object can directly access and mutate data in the document, our selection object should probably just be used to define *how* to access or mutate data. This means we use the selection object as a parameter to those methods as opposed to actually calling the methods on the selection object directly.
+
+So in essence, this would look something like:
+
+```rust
+// Get a clone of the current selection
+let mut selection = context.get_selection().unwrap();
+// Mutate it
+selection.shift_offset(-1);
+// Use it to get content
+let content = context.get_contents(selection.range());
+// Set the new selection
+context.set_selection(Some(selection));
+```
+
+Here, we see that the selection object on its own does nothing. It's purely data meant to be used by `KayakContext`.
+
+At the cost of being slightly more verbose, we now don't have to concern ourselves too much with borrow checking. This does, however, leave us with one possibly annoying issue: bounds checking.
+
+Since we don't have access to the widget tree, we are forced to accept any and every range, even if it's not possible. We can't throw an error on this code, for example:
+
+```rust
+let mut selection = context.get_selection().unwrap();
+
+// Assume the node our head is at only has a length of 10
+// This should, therefore, not be possible:
+selection.shift_offset(100000000);
+```
+
+Even though we know the offset can't extend beyond the length of the content, it's still allowed to. Why? Because we can't verify that this is wrong without a reference to the widget tree. Therefore, the actual error needs to be thrown when we try to use it:
+
+```rust
+context.set_selection(Some(selection)); // "Error: Offset exceeds node's length of 10"
+```
+
+This isn't the worst, but it may result in confusion and difficulty on the user's end.
+
+##### 4.1.3. Alternative - `Arc`-ing
+
+Selection only deals with two things: itself and the widget tree. As we saw in the section above, we can freely edit a selection, but need to use `KayakContext` as a bridge to read/write the widget tree. This was due to issues with borrowing while we mutably borrow `KayakContext` for rendering.
+
+One way around this would be to change `KayakContext::widget_manager` from just a basic `WidgetManager` to an `Arc<RwLock<WidgetManager>>`. Doing so, allows us to store a reference to the manager (and thus, its widget trees) in the selection object directly.
+
+It should be safe to do so since we render widgets one-at-a-time on a single thread anyway. And this would allow the API to look something more like:
+
+```rust
+// (NO CHANGE) Get a clone of the current selection
+let mut selection = context.get_selection().unwrap();
+// Mutate it (now with bounds checking)
+selection.shift_offset(-1).unwrap();
+// Use it to get content (now done via the selection itself)
+let content = selection.get_contents();
+// (NO CHANGE) Set the new selection
+context.set_selection(Some(selection));
+```
+
+It's not a major change but certainly an improvement.
+
+However, this would be a large refactor and something we'd want to really consider before doing. It may be beneficial to do something like this in the long run for other systems, but it might also cause unforeseen issues.
+
+> 💬 Should a major refactor like this be done? What are the possible issues this might create? Is it worth it?
+
+# Challenges
+
+// TODO: Complete this section
+
+1. `RangeBound` comparison - can't compare `Index` type since their tree order is not guaranteed
+2. Handling tree mutation (maybe check if dirty widget is within bounds of range and if bounds' nodes exist?)
 
 ---
 

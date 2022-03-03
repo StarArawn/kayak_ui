@@ -48,9 +48,37 @@ For the purposes of text selection, a <em>**range**</em> is a set of two positio
 
 ## Design
 
-### 1. Retrieving Text
+### 1. Retrieving Widget Info
+
+#### 1.1. Text Content
 
 Before we start discussing how we select text and all that, we need to discuss how we even process our widgets textually. Thankfully we already have a system in place to determine if a widget displays text and what text content it displays. All we need to do is check if a widget has a `RenderCommand::Text` render command.
+
+#### 1.2. Length
+
+Another important bit of information we may need is the the *length* of a widget. The length of a widget is determined as the following:
+
+* If the widget contains text, return the number of characters[^1] in the text
+* If the widget has children, return the number of children
+* Otherwise, return 0
+
+This information will be used to verify that a range is valid.
+
+#### 1.3. `Node` Methods
+
+Most of this data will be available via the `Node` object (since all styles and other data are resolved into nodes). As such, we'll add a few convenience methods to access the required widget info:
+
+```rust
+impl Node {
+  /// Get the text contents of this node, if any, otherwise `None`
+  pub fn content() -> Option<&str> {/* ... */}
+  /// Get the content length of this node
+  pub fn len() -> usize {/* ... */}
+  // etc.
+}
+```
+
+> The `&str` in the code above may need to just be `String` depending on implementation. Either way, the general idea of it will remain the same.
 
 ### 2. Defining the Range
 
@@ -68,6 +96,7 @@ As long as we have the answer to those two questions we'll know exactly where th
 This can succinctly be stored in a struct like:
 
 ```rust
+// DEMONSTRATION - This may change based on implementation
 pub struct RangeBound {
   node: Index,
   offset: usize
@@ -79,6 +108,7 @@ pub struct RangeBound {
 Given any two `RangeBound` objects, we can define an actual range like so:
 
 ```rust
+// DEMONSTRATION - This may change based on implementation
 pub struct Range {
   start: RangeBound,
   end: RangeBound
@@ -87,14 +117,39 @@ pub struct Range {
 
 If we allow ourselves to jump ahead for a moment, we might wonder if text selection will always have a start and end. Could one exist without the other? It might be possible that we only know the start or end of a range and not both. However, recall that a range is perfectly valid even if its start and end are the same point. Therefore, if we can only define the range with a single point, we can simply set both the start *and* end to that point.
 
-When both the start and end are equal, it's known as a *collapsed* range. We can specify a method that gives quick access to whether or not a range is collapsed:
+##### 2.1.1 `RangeBound` Methods
+
+```rust
+impl RangeBound {
+  /// Get the ID of the widget
+  pub fn id(&self) -> Index {/* ... */}
+  /// Get the offset within the widget
+  pub fn offset(&self) -> usize {/* ... */}
+  // etc.
+}
+```
+
+##### 2.1.2 `Range` Methods
 
 ```rust
 impl Range {
-  // ...
-  pub fn is_collapsed(&self) -> bool {
-    self.start == self.end
-  }
+  /// Get the start bound
+  pub fn start(&self) -> RangeBound {/* ... */}
+  /// Set the start bound
+  pub fn set_start(&mut self, start: RangeBound) {/* ... */}
+  /// Get the end bound
+  pub fn end(&self) -> RangeBound {/* ... */}
+  /// Set the end bound
+  pub fn set_end(&mut self, end: RangeBound) {/* ... */}
+  /// Collapse and move both start and end bounds to the given position
+  pub fn move(&mut self, node: Index, offset: usize) {/* ... */}
+  /// Check if the range is collapsed (start is the same as end)
+  pub fn is_collapsed(&self) -> bool {/* ... */}
+  /// Collapse the end bound to the start point
+  pub fn collapse_to_start(&mut self) {/* ... */}
+  /// Collapse the start bound to the end point
+  pub fn collapse_to_end(&mut self) {/* ... */}
+  // etc.
 }
 ```
 
@@ -474,6 +529,27 @@ It's not a major change but certainly an improvement.
 However, this would be a large refactor and something we'd want to really consider before doing. It may be beneficial to do something like this in the long run for other systems, but it might also cause unforeseen issues.
 
 > 💬 Should a major refactor like this be done? What are the possible issues this might create? Is it worth it?
+
+##### 4.1.5. `KayakContext` Methods
+
+> By extension these methods also apply to `KayakContextRef` (for all user-facing APIs)
+
+```rust
+impl KayakContext {
+  /// Get the current selection, if any, otherwise `None`
+  pub fn get_selection(&self) -> Option<Selection> {/* ... */}
+  /// Set the current selection
+  pub fn set_selection(&mut self, selection: Option<Selection>) {/* ... */}
+  /// Get the string content with the given range
+  pub fn get_content(&self, range: Range) -> Result<&str, WidgetRangeError> {/* ... */}
+}
+```
+
+> Note that whether we go with the [alternative](#4.1.3. Alternative - `Arc`-ing) design or not, we likely still want methods like `get_content(...)` on `KayakContext` so that they can be used outside of widgets and apart from the physical selection.
+
+#### 4.2. Creating the Selection
+
+
 
 # Challenges
 

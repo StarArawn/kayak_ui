@@ -71,9 +71,11 @@ Most of this data will be available via the `Node` object (since all styles and 
 ```rust
 impl Node {
   /// Get the text contents of this node, if any, otherwise `None`
-  pub fn content() -> Option<&str> {/* ... */}
+  pub fn content(&self) -> Option<&str> {/* ... */}
   /// Get the content length of this node
-  pub fn len() -> usize {/* ... */}
+  pub fn len(&self) -> usize {/* ... */}
+  /// Checks whether this is a text node or not
+  pub fn is_text(&self) -> bool {/* ... */}
   // etc.
 }
 ```
@@ -438,6 +440,8 @@ The *anchor* is the part of the selection that doesn't change while the *head* i
 * If the selection direction is *backwards*— the anchor comes after the head— we set the anchor as the end and the head as the start
 * If the selection direction is *directionless*— the anchor and the head are the same (a collapsed range)— it doesn't matter which is set to which
 
+Additionally, the selection should contain the *common ancestor* of the two bounds. This is the deepest node in the widget tree that contains both bounds and is vital for efficiently processing certain calculations. This will also be very helpful when we add [dynamic ranges](#2.4.-dynamic-vs-static) since it can help determine if a tree mutation possibly affected the selected contents.
+
 ##### 4.1.1. `Selection` Methods
 
 Here is a list of potential methods we may want to include on the selection object (not exhaustive):
@@ -464,6 +468,8 @@ impl Selection {
 
 > We'll also likely want to expose some methods on `Range` in `Selection` for convenience.
 
+> If [access to the widget tree](#4.1.3.-alternative---arc-ing) is granted, we can include additional methods here such as `contents()` and `common_ancestor()`.
+
 ##### 4.1.2. Interfacing with `KayakContext`
 
 One big issue the API will need to address is handling retrieving and mutating the selection. The reason this is difficult is because we need access to not only the widget tree, but the selection itself. Since we might mutate the selection or the tree, we need mutable access to both. This is obviously a challenge when it comes to Rust's borrow rules.
@@ -474,13 +480,13 @@ So in essence, this would look something like:
 
 ```rust
 // Get a clone of the current selection
-let mut selection = context.get_selection().unwrap();
+let mut selection = context.selection();
 // Mutate it
 selection.shift_offset(-1);
 // Use it to get content
-let content = context.get_contents(selection.range());
+let content = context.contents(selection.range());
 // Set the new selection
-context.set_selection(Some(selection));
+context.set_selection(selection);
 ```
 
 Here, we see that the selection object on its own does nothing. It's purely data meant to be used by `KayakContext`.
@@ -490,7 +496,7 @@ At the cost of being slightly more verbose, we now don't have to concern ourselv
 Since we don't have access to the widget tree, we are forced to accept any and every range, even if it's not possible. We can't throw an error on this code, for example:
 
 ```rust
-let mut selection = context.get_selection().unwrap();
+let mut selection = context.selection();
 
 // Assume the node our head is at only has a length of 10
 // This should, therefore, not be possible:
@@ -500,7 +506,7 @@ selection.shift_offset(100000000);
 Even though we know the offset can't extend beyond the length of the content, it's still allowed to. Why? Because we can't verify that this is wrong without a reference to the widget tree. Therefore, the actual error needs to be thrown when we try to use it:
 
 ```rust
-context.set_selection(Some(selection)); // "Error: Offset exceeds node's length of 10"
+context.set_selection(selection); // "Error: Offset exceeds node's length of 10"
 ```
 
 This isn't the worst, but it may result in confusion and difficulty on the user's end.
@@ -515,13 +521,13 @@ It should be safe to do so since we render widgets one-at-a-time on a single thr
 
 ```rust
 // (NO CHANGE) Get a clone of the current selection
-let mut selection = context.get_selection().unwrap();
+let mut selection = context.selection();
 // Mutate it (now with bounds checking)
 selection.shift_offset(-1).unwrap();
 // Use it to get content (now done via the selection itself)
-let content = selection.get_contents();
+let content = selection.contents();
 // (NO CHANGE) Set the new selection
-context.set_selection(Some(selection));
+context.set_selection(selection);
 ```
 
 It's not a major change but certainly an improvement.
@@ -530,33 +536,281 @@ However, this would be a large refactor and something we'd want to really consid
 
 > 💬 Should a major refactor like this be done? What are the possible issues this might create? Is it worth it?
 
-##### 4.1.5. `KayakContext` Methods
+##### 4.1.4. `KayakContext` Methods
 
 > By extension these methods also apply to `KayakContextRef` (for all user-facing APIs)
 
 ```rust
 impl KayakContext {
-  /// Get the current selection, if any, otherwise `None`
-  pub fn get_selection(&self) -> Option<Selection> {/* ... */}
+  /// Get the current selection (if nothing is selected, the range should be "collapsed")
+  pub fn selection(&self) -> Selection {/* ... */}
   /// Set the current selection
-  pub fn set_selection(&mut self, selection: Option<Selection>) {/* ... */}
+  pub fn set_selection(&mut self, selection: Selection) -> Result<(), WidgetRangeError> {/* ... */}
   /// Get the string content with the given range
-  pub fn get_content(&self, range: Range) -> Result<&str, WidgetRangeError> {/* ... */}
+  pub fn contents(&self, range: Range) -> Result<&str, WidgetRangeError> {/* ... */}
+  /// Get the common ancestor of the given range
+  pub fn common_ancestor(&self, range: Range) -> Index {/* ... */}
 }
 ```
 
-> Note that whether we go with the [alternative](#4.1.3. Alternative - `Arc`-ing) design or not, we likely still want methods like `get_content(...)` on `KayakContext` so that they can be used outside of widgets and apart from the physical selection.
+> Note that whether we go with the [alternative](#4.1.3.-alternative---arc-ing) design or not, we likely still want methods like `contents(...)` on `KayakContext` so that they can be used outside of widgets and apart from the physical selection. However, things like `common_ancestor(...)` can be moved to `Selection`.
+
+##### 4.1.5. Ownership
+
+One quick note to make is that the selection object should likely be stored in `WidgetManager`. This might come down to actual implementation, but it's probably best to keep it there so processing things like content and validating bounds can be done at any point in time— without having to pass the selection object in as a parameter from `KayakContext`.
+
+##### 4.1.6. Validating Selection
+
+It's important that our selection always remain valid. In other words, our selection's bounds must always point to an existing widget and a valid offset within that widget. Again, without proper support for [dynamic ranges](#2.4.-dynamic-vs-static) we can't really diff our widgets to see if their content is the same and account for changes. However, we *can* ensure the bounds are always valid.
+
+If one of the selection's bounds has been re-rendered, we can collapse the selection to the root widget. In this way, we ensure that no matter what happened to the bound widget, we don't ever have an invalid selection.
+
+> We might need to verify this on each render since we don't have widget removal detection available yet.
+
+We could potentially only collapse to root if the offset of the re-rendered widget is invalid, however, this might cause some discrepancies. Consider the following:
+
+```
+Node 1: "Hello "
+Node 2: "World!"
+```
+
+Say we select from the 'e' in "Hello" and the 'r' in "World". If we only collapse on invalid offsets, we could potentially change Node 1 to this without collapsing:
+
+```
+Node 1: "Hello everyone in this lovely "
+Node 2: "World!"
+```
+
+This seems reasonable since it's still between the bounds. But does this next example make sense?
+
+```
+Node 1: "Hello "
+Node 2: "everyone in this lovely World!"
+```
+
+Now our selection's content is "Hello eve". The offset in Node 2 is still valid, it just points to the wrong character.
+
+To avoid confusion, it's probably better to just have the rule be: if the widget is re-rendered, the selection is collapsed to the root.
 
 #### 4.2. Creating the Selection
 
+The [Selection API](#4.1. The Selection API) is useful for allowing users (and ourselves) to manually control the selection. However, we don't want them to have to do this all manually. It would be obviously be better to do most of the basic stuff automatically for them. In order to do this, we'll need to augment our event system to include a few more default actions and events.
 
+Firstly, what causes a selection to be made or augmented? Here are the ways we should allow this:
 
-# Challenges
+* Double-click to select a word
+* Triple-click to select an entire node
+* Click and drag to select a custom range
 
-// TODO: Complete this section
+We may also want to include other niceties, although they may be more difficult to implement:
 
-1. `RangeBound` comparison - can't compare `Index` type since their tree order is not guaranteed
-2. Handling tree mutation (maybe check if dirty widget is within bounds of range and if bounds' nodes exist?)
+* Use <kbd>Shift</kbd>+<kbd>→</kbd> or <kbd>Shift</kbd>+<kbd>←</kbd> to expand/shrink the selection
+  * Hold <kbd>Alt</kbd> to shift by a whole word
+  * Hold <kbd>⌘</kbd> or <kbd>Win</kbd> to expand/shrink the selection to the start/end of the current line (although, I'm not sure if this actually the behavior on Windows)
+* Use <kbd>Shift</kbd>+<kbd>↑</kbd> or <kbd>Shift</kbd>+<kbd>↓</kbd> to expand/shrink the selection up or down a line
+
+#### 4.2.1. Multi-Clicks
+
+Detecting double-click and triple-click should be relatively simple. We just need to store the location and `Instant` for up to three clicks and check that they're within a certain range. We may even want to expose an event for these (or at least for double-click):
+
+```rust
+enum EventType {
+  // ...
+  DoubleClick(CursorEvent),
+  // ...
+}
+```
+
+With that done, we can add a default action to be performed on each.
+
+> It's important to note that these "default actions" should not be preventable by `event.prevent_default()`. Allowing that would create inconsistencies for how selection can be created (this wouldn't stop click-and-drag, for example).
+
+For the double-click, we can do the following:
+
+1. Get *position* using one of the previously discussed [methods](#3.-positioning)
+2. If non-text node, collapse to *position* and return
+3. Otherwise, get node *content*
+4. Use *offset* to identify *word*
+5. Set *anchor* to start offset of *word* and set *head* to end offset of word
+
+For triple-click, things may change depending on the selected position-detection method. Since we need to access lines, directly, this may be a reason to use the [line method](#3.2.2.-line-method). Otherwise, some other method of calculating the desired line may be needed.
+
+If we use the line method, though, we get something like:
+
+1. Get *position*
+2. If non-text node, collapse to *position* and return
+3. Otherwise, get *line offset* and *line index*
+4. Set *anchor* to *line offset* and set *head* to offset of the line at *line index* + 1
+
+#### 4.2.2. Click-and-Drag
+
+Click and drag is actually relatively straightforward. Anytime we click, we collapse the selection to the range bound at that location. If we hold the cursor down, we'll continue to update the head of the selection every time the mouse moves.  
+
+Additionally, if we hold <kbd>Shift</kbd> and click elsewhere, we'll do the following:
+
+1. Get the boundary, *A*, of the anchor and the boundary, *B*, of the head
+2. Get the boundary, *C*, of the clicked location
+3. If *C* is closer to *A* than to *B*, set anchor to *B* and head to *C*
+4. If *C* is closer to *B* than to *A*, set anchor to *A* and head to *C*
+
+> If *C* is between *A* and *B*, we will likely need to traverse the tree to determine which one is closer, unless a better solution is found
+
+#### 4.2.3. Expanding/Shrinking Selection
+
+We should also consider making it possible to expand/shrink the selection using arrow keys. This feature should only be possible if there is currently a *non-collapsed* selection and the user is also holding down the <kbd>Shift</kbd> key.
+
+Pressing <kbd>←</kbd>, <kbd>→</kbd>, <kbd>↑</kbd>, or <kbd>↓</kbd> should work like so:
+
+1. If *selection* is collapsed, return
+2. Get arrow key direction, *D*
+3. If *selection* has not yet been moved, do the following:
+   1. If *D* is pointing left or up, set the rightmost bound as the *anchor*
+   2. Otherwise, set leftmost bound as the *anchor*
+   3. Save current offset of *head*, *H*, from start offset of current line
+4. If *D* is moving left or right:
+   1. Shift *head* by an offset of 1 in that direction
+   2. Save current offset of *head*, *H*, from start offset of current line
+5. If *D* is moving up or down:
+   1. Get line, *L*, in direction of *D*
+   2. Get start offset of *L*, *S*
+   3. Get content length of *L*, *C*
+   4. Set offset of *head* to *min( S + H , C )*
+6. If *head* crosses over *anchor*, collapse range
+
+#### 4.2.4. Selection Events
+
+Selection is its own thing and should *never* be cancelable from some other event. Calling `event.prevent_default()` on  `EventType::Click` should not affect selection. Instead, we will dispatch selection events that will allow users to respond to and prevent selection.
+
+```rust
+enum EventType {
+  // ...
+  SelectionStart(SelectionEvent),
+  SelectionEnd(SelectionEvent),
+  // ...
+}
+```
+
+###### `SelectionStart` Event
+
+The `SelectionStart` event will be invoked whenever a new selection is started in the target. It should be able to propagate with its target being the node at the selection's anchor. If canceled, the current selection should not change and the new selection should not be created.
+
+###### `SelectionEnd` Event
+
+The `SelectionEnd` event will be invoked whenever a selection is ended in the target. It should be able to propagate with its target being the node at the selection's head. If canceled, the current selection should not change and the head should not be moved.
+
+This should not include click-and-drag events that pass over widgets. For click-and-drag, it is the act of releasing the mouse button that "ends" the selection.
+
+> 💬 The web uses `selectstart` and `selectionchange` events. However, it might be nice to respond to a selection being ended so I added `SelectionEnd`. My question is, do we include a `SelectionChanged` event that is invoked on all widgets when the selection changes? And are there other events we might want, such as `OnSelect` and `OnDeselect`? 
+
+#### 4.3. Indicating the Selection
+
+Obviously all of this is no good if we can't actually display the selection to the user. There's two types of displays we'll need to cover: collapsed ranges and non-collapsed ranges.
+
+Both only apply to text-based widgets. We can ignore all non-text widgets when handling these selection indicators.
+
+Furthermore, we'll likely want to handle them as *pseudo-elements*. In other words, they shouldn't be physical widgets existing in the widget tree and instead primitives sent directly to the renderer. There are two reasons for this:
+
+1. It makes the whole system "automatic" (users who make their own custom `Text` widget don't need to integrate all our custom logic to achieve the same effect)
+2. It also might be more performant since it reduces the number of tree mutations we'd need to make (due to these pseudo-elements not being actual nodes in the tree)
+
+> 💬 Is this a good way of handling it? Is there a better way?
+
+##### 4.3.1. Collapsed Ranges
+
+Collapsed ranges display what's known as the text insertion cursor, or *caret*. This is usually only displayed in editable content. Unfortunately we don't have a distinguishing or handling editable content directly (it has to be managed by a widget like `TextBox`). Such a feature could be added in the future using a text diff algorithm, but we'll consider that out of scope for now— though, it should be not too difficult to add onto the systems we develop here.
+
+Until then, any text widget with an appropriate [`caret`](#4.4.2.-caret) style will display the caret, assuming the selection range is located within it.
+
+> 💬 Since the caret is a pseudo-element, we might be able to even incorporate blinking directly in the shader. Although, I'm not sure how feasible that is or how we would handle pausing the blink when the caret moves (as is standard behavior).
+
+##### 4.3.2. Non-Collapsed Ranges
+
+Non-collapsed ranges will need to display the full range of the selection. This is normally done by adding a semi-transparent background to the selected text. We cannot just set the `background_color` style of the widget, though, since not all of it might be selected.
+
+To get around this, we will need to create one quad for each line that spans the selected region. Another option would be to render at most three quads: one for the start selection, one for the end, and one for all the content in the middle. However, this assumes that the line height is set in such a way that warrants a seamless selection area. It also runs into an issue with self-directed widgets that might not align with other content. Therefore, I think the multi-quad approach will be the simplest and most versatile.
+
+#### 4.4. Selection Styles
+
+##### 4.4.1. `select`
+
+This style property controls how content is selected. This can be applied to any widget.
+
+###### Values
+
+| Variant           | Description                                                  |
+| ----------------- | ------------------------------------------------------------ |
+| `Select::Normal`  | Allows for normal selection text selection. This is the default value. |
+| `Select::Contain` | Restricts a selection started within this widget or its descendants to the widget |
+| `Select::All`     | Selects/deselects all contents of this widget at once        |
+| `Select::None`    | This widget and all its descendants are not selectable.      |
+
+> All values are values can be overridden. For example, setting a parent to `Select::None` and its child to `Select::Normal` will still allow the child to be selected.
+
+> The specs for these values are based on the [web equivalent values](https://developer.mozilla.org/en-US/docs/Web/CSS/user-select#syntax). Those specs also suggest that this property should not be inheritable and that its default be `auto`. The reasoning for this is to enforce consistency with editable content and pseudo-elements. Since we don't really have those, we can just ignore this and allow inheritance.
+
+##### 4.4.2. `caret`
+
+This style property controls how the text insertion cursor (caret) is displayed. This can be applied to any `RenderCommand::Text` widget.
+
+> While this is generally only useful to editable content, we don't have a great way of making that kind of distinction like HTML [can](https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/contenteditable). So we'll just allow it for any text widget that opts in.
+
+###### Values
+
+| Variant               | Description                                                  |
+| --------------------- | ------------------------------------------------------------ |
+| `Caret::None`         | No caret is displayed. This is the default value.            |
+| `Caret::Bar`          | A vertical bar is displayed after the character[^1] at the collapsed position |
+| `Caret::Under`        | A horizontal line is displayed below the character[^1] at the collapsed position |
+| `Caret::Block`        | A background is displayed behind the character[^1] at the collapsed position |
+| `Caret::Custom(char)` | A custom character is displayed after the character[^1] at the collapsed position |
+
+##### 4.4.3. `caret_color`
+
+This style property controls the color of the caret (when displayed). This can be applied to any `RenderCommand::Text` widget.
+
+Accepts any `Color` value.
+
+##### 4.4.4. `selection_background_color`
+
+This style property controls the background color of the selection. This does not change the background color of *all* text in the widget, just the selected range. This can be applied to any `RenderCommand::Text` widget.
+
+Accepts any `Color` value.
+
+##### 4.4.5. `selection_color`
+
+This style property controls the text color of the selection. This does not change the text color of *all* text in the widget, just the selected range. This can be applied to any `RenderCommand::Text` widget.
+
+Accepts any `Color` value.
+
+> By default this should take on the current `color` value.
+
+## Implementation Guide
+
+Below is a guide for how we could implement this RFC. The exact details of the implementation can be decided in the PRs themselves or in separate RFC documents. This list should also be taken with a grain of salt as it might make sense to do things differently as the implementation process begins.
+
+### Small Changes
+
+These are changes that are quick to implement or don't interact with other systems/APIs too much.
+
+1. Add the appropriate methods to `Node` ([reference](#1.3.-node-methods))
+2. Create `Range` and `RangeBound` structs ([reference](#2.-defining-the-range))
+
+### Moderate Changes
+
+These are changes that might be slightly more difficult to implement or have limited interaction with other systems/APIs.
+
+1. Use grapheme clusters for font sizing ([reference](#character))
+2. Implement text layout caching and sizing ([reference](#3.2.-text-nodes))
+
+### Large Changes
+
+These are changes that are large in scope, difficult to implement, or touch a large number of other systems/APIs.
+
+1. Add selection object ([reference](#4.1.-the-selection-api))
+2. Add selection indicators ([reference](#4.3.-indicating-the-selection))
+   1. Add selection styles ([reference](#4.4.-selection-styles))
+3. Add selection events ([reference](#4.2.4.-selection-events))
+   1. Handle user interaction ([reference](#4.2.-creating-the-selection))
 
 ---
 

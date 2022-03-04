@@ -513,9 +513,9 @@ This isn't the worst, but it may result in confusion and difficulty on the user'
 
 ##### 4.1.3. Alternative - `Arc`-ing
 
-Selection only deals with two things: itself and the widget tree. As we saw in the section above, we can freely edit a selection, but need to use `KayakContext` as a bridge to read/write the widget tree. This was due to issues with borrowing while we mutably borrow `KayakContext` for rendering.
+Selection only deals with two things: itself and the node tree. As we saw in the section above, we can freely edit a selection, but need to use `KayakContext` as a bridge to read/write the tree. This was due to issues with borrowing while we mutably borrow `KayakContext` for rendering.
 
-One way around this would be to change `KayakContext::widget_manager` from just a basic `WidgetManager` to an `Arc<RwLock<WidgetManager>>`. Doing so, allows us to store a reference to the manager (and thus, its widget trees) in the selection object directly.
+One way around this would be to either change `KayakContext::widget_manager` from just a basic `WidgetManager` to an `Arc<RwLock<WidgetManager>>` (if we store the selection object in `KayakContext`) or we change `WidgetManager::node_tree` to an `Arc<RwLock<Tree>>`. Doing so, allows us to store a reference to the manager— or tree— in the selection object directly.
 
 It should be safe to do so since we render widgets one-at-a-time on a single thread anyway. And this would allow the API to look something more like:
 
@@ -532,9 +532,9 @@ context.set_selection(selection);
 
 It's not a major change but certainly an improvement.
 
-However, this would be a large refactor and something we'd want to really consider before doing. It may be beneficial to do something like this in the long run for other systems, but it might also cause unforeseen issues.
+However, this could be a large refactor and something we'd want to really consider before doing. It may be beneficial to do something like this in the long run for other systems, but it might also cause unforeseen issues.
 
-> 💬 Should a major refactor like this be done? What are the possible issues this might create? Is it worth it?
+> 💬 Should a major refactor like this be done? What are the possible issues this might create? Is it worth it? Should we do it to only the node tree or the manager itself?
 
 ##### 4.1.4. `KayakContext` Methods
 
@@ -558,6 +558,8 @@ impl KayakContext {
 ##### 4.1.5. Ownership
 
 One quick note to make is that the selection object should likely be stored in `WidgetManager`. This might come down to actual implementation, but it's probably best to keep it there so processing things like content and validating bounds can be done at any point in time— without having to pass the selection object in as a parameter from `KayakContext`.
+
+However, this depends on whether we want the selection object to store a reference to the node tree or the entire `WidgetManager` (see section [4.1.3 Alternative - `Arc`-ing](#413-alternative---arc-ing) for details).
 
 ##### 4.1.6. Validating Selection
 

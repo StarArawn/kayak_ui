@@ -262,7 +262,7 @@ Node 3 - Some("Foo") | Total - "Foo"
 
 Because Node 0 has no text content, its offset refers to children rather than characters. Because of this, ranging from an offset of 0 to an offset of 1 captures the entirety of the first child. And this captures the entire string, `"Foo"`.
 
-> In fact, we've been doing this already. A node that's fully captured by a range can be seen as sub-range from (Node, 0) to (Node, Length-1). And we can apply the same rules to the children as well, which is why we capture *all* of Node 3 in the example above. This is pretty much what happens when a range spans across a full node, such as in [Example 2.2.1](#example-2.2.1).
+> In fact, we've been doing this already. A node that's fully captured by a range can be seen as sub-range from (Node, 0) to (Node, Length-1). And we can apply the same rules to the children as well, which is why we capture *all* of Node 3 in the example above. This is pretty much what happens when a range spans across a full node, such as in [Example 2.2.1](#example-221).
 
 If instead we ended the range at (4, 1), we'd get the following traversal:
 
@@ -440,7 +440,7 @@ The *anchor* is the part of the selection that doesn't change while the *head* i
 * If the selection direction is *backwards*— the anchor comes after the head— we set the anchor as the end and the head as the start
 * If the selection direction is *directionless*— the anchor and the head are the same (a collapsed range)— it doesn't matter which is set to which
 
-Additionally, the selection should contain the *common ancestor* of the two bounds. This is the deepest node in the widget tree that contains both bounds and is vital for efficiently processing certain calculations. This will also be very helpful when we add [dynamic ranges](#2.4.-dynamic-vs-static) since it can help determine if a tree mutation possibly affected the selected contents.
+Additionally, the selection should contain the *common ancestor* of the two bounds. This is the deepest node in the widget tree that contains both bounds and is vital for efficiently processing certain calculations. This will also be very helpful when we add [dynamic ranges](#24-dynamic-vs-static) since it can help determine if a tree mutation possibly affected the selected contents.
 
 ##### 4.1.1. `Selection` Methods
 
@@ -468,7 +468,7 @@ impl Selection {
 
 > We'll also likely want to expose some methods on `Range` in `Selection` for convenience.
 
-> If [access to the widget tree](#4.1.3.-alternative---arc-ing) is granted, we can include additional methods here such as `contents()` and `common_ancestor()`.
+> If [access to the widget tree](#413-alternative---arc-ing) is granted, we can include additional methods here such as `contents()` and `common_ancestor()`.
 
 ##### 4.1.2. Interfacing with `KayakContext`
 
@@ -553,7 +553,7 @@ impl KayakContext {
 }
 ```
 
-> Note that whether we go with the [alternative](#4.1.3.-alternative---arc-ing) design or not, we likely still want methods like `contents(...)` on `KayakContext` so that they can be used outside of widgets and apart from the physical selection. However, things like `common_ancestor(...)` can be moved to `Selection`.
+> Note that whether we go with the [alternative](#413-alternative---arc-ing) design or not, we likely still want methods like `contents(...)` on `KayakContext` so that they can be used outside of widgets and apart from the physical selection. However, things like `common_ancestor(...)` can be moved to `Selection`.
 
 ##### 4.1.5. Ownership
 
@@ -561,7 +561,7 @@ One quick note to make is that the selection object should likely be stored in `
 
 ##### 4.1.6. Validating Selection
 
-It's important that our selection always remain valid. In other words, our selection's bounds must always point to an existing widget and a valid offset within that widget. Again, without proper support for [dynamic ranges](#2.4.-dynamic-vs-static) we can't really diff our widgets to see if their content is the same and account for changes. However, we *can* ensure the bounds are always valid.
+It's important that our selection always remain valid. In other words, our selection's bounds must always point to an existing widget and a valid offset within that widget. Again, without proper support for [dynamic ranges](#24-dynamic-vs-static) we can't really diff our widgets to see if their content is the same and account for changes. However, we *can* ensure the bounds are always valid.
 
 If one of the selection's bounds has been re-rendered, we can collapse the selection to the root widget. In this way, we ensure that no matter what happened to the bound widget, we don't ever have an invalid selection.
 
@@ -594,7 +594,7 @@ To avoid confusion, it's probably better to just have the rule be: if the widget
 
 #### 4.2. Creating the Selection
 
-The [Selection API](#4.1. The Selection API) is useful for allowing users (and ourselves) to manually control the selection. However, we don't want them to have to do this all manually. It would be obviously be better to do most of the basic stuff automatically for them. In order to do this, we'll need to augment our event system to include a few more default actions and events.
+The [Selection API](#41-the-selection-api) is useful for allowing users (and ourselves) to manually control the selection. However, we don't want them to have to do this all manually. It would be obviously be better to do most of the basic stuff automatically for them. In order to do this, we'll need to augment our event system to include a few more default actions and events.
 
 Firstly, what causes a selection to be made or augmented? Here are the ways we should allow this:
 
@@ -627,13 +627,13 @@ With that done, we can add a default action to be performed on each.
 
 For the double-click, we can do the following:
 
-1. Get *position* using one of the previously discussed [methods](#3.-positioning)
+1. Get *position* using one of the previously discussed [methods](#3-positioning)
 2. If non-text node, collapse to *position* and return
 3. Otherwise, get node *content*
 4. Use *offset* to identify *word*
 5. Set *anchor* to start offset of *word* and set *head* to end offset of word
 
-For triple-click, things may change depending on the selected position-detection method. Since we need to access lines, directly, this may be a reason to use the [line method](#3.2.2.-line-method). Otherwise, some other method of calculating the desired line may be needed.
+For triple-click, things may change depending on the selected position-detection method. Since we need to access lines, directly, this may be a reason to use the [line method](#322-line-method). Otherwise, some other method of calculating the desired line may be needed.
 
 If we use the line method, though, we get something like:
 
@@ -719,7 +719,7 @@ Furthermore, we'll likely want to handle them as *pseudo-elements*. In other wor
 
 Collapsed ranges display what's known as the text insertion cursor, or *caret*. This is usually only displayed in editable content. Unfortunately we don't have a distinguishing or handling editable content directly (it has to be managed by a widget like `TextBox`). Such a feature could be added in the future using a text diff algorithm, but we'll consider that out of scope for now— though, it should be not too difficult to add onto the systems we develop here.
 
-Until then, any text widget with an appropriate [`caret`](#4.4.2.-caret) style will display the caret, assuming the selection range is located within it.
+Until then, any text widget with an appropriate [`caret`](#442-caret) style will display the caret, assuming the selection range is located within it.
 
 > 💬 Since the caret is a pseudo-element, we might be able to even incorporate blinking directly in the shader. Although, I'm not sure how feasible that is or how we would handle pausing the blink when the caret moves (as is standard behavior).
 
@@ -792,25 +792,25 @@ Below is a guide for how we could implement this RFC. The exact details of the i
 
 These are changes that are quick to implement or don't interact with other systems/APIs too much.
 
-1. Add the appropriate methods to `Node` ([reference](#1.3.-node-methods))
-2. Create `Range` and `RangeBound` structs ([reference](#2.-defining-the-range))
+1. Add the appropriate methods to `Node` ([reference](#13-node-methods))
+2. Create `Range` and `RangeBound` structs ([reference](#2-defining-the-range))
 
 ### Moderate Changes
 
 These are changes that might be slightly more difficult to implement or have limited interaction with other systems/APIs.
 
 1. Use grapheme clusters for font sizing ([reference](#character))
-2. Implement text layout caching and sizing ([reference](#3.2.-text-nodes))
+2. Implement text layout caching and sizing ([reference](#32-text-nodes))
 
 ### Large Changes
 
 These are changes that are large in scope, difficult to implement, or touch a large number of other systems/APIs.
 
-1. Add selection object ([reference](#4.1.-the-selection-api))
-2. Add selection indicators ([reference](#4.3.-indicating-the-selection))
-   1. Add selection styles ([reference](#4.4.-selection-styles))
-3. Add selection events ([reference](#4.2.4.-selection-events))
-   1. Handle user interaction ([reference](#4.2.-creating-the-selection))
+1. Add selection object ([reference](#41-the-selection-api))
+2. Add selection indicators ([reference](#43-indicating-the-selection))
+   1. Add selection styles ([reference](#44-selection-styles))
+3. Add selection events ([reference](#424-selection-events))
+   1. Handle user interaction ([reference](#42-creating-the-selection))
 
 ---
 

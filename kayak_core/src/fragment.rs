@@ -1,6 +1,4 @@
-use crate::{
-    context_ref::KayakContextRef, styles::Style, Children, Index, OnEvent, Widget, WidgetProps,
-};
+use crate::{context_ref::KayakContextRef, styles::Style, Children, Index, OnEvent, Widget, WidgetProps, OnLayout};
 
 /// Props used by the [`Fragment`] widget
 #[derive(Default, Debug, PartialEq, Clone)]
@@ -42,6 +40,10 @@ impl WidgetProps for FragmentProps {
     }
 
     fn get_on_event(&self) -> Option<OnEvent> {
+        None
+    }
+
+    fn get_on_layout(&self) -> Option<OnLayout> {
         None
     }
 

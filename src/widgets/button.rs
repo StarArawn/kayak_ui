@@ -2,7 +2,7 @@ use crate::core::{
     render_command::RenderCommand,
     rsx,
     styles::{Corner, Style, StyleProp, Units},
-    widget, Children, Color, Fragment, OnEvent, WidgetProps,
+    widget, Children, Color, Fragment, OnEvent, OnLayout, WidgetProps,
 };
 use kayak_core::CursorIcon;
 
@@ -17,6 +17,7 @@ pub struct ButtonProps {
     pub styles: Option<Style>,
     pub children: Option<Children>,
     pub on_event: Option<OnEvent>,
+    pub on_layout: Option<OnLayout>,
     pub focusable: Option<bool>,
 }
 
@@ -35,6 +36,10 @@ impl WidgetProps for ButtonProps {
 
     fn get_on_event(&self) -> Option<OnEvent> {
         self.on_event.clone()
+    }
+
+    fn get_on_layout(&self) -> Option<OnLayout> {
+        self.on_layout.clone()
     }
 
     fn get_focusable(&self) -> Option<bool> {

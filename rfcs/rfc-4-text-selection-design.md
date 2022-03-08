@@ -891,7 +891,10 @@ These are changes that are large in scope, difficult to implement, or touch a la
 
 1. Add selection object ([reference](#41-the-selection-api))
 2. Add selection indicators ([reference](#43-indicating-the-selection))
-   1. Add selection styles ([reference](#44-selection-styles))
+   1. Add text insertion cursor ([reference](#431-collapsed-ranges))
+   2. Add text selection highlighting ([reference](#432-non-collapsed-ranges))
+   3. Add selection styles ([reference](#44-selection-styles))
+   
 3. Add selection events ([reference](#424-selection-events))
    1. Handle user interaction ([reference](#42-creating-the-selection))
 

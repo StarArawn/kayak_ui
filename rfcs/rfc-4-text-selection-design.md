@@ -1,24 +1,105 @@
 # RFC 4 - Text Selection Design
 
-The purpose of this RFC is to discuss the design and implementations of text selection, possible considerations, and challenges.
+The purpose of this RFC is to discuss the design of text selection, possible considerations, and challenges. This is meant to be a general overview of many features regarding text selection and to act as a source of truth for broad concepts, feature interactions, and general implementation details. The actual features discussed should either be explored further in separate smaller and more focused RFCs or implemented directly in their own PRs.
 
-## Goals
+Some features may be discussed in more detail than others in this RFC, but that is mainly to make sure all parts play nicely with each other. The actual details can be fleshed out in the subsequent RFCs and PRs.
+
+A general guide to implementation— what likely needs to be done and in a sensible order— can be found in the [Implementation Guide](#implementation-guide) section at the bottom of this document.
+
+## Table of Contents
+
+<!-- TOC start -->
+
+- [Motivation](#motivation)
+- [Additional Context](#additional-context)
+  * [Resources](#resources)
+  * [Discussion](#discussion)
+- [Terminology](#terminology)
+  * [Character](#character)
+  * [Range](#range)
+- [Design](#design)
+  * [1. Retrieving Widget Info](#1-retrieving-widget-info)
+    + [1.1. Text Content](#11-text-content)
+    + [1.2. Length](#12-length)
+    + [1.3. `Node` Methods](#13-node-methods)
+  * [2. Defining the Range](#2-defining-the-range)
+    + [2.1. Bounds](#21-bounds)
+      - [2.1.1 `RangeBound` Methods](#211-rangebound-methods)
+      - [2.1.2 `Range` Methods](#212-range-methods)
+    + [2.2. The In-Between](#22-the-in-between)
+        * [Example 2.2.1](#example-221)
+    + [2.3. Non-Text Nodes](#23-non-text-nodes)
+        * [Example 2.3.1](#example-231)
+    + [2.4. Dynamic vs Static](#24-dynamic-vs-static)
+  * [3. Positioning](#3-positioning)
+    + [3.1. Non-Text Nodes](#31-non-text-nodes)
+    + [3.2. Text Nodes](#32-text-nodes)
+      - [3.2.1. Brute Force Method](#321-brute-force-method)
+      - [3.2.2. Line Method](#322-line-method)
+      - [3.2.3. Word Box Method](#323-word-box-method)
+      - [3.2.4. Comparison and Discussion](#324-comparison-and-discussion)
+  * [4. Selection](#4-selection)
+    + [4.1. The Selection API](#41-the-selection-api)
+      - [4.1.1. `Selection` Methods](#411-selection-methods)
+      - [4.1.2. Interfacing with `KayakContext`](#412-interfacing-with-kayakcontext)
+      - [4.1.3. Alternative - `Arc`-ing](#413-alternative---arc-ing)
+      - [4.1.4. `KayakContext` Methods](#414-kayakcontext-methods)
+      - [4.1.5. Ownership](#415-ownership)
+      - [4.1.6. Validating Selection](#416-validating-selection)
+    + [4.2. Creating the Selection](#42-creating-the-selection)
+    + [4.2.1. Multi-Clicks](#421-multi-clicks)
+    + [4.2.2. Click-and-Drag](#422-click-and-drag)
+    + [4.2.3. Expanding/Shrinking Selection](#423-expandingshrinking-selection)
+    + [4.2.4. Selection Events](#424-selection-events)
+        * [`SelectionStart` Event](#selectionstart-event)
+        * [`SelectionEnd` Event](#selectionend-event)
+    + [4.3. Indicating the Selection](#43-indicating-the-selection)
+      - [4.3.1. Collapsed Ranges](#431-collapsed-ranges)
+      - [4.3.2. Non-Collapsed Ranges](#432-non-collapsed-ranges)
+    + [4.4. Selection Styles](#44-selection-styles)
+      - [4.4.1. `select`](#441-select)
+        * [Values](#values)
+      - [4.4.2. `caret`](#442-caret)
+        * [Values](#values-1)
+      - [4.4.3. `caret_color`](#443-caret_color)
+      - [4.4.4. `selection_background_color`](#444-selection_background_color)
+      - [4.4.5. `selection_color`](#445-selection_color)
+- [Implementation Guide](#implementation-guide)
+  * [Small Changes](#small-changes)
+  * [Moderate Changes](#moderate-changes)
+  * [Large Changes](#large-changes)
+  <!-- TOC end -->
+
+## Motivation
+
+While Kayak has text editing features, it still lacks proper tools for doing so in a user-friendly way. Currently, text can only be added or removed from the end. This is not the best UX.
+
+To solve this issue, it makes sense we need to be able to do two things at minimum: render a text insertion cursor (or, caret) and move it around. This might be a fairly simple issue to tackle, but before we start diving into the code, I think it's fair that we look at this from a more holistic point-of-view.
+
+The reason for this is so that we don't back ourselves into a corner— or at least reduce the amount of refactoring needed to add onto the feature. It also allows us to look at how other parts of the system might interact with this one. For example, how do we know where to place the caret and when? How can we implement that system to account for other text-related features? Or, to be more specific to this RFC, we know we want to support text selection, is there something we can be doing now to help make that goal more achievable?
+
+This RFC came from the need to render a text cursor, but it actually isn't about that. The primary objective of this RFC is to set the foundation for all (or at least *most*) things related to text selection, which rendering a controllable caret falls into. This document should be an outline for implementation, not the implementation itself. The real implementation details should be discussed in a separate RFC or directly in their own PR, using this RFC as a base.
+
+> This RFC actually *does* cover some implementation details such as traversing the node tree and algorithms for calculating the position of a character. These were mainly included since they're so vital to all other systems. How we do some of these things might affect how we decide to implement other features (for example, how we determine the selected line helps inform how the cursor should move up or down).
+
+Below are the goals for the *entire* text-selection feature and include what this document will be outlining for the most part.
 
 **Main Goals**
 
 * Visualize a cursor within focused text fields
-* Allow text within widgets to be selectable
-* Allow text across widgets to be selectable
+  * Allow it to be placed and moved
+
+* Allow text within widgets to be selectable (such as the contents of a `TextBox`)
+  * Visually indicate the selection
+
 
 **Secondary Goals**
 
+* Allow text across widgets to be selectable
+
+**Tertiary Goals**
+
 * All of the above with future accessibility in mind
-
-## Motivation
-
-The primary goal of this RFC is to actually render a cursor within the `TextBox` widget. And while we could come up with a specific solution to that problem, I think it would be better to look at text selection as a whole first. This is because rendering a cursor and moving it around is very similar to the broader concept of text selection: a text cursor is really just a selection of zero width.
-
-We can explore text cursors with more specificity in another RFC/PR. For now, this one will cover the general topics and considerations for text selection, which should (hopefully) aid an actual design and implementation for text cursors.
 
 ## Additional Context
 
@@ -788,7 +869,7 @@ Accepts any `Color` value.
 
 ## Implementation Guide
 
-Below is a guide for how we could implement this RFC. The exact details of the implementation can be decided in the PRs themselves or in separate RFC documents. This list should also be taken with a grain of salt as it might make sense to do things differently as the implementation process begins.
+Below is a guide for how we could implement all the features outlined in this RFC. The exact details of the implementation can be decided in the PRs themselves or in separate RFC documents. This list should also be taken with a grain of salt as it might make sense to do things differently as the implementation process begins.
 
 ### Small Changes
 

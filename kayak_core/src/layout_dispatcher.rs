@@ -1,4 +1,4 @@
-use crate::{Index, KayakContext};
+use crate::{KayakContext};
 
 pub(crate) struct LayoutEventDispatcher;
 

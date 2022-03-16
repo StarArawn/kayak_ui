@@ -1,8 +1,7 @@
 use std::fmt::{Debug, Formatter};
 use std::sync::{Arc, RwLock};
-use morphorm::GeometryChanged;
 use crate::KayakContextRef;
-use crate::layout::{Layout, LayoutEvent};
+use crate::layout::{LayoutEvent};
 
 /// A container for a function that handles layout
 ///

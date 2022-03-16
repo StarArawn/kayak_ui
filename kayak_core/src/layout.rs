@@ -1,6 +1,6 @@
 use morphorm::GeometryChanged;
 use crate::layout_cache::Rect;
-use crate::{Index, KayakContextRef};
+use crate::{Index};
 
 /// A layout event context sent to widgets
 #[derive(Debug, Default, Clone, Copy, PartialEq)]
@@ -49,7 +49,7 @@ impl From<Rect> for Layout {
 }
 
 ///
-///
+/// Struct used for 
 ///
 pub struct LayoutEvent {
     pub layout: Layout,

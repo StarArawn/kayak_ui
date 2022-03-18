@@ -32,7 +32,7 @@ fn GrowShrink() {
     };
 
     let fill = Style {
-        width: StyleProp::Value(Units::Pixels(150.0)),
+        width: StyleProp::Value(Units::Pixels(bar_width.get().0)),
         height: StyleProp::Value(Units::Pixels(24.0)),
         layout_type: StyleProp::Value(LayoutType::Column),
         background_color: StyleProp::Value(Color::new(1.0, 0.0, 0.0, 1.0)),

@@ -1,4 +1,5 @@
 use crate::assets::AssetStorage;
+use crate::layout_dispatcher::LayoutEventDispatcher;
 use crate::{Binding, Changeable, CursorIcon, KayakContextRef};
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -559,6 +560,7 @@ impl KayakContext {
         // self.widget_manager.dirty_nodes.clear();
         self.widget_manager.render();
         self.widget_manager.calculate_layout();
+        LayoutEventDispatcher::dispatch(self);
         self.update_cursor();
     }
 

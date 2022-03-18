@@ -56,3 +56,13 @@ pub struct LayoutEvent {
     pub flags: GeometryChanged,
     pub target: Index,
 }
+
+impl LayoutEvent {
+    pub (crate) fn new(rect: Rect, geometry_change: GeometryChanged, index: Index) -> LayoutEvent {
+        LayoutEvent {
+            layout:  rect.into(),
+            flags: geometry_change, 
+            target: index,
+        }
+    }
+}

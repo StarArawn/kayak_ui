@@ -5,23 +5,18 @@ use bevy::{
 };
 use kayak_core::{styles::{LayoutType, Style, StyleProp, Units}, OnLayout};
 use kayak_core::{Color, EventType, OnEvent};
-use kayak_ui::core::{bind, render, rsx, widget, Binding, MutableBound, Bound, Index};
+use kayak_render_macros::use_state;
+use kayak_ui::core::{render, rsx, widget, Index};
 use kayak_ui::widgets::{App, Text, Window};
 use kayak_ui::{
     bevy::{BevyContext, BevyKayakUIPlugin, FontMapping, UICameraBundle},
     widgets::Button,
 };
-#[derive(Clone, PartialEq)]
-struct WidthCounter(pub f32);
+
 
 #[widget]
 fn GrowShrink() {
-    let bar_width =
-        context.query_world::<Res<Binding<WidthCounter>>, _, _>(move |width| width.clone());
-
-    context.bind(&bar_width);
-
-    let width = bar_width.get().0;
+    let (width, set_width, _) = use_state!(150.0);
 
     let button_styles = Style {
         width: StyleProp::Value(Units::Pixels(100.0)),
@@ -32,41 +27,46 @@ fn GrowShrink() {
     };
 
     let fill = Style {
-        width: StyleProp::Value(Units::Pixels(bar_width.get().0)),
-        height: StyleProp::Value(Units::Pixels(24.0)),
+        width: StyleProp::Value(Units::Pixels(width)),
+        height: StyleProp::Value(Units::Pixels(28.0)),
         layout_type: StyleProp::Value(LayoutType::Column),
         background_color: StyleProp::Value(Color::new(1.0, 0.0, 0.0, 1.0)),
         ..Default::default()
     };
 
-    let grow = OnEvent::new(move |context, event| match event.event_type {
-        EventType::Click(..) => 
-            context.query_world::<Res<Binding<WidthCounter>>, _, _>(move |width| width.set(WidthCounter(width.get().0 + 10.0))),
+    let grow_fn = set_width.clone();
+    let shrink_fn = set_width.clone();
+
+    let grow = OnEvent::new(move |_, event| match event.event_type {
+        EventType::Click(..) =>  grow_fn(width + 10.0),
         _ => {},
     });
 
-    let shrink = OnEvent::new(move |context, event| match event.event_type {
-        EventType::Click(..) => 
-            context.query_world::<Res<Binding<WidthCounter>>, _, _>(move |width| width.set(WidthCounter(width.get().0 - 10.0))),
+    let shrink = OnEvent::new(move |_, event| match event.event_type {
+        EventType::Click(..) => shrink_fn(width - 10.0),
         _ => {},
     });
 
-    let resize = OnLayout::new(move |context, layout_event| {
-        context.query_world::<Res<Binding<WidthCounter>>, _, _>(move |width| width.clone());
-        layout_event.layout.width = width;
+    let (layout_width, set_layout_width, _) = use_state!(0.0);
+
+    let update_text = OnLayout::new(move |_, layout_event| {        
+        layout_event.layout.width *= 2.0;
+        println!("Width = {}", layout_event.layout.width);
+        set_layout_width(layout_event.layout.width);
     });
 
     rsx! {
         <>
             <Window position={(100.0, 100.0)} size={(400.0, 400.0)} title={"Grow Example".to_string()}>
-                <Text size={32.0} content={format!("Width: {}", width).to_string()}>{}</Text>
+                <Text size={25.0} content={format!("Width: {:?}", layout_width).to_string()} />
                 <Button styles={Some(button_styles)} on_event={Some(grow)}>
                     <Text size={20.0} content={"Grow".to_string()}/>
                 </Button>
                 <Button styles={Some(button_styles)} on_event={Some(shrink)}>
                     <Text size={20.0} content={"Shrink".to_string()}/>
                 </Button>
-                <Button styles={Some(fill)} on_layout={Some(resize)}/>
+                <Button styles={Some(fill)} on_layout={Some(update_text)}>
+                </Button>
             </Window>
         </>
     }
@@ -80,8 +80,6 @@ fn startup(
     commands.spawn_bundle(UICameraBundle::new());
 
     font_mapping.add("Roboto", asset_server.load("roboto.kayak_font"));
-
-    commands.insert_resource(bind(WidthCounter(0f32)));
 
     let context = BevyContext::new(|context| {
         render! {

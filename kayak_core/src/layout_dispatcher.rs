@@ -19,7 +19,6 @@ impl LayoutEventDispatcher {
             if context.widget_manager.layout_cache.geometry_changed(node_index) == GeometryChanged::default() {
               continue;
             }
-            // TODO 
             
             // Add parent to set
             if let Some(parent_index) = context.widget_manager.tree.get_parent(node_index) {

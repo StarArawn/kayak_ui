@@ -3,7 +3,10 @@ use bevy::{
     window::WindowDescriptor,
     DefaultPlugins,
 };
-use kayak_core::{styles::{LayoutType, Style, StyleProp, Units}, OnLayout};
+use kayak_core::{
+    styles::{LayoutType, Style, StyleProp, Units},
+    OnLayout,
+};
 use kayak_core::{Color, EventType, OnEvent};
 use kayak_render_macros::use_state;
 use kayak_ui::core::{render, rsx, widget, Index};
@@ -12,7 +15,6 @@ use kayak_ui::{
     bevy::{BevyContext, BevyKayakUIPlugin, FontMapping, UICameraBundle},
     widgets::Button,
 };
-
 
 #[widget]
 fn GrowShrink() {
@@ -38,18 +40,18 @@ fn GrowShrink() {
     let shrink_fn = set_width.clone();
 
     let grow = OnEvent::new(move |_, event| match event.event_type {
-        EventType::Click(..) =>  grow_fn(width + 10.0),
-        _ => {},
+        EventType::Click(..) => grow_fn(width + 10.0),
+        _ => {}
     });
 
     let shrink = OnEvent::new(move |_, event| match event.event_type {
         EventType::Click(..) => shrink_fn(width - 10.0),
-        _ => {},
+        _ => {}
     });
 
     let (layout_width, set_layout_width, _) = use_state!(0.0);
 
-    let update_text = OnLayout::new(move |_, layout_event| {        
+    let update_text = OnLayout::new(move |_, layout_event| {
         layout_event.layout.width *= 2.0;
         println!("Width = {}", layout_event.layout.width);
         set_layout_width(layout_event.layout.width);

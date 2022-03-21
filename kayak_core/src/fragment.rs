@@ -1,4 +1,7 @@
-use crate::{context_ref::KayakContextRef, styles::Style, Children, Index, OnEvent, Widget, WidgetProps, OnLayout};
+use crate::{
+    context_ref::KayakContextRef, styles::Style, Children, Index, OnEvent, OnLayout, Widget,
+    WidgetProps,
+};
 
 /// Props used by the [`Fragment`] widget
 #[derive(Default, Debug, PartialEq, Clone)]

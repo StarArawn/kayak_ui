@@ -1,7 +1,7 @@
+use crate::layout::LayoutEvent;
+use crate::KayakContextRef;
 use std::fmt::{Debug, Formatter};
 use std::sync::{Arc, RwLock};
-use crate::KayakContextRef;
-use crate::layout::{LayoutEvent};
 
 /// A container for a function that handles layout
 ///

@@ -1,6 +1,6 @@
-use morphorm::GeometryChanged;
 use crate::layout_cache::Rect;
-use crate::{Index};
+use crate::Index;
+use morphorm::GeometryChanged;
 
 /// A layout event context sent to widgets
 #[derive(Debug, Default, Clone, Copy, PartialEq)]
@@ -43,13 +43,13 @@ impl From<Rect> for Layout {
             height: rect.height,
             x: rect.posx,
             y: rect.posy,
-            z_index: rect.z_index
+            z_index: rect.z_index,
         }
     }
 }
 
 ///
-/// Struct used for 
+/// Struct used for
 ///
 pub struct LayoutEvent {
     pub layout: Layout,
@@ -58,10 +58,10 @@ pub struct LayoutEvent {
 }
 
 impl LayoutEvent {
-    pub (crate) fn new(rect: Rect, geometry_change: GeometryChanged, index: Index) -> LayoutEvent {
+    pub(crate) fn new(rect: Rect, geometry_change: GeometryChanged, index: Index) -> LayoutEvent {
         LayoutEvent {
-            layout:  rect.into(),
-            flags: geometry_change, 
+            layout: rect.into(),
+            flags: geometry_change,
             target: index,
         }
     }

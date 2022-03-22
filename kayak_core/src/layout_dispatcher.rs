@@ -22,7 +22,7 @@ impl LayoutEventDispatcher {
                 .widget_manager
                 .layout_cache
                 .geometry_changed(node_index)
-                == GeometryChanged::default()
+                .is_empty()
             {
                 continue;
             }

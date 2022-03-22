@@ -46,7 +46,7 @@ impl Debug for OnLayout {
 
 impl PartialEq for OnLayout {
     fn eq(&self, _: &Self) -> bool {
-        // TODO what goes here
+        // Never prevent "==" from being true because of this struct
         true
     }
 }

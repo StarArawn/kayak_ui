@@ -87,9 +87,9 @@ pub trait WidgetProps: std::fmt::Debug + AsAny + Send + Sync {
     ///
     /// Returns `None` if this widget doesn't contain a custom event handler
     fn get_on_event(&self) -> Option<OnEvent>;
-    /// Gets the custom layout handler of this widget
+    /// Gets the custom layout event handler of this widget
     ///
-    /// Returns `None` if this widget doesn't contain a custom event handler
+    /// Returns `None` if this widget doesn't contain a custom layout event handler
     fn get_on_layout(&self) -> Option<OnLayout>;
     /// Gets the focusability of this widget
     ///

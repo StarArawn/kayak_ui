@@ -15,11 +15,14 @@ use kayak_core::{
 };
 use kayak_core::{Color, EventType, OnEvent};
 use kayak_render_macros::use_state;
-use kayak_ui::{core::{render, rsx, widget, Index}, widgets::Background};
 use kayak_ui::widgets::{App, Text, Window};
 use kayak_ui::{
     bevy::{BevyContext, BevyKayakUIPlugin, FontMapping, UICameraBundle},
     widgets::Button,
+};
+use kayak_ui::{
+    core::{render, rsx, widget, Index},
+    widgets::Background,
 };
 
 /// This widget provides a theme to its children
@@ -30,7 +33,7 @@ fn GrowShrink() {
 
     let panel_style = Style {
         layout_type: StyleProp::Value(LayoutType::Row),
-        background_color: StyleProp::Value(Color::new(0.33, 0.33, 0.33,0.2)),
+        background_color: StyleProp::Value(Color::new(0.33, 0.33, 0.33, 0.2)),
         width: StyleProp::Value(Units::Auto),
         height: StyleProp::Value(Units::Pixels(50.0)),
         ..Default::default()
@@ -39,7 +42,7 @@ fn GrowShrink() {
     // Grow/Shrink button styles
     let button_styles = Style {
         width: StyleProp::Value(Units::Pixels(100.0)),
-        height: StyleProp::Value(Units::Pixels(24.0)),        
+        height: StyleProp::Value(Units::Pixels(24.0)),
         background_color: StyleProp::Value(Color::new(0.33, 0.33, 0.33, 1.0)),
         ..Default::default()
     };
@@ -58,12 +61,12 @@ fn GrowShrink() {
     let shrink_fn = set_width.clone();
 
     let grow = OnEvent::new(move |_, event| match event.event_type {
-        EventType::Click(..) => grow_fn(background_width + 10.0),
+        EventType::Click(..) => grow_fn(background_width + rand::random::<f32>() * 10.0),
         _ => {}
     });
 
     let shrink = OnEvent::new(move |_, event| match event.event_type {
-        EventType::Click(..) => shrink_fn(background_width - 10.0),
+        EventType::Click(..) => shrink_fn(background_width - rand::random::<f32>() * 10.0),
         _ => {}
     });
 

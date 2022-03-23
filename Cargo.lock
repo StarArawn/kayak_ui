@@ -1904,6 +1904,7 @@ dependencies = [
  "kayak_core",
  "kayak_font",
  "kayak_render_macros",
+ "rand",
 ]
 
 [[package]]

@@ -25,6 +25,7 @@ kayak_render_macros = { path = "kayak_render_macros" }
 
 [dev-dependencies]
 bevy = { version = "0.6.0" }
+rand = { version = "0.8.4" }
 
 [[example]]
 name = "todo"

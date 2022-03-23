@@ -59,6 +59,7 @@ impl WidgetProps for ButtonProps {
 /// | `children`  | ✅        |
 /// | `styles`    | ✅        |
 /// | `on_event`  | ✅        |
+/// | `on_layout` | ✅        |
 /// | `focusable` | ✅        |
 ///
 pub fn Button(props: ButtonProps) {

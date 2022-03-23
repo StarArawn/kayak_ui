@@ -1,5 +1,5 @@
 use indexmap::IndexSet;
-use morphorm::{Cache, GeometryChanged};
+use morphorm::{Cache};
 
 use crate::{Index, KayakContext, KayakContextRef, LayoutEvent};
 

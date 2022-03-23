@@ -1,8 +1,9 @@
 use crate::layout_cache::Rect;
 use crate::Index;
-use morphorm::GeometryChanged;
+pub use morphorm::GeometryChanged;
 
 /// A layout event context sent to widgets
+/// Similar and interchangeable with [Rect]
 #[derive(Debug, Default, Clone, Copy, PartialEq)]
 pub struct Layout {
     /// width of the component
@@ -14,7 +15,7 @@ pub struct Layout {
     /// y-coordinates of the component
     pub y: f32,
     /// z-coordinates of the component
-    pub z_index: f32,
+    pub z: f32,
 }
 
 impl Layout {
@@ -31,7 +32,7 @@ impl From<Layout> for Rect {
             posy: layout.y,
             width: layout.width,
             height: layout.height,
-            z_index: layout.z_index,
+            z_index: layout.z,
         }
     }
 }
@@ -43,17 +44,20 @@ impl From<Rect> for Layout {
             height: rect.height,
             x: rect.posx,
             y: rect.posy,
-            z_index: rect.z_index,
+            z: rect.z_index,
         }
     }
 }
 
 ///
-/// Struct used for
+/// Struct used for [crate::OnLayout] as layout event data.
 ///
 pub struct LayoutEvent {
+    /// Layout of target component
     pub layout: Layout,
+    /// Flags noting one of dimensions has changed.
     pub flags: GeometryChanged,
+    /// the node id of the element receiving the layout event
     pub target: Index,
 }
 

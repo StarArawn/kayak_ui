@@ -97,6 +97,7 @@ pub struct Focus(pub bool);
 /// | `children`  | ✅        |
 /// | `styles`    | ✅        |
 /// | `on_event`  | ✅        |
+/// | `on_layout` | ✅        |
 /// | `focusable` | ✅        |
 ///
 pub fn TextBox(props: TextBoxProps) {

@@ -29,8 +29,8 @@ impl OnLayout {
     ///
     /// Returns true if the handler was successfully invoked.
     pub fn try_call(&self, context: &mut KayakContextRef, event: &mut LayoutEvent) -> bool {
-        if let Ok(mut on_event) = self.0.write() {
-            on_event(context, event);
+        if let Ok(mut on_layout) = self.0.write() {
+            on_layout(context, event);
             true
         } else {
             false

@@ -2,8 +2,17 @@ use crate::layout_cache::Rect;
 use crate::Index;
 pub use morphorm::GeometryChanged;
 
-/// A layout event context sent to widgets
+/// A layout data sent to widgets on layout.
+/// 
 /// Similar and interchangeable with [Rect]
+/// ```
+/// use kayak_core::layout_cache::Rect;
+/// use kayak_core::Layout;
+/// 
+/// let layout = Layout::default();
+/// let rect : Rect = layout.into();
+/// let layout : Layout = rect.into();
+/// ```
 #[derive(Debug, Default, Clone, Copy, PartialEq)]
 pub struct Layout {
     /// width of the component

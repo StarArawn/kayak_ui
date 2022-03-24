@@ -55,9 +55,9 @@ impl From<Rect> for Layout {
 pub struct LayoutEvent {
     /// Layout of target component
     pub layout: Layout,
-    /// Flags noting one of dimensions has changed.
+    /// Flags denoting the layout change.
     pub flags: GeometryChanged,
-    /// the node id of the element receiving the layout event
+    /// The node ID of the element receiving the layout event.
     pub target: Index,
 }
 

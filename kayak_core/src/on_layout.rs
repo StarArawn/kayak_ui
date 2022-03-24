@@ -10,7 +10,7 @@ use std::sync::{Arc, RwLock};
 /// as a parameter.
 #[derive(Clone)]
 pub struct OnLayout(
-    Arc<RwLock<dyn FnMut(&mut KayakContextRef, &mut LayoutEvent) + Send + Sync + 'static>>,
+    Arc<RwLock<dyn FnMut(&mut KayakContextRef, &LayoutEvent) + Send + Sync + 'static>>,
 );
 
 impl OnLayout {
@@ -19,7 +19,7 @@ impl OnLayout {
     /// The handler should be a closure that takes the following arguments:
     /// 1. The current context
     /// 2. The LayoutEvent
-    pub fn new<F: FnMut(&mut KayakContextRef, &mut LayoutEvent) + Send + Sync + 'static>(
+    pub fn new<F: FnMut(&mut KayakContextRef, &LayoutEvent) + Send + Sync + 'static>(
         f: F,
     ) -> OnLayout {
         OnLayout(Arc::new(RwLock::new(f)))
@@ -28,7 +28,7 @@ impl OnLayout {
     /// Call the layout handler
     ///
     /// Returns true if the handler was successfully invoked.
-    pub fn try_call(&self, context: &mut KayakContextRef, event: &mut LayoutEvent) -> bool {
+    pub fn try_call(&self, context: &mut KayakContextRef, event: &LayoutEvent) -> bool {
         if let Ok(mut on_layout) = self.0.write() {
             on_layout(context, event);
             true

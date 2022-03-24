@@ -49,14 +49,14 @@ impl LayoutEventDispatcher {
         let widget = context.widget_manager.take(index);
         if let Some(on_layout) = widget.get_props().get_on_layout() {
             if let Some(rect) = context.widget_manager.layout_cache.rect.get(&index) {
-                let mut layout_event = LayoutEvent::new(
+                let layout_event = LayoutEvent::new(
                     *rect,
                     context.widget_manager.layout_cache.geometry_changed(index),
                     index,
                 );
                 let mut context_ref = KayakContextRef::new(context, Some(index));
 
-                on_layout.try_call(&mut context_ref, &mut layout_event);
+                on_layout.try_call(&mut context_ref, &layout_event);
             }
         }
 

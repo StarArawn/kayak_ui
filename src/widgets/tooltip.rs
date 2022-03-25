@@ -72,6 +72,7 @@ pub struct TooltipConsumerProps {
 /// | `children`  | ✅        |
 /// | `styles`    | ✅        |
 /// | `on_event`  | ✅        |
+/// | `on_layout` | ❌        |
 /// | `focusable` | ❌        |
 ///
 /// # Styles

@@ -40,6 +40,7 @@ pub struct TextProps {
 /// | `children`  | ❌        |
 /// | `styles`    | ✅        |
 /// | `on_event`  | ✅        |
+/// | `on_layout` | ❌        |
 /// | `focusable` | ✅        |
 ///
 pub fn Text(props: TextProps) {

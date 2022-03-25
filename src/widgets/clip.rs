@@ -1,3 +1,5 @@
+use kayak_core::OnLayout;
+
 use crate::core::{
     render_command::RenderCommand,
     rsx,
@@ -14,6 +16,8 @@ pub struct ClipProps {
     pub children: Option<Children>,
     #[prop_field(OnEvent)]
     pub on_event: Option<OnEvent>,
+    #[prop_field(OnLayout)]
+    pub on_layout: Option<OnLayout>,
 }
 
 #[widget]
@@ -29,6 +33,7 @@ pub struct ClipProps {
 /// | `children`  | ✅        |
 /// | `styles`    | ✅        |
 /// | `on_event`  | ✅        |
+/// | `on_layout` | ✅        |
 /// | `focusable` | ❌        |
 ///
 pub fn Clip(props: ClipProps) {

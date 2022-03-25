@@ -34,6 +34,7 @@ pub struct InspectorProps {
 /// | `children`  | ❌        |
 /// | `styles`    | ✅        |
 /// | `on_event`  | ❌        |
+/// | `on_layout` | ❌        |
 /// | `focusable` | ❌        |
 ///
 pub fn Inspector(props: InspectorProps) {

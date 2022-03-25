@@ -1,4 +1,4 @@
-use kayak_core::{styles::Units, Binding, Bound, CursorIcon};
+use kayak_core::{styles::Units, Binding, Bound, CursorIcon, OnLayout};
 use kayak_font::{CoordinateSystem, KayakFont};
 
 use crate::core::{
@@ -24,6 +24,8 @@ pub struct TextProps {
     pub styles: Option<Style>,
     #[prop_field(OnEvent)]
     pub on_event: Option<OnEvent>,
+    #[prop_field(OnLayout)]
+    pub on_layout: Option<OnLayout>,
     #[prop_field(Focusable)]
     pub focusable: Option<bool>,
 }
@@ -40,7 +42,7 @@ pub struct TextProps {
 /// | `children`  | ❌        |
 /// | `styles`    | ✅        |
 /// | `on_event`  | ✅        |
-/// | `on_layout` | ❌        |
+/// | `on_layout` | ✅        |
 /// | `focusable` | ✅        |
 ///
 pub fn Text(props: TextProps) {

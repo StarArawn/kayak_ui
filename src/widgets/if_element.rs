@@ -1,5 +1,3 @@
-use kayak_core::OnLayout;
-
 use crate::core::{rsx, styles::Style, widget, Children, OnEvent, WidgetProps};
 
 /// Props used by the [`If`] widget
@@ -13,8 +11,6 @@ pub struct IfProps {
     pub children: Option<Children>,
     #[prop_field(OnEvent)]
     pub on_event: Option<OnEvent>,
-    #[prop_field(OnLayout)]
-    pub on_layout: Option<OnLayout>,
     #[prop_field(Focusable)]
     pub focusable: Option<bool>,
 }
@@ -31,7 +27,7 @@ pub struct IfProps {
 /// | `children`  | ✅        |
 /// | `styles`    | ✅        |
 /// | `on_event`  | ✅        |
-/// | `on_layout` | ✅        |
+/// | `on_layout` | ❌        |
 /// | `focusable` | ✅        |
 ///
 pub fn If(props: IfProps) {

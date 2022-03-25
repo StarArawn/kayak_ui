@@ -1,10 +1,10 @@
-use kayak_core::OnLayout;
 use crate::core::{
     render_command::RenderCommand,
     rsx,
     styles::{Style, StyleProp},
     widget, Children, Fragment, OnEvent, WidgetProps,
 };
+use kayak_core::OnLayout;
 
 /// Props used by the [`Background`] widget
 #[derive(WidgetProps, Default, Debug, PartialEq, Clone)]

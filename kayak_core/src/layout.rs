@@ -3,12 +3,12 @@ use crate::Index;
 pub use morphorm::GeometryChanged;
 
 /// A layout data sent to widgets on layout.
-/// 
+///
 /// Similar and interchangeable with [Rect]
 /// ```
 /// use kayak_core::layout_cache::Rect;
 /// use kayak_core::Layout;
-/// 
+///
 /// let layout = Layout::default();
 /// let rect : Rect = layout.into();
 /// let layout : Layout = rect.into();

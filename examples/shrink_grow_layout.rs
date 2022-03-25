@@ -10,12 +10,12 @@ use bevy::{
     DefaultPlugins,
 };
 use kayak_core::{
-    styles::{LayoutType, Style, StyleProp, Units, Edge},
+    styles::{Edge, LayoutType, Style, StyleProp, Units},
     OnLayout,
 };
 use kayak_core::{Color, EventType, OnEvent};
 use kayak_render_macros::use_state;
-use kayak_ui::widgets::{App, Text, Window, Element};
+use kayak_ui::widgets::{App, Element, Text, Window};
 use kayak_ui::{
     bevy::{BevyContext, BevyKayakUIPlugin, FontMapping, UICameraBundle},
     widgets::Button,

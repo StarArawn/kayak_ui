@@ -50,7 +50,7 @@ impl WidgetProps for TextBoxProps {
     fn get_on_layout(&self) -> Option<OnLayout> {
         self.on_layout.clone()
     }
-    
+
     fn get_focusable(&self) -> Option<bool> {
         Some(!self.disabled)
     }

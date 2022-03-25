@@ -10,12 +10,12 @@ use bevy::{
     DefaultPlugins,
 };
 use kayak_core::{
-    styles::{LayoutType, Style, StyleProp, Units},
+    styles::{LayoutType, Style, StyleProp, Units, Edge},
     OnLayout,
 };
 use kayak_core::{Color, EventType, OnEvent};
 use kayak_render_macros::use_state;
-use kayak_ui::widgets::{App, Text, Window};
+use kayak_ui::widgets::{App, Text, Window, Element};
 use kayak_ui::{
     bevy::{BevyContext, BevyKayakUIPlugin, FontMapping, UICameraBundle},
     widgets::Button,
@@ -33,9 +33,9 @@ fn GrowShrink() {
 
     let panel_style = Style {
         layout_type: StyleProp::Value(LayoutType::Row),
-        background_color: StyleProp::Value(Color::new(0.33, 0.33, 0.33, 0.2)),
         width: StyleProp::Value(Units::Auto),
         height: StyleProp::Value(Units::Pixels(50.0)),
+        offset: StyleProp::Value(Edge::all(Units::Pixels(10.0))),
         ..Default::default()
     };
 
@@ -44,6 +44,7 @@ fn GrowShrink() {
         width: StyleProp::Value(Units::Pixels(100.0)),
         height: StyleProp::Value(Units::Pixels(24.0)),
         background_color: StyleProp::Value(Color::new(0.33, 0.33, 0.33, 1.0)),
+        offset: StyleProp::Value(Edge::all(Units::Pixels(10.0))),
         ..Default::default()
     };
 
@@ -82,14 +83,14 @@ fn GrowShrink() {
         <>
             <Window position={(100.0, 100.0)} size={(400.0, 400.0)} title={"Grow/Shrink Example".to_string()}>
                 <Text size={25.0} content={format!("Width: {:?}", layout_width).to_string()} />
-                <Background styles={Some(panel_style)}>
+                <Element styles={Some(panel_style)}>
                     <Button styles={Some(button_styles)} on_event={Some(grow)}>
                         <Text size={20.0} content={"Grow".to_string()}/>
                     </Button>
                     <Button styles={Some(button_styles)} on_event={Some(shrink)}>
                         <Text size={20.0} content={"Shrink".to_string()}/>
                     </Button>
-                </Background>
+                </Element>
                 <Background styles={Some(fill)} on_layout={Some(update_text)} />
             </Window>
         </>

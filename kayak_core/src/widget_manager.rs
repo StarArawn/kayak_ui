@@ -172,8 +172,8 @@ impl WidgetManager {
     pub fn render(&mut self) {
         let initial_styles = Style::initial();
         let default_styles = Style::new_default();
-        for dirty_node_index in self.dirty_render_nodes.drain(..) {
-            let dirty_widget = self.current_widgets[dirty_node_index].as_ref().unwrap();
+        for dirty_node_index in &self.dirty_render_nodes {
+            let dirty_widget = self.current_widgets[*dirty_node_index].as_ref().unwrap();
             // Get the parent styles. Will be one of the following:
             // 1. Already-resolved node styles (best)
             // 2. Unresolved widget prop styles
@@ -232,13 +232,13 @@ impl WidgetManager {
                 .unwrap_or(vec![]);
 
             let mut node = NodeBuilder::empty()
-                .with_id(dirty_node_index)
+                .with_id(*dirty_node_index)
                 .with_styles(styles, raw_styles)
                 .with_children(children)
                 .build();
             node.z = current_z;
 
-            self.nodes[dirty_node_index] = Some(node);
+            self.nodes[*dirty_node_index] = Some(node);
         }
 
         self.node_tree = self.build_nodes_tree();

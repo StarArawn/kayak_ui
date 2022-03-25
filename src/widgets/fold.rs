@@ -1,3 +1,5 @@
+use kayak_core::OnLayout;
+
 use crate::core::{
     render_command::RenderCommand,
     rsx,
@@ -7,34 +9,52 @@ use crate::core::{
 
 use crate::widgets::{Background, Clip, If, Text};
 
+// TODO: Add `disabled` prop
+
+/// Props used by the [`Fold`] widget
 #[derive(WidgetProps, Default, Debug, PartialEq, Clone)]
 pub struct FoldProps {
-    pub label: String,
-    pub open: Option<bool>,
-    pub on_change: Option<Handler<bool>>,
+    /// The initial open state of the fold
     pub default_open: bool,
+    /// The string displayed as the label of this fold element
+    pub label: String,
+    /// A callback for when the user presses the fold's label
+    ///
+    /// The handler is given the boolean value of the desired open state. For example,
+    /// if the fold is closed and the user presses on the label, this callback will be
+    /// fired with the boolean value `true`.
+    pub on_change: Option<Handler<bool>>,
+    /// Sets the controlled open state of the fold
+    ///
+    /// If `None`, the open state will be automatically handled internally.
+    /// This is useful for if you don't need or care to manage the toggling yourself.
+    pub open: Option<bool>,
     #[prop_field(Styles)]
     pub styles: Option<Style>,
     #[prop_field(Children)]
     pub children: Option<Children>,
     #[prop_field(OnEvent)]
     pub on_event: Option<OnEvent>,
+    #[prop_field(OnLayout)]
+    pub on_layout: Option<OnLayout>,
     #[prop_field(Focusable)]
     pub focusable: Option<bool>,
 }
 
+#[widget]
 /// A widget container that toggles its content between visible and hidden when clicked
 ///
-/// If `open` is set to `None`, then the toggle state will be automatically handled by
-/// the widget. This is useful for if you don't need or care to manage the toggling yourself.
+/// # Props
 ///
-/// # Arguments
+/// __Type:__ [`FoldProps`]
 ///
-/// * `label`: The Fold's label
-/// * `children`: The Fold's content
-/// * `open`: If true, renders the content. If `None`, the widget will manage its own open/close state.
-/// * `on_change`: Called when the user clicks on the Fold's label. Contains the next desired toggle state.
-/// * `default_open`: Set the initial open state of this widget
+/// | Common Prop | Accepted |
+/// | :---------: | :------: |
+/// | `children`  | ✅        |
+/// | `styles`    | ✅        |
+/// | `on_event`  | ✅        |
+/// | `on_layout` | ✅        |
+/// | `focusable` | ✅        |
 ///
 /// # Examples
 ///
@@ -53,7 +73,6 @@ pub struct FoldProps {
 ///     </Fold>
 /// }
 /// ```
-#[widget]
 pub fn Fold(props: FoldProps) {
     let FoldProps {
         default_open,

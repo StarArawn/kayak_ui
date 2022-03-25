@@ -1,4 +1,5 @@
 use crate::assets::AssetStorage;
+use crate::layout_dispatcher::LayoutEventDispatcher;
 use crate::{Binding, Changeable, CursorIcon, KayakContextRef};
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -9,15 +10,31 @@ use crate::{
     Releasable,
 };
 
+/// The context in which all widgets are contained
+///
+/// This manages everything from rendering widgets to processing events.
+///
+/// Generally widgets themselves do not need to interface with this struct directly
+/// and can instead use the  [`KayakContextRef`] abstraction layer. Integrations, on
+/// the other hand, will likely need to work with this struct directly so they can
+/// control when to render, dispatch events, load assets, etc.
 pub struct KayakContext {
     assets: resources::Resources,
     pub(crate) current_effect_index: usize,
     pub(crate) current_state_index: usize,
+    /// Processes and dispatches all events
     event_dispatcher: EventDispatcher,
     global_bindings: HashMap<crate::Index, Vec<crate::flo_binding::Uuid>>,
     global_state: resources::Resources,
     pub(crate) last_state_type_id: Option<std::any::TypeId>,
     // TODO: Make widget_manager private.
+    /// The widget manager containing information about the widget tree and layout
+    ///
+    /// # Important Note
+    ///
+    /// While this is currently publicly accessible, it's recommended you __don't__ use it
+    /// within your own code. This will likely be privatized in the future and only
+    /// accessible through controlled layers of abstraction.
     pub widget_manager: WidgetManager,
     widget_effects: HashMap<crate::Index, resources::Resources>,
     /// Contains provider state data to be accessed by consumers.
@@ -56,7 +73,19 @@ impl KayakContext {
         }
     }
 
-    /// Binds some global state to the current widget.
+    /// Bind the given widget to a `Binding<T>` value
+    ///
+    /// "Binding" means that whenever the bound value is changed, the given widget will be re-rendered.
+    /// To undo this effect, use the [`unbind`](Self::unbind) method.
+    ///
+    /// Make sure the binding is stored _outside_ the widget's scope. Otherwise, it will just be dropped
+    /// once the widget is rendered.
+    ///
+    /// # Arguments
+    ///
+    /// * `widget_id`: The ID of the widget
+    /// * `binding`: The value to bind to
+    ///
     pub fn bind<T: Clone + PartialEq + Send + Sync + 'static>(
         &mut self,
         widget_id: Index,
@@ -79,23 +108,32 @@ impl KayakContext {
         }
     }
 
+    /// Unbinds the given widget from a `Binding<T>` value
+    ///
+    /// The will only work on values for which the given widget has already been bound
+    /// using the [`bind`](Self::bind) method.
+    ///
+    /// If the given value was not already bound, this method does nothing.
+    ///
+    /// # Arguments
+    ///
+    /// * `widget_id`: The ID of the widget
+    /// * `binding`: The already-bound value
+    ///
     pub fn unbind<T: Clone + PartialEq + Send + Sync + 'static>(
         &mut self,
         widget_id: Index,
-        global_state: &crate::Binding<T>,
+        binding: &crate::Binding<T>,
     ) {
         if self.global_bindings.contains_key(&widget_id) {
             let global_binding_ids = self.global_bindings.get_mut(&widget_id).unwrap();
-            if let Some(index) = global_binding_ids
-                .iter()
-                .position(|id| *id == global_state.id)
-            {
+            if let Some(index) = global_binding_ids.iter().position(|id| *id == binding.id) {
                 global_binding_ids.remove(index);
 
                 Self::remove_state_lifetime(
                     &mut self.widget_state_lifetimes,
                     widget_id,
-                    global_state.id,
+                    binding.id,
                 );
             }
         }
@@ -103,8 +141,14 @@ impl KayakContext {
 
     /// Creates a provider context with the given state data
     ///
-    /// This works much like [create_state](Self::create_state), except that the state is also made available to any children. They can
-    /// access this provider's state by calling [create_consumer](Self::create_consumer).
+    /// This works much like [create_state](Self::create_state), except that the state is also made available to any
+    /// descendent widget. They can access this provider's state by calling [create_consumer](Self::create_consumer).
+    ///
+    /// # Arguments
+    ///
+    /// * `widget_id`: The ID of the widget
+    /// * `initial_state`: The initial value to set (if it hasn't been set already)
+    ///
     pub fn create_provider<T: resources::Resource + Clone + PartialEq>(
         &mut self,
         widget_id: Index,
@@ -142,6 +186,11 @@ impl KayakContext {
     /// Creates a context consumer for the given type, [T]
     ///
     /// This allows direct access to a parent's state data made with [create_provider](Self::create_provider).
+    ///
+    /// # Arguments
+    ///
+    /// * `widget_id`: The ID of the widget
+    ///
     pub fn create_consumer<T: resources::Resource + Clone + PartialEq>(
         &mut self,
         widget_id: Index,
@@ -167,6 +216,54 @@ impl KayakContext {
         None
     }
 
+    /// Create a state
+    ///
+    /// A "state" is a value that is maintained across re-renders of a widget. Additionally, widgets
+    /// are _bound_ to their state. This means that whenever the state is updated, it will cause the
+    /// widget to re-render.
+    ///
+    /// # Arguments
+    ///
+    /// * `widget_id`: The ID of the widget
+    /// * `initial_state`: The initial value to set (if it hasn't been set already)
+    ///
+    /// # Examples
+    ///
+    /// Creating a state is easy. With the `Bound` and `MutableBound` traits in scope, we can then
+    /// `get` and `set` the state value, respectively.
+    ///
+    /// ```ignore
+    /// #[widget]
+    /// fn MyWidget() {
+    ///   // Create state
+    ///   let count = context.create_state::<u32>(0);
+    ///
+    ///   // Get current value
+    ///   let count_value = count.get();
+    ///
+    ///   // Set value (this would cause the a re-render, resulting in an infinite loop)
+    ///   count.set(count_value + 1);
+    /// }
+    /// ```
+    ///
+    /// The order in which states are defined matters. Placing this method behind some type of conditional
+    /// can lead to unexpected behavior, such as one state being set to the value of another state.
+    ///
+    /// ```should_panic
+    /// #[widget]
+    /// fn MyWidget() {
+    ///   let some_conditional = context.create_state(true);
+    ///
+    ///   if some_conditional {
+    ///     let count_a = context.create_state::<u32>(123);
+    ///     some_conditional.set(false);
+    ///   }
+    ///
+    ///   let count_b = context.create_state::<u32>(0);
+    ///
+    ///   assert_eq!(0, count_b.get());
+    /// }
+    /// ```
     pub fn create_state<T: resources::Resource + Clone + PartialEq>(
         &mut self,
         widget_id: Index,
@@ -226,32 +323,40 @@ impl KayakContext {
         return self.get_state(widget_id);
     }
 
-    /// Creates a callback that runs as a side-effect of its dependencies, running only when one of them is updated.
+    /// Creates a callback that runs as a side-effect of one of its dependencies being changed.
     ///
     /// All dependencies must be implement the [Changeable](crate::Changeable) trait, which means it will generally
-    /// work best with [Binding](crate::Binding) values.
+    /// work best with [Binding](crate::Binding) values, such as those created by [`create_state`](Self::create_state).
+    ///
+    /// Use an empty dependency array if you want this effect to run only when the widget is _first_ rendered
+    /// (then never again).
     ///
     /// For more details, check out [React's documentation](https://reactjs.org/docs/hooks-effect.html),
     /// upon which this method is based.
     ///
     /// # Arguments
     ///
+    /// * `widget_id`: The ID of the widget
     /// * `effect`: The side-effect function
     /// * `dependencies`: The dependencies the effect relies on
     ///
-    /// returns: ()
-    ///
     /// # Examples
     ///
-    /// ```
-    /// # use kayak_core::{bind, Binding, Bound, KayakContext};
-    /// # let mut context = KayakContext::new();
+    /// ```ignore
+    /// #[widget]
+    /// fn MyWidget() {
+    ///   let count = context.create_state::<u32>(0);
     ///
-    /// let my_state: Binding<i32> = bind(0i32);
-    /// let my_state_clone = my_state.clone();
-    /// context.create_effect(move || {
-    ///     println!("Value: {}", my_state_clone.get());
-    /// }, &[&my_state]);
+    ///   // An effect that prints out the count value whenever it changes
+    ///   context.create_effect(move || {
+    ///     println!("Value: {}", count.get());
+    ///   }, &[&count]);
+    ///
+    ///   // An effect that prints to the console when the widget is first rendered
+    ///   context.create_effect(|| {
+    ///     println!("MyWidget created!");
+    ///   }, &[]);
+    /// }
     /// ```
     pub fn create_effect<'a, F: Fn() + Send + Sync + 'static>(
         &'a mut self,
@@ -364,20 +469,79 @@ impl KayakContext {
         }
     }
 
-    pub fn set_global_state<T: resources::Resource>(&mut self, state: T) {
-        self.global_state.insert(state);
+    /// Set a value that's accessible to all widgets
+    ///
+    /// Values should be type-unique. Setting an `i32` value, for example, allows another widget
+    /// to overwrite that value by adding their own global `i32` value, whether or not it was intentional.
+    /// If this is not desired, an easy solution is to use the [newtype](https://doc.rust-lang.org/rust-by-example/generics/new_types.html)
+    /// pattern.
+    ///
+    /// Widgets are not automatically bound to this global. You will have to bind to it manually
+    /// (as long as the value is a `Binding<T>`) using [`bind`](Self::bind).
+    ///
+    /// # Arguments
+    ///
+    /// * `value`: The value to set
+    ///
+    /// # Examples
+    ///
+    /// ```ignore
+    /// struct MyCount(i32);
+    ///
+    /// #[widget]
+    /// fn MyWidget() {
+    ///   context.set_global(MyCount(123));
+    /// }
+    /// ```
+    ///
+    /// You may also want to bind the widget to a global, so that when the global is changed,
+    /// the widget will re-render. This can be done by binding to the global.
+    ///
+    /// ```ignore
+    /// use kayak_core::bind;
+    ///
+    /// #[derive(Clone, PartialEq)] // <- Required by `bind`
+    /// struct MyCount(i32);
+    ///
+    /// #[widget]
+    /// fn MyWidget() {
+    ///   let bound_count = bind(MyCount(123));
+    ///   context.bind(&bound_count);
+    ///   context.set_global(bound_count);
+    /// }
+    /// ```
+    pub fn set_global<T: resources::Resource>(&mut self, value: T) {
+        self.global_state.insert(value);
     }
 
-    pub fn get_global_state<T: resources::Resource>(
+    /// Attempts to fetch a global value with the given type, returning an immutable reference to
+    /// that value.
+    ///
+    /// If you need mutable access to the global, use the [`get_global_mut`](Self::get_global_mut) method.
+    pub fn get_global<T: resources::Resource>(
+        &mut self,
+    ) -> Result<resources::Ref<T>, resources::CantGetResource> {
+        self.global_state.get::<T>()
+    }
+
+    /// Attempts to fetch a global value with the given type, returning a mutable reference to
+    /// that value.
+    ///
+    /// If you only need immutable access to the global, use the [`get_global`](Self::get_global) method.
+    pub fn get_global_mut<T: resources::Resource>(
         &mut self,
     ) -> Result<resources::RefMut<T>, resources::CantGetResource> {
         self.global_state.get_mut::<T>()
     }
 
-    pub fn take_global_state<T: resources::Resource>(&mut self) -> Option<T> {
+    /// Removes the global value with the given type
+    ///
+    /// Returns the removed value, or `None` if a value with the given type did not exist.
+    pub fn remove_global<T: resources::Resource>(&mut self) -> Option<T> {
         self.global_state.remove::<T>()
     }
 
+    /// Re-render all widgets that need rendering (i.e., marked dirty)
     pub fn render(&mut self) {
         let dirty_nodes: Vec<_> =
             if let Ok(mut dirty_nodes) = self.widget_manager.dirty_nodes.lock() {
@@ -396,6 +560,7 @@ impl KayakContext {
         // self.widget_manager.dirty_nodes.clear();
         self.widget_manager.render();
         self.widget_manager.calculate_layout();
+        LayoutEventDispatcher::dispatch(self);
         self.update_cursor();
     }
 
@@ -433,19 +598,41 @@ impl KayakContext {
         }
     }
 
+    /// Checks if the widget with the given ID is currently focused or not
     pub fn is_focused(&self, index: Index) -> bool {
         let current = self.widget_manager.focus_tree.current();
         current == Some(index)
     }
 
+    /// Gets the currently focused widget ID
     pub fn current_focus(&self) -> Option<Index> {
         self.widget_manager.focus_tree.current()
     }
 
+    /// Gets whether the widget with the given ID can be focused
+    ///
+    /// The values are:
+    ///
+    /// | Value         | Description                              |
+    /// |---------------|------------------------------------------|
+    /// | `Some(true)`  | The widget is focusable                  |
+    /// | `Some(false)` | The widget is not focusable              |
+    /// | `None`        | The widget's focusability is unspecified |
+    ///
     pub fn get_focusable(&self, index: Index) -> Option<bool> {
         self.widget_manager.get_focusable(index)
     }
 
+    /// Sets the "focusability" of the widget with the given ID
+    ///
+    /// The values are:
+    ///
+    /// | Value         | Description                              |
+    /// |---------------|------------------------------------------|
+    /// | `Some(true)`  | The widget is focusable                  |
+    /// | `Some(false)` | The widget is not focusable              |
+    /// | `None`        | The widget's focusability is unspecified |
+    ///
     pub fn set_focusable(&mut self, focusable: Option<bool>, index: Index) {
         self.widget_manager.set_focusable(focusable, index, false);
     }
@@ -457,12 +644,39 @@ impl KayakContext {
         self.event_dispatcher.current_mouse_position()
     }
 
+    /// Query the Bevy `World` with the given `SystemParam`
+    ///
+    /// The function passed to this method will be called with the retrieved value from `World`. If
+    /// a value is returned from that function, it will be returned from this method as well.
+    ///
+    /// # Arguments
+    ///
+    /// * `f`: The function to call with the given system parameter
+    ///
+    /// # Examples
+    ///
+    /// ```ignore
+    /// use bevy::prelude::{Query, Res, Transform};
+    ///
+    /// struct MyCount(i32);
+    ///
+    /// #[widget]
+    /// fn MyWidget() {
+    ///   // Query a single item
+    ///   let value = context.query_world::<Res<MyCount>, _, _>(|count| count.0);
+    ///
+    ///   // Or query multiple using a tuple
+    ///   context.query_world::<(Res<MyCount>, Query<&mut Transform>), _, _>(|(count, query)| {
+    ///     // ...
+    ///   });
+    /// }
+    /// ```
     #[cfg(feature = "bevy_renderer")]
     pub fn query_world<T: bevy::ecs::system::SystemParam, F, R>(&mut self, mut f: F) -> R
     where
         F: FnMut(<T::Fetch as bevy::ecs::system::SystemParamFetch<'_, '_>>::Item) -> R,
     {
-        let mut world = self.get_global_state::<bevy::prelude::World>().unwrap();
+        let mut world = self.get_global_mut::<bevy::prelude::World>().unwrap();
         let mut system_state = bevy::ecs::system::SystemState::<T>::new(&mut world);
         let r = {
             let test = system_state.get_mut(&mut world);
@@ -473,6 +687,35 @@ impl KayakContext {
         r
     }
 
+    /// Get a stored asset with the given asset key
+    ///
+    /// The type of the asset [T] must implement `Clone` and `PartialEq` so that a `Binding<Option<T>>`
+    /// can be returned. By calling [bind](Self::bind) over the binding, you can react to all changes to
+    /// the asset, including when it's added or removed.
+    ///
+    /// If no asset in storage matches both the asset key _and_ the asset type, a value of
+    /// `Binding<None>` is returned. Again, binding to this value will allow you to detect when a matching
+    /// asset is added to storage.
+    ///
+    /// # Arguments
+    ///
+    /// * `key`: The asset key
+    ///
+    /// # Examples
+    ///
+    /// ```ignore
+    /// #[derive(Clone, PartialEq)]
+    /// struct MyAsset(pub String);
+    ///
+    /// #[widget]
+    /// fn MyWidget() {
+    ///   let asset = context.get_asset::<MyAsset>("foo");
+    ///   context.bind(&asset);
+    ///   if let Some(asset) = asset.get() {
+    ///     // ...
+    ///   }
+    /// }
+    /// ```
     pub fn get_asset<T: 'static + Send + Sync + Clone + PartialEq>(
         &mut self,
         key: impl Into<PathBuf>,
@@ -485,6 +728,13 @@ impl KayakContext {
         }
     }
 
+    /// Stores an asset along with a key to access it
+    ///
+    /// # Arguments
+    ///
+    /// * `key`: The asset key
+    /// * `asset`: The asset to store
+    ///
     pub fn set_asset<T: 'static + Send + Sync + Clone + PartialEq>(
         &mut self,
         key: impl Into<PathBuf>,
@@ -504,6 +754,7 @@ impl KayakContext {
         }
     }
 
+    /// Get the ID of the widget that was last clicked
     pub fn get_last_clicked_widget(&self) -> Binding<Index> {
         self.event_dispatcher.last_clicked.clone()
     }
@@ -561,6 +812,7 @@ impl KayakContext {
         self.event_dispatcher.force_release_cursor()
     }
 
+    /// Get the current cursor icon
     pub fn cursor_icon(&self) -> CursorIcon {
         self.cursor_icon
     }

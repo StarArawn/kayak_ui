@@ -1,3 +1,5 @@
+use kayak_core::OnLayout;
+
 use crate::core::{
     render_command::RenderCommand,
     rsx,
@@ -5,6 +7,7 @@ use crate::core::{
     widget, Children, OnEvent, WidgetProps,
 };
 
+/// Props used by the [`Image`] widget
 #[derive(WidgetProps, Default, Debug, PartialEq, Clone)]
 pub struct ImageProps {
     pub handle: u16,
@@ -14,11 +17,27 @@ pub struct ImageProps {
     pub children: Option<Children>,
     #[prop_field(OnEvent)]
     pub on_event: Option<OnEvent>,
+    #[prop_field(OnLayout)]
+    pub on_layout: Option<OnLayout>,
     #[prop_field(Focusable)]
     pub focusable: Option<bool>,
 }
 
 #[widget]
+/// A widget that renders an image background
+///
+/// # Props
+///
+/// __Type:__ [`ImageProps`]
+///
+/// | Common Prop | Accepted |
+/// | :---------: | :------: |
+/// | `children`  | ✅        |
+/// | `styles`    | ✅        |
+/// | `on_event`  | ✅        |
+/// | `on_layout` | ✅        |
+/// | `focusable` | ✅        |
+///
 pub fn Image(props: ImageProps) {
     props.styles = Some(Style {
         render_command: StyleProp::Value(RenderCommand::Image {

@@ -8,6 +8,7 @@ use std::sync::Arc;
 
 use crate::widgets::{Background, Clip, Element, If, Text};
 
+/// Data provided by a [`TooltipProvider`] used to control a tooltip
 #[derive(Clone, PartialEq, Debug, Default)]
 pub struct TooltipData {
     /// The anchor coordinates in pixels (x, y)
@@ -20,9 +21,12 @@ pub struct TooltipData {
     pub visible: bool,
 }
 
+/// Props used by the [`TooltipProvider`] widget
 #[derive(WidgetProps, Default, Debug, PartialEq, Clone)]
 pub struct TooltipProviderProps {
+    /// The position of the containing rect (used to layout the tooltip)
     pub position: (f32, f32),
+    /// The size of the containing rect (used to layout the tooltip)
     pub size: (f32, f32),
     #[prop_field(Styles)]
     pub styles: Option<Style>,
@@ -32,10 +36,18 @@ pub struct TooltipProviderProps {
     pub on_event: Option<OnEvent>,
 }
 
+/// Props used by the [`TooltipProvider`] widget
 #[derive(WidgetProps, Default, Debug, PartialEq, Clone)]
 pub struct TooltipConsumerProps {
+    /// The position at which to anchor the tooltip (in pixels)
+    ///
+    /// If `None`, the tooltip will follow the cursor
     pub anchor: Option<(f32, f32)>,
+    /// The size of the tooltip
+    ///
+    /// If `None`, the tooltip will be automatically sized
     pub size: Option<(f32, f32)>,
+    /// The text to display in the tooltip
     pub text: String,
     #[prop_field(Styles)]
     pub styles: Option<Style>,
@@ -45,14 +57,23 @@ pub struct TooltipConsumerProps {
     pub on_event: Option<OnEvent>,
 }
 
-/// A provider for managing a tooltip context.
+#[widget]
+/// A widget that provides a context for managing a tooltip
 ///
-/// This widget creates a single tooltip that can be controlled by any descendant [TooltipConsumer].
+/// This widget creates a single tooltip that can be controlled by any descendant [`TooltipConsumer`],
+/// or by creating a consumer for [`TooltipData`]
 ///
-/// # Arguments
+/// # Props
 ///
-/// * `position`: The position of the containing rect (used to layout the tooltip).
-/// * `size`: The size of the containing rect (used to layout the tooltip).
+/// __Type:__ [`TooltipProviderProps`]
+///
+/// | Common Prop | Accepted |
+/// | :---------: | :------: |
+/// | `children`  | ✅        |
+/// | `styles`    | ✅        |
+/// | `on_event`  | ✅        |
+/// | `on_layout` | ❌        |
+/// | `focusable` | ❌        |
 ///
 /// # Styles
 ///
@@ -82,7 +103,6 @@ pub struct TooltipConsumerProps {
 ///   }
 /// }
 /// ```
-#[widget]
 pub fn TooltipProvider(props: TooltipProviderProps) {
     let TooltipProviderProps { position, size, .. } = props;
     const WIDTH: f32 = 150.0;
@@ -164,13 +184,20 @@ pub fn TooltipProvider(props: TooltipProviderProps) {
     }
 }
 
-/// A consumer of [TooltipProvider], displaying a tooltip when its children are hovered.
+#[widget]
+/// A widget that consumes the [`TooltipData`] from a [`TooltipProvider`], providing a
+/// convenient way to apply a tooltip over its children.
 ///
-/// # Arguments
+/// # Props
 ///
-/// * `text`: The text to display in the tooltip.
-/// * `anchor`: The position (in pixels) to which the tooltip will be anchored. If `None`, defaults to the cursor's position.
-/// * `size`: The size (in pixels) of the tooltip.
+/// __Type:__ [`TooltipConsumerProps`]
+///
+/// | Common Prop | Accepted |
+/// | :---------: | :------: |
+/// | `children`  | ✅        |
+/// | `styles`    | ✅        |
+/// | `on_event`  | ✅        |
+/// | `focusable` | ❌        |
 ///
 /// # Examples
 /// ```
@@ -194,7 +221,6 @@ pub fn TooltipProvider(props: TooltipProviderProps) {
 ///   }
 /// }
 /// ```
-#[widget]
 pub fn TooltipConsumer(props: TooltipConsumerProps) {
     let TooltipConsumerProps {
         anchor, size, text, ..

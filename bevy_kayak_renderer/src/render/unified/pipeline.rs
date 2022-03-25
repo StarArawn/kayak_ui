@@ -38,8 +38,8 @@ use kayak_font::{
 };
 
 use super::{Dpi, UNIFIED_SHADER_HANDLE};
-use crate::{render::ui_pass::TransparentUI, WindowSize};
-use kayak_core::styles::Corner;
+use crate::render::ui_pass::TransparentUI;
+use crate::{Corner, WindowSize};
 
 pub struct UnifiedPipeline {
     view_layout: BindGroupLayout,
@@ -300,7 +300,7 @@ impl FromWorld for UnifiedPipeline {
 
 #[derive(Debug, Bundle)]
 pub struct ExtractQuadBundle {
-    pub(crate) extracted_quad: ExtractedQuad,
+    pub extracted_quad: ExtractedQuad,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]

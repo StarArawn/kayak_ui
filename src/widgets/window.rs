@@ -5,15 +5,20 @@ use crate::core::{
     styles::{Corner, Edge, PositionType, Style, StyleProp, Units},
     use_state, widget, Children, EventType, OnEvent, WidgetProps,
 };
-use kayak_core::CursorIcon;
+use kayak_core::{CursorIcon, OnLayout};
 
 use crate::widgets::{Background, Clip, Element, Text};
 
+/// Props used by the [`Window`] widget
 #[derive(WidgetProps, Default, Debug, PartialEq, Clone)]
 pub struct WindowProps {
+    /// If true, allows the window to be draggable by its title bar
     pub draggable: bool,
+    /// The position at which to display the window in pixels
     pub position: (f32, f32),
+    /// The size of the window in pixels
     pub size: (f32, f32),
+    /// The text to display in the window's title bar
     pub title: String,
     #[prop_field(Styles)]
     pub styles: Option<Style>,
@@ -21,11 +26,27 @@ pub struct WindowProps {
     pub children: Option<Children>,
     #[prop_field(OnEvent)]
     pub on_event: Option<OnEvent>,
+    #[prop_field(OnLayout)]
+    pub on_layout: Option<OnLayout>,
     #[prop_field(Focusable)]
     pub focusable: Option<bool>,
 }
 
 #[widget]
+/// A widget that renders a window-like container element
+///
+/// # Props
+///
+/// __Type:__ [`WindowProps`]
+///
+/// | Common Prop | Accepted |
+/// | :---------: | :------: |
+/// | `children`  | ✅        |
+/// | `styles`    | ✅        |
+/// | `on_event`  | ✅        |
+/// | `on_layout` | ✅        |
+/// | `focusable` | ✅        |
+///
 pub fn Window(props: WindowProps) {
     let WindowProps {
         draggable,

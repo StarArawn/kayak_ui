@@ -1,11 +1,42 @@
 use std::sync::{Arc, RwLock};
 
 use kayak_core::context::KayakContext;
+
+/// A wrapper around `KayakContext` to be used in Bevy integrations
+///
+/// ```
+/// use bevy::prelude::*;
+/// use bevy_kayak_ui::BevyContext;
+///
+/// fn ui_system(context: Res<BevyContext>) {
+///   // ...
+/// }
+/// ```
 pub struct BevyContext {
     pub kayak_context: Arc<RwLock<KayakContext>>,
 }
 
 impl BevyContext {
+    /// Create a new `BevyContext`
+    ///
+    /// This takes a function that will setup the `KayakContext` and its widget tree.
+    ///
+    /// ```
+    /// use bevy::prelude::*;
+    /// use bevy_kayak_ui::BevyContext;
+    ///
+    /// fn setup_context(mut commands: Commands) {
+    ///   let context = BevyContext::new(|context| {
+    ///     render! {
+    ///       <>
+    ///         // ...
+    ///       </>
+    ///     }
+    ///   });
+    ///
+    ///   commands.insert_resource(context);
+    /// }
+    /// ```
     pub fn new<F: Fn(&mut KayakContext)>(f: F) -> Self {
         let kayak_context = Arc::new(RwLock::new(KayakContext::new()));
 

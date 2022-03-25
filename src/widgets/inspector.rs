@@ -6,12 +6,14 @@ use crate::core::{rsx, widget, MutableBound, WidgetProps};
 
 use crate::widgets::{Background, Button, Text};
 
+// TODO: Remove if unneeded
 #[derive(Clone, PartialEq)]
 pub enum InspectData {
     None,
     Data(Vec<String>),
 }
 
+/// Props used by the [`Inspector`] widget
 #[derive(WidgetProps, Default, Debug, PartialEq, Clone)]
 pub struct InspectorProps {
     #[prop_field(Styles)]
@@ -19,6 +21,22 @@ pub struct InspectorProps {
 }
 
 #[widget]
+/// A widget that displays debug data for inspected widgets
+///
+/// "Inspected widgets" refers to the last clicked widget.
+///
+/// # Props
+///
+/// __Type:__ [`InspectorProps`]
+///
+/// | Common Prop | Accepted |
+/// | :---------: | :------: |
+/// | `children`  | ❌        |
+/// | `styles`    | ✅        |
+/// | `on_event`  | ❌        |
+/// | `on_layout` | ❌        |
+/// | `focusable` | ❌        |
+///
 pub fn Inspector(props: InspectorProps) {
     let (inspect_data, set_inspect_data, _) = use_state!(Vec::<String>::new());
 

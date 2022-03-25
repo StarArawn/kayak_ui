@@ -4,20 +4,29 @@ use crate::core::{
     styles::{Corner, Style, Units},
     widget, Bound, Children, Color, EventType, MutableBound, OnEvent, WidgetProps,
 };
-use kayak_core::CursorIcon;
+use kayak_core::{CursorIcon, OnLayout};
 use std::sync::{Arc, RwLock};
 
 use crate::widgets::{Background, Clip, Text};
 
+/// Props used by the [`TextBox`] widget
 #[derive(Default, Debug, PartialEq, Clone)]
 pub struct TextBoxProps {
+    /// If true, prevents the widget from being focused (and consequently edited)
     pub disabled: bool,
-    pub value: String,
+    /// A callback for when the text value was changed
     pub on_change: Option<OnChange>,
+    /// The text to display when the user input is empty
     pub placeholder: Option<String>,
+    /// The user input
+    ///
+    /// This is a controlled state. You _must_ set this to the value to you wish to be displayed.
+    /// You can use the [`on_change`] callback to update this prop as the user types.
+    pub value: String,
     pub styles: Option<Style>,
     pub children: Option<Children>,
     pub on_event: Option<OnEvent>,
+    pub on_layout: Option<OnLayout>,
     pub focusable: Option<bool>,
 }
 
@@ -36,6 +45,10 @@ impl WidgetProps for TextBoxProps {
 
     fn get_on_event(&self) -> Option<OnEvent> {
         self.on_event.clone()
+    }
+
+    fn get_on_layout(&self) -> Option<OnLayout> {
+        self.on_layout.clone()
     }
 
     fn get_focusable(&self) -> Option<bool> {
@@ -73,6 +86,20 @@ impl std::fmt::Debug for OnChange {
 pub struct Focus(pub bool);
 
 #[widget]
+/// A widget that displays a text input field
+///
+/// # Props
+///
+/// __Type:__ [`TextBoxProps`]
+///
+/// | Common Prop | Accepted |
+/// | :---------: | :------: |
+/// | `children`  | ✅        |
+/// | `styles`    | ✅        |
+/// | `on_event`  | ✅        |
+/// | `on_layout` | ✅        |
+/// | `focusable` | ✅        |
+///
 pub fn TextBox(props: TextBoxProps) {
     let TextBoxProps {
         on_change,

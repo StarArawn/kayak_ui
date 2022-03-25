@@ -1,14 +1,12 @@
 [package]
-name = "bevy_kayak_ui"
+name = "bevy_kayak_renderer"
 version = "0.0.1"
 edition = "2021"
 
 [dependencies]
 bytemuck = "1.7.2"
 bevy = { version = "0.6.0" }
-kayak_core = { path = "../kayak_core" }
 kayak_font = { path = "../kayak_font" }
-bevy_kayak_renderer = { path = "../bevy_kayak_renderer" }
 serde = "1.0"
 serde_json = "1.0"
 serde_path_to_error = "0.1"

@@ -1,3 +1,4 @@
+use kayak_core::styles::Edge;
 use kayak_ui::core::{
     rsx,
     styles::{LayoutType, Style, StyleProp, Units},

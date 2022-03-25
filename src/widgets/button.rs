@@ -2,16 +2,22 @@ use crate::core::{
     render_command::RenderCommand,
     rsx,
     styles::{Corner, Style, StyleProp, Units},
-    widget, Children, Color, Fragment, OnEvent, WidgetProps,
+    widget, Children, Color, Fragment, OnEvent, OnLayout, WidgetProps,
 };
 use kayak_core::CursorIcon;
 
+/// Props used by the [`Button`] widget
 #[derive(Default, Debug, PartialEq, Clone)]
 pub struct ButtonProps {
+    /// If true, disables this widget not allowing it to be focusable
+    ///
+    // TODO: Update this documentation when the disabled issue is fixed
+    /// Currently, this does not actually disable the button from being clicked.
     pub disabled: bool,
     pub styles: Option<Style>,
     pub children: Option<Children>,
     pub on_event: Option<OnEvent>,
+    pub on_layout: Option<OnLayout>,
     pub focusable: Option<bool>,
 }
 
@@ -32,13 +38,36 @@ impl WidgetProps for ButtonProps {
         self.on_event.clone()
     }
 
+    fn get_on_layout(&self) -> Option<OnLayout> {
+        self.on_layout.clone()
+    }
+
     fn get_focusable(&self) -> Option<bool> {
         Some(!self.disabled)
     }
 }
 
 #[widget]
+/// A widget that is styled like a button
+///
+/// # Props
+///
+/// __Type:__ [`ButtonProps`]
+///
+/// | Common Prop | Accepted |
+/// | :---------: | :------: |
+/// | `children`  | ✅        |
+/// | `styles`    | ✅        |
+/// | `on_event`  | ✅        |
+/// | `on_layout` | ✅        |
+/// | `focusable` | ✅        |
+///
 pub fn Button(props: ButtonProps) {
+    // TODO: This should probably do more than just provide basic styling.
+    //       Ideally, we could add a `Handler` prop for `on_click` and other common cursor
+    //       events. Giving it the additional purpose of being a compact way to define a button.
+    //       This also allows us to make `disable` trule disable the button.
+    //       Also, styles need to reflect disabled status.
     props.styles = Some(
         Style::default()
             .with_style(Style {

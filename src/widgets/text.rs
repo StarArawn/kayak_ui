@@ -1,4 +1,4 @@
-use kayak_core::{styles::Units, Binding, Bound, CursorIcon};
+use kayak_core::{styles::Units, Binding, Bound, CursorIcon, OnLayout};
 use kayak_font::{CoordinateSystem, KayakFont};
 
 use crate::core::{
@@ -7,21 +7,44 @@ use crate::core::{
     widget, OnEvent, WidgetProps,
 };
 
+/// PRops used by the [`Text`] widget
 #[derive(WidgetProps, Default, Debug, PartialEq, Clone)]
 pub struct TextProps {
+    /// The string to display
     pub content: String,
+    /// The name of the font to use
+    ///
+    /// The given font must already be loaded into the [`KayakContext`](kayak_core::KayakContext)
     pub font: Option<String>,
+    /// The height of a line of text (currently in pixels)
     pub line_height: Option<f32>,
+    /// The font size (in pixels)
     pub size: f32,
     #[prop_field(Styles)]
     pub styles: Option<Style>,
     #[prop_field(OnEvent)]
     pub on_event: Option<OnEvent>,
+    #[prop_field(OnLayout)]
+    pub on_layout: Option<OnLayout>,
     #[prop_field(Focusable)]
     pub focusable: Option<bool>,
 }
 
 #[widget]
+/// A widget that renders plain text
+///
+/// # Props
+///
+/// __Type:__ [`TextProps`]
+///
+/// | Common Prop | Accepted |
+/// | :---------: | :------: |
+/// | `children`  | ❌        |
+/// | `styles`    | ✅        |
+/// | `on_event`  | ✅        |
+/// | `on_layout` | ✅        |
+/// | `focusable` | ✅        |
+///
 pub fn Text(props: TextProps) {
     let TextProps {
         content,

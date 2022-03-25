@@ -1,6 +1,7 @@
 use crate::cursor::{CursorEvent, ScrollEvent};
 use crate::{Index, KeyboardEvent};
 
+/// An event type sent to widgets
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Event {
     /// The node targeted by this event
@@ -70,41 +71,56 @@ impl Event {
 /// with a custom wrapper.
 #[derive(Debug, Clone, Copy)]
 pub enum EventType {
+    /// An event that occurs when the user clicks a widget
     Click(CursorEvent),
+    /// An event that occurs when the user hovers the cursor over a widget
     Hover(CursorEvent),
+    /// An event that occurs when the user moves the cursor into a widget
     MouseIn(CursorEvent),
+    /// An event that occurs when the user moves the cursor out of a widget
     MouseOut(CursorEvent),
+    /// An event that occurs when the user presses down on the cursor over a widget
     MouseDown(CursorEvent),
+    /// An event that occurs when the user releases the cursor over a widget
     MouseUp(CursorEvent),
     /// An event that occurs when the user scrolls over a widget
     Scroll(ScrollEvent),
+    /// An event that occurs when a widget receives focus
     Focus,
+    /// An event that occurs when a widget loses focus
     Blur,
-    CharInput {
-        c: char,
-    },
+    /// An event that occurs when the user types in a character within a _focused_ widget
+    CharInput { c: char },
+    /// An event that occurs when the user releases a key within a _focused_ widget
     KeyUp(KeyboardEvent),
+    /// An event that occurs when the user presses a key down within a _focused_ widget
     KeyDown(KeyboardEvent),
 }
 
 impl Eq for EventType {}
 
+/// __Note:__ Only checks if the two event types are the same discriminant
 impl PartialEq for EventType {
-    fn eq(&self, _other: &Self) -> bool {
-        matches!(self, _other)
+    fn eq(&self, other: &Self) -> bool {
+        std::mem::discriminant(self) == std::mem::discriminant(other)
     }
 }
 
+/// __Note:__ Only uses the discriminant for hashing
 impl std::hash::Hash for EventType {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         std::hash::Hash::hash(&std::mem::discriminant(self), state);
     }
 }
 
+/// The various categories an event can belong to
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum EventCategory {
+    /// A category for events related to the mouse/cursor
     Mouse,
+    /// A category for events related to the keyboard
     Keyboard,
+    /// A category for events related to focus
     Focus,
 }
 

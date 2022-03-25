@@ -1,7 +1,9 @@
 use crate::core::{rsx, styles::Style, widget, Children, OnEvent, WidgetProps};
 
+/// Props used by the [`If`] widget
 #[derive(WidgetProps, Default, Debug, PartialEq, Clone)]
 pub struct IfProps {
+    /// If true, the children will be rendered, otherwise nothing will be rendered
     pub condition: bool,
     #[prop_field(Styles)]
     pub styles: Option<Style>,
@@ -14,6 +16,20 @@ pub struct IfProps {
 }
 
 #[widget]
+/// A widget that _conditionally_ renders its children
+///
+/// # Props
+///
+/// __Type:__ [`IfProps`]
+///
+/// | Common Prop | Accepted |
+/// | :---------: | :------: |
+/// | `children`  | ✅        |
+/// | `styles`    | ✅        |
+/// | `on_event`  | ✅        |
+/// | `on_layout` | ❌        |
+/// | `focusable` | ✅        |
+///
 pub fn If(props: IfProps) {
     if props.condition {
         rsx! {

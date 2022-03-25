@@ -42,7 +42,7 @@ fn GrowShrink() {
     // Grow/Shrink button styles
     let button_styles = Style {
         width: StyleProp::Value(Units::Pixels(100.0)),
-        height: StyleProp::Value(Units::Pixels(24.0)),
+        height: StyleProp::Value(Units::Pixels(30.0)),
         background_color: StyleProp::Value(Color::new(0.33, 0.33, 0.33, 1.0)),
         offset: StyleProp::Value(Edge::all(Units::Pixels(10.0))),
         ..Default::default()

@@ -5,7 +5,7 @@ use crate::core::{
     styles::{Corner, Edge, PositionType, Style, StyleProp, Units},
     use_state, widget, Children, EventType, OnEvent, WidgetProps,
 };
-use kayak_core::CursorIcon;
+use kayak_core::{CursorIcon, OnLayout};
 
 use crate::widgets::{Background, Clip, Element, Text};
 
@@ -26,6 +26,8 @@ pub struct WindowProps {
     pub children: Option<Children>,
     #[prop_field(OnEvent)]
     pub on_event: Option<OnEvent>,
+    #[prop_field(OnLayout)]
+    pub on_layout: Option<OnLayout>,
     #[prop_field(Focusable)]
     pub focusable: Option<bool>,
 }
@@ -42,6 +44,7 @@ pub struct WindowProps {
 /// | `children`  | ✅        |
 /// | `styles`    | ✅        |
 /// | `on_event`  | ✅        |
+/// | `on_layout` | ✅        |
 /// | `focusable` | ✅        |
 ///
 pub fn Window(props: WindowProps) {

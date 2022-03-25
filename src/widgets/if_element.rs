@@ -27,6 +27,7 @@ pub struct IfProps {
 /// | `children`  | ✅        |
 /// | `styles`    | ✅        |
 /// | `on_event`  | ✅        |
+/// | `on_layout` | ❌        |
 /// | `focusable` | ✅        |
 ///
 pub fn If(props: IfProps) {

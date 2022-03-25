@@ -1,6 +1,4 @@
-use crate::{
-    context_ref::KayakContextRef, styles::Style, Children, Index, OnEvent, Widget, WidgetProps,
-};
+use crate::{context_ref::KayakContextRef, styles::Style, Children, Index, OnEvent, Widget, WidgetProps, OnLayout};
 
 /// Props used by the [`VecTracker`] widget
 #[derive(Default, Debug, PartialEq, Clone)]
@@ -12,6 +10,7 @@ pub struct VecTrackerProps<T> {
     pub styles: Option<Style>,
     pub children: Option<Children>,
     pub on_event: Option<OnEvent>,
+    pub on_layout: Option<OnLayout>,
 }
 
 /// A widget that renders a `Vec` of widgets
@@ -40,6 +39,7 @@ impl<T> VecTracker<T> {
             styles: None,
             children: None,
             on_event: None,
+            on_layout: None,
         };
 
         Self {
@@ -76,6 +76,10 @@ where
 
     fn get_on_event(&self) -> Option<OnEvent> {
         self.on_event.clone()
+    }
+
+    fn get_on_layout(&self) -> Option<OnLayout> {
+        self.on_layout.clone()
     }
 
     fn get_focusable(&self) -> Option<bool> {

@@ -1,6 +1,7 @@
 use as_any::AsAny;
 use std::any::Any;
 
+use crate::on_layout::OnLayout;
 use crate::{context_ref::KayakContextRef, styles::Style, Children, Event, Index, OnEvent};
 
 /// An internal trait that has a blanket implementation over all implementors of [`Widget`]
@@ -86,6 +87,10 @@ pub trait WidgetProps: std::fmt::Debug + AsAny + Send + Sync {
     ///
     /// Returns `None` if this widget doesn't contain a custom event handler
     fn get_on_event(&self) -> Option<OnEvent>;
+    /// Gets the custom layout event handler of this widget
+    ///
+    /// Returns `None` if this widget doesn't contain a custom layout event handler
+    fn get_on_layout(&self) -> Option<OnLayout>;
     /// Gets the focusability of this widget
     ///
     /// The meanings of the returned values are:
@@ -161,6 +166,10 @@ impl WidgetProps for () {
     }
 
     fn get_on_event(&self) -> Option<OnEvent> {
+        None
+    }
+
+    fn get_on_layout(&self) -> Option<OnLayout> {
         None
     }
 

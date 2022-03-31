@@ -65,6 +65,11 @@ pub struct LayoutEvent {
     /// Layout of target component
     pub layout: Layout,
     /// Flags denoting the layout change.
+    ///
+    /// Note: The flags can potentially all be unset in cases where the [target's] layout did
+    /// not change, but one of its immediate children did.
+    ///
+    /// [target's]: LayoutEvent::target
     pub flags: GeometryChanged,
     /// The node ID of the element receiving the layout event.
     pub target: Index,

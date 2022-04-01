@@ -187,10 +187,6 @@ impl WidgetManager {
         // Recursion involves recalculating layout which should be done sparingly.
         const MAX_RECURSION_DEPTH: usize = 2;
 
-        if depth > 0 {
-            dbg!(depth);
-        }
-
         let initial_styles = Style::initial();
         let default_styles = Style::new_default();
         let nodes: Vec<_> = self.dirty_render_nodes.drain(..).collect();
@@ -336,7 +332,7 @@ impl WidgetManager {
         }
 
         if needs_layout {
-            self.dirty_render_nodes.insert(id);
+            self.needs_layout(id);
         }
 
         render_primitive
@@ -403,6 +399,13 @@ impl WidgetManager {
         }
 
         render_primitives
+    }
+
+    /// Forces layout to be recalculated before rendering.
+    ///
+    /// This should be used _sparingly_, if at all.
+    pub fn needs_layout(&mut self, id: Index) {
+        self.dirty_render_nodes.insert(id);
     }
 
     pub fn build_render_primitives(&self) -> Vec<RenderPrimitive> {

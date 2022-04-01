@@ -187,7 +187,7 @@ impl WidgetManager {
         // Recursion involves recalculating layout which should be done sparingly.
         const MAX_RECURSION_DEPTH: usize = 2;
 
-        if depth > 0{
+        if depth > 0 {
             dbg!(depth);
         }
 

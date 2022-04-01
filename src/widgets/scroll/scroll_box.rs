@@ -2,11 +2,11 @@ use crate::core::{
     render_command::RenderCommand,
     rsx,
     styles::{PositionType, Style, Units},
-    use_state, widget, Bound, Children, EventType, MutableBound, OnEvent, ScrollUnit, WidgetProps,
+    widget, Bound, Children, EventType, MutableBound, OnEvent, ScrollUnit, WidgetProps,
 };
 
-use kayak_core::styles::LayoutType;
-use kayak_core::Color;
+use kayak_core::styles::{ LayoutType};
+use kayak_core::{Color, GeometryChanged, OnLayout};
 
 use crate::widgets::{Clip, Element, If};
 
@@ -46,6 +46,8 @@ pub struct ScrollBoxProps {
     pub styles: Option<Style>,
     #[prop_field(Children)]
     pub children: Option<Children>,
+    #[prop_field(OnLayout)]
+    on_layout: Option<OnLayout>,
 }
 
 #[widget]
@@ -77,10 +79,6 @@ pub fn ScrollBox(props: ScrollBoxProps) {
     let track_color = props.track_color;
     let track_styles = props.track_styles.clone();
 
-    // === States === //
-    let (_scroll_offset, set_scroll_offset, ..) = use_state!((0.0, 0.0));
-    let (is_ready, set_is_ready, ..) = use_state!(false);
-
     // === Scroll === //
     let scroll_ctx = context.create_provider(ScrollContext {
         mode,
@@ -95,34 +93,29 @@ pub fn ScrollBox(props: ScrollBoxProps) {
     let hori_thickness = scrollbar_thickness;
     let vert_thickness = scrollbar_thickness;
 
-    let hide_hori = if hide_horizontal {
-        hide_horizontal
-    } else {
-        !always_show_scrollbar && scrollable_width < f32::EPSILON
-    };
+    let hide_horizontal = hide_horizontal || !always_show_scrollbar && scrollable_width < f32::EPSILON;
+    let hide_vertical = hide_vertical || !always_show_scrollbar && scrollable_height < f32::EPSILON;
 
-    let hide_vert = if hide_vertical {
-        hide_vertical
-    } else {
-        !always_show_scrollbar && scrollable_height < f32::EPSILON
-    };
+    {
+        let mut next = scroll_ctx.get();
+        next.pad_x = if hide_vertical { 0.0 } else { vert_thickness };
+        next.pad_y = if hide_horizontal { 0.0 } else { hori_thickness };
 
-    // === Layout === //
-    let id = self.get_id();
-    if let Some(layout) = context.get_layout(&id) {
-        if scroll.content_width > 0.0 || scroll.content_height > 0.0 {
-            let mut old = scroll_ctx.get();
-            old.scrollbox_width = layout.width;
-            old.scrollbox_height = layout.height;
-            old.pad_x = if !hide_hori { hori_thickness } else { 0.0 };
-            old.pad_y = if !hide_vert { vert_thickness } else { 0.0 };
-            scroll_ctx.set(old);
-
-            if !is_ready && old == scroll {
-                set_is_ready(true);
-            }
+        if next.pad_x != scroll.pad_x || next.pad_y != scroll.pad_y {
+            scroll_ctx.set(next);
         }
     }
+
+    // === Layout === //
+    let _scroll_ctx = scroll_ctx.clone();
+    props.on_layout = Some(OnLayout::new(move |_, evt| {
+        if evt.flags.intersects(GeometryChanged::WIDTH_CHANGED | GeometryChanged::HEIGHT_CHANGED) {
+            let mut next = _scroll_ctx.get();
+            next.scrollbox_width = evt.layout.width;
+            next.scrollbox_height = evt.layout.height;
+            _scroll_ctx.set(next);
+        }
+    }));
 
     // === Styles === //
     props.styles = Some(
@@ -131,17 +124,24 @@ pub fn ScrollBox(props: ScrollBoxProps) {
                 render_command: RenderCommand::Layout.into(),
                 ..Default::default()
             })
-            .with_style(&props.styles),
+            .with_style(&props.styles)
+            .with_style(Style {
+                width: Units::Stretch(1.0).into(),
+                height: Units::Stretch(1.0).into(),
+                ..Default::default()
+            }),
     );
 
     let hbox_styles = Style::default().with_style(Style {
         render_command: RenderCommand::Layout.into(),
         layout_type: LayoutType::Row.into(),
+        width: Units::Stretch(1.0).into(),
         ..Default::default()
     });
     let vbox_styles = Style::default().with_style(Style {
         render_command: RenderCommand::Layout.into(),
         layout_type: LayoutType::Column.into(),
+        width: Units::Stretch(1.0).into(),
         ..Default::default()
     });
 
@@ -149,13 +149,10 @@ pub fn ScrollBox(props: ScrollBoxProps) {
         position_type: PositionType::SelfDirected.into(),
         top: Units::Pixels(scroll_y).into(),
         left: Units::Pixels(scroll_x).into(),
-        height: Units::Percentage(100.0).into(),
-        width: Units::Percentage(100.0).into(),
         ..Default::default()
     });
 
     // === Events === //
-    let _set_offset = set_scroll_offset;
     let event_handler = OnEvent::new(move |_, event| match event.event_type {
         EventType::Scroll(evt) => {
             match evt.delta {
@@ -193,10 +190,10 @@ pub fn ScrollBox(props: ScrollBoxProps) {
                 <Element styles={Some(vbox_styles)}>
                     <Clip>
                         <ScrollContent styles={Some(content_styles)}>
-                            {children}
+                                {children}
                         </ScrollContent>
                     </Clip>
-                    <If condition={!hide_hori}>
+                    <If condition={!hide_horizontal}>
                         <ScrollBar
                             disabled={disable_horizontal}
                             horizontal={true}
@@ -208,7 +205,7 @@ pub fn ScrollBox(props: ScrollBoxProps) {
                         />
                     </If>
                 </Element>
-                <If condition={!hide_vert}>
+                <If condition={!hide_vertical}>
                     <ScrollBar
                         disabled={disable_vertical}
                         thickness={hori_thickness}

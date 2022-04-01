@@ -8,7 +8,7 @@ use kayak_core::layout_cache::Rect;
 use kayak_core::styles::{Corner, Edge};
 use kayak_core::Color;
 
-use crate::widgets::Background;
+use crate::widgets::{Background, Clip};
 
 use super::{map_range, ScrollContext};
 
@@ -297,7 +297,9 @@ pub fn ScrollBar(props: ScrollBarProps) {
     // === Render === //
     rsx! {
         <Background on_event={on_track_event} styles={Some(track_style)}>
+        <Clip>
             <Background styles={Some(thumb_style)} />
+        </Clip>
         </Background>
     }
 }

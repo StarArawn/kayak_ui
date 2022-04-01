@@ -1,7 +1,7 @@
-use kayak_core::{GeometryChanged, OnLayout};
+use crate::core::{rsx, styles::Style, widget, Bound, Children, MutableBound, WidgetProps};
 use kayak_core::render_command::RenderCommand;
 use kayak_core::styles::{LayoutType, Units};
-use crate::core::{rsx, styles::Style, widget, Bound, Children, MutableBound, WidgetProps};
+use kayak_core::{GeometryChanged, OnLayout};
 
 use super::ScrollContext;
 
@@ -13,7 +13,7 @@ pub(super) struct ScrollContentProps {
     #[prop_field(Children)]
     pub children: Option<Children>,
     #[prop_field(OnLayout)]
-    pub on_layout: Option<OnLayout>
+    pub on_layout: Option<OnLayout>,
 }
 
 #[widget]
@@ -24,11 +24,20 @@ pub(super) struct ScrollContentProps {
 pub(super) fn ScrollContent(props: ScrollContentProps) {
     // === Scroll === //
     let scroll_ctx = context.create_consumer::<ScrollContext>().unwrap();
-    let ScrollContext {scrollbox_width, scrollbox_height, pad_x, pad_y, ..} = scroll_ctx.get();
+    let ScrollContext {
+        scrollbox_width,
+        scrollbox_height,
+        pad_x,
+        pad_y,
+        ..
+    } = scroll_ctx.get();
 
     // === Layout === //
     props.on_layout = Some(OnLayout::new(move |_, evt| {
-        if evt.flags.intersects(GeometryChanged::WIDTH_CHANGED | GeometryChanged::HEIGHT_CHANGED) {
+        if evt
+            .flags
+            .intersects(GeometryChanged::WIDTH_CHANGED | GeometryChanged::HEIGHT_CHANGED)
+        {
             let mut scroll: ScrollContext = scroll_ctx.get();
             scroll.content_width = evt.layout.width;
             scroll.content_height = evt.layout.height;
@@ -37,17 +46,18 @@ pub(super) fn ScrollContent(props: ScrollContentProps) {
     }));
 
     // === Styles === //
-    props.styles = Some(Style::default()
-        .with_style(Style {
-            render_command: RenderCommand::Layout.into(),
-            layout_type: LayoutType::Column.into(),
-            min_width: Units::Pixels(scrollbox_width - pad_x).into(),
-            min_height: Units::Stretch(scrollbox_height - pad_y).into(),
-            width: Units::Auto.into(),
-            height: Units::Auto.into(),
-            ..Default::default()
-        })
-        .with_style(&props.styles)
+    props.styles = Some(
+        Style::default()
+            .with_style(Style {
+                render_command: RenderCommand::Layout.into(),
+                layout_type: LayoutType::Column.into(),
+                min_width: Units::Pixels(scrollbox_width - pad_x).into(),
+                min_height: Units::Stretch(scrollbox_height - pad_y).into(),
+                width: Units::Auto.into(),
+                height: Units::Auto.into(),
+                ..Default::default()
+            })
+            .with_style(&props.styles),
     );
 
     // === Render === //

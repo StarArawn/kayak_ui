@@ -9,7 +9,7 @@ use kayak_ui::core::{
     styles::{Edge, Style, StyleProp, Units},
     Index,
 };
-use kayak_ui::widgets::{App, NinePatch, ScrollBox, Text, Inspector};
+use kayak_ui::widgets::{App, Inspector, NinePatch, ScrollBox, Text};
 
 fn startup(
     mut commands: Commands,

@@ -10,11 +10,7 @@ pub enum InputEvent {
     /// An event that occurs when the user releases the left mouse button
     MouseLeftRelease,
     /// An event that occurs when the user scrolls
-    Scroll {
-        dx: f32,
-        dy: f32,
-        is_line: bool,
-    },
+    Scroll { dx: f32, dy: f32, is_line: bool },
     /// An event that occurs when the user types in a character
     CharEvent { c: char },
     /// An event that occurs when the user presses or releases a key

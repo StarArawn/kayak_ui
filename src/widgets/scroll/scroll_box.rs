@@ -5,7 +5,7 @@ use crate::core::{
     widget, Bound, Children, EventType, MutableBound, OnEvent, ScrollUnit, WidgetProps,
 };
 
-use kayak_core::styles::{ LayoutType};
+use kayak_core::styles::LayoutType;
 use kayak_core::{Color, GeometryChanged, OnLayout};
 
 use crate::widgets::{Clip, Element, If};
@@ -93,7 +93,8 @@ pub fn ScrollBox(props: ScrollBoxProps) {
     let hori_thickness = scrollbar_thickness;
     let vert_thickness = scrollbar_thickness;
 
-    let hide_horizontal = hide_horizontal || !always_show_scrollbar && scrollable_width < f32::EPSILON;
+    let hide_horizontal =
+        hide_horizontal || !always_show_scrollbar && scrollable_width < f32::EPSILON;
     let hide_vertical = hide_vertical || !always_show_scrollbar && scrollable_height < f32::EPSILON;
 
     {
@@ -109,7 +110,10 @@ pub fn ScrollBox(props: ScrollBoxProps) {
     // === Layout === //
     let _scroll_ctx = scroll_ctx.clone();
     props.on_layout = Some(OnLayout::new(move |_, evt| {
-        if evt.flags.intersects(GeometryChanged::WIDTH_CHANGED | GeometryChanged::HEIGHT_CHANGED) {
+        if evt
+            .flags
+            .intersects(GeometryChanged::WIDTH_CHANGED | GeometryChanged::HEIGHT_CHANGED)
+        {
             let mut next = _scroll_ctx.get();
             next.scrollbox_width = evt.layout.width;
             next.scrollbox_height = evt.layout.height;

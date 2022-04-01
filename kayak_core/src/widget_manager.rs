@@ -179,6 +179,18 @@ impl WidgetManager {
     }
 
     pub fn render(&mut self, assets: &mut Assets) {
+        self.render_internal(assets, 0);
+    }
+
+    fn render_internal(&mut self, assets: &mut Assets, depth: usize) {
+        // This is the maximum recursion depth for this method.
+        // Recursion involves recalculating layout which should be done sparingly.
+        const MAX_RECURSION_DEPTH: usize = 2;
+
+        if depth > 0{
+            dbg!(depth);
+        }
+
         let initial_styles = Style::initial();
         let default_styles = Style::new_default();
         let nodes: Vec<_> = self.dirty_render_nodes.drain(..).collect();
@@ -255,6 +267,13 @@ impl WidgetManager {
         }
 
         self.node_tree = self.build_nodes_tree();
+
+        if !self.dirty_render_nodes.is_empty() && depth < MAX_RECURSION_DEPTH {
+            // If not empty, then there are nodes that need layout to be re-calculated
+            // before they can properly render.
+            self.calculate_layout();
+            self.render_internal(assets, depth + 1);
+        }
     }
 
     pub fn calculate_layout(&mut self) {
@@ -268,6 +287,7 @@ impl WidgetManager {
         assets: &mut Assets,
     ) -> RenderPrimitive {
         let mut render_primitive = RenderPrimitive::from(&styles.clone());
+        let mut needs_layout = false;
 
         match &mut render_primitive {
             RenderPrimitive::Text {
@@ -285,6 +305,9 @@ impl WidgetManager {
                 if let Some(font) = asset.get() {
                     if let Some(parent_id) = self.get_valid_parent(id) {
                         if let Some(parent_layout) = self.get_layout(&parent_id) {
+                            if *parent_layout == Rect::default() {
+                                // needs_layout = true;
+                            }
                             *parent_size = (parent_layout.width, parent_layout.height);
 
                             // --- Calculate Text Layout --- //
@@ -303,11 +326,17 @@ impl WidgetManager {
                             if matches!(styles.height, StyleProp::Default) {
                                 styles.height = StyleProp::Value(Units::Pixels(measurement.1));
                             }
+                        } else {
+                            needs_layout = true;
                         }
                     }
                 }
             }
             _ => {}
+        }
+
+        if needs_layout {
+            self.dirty_render_nodes.insert(id);
         }
 
         render_primitive

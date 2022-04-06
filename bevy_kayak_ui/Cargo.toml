@@ -5,7 +5,7 @@ edition = "2021"
 
 [dependencies]
 bytemuck = "1.7.2"
-bevy = { version = "0.6.0" }
+bevy = { version = "0.6.1" }
 kayak_core = { path = "../kayak_core" }
 kayak_font = { path = "../kayak_font" }
 bevy_kayak_renderer = { path = "../bevy_kayak_renderer" }

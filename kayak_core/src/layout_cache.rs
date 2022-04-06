@@ -1,3 +1,4 @@
+use std::collections::hash_map::Iter;
 use std::collections::HashMap;
 
 use morphorm::{Cache, GeometryChanged};
@@ -60,6 +61,10 @@ pub struct LayoutCache {
     stack_first_child: HashMap<Index, bool>,
     stack_last_child: HashMap<Index, bool>,
 
+    /// A map of node IDs to their `GeometryChanged` flags
+    ///
+    /// This should only contain entries for nodes that have _at least one_ flag set.
+    /// If a node does not have any flags set, then they should be removed from the map.
     geometry_changed: HashMap<Index, GeometryChanged>,
 
     visible: HashMap<Index, bool>,
@@ -95,9 +100,12 @@ impl LayoutCache {
 
         self.size.insert(node_index, Default::default());
 
-        self.geometry_changed.insert(node_index, Default::default());
-
         self.visible.insert(node_index, true);
+    }
+
+    /// Returns an iterator over nodes whose layout have been changed since the last update
+    pub fn iter_changed(&self) -> Iter<'_, Index, GeometryChanged> {
+        self.geometry_changed.iter()
     }
 }
 
@@ -121,8 +129,19 @@ impl Cache for LayoutCache {
     }
 
     fn set_geo_changed(&mut self, node: Self::Item, flag: GeometryChanged, value: bool) {
-        if let Some(geometry_changed) = self.geometry_changed.get_mut(&node) {
+        if value {
+            // Setting a flag -> Add entry if it does not already exist
+            let geometry_changed = self.geometry_changed.entry(node).or_default();
             geometry_changed.set(flag, value);
+        } else {
+            // Unsetting a flag -> Don't add entry if it does not exist
+            if let Some(geometry_changed) = self.geometry_changed.get_mut(&node) {
+                geometry_changed.set(flag, value);
+
+                if geometry_changed.is_empty() {
+                    self.geometry_changed.remove(&node);
+                }
+            }
         }
     }
 

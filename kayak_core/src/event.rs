@@ -1,4 +1,4 @@
-use crate::cursor::CursorEvent;
+use crate::cursor::{CursorEvent, ScrollEvent};
 use crate::{Index, KeyboardEvent};
 
 /// An event type sent to widgets
@@ -83,6 +83,8 @@ pub enum EventType {
     MouseDown(CursorEvent),
     /// An event that occurs when the user releases the cursor over a widget
     MouseUp(CursorEvent),
+    /// An event that occurs when the user scrolls over a widget
+    Scroll(ScrollEvent),
     /// An event that occurs when a widget receives focus
     Focus,
     /// An event that occurs when a widget loses focus
@@ -134,6 +136,7 @@ impl EventType {
             Self::Click(..) => true,
             Self::MouseDown(..) => true,
             Self::MouseUp(..) => true,
+            Self::Scroll(..) => true,
             Self::CharInput { .. } => true,
             Self::KeyUp(..) => true,
             Self::KeyDown(..) => true,
@@ -155,6 +158,7 @@ impl EventType {
             Self::MouseUp(..) => EventCategory::Mouse,
             Self::MouseIn(..) => EventCategory::Mouse,
             Self::MouseOut(..) => EventCategory::Mouse,
+            Self::Scroll(..) => EventCategory::Mouse,
             // Keyboard
             Self::CharInput { .. } => EventCategory::Keyboard,
             Self::KeyUp(..) => EventCategory::Keyboard,

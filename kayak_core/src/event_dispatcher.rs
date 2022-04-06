@@ -1,6 +1,6 @@
 use crate::flo_binding::{Binding, MutableBound};
 
-use crate::cursor::CursorEvent;
+use crate::cursor::{CursorEvent, ScrollEvent, ScrollUnit};
 use crate::layout_cache::Rect;
 use crate::render_command::RenderCommand;
 use crate::widget_manager::WidgetManager;
@@ -528,6 +528,25 @@ impl EventDispatcher {
                                 EventType::Click(cursor_event),
                             );
                         }
+                    }
+                }
+            }
+            InputEvent::Scroll { dx, dy, is_line } => {
+                if let Some(layout) = widget_manager.get_layout(&node) {
+                    // Check for scroll eligibility
+                    if ignore_layout || layout.contains(&self.current_mouse_position) {
+                        Self::update_state(
+                            states,
+                            (node, depth),
+                            layout,
+                            EventType::Scroll(ScrollEvent {
+                                delta: if *is_line {
+                                    ScrollUnit::Line { x: *dx, y: *dy }
+                                } else {
+                                    ScrollUnit::Pixel { x: *dx, y: *dy }
+                                },
+                            }),
+                        );
                     }
                 }
             }

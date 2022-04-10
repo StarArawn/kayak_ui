@@ -597,7 +597,7 @@ impl Draw<TransparentUI> for DrawUI {
             let mut height = extracted_quad.rect.height() as u32;
             width = width.min(window_size.0 as u32);
             height = height.min(window_size.1 as u32);
-            if width == 0 || height == 0 || x > width || y > height {
+            if width == 0 || height == 0 || x > window_size.0 as u32 || y > window_size.1 as u32 {
                 return;
             }
             if x + width > window_size.0 as u32 {

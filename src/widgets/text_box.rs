@@ -4,7 +4,7 @@ use crate::core::{
     styles::{Corner, Style, Units},
     widget, Bound, Children, Color, EventType, MutableBound, OnEvent, WidgetProps,
 };
-use kayak_core::CursorIcon;
+use kayak_core::{CursorIcon, OnLayout};
 use std::sync::{Arc, RwLock};
 
 use crate::widgets::{Background, Clip, Text};
@@ -26,6 +26,7 @@ pub struct TextBoxProps {
     pub styles: Option<Style>,
     pub children: Option<Children>,
     pub on_event: Option<OnEvent>,
+    pub on_layout: Option<OnLayout>,
     pub focusable: Option<bool>,
 }
 
@@ -44,6 +45,10 @@ impl WidgetProps for TextBoxProps {
 
     fn get_on_event(&self) -> Option<OnEvent> {
         self.on_event.clone()
+    }
+
+    fn get_on_layout(&self) -> Option<OnLayout> {
+        self.on_layout.clone()
     }
 
     fn get_focusable(&self) -> Option<bool> {
@@ -92,6 +97,7 @@ pub struct Focus(pub bool);
 /// | `children`  | ✅        |
 /// | `styles`    | ✅        |
 /// | `on_event`  | ✅        |
+/// | `on_layout` | ✅        |
 /// | `focusable` | ✅        |
 ///
 pub fn TextBox(props: TextBoxProps) {

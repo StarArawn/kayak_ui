@@ -1,8 +1,7 @@
-use kayak_core::CursorIcon;
-
 use crate::core::{
     render_command::RenderCommand,
     styles::{Style, StyleProp},
+    CursorIcon, OnLayout,
     widget, OnEvent, WidgetProps,
 };
 
@@ -25,19 +24,22 @@ pub struct TextProps {
     pub styles: Option<Style>,
     #[prop_field(OnEvent)]
     pub on_event: Option<OnEvent>,
+    #[prop_field(OnLayout)]
+    pub on_layout: Option<OnLayout>,
     #[prop_field(Focusable)]
     pub focusable: Option<bool>,
 }
 
 impl Default for TextProps {
     fn default() -> Self {
-        TextProps {
+        Self {
             content: String::new(),
             font: None,
             line_height: None,
             size: -1.0,
             styles: None,
             on_event: None,
+            on_layout: None,
             focusable: None,
         }
     }
@@ -55,6 +57,7 @@ impl Default for TextProps {
 /// | `children`  | ❌        |
 /// | `styles`    | ✅        |
 /// | `on_event`  | ✅        |
+/// | `on_layout` | ✅        |
 /// | `focusable` | ✅        |
 ///
 pub fn Text(props: TextProps) {

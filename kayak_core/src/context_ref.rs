@@ -468,14 +468,27 @@ impl<'a> KayakContextRef<'a> {
         self.context.widget_manager.get_valid_parent(id)
     }
 
+    /// Attempts to get the children of the widget with the given ID
+    ///
+    /// A "valid" child is simply one that does not have a render command of
+    /// [`RenderCommand::Empty`](crate::render_command::RenderCommand::Empty).
+    ///
+    /// # Arguments
+    ///
+    /// * `id`: The ID of the widget
+    ///
+    pub fn get_valid_children(&self, id: Index) -> Vec<Index> {
+        self.context.widget_manager.get_valid_node_children(id)
+    }
+
     /// Attempts to get the layout rect for the widget with the given ID
     ///
     /// # Arguments
     ///
     /// * `id`: The ID of the widget
     ///
-    pub fn get_layout(&self, id: &Index) -> Option<&crate::layout_cache::Rect> {
-        self.context.widget_manager.get_layout(id)
+    pub fn get_layout(&self, widget_id: &Index) -> Option<&crate::layout_cache::Rect> {
+        self.context.widget_manager.get_layout(widget_id)
     }
 
     /// Get the render node for the widget with the given ID

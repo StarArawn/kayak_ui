@@ -1,3 +1,5 @@
+use kayak_core::OnLayout;
+
 use crate::core::{
     render_command::RenderCommand,
     rsx,
@@ -16,6 +18,8 @@ pub struct AppProps {
     pub children: Option<Children>,
     #[prop_field(OnEvent)]
     pub on_event: Option<OnEvent>,
+    #[prop_field(OnLayout)]
+    pub on_layout: Option<OnLayout>,
     #[prop_field(Focusable)]
     pub focusable: Option<bool>,
 }
@@ -32,6 +36,7 @@ pub struct AppProps {
 /// | `children`  | ✅        |
 /// | `styles`    | ✅        |
 /// | `on_event`  | ✅        |
+/// | `on_layout` | ✅        |
 /// | `focusable` | ✅        |
 ///
 /// # Using the `bevy_renderer` feature

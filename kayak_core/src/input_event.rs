@@ -9,6 +9,8 @@ pub enum InputEvent {
     MouseLeftPress,
     /// An event that occurs when the user releases the left mouse button
     MouseLeftRelease,
+    /// An event that occurs when the user scrolls
+    Scroll { dx: f32, dy: f32, is_line: bool },
     /// An event that occurs when the user types in a character
     CharEvent { c: char },
     /// An event that occurs when the user presses or releases a key
@@ -32,6 +34,7 @@ impl InputEvent {
             Self::MouseMoved(..) => InputEventCategory::Mouse,
             Self::MouseLeftPress => InputEventCategory::Mouse,
             Self::MouseLeftRelease => InputEventCategory::Mouse,
+            Self::Scroll { .. } => InputEventCategory::Mouse,
             // Keyboard events
             Self::CharEvent { .. } => InputEventCategory::Keyboard,
             Self::Keyboard { .. } => InputEventCategory::Keyboard,

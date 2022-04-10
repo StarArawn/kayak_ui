@@ -24,3 +24,24 @@ pub struct CursorEvent {
     pub just_released: bool,
     pub position: (f32, f32),
 }
+
+/// An event created on scroll
+#[derive(Default, Debug, Copy, Clone, PartialEq)]
+pub struct ScrollEvent {
+    /// The amount scrolled
+    pub delta: ScrollUnit,
+}
+
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub enum ScrollUnit {
+    /// A scroll unit that goes by a "line of text"
+    Line { x: f32, y: f32 },
+    /// A scroll unit that goes by individual pixels
+    Pixel { x: f32, y: f32 },
+}
+
+impl Default for ScrollUnit {
+    fn default() -> Self {
+        ScrollUnit::Pixel { x: 0.0, y: 0.0 }
+    }
+}

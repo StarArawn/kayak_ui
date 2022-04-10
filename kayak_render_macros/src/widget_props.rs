@@ -13,6 +13,7 @@ const PROPS_HELPER_IDENT: &str = "prop_field";
 const PROP_CHILDREN: &str = "Children";
 const PROP_STYLE: &str = "Styles";
 const PROP_ON_EVENT: &str = "OnEvent";
+const PROP_ON_LAYOUT: &str = "OnLayout";
 const PROP_FOCUSABLE: &str = "Focusable";
 
 #[derive(Default)]
@@ -20,6 +21,7 @@ struct PropsHelpers {
     children_ident: Option<Ident>,
     styles_ident: Option<Ident>,
     on_event_ident: Option<Ident>,
+    on_layout_ident: Option<Ident>,
     focusable_ident: Option<Ident>,
 }
 
@@ -43,6 +45,7 @@ pub(crate) fn impl_widget_props(input: TokenStream) -> TokenStream {
     let children_return = quote_clone_field(helpers.children_ident);
     let styles_return = quote_clone_field(helpers.styles_ident);
     let on_event_return = quote_clone_field(helpers.on_event_ident);
+    let on_layout_return = quote_clone_field(helpers.on_layout_ident);
     let focusable_return = quote_clone_field(helpers.focusable_ident);
 
     let kayak_core = get_core_crate();
@@ -63,6 +66,10 @@ pub(crate) fn impl_widget_props(input: TokenStream) -> TokenStream {
 
             fn get_on_event(&self) -> Option<#kayak_core::OnEvent> {
                 #on_event_return
+            }
+
+            fn get_on_layout(&self) -> Option<#kayak_core::OnLayout> {
+                #on_layout_return
             }
 
             fn get_focusable(&self) -> Option<bool> {
@@ -125,6 +132,7 @@ fn process_field(field: Field, props: &mut PropsHelpers) {
                             PROP_CHILDREN => props.children_ident = field.ident.clone(),
                             PROP_STYLE => props.styles_ident = field.ident.clone(),
                             PROP_ON_EVENT => props.on_event_ident = field.ident.clone(),
+                            PROP_ON_LAYOUT => props.on_layout_ident = field.ident.clone(),
                             PROP_FOCUSABLE => props.focusable_ident = field.ident.clone(),
                             err => emit_error!(err.span(), "Invalid attribute: {}", err),
                         }

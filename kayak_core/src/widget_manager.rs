@@ -178,6 +178,12 @@ impl WidgetManager {
         None
     }
 
+    /// Render the widget tree.
+    ///
+    /// This will call [`calculate_layout`] automatically and recurse if any widget
+    /// has unresolved layout dependencies (up to a maximum recursion depth of 2).
+    ///
+    /// [`calculate_layout`]: Self::calculate_layout
     pub fn render(&mut self, assets: &mut Assets) {
         self.render_internal(assets, 0);
     }
@@ -263,11 +269,11 @@ impl WidgetManager {
         }
 
         self.node_tree = self.build_nodes_tree();
+        self.calculate_layout();
 
         if !self.dirty_render_nodes.is_empty() && depth < MAX_RECURSION_DEPTH {
             // If not empty, then there are nodes that need layout to be re-calculated
             // before they can properly render.
-            self.calculate_layout();
             self.render_internal(assets, depth + 1);
         }
     }
@@ -511,8 +517,8 @@ impl WidgetManager {
     /// * `binding`: the binding to watch
     ///
     pub(crate) fn bind<T>(&mut self, id: Index, binding: &Binding<T>)
-    where
-        T: resources::Resource + Clone + PartialEq,
+        where
+            T: resources::Resource + Clone + PartialEq,
     {
         let dirty_nodes = self.dirty_nodes.clone();
         let lifetime = self.widget_lifetimes.entry(id).or_default();

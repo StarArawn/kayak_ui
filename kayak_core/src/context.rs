@@ -559,7 +559,6 @@ impl KayakContext {
 
         // self.widget_manager.dirty_nodes.clear();
         self.widget_manager.render(&mut self.assets);
-        self.widget_manager.calculate_layout();
         LayoutEventDispatcher::dispatch(self);
         self.update_cursor();
     }

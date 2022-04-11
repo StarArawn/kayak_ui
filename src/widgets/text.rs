@@ -1,8 +1,7 @@
 use crate::core::{
     render_command::RenderCommand,
     styles::{Style, StyleProp},
-    CursorIcon, OnLayout,
-    widget, OnEvent, WidgetProps,
+    widget, CursorIcon, OnEvent, OnLayout, WidgetProps,
 };
 
 /// Props used by the [`Text`] widget

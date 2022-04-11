@@ -134,7 +134,7 @@ impl Cache for LayoutCache {
     fn set_geo_changed(&mut self, node: Self::Item, flag: GeometryChanged, value: bool) {
         // This method is guaranteed to be called by morphorm every layout so we'll attempt to initialize here
         self.try_init(node);
-        
+
         if value {
             // Setting a flag -> Add entry if it does not already exist
             let geometry_changed = self.geometry_changed.entry(node).or_default();

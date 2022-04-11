@@ -517,8 +517,8 @@ impl WidgetManager {
     /// * `binding`: the binding to watch
     ///
     pub(crate) fn bind<T>(&mut self, id: Index, binding: &Binding<T>)
-        where
-            T: resources::Resource + Clone + PartialEq,
+    where
+        T: resources::Resource + Clone + PartialEq,
     {
         let dirty_nodes = self.dirty_nodes.clone();
         let lifetime = self.widget_lifetimes.entry(id).or_default();

@@ -19,7 +19,7 @@ fn startup(
 ) {
     commands.spawn_bundle(UICameraBundle::new());
 
-    font_mapping.add("Roboto", asset_server.load("roboto.kayak_font"));
+    font_mapping.set_default(asset_server.load("roboto.kayak_font"));
 
     let handle: Handle<bevy::render::texture::Image> = asset_server.load("kenny/panel_brown.png");
     let panel_brown_handle = image_manager.get(&handle);

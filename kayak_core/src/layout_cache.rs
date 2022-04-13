@@ -72,8 +72,6 @@ pub struct LayoutCache {
 
 impl LayoutCache {
     pub fn add(&mut self, node_index: Index) {
-        self.rect.insert(node_index, Default::default());
-
         self.space.insert(node_index, Default::default());
 
         self.child_width_max.insert(node_index, Default::default());
@@ -103,6 +101,11 @@ impl LayoutCache {
         self.visible.insert(node_index, true);
     }
 
+    /// Attempts to initialize the node if it hasn't already been initialized.
+    fn try_init(&mut self, node: Index) {
+        self.rect.entry(node).or_default();
+    }
+
     /// Returns an iterator over nodes whose layout have been changed since the last update
     pub fn iter_changed(&self) -> Iter<'_, Index, GeometryChanged> {
         self.geometry_changed.iter()
@@ -129,6 +132,9 @@ impl Cache for LayoutCache {
     }
 
     fn set_geo_changed(&mut self, node: Self::Item, flag: GeometryChanged, value: bool) {
+        // This method is guaranteed to be called by morphorm every layout so we'll attempt to initialize here
+        self.try_init(node);
+
         if value {
             // Setting a flag -> Add entry if it does not already exist
             let geometry_changed = self.geometry_changed.entry(node).or_default();
@@ -310,24 +316,20 @@ impl Cache for LayoutCache {
     }
 
     fn set_width(&mut self, node: Self::Item, value: f32) {
-        if let Some(rect) = self.rect.get_mut(&node) {
-            rect.width = value;
-        }
+        let rect = self.rect.entry(node).or_default();
+        rect.width = value;
     }
     fn set_height(&mut self, node: Self::Item, value: f32) {
-        if let Some(rect) = self.rect.get_mut(&node) {
-            rect.height = value;
-        }
+        let rect = self.rect.entry(node).or_default();
+        rect.height = value;
     }
     fn set_posx(&mut self, node: Self::Item, value: f32) {
-        if let Some(rect) = self.rect.get_mut(&node) {
-            rect.posx = value;
-        }
+        let rect = self.rect.entry(node).or_default();
+        rect.posx = value;
     }
     fn set_posy(&mut self, node: Self::Item, value: f32) {
-        if let Some(rect) = self.rect.get_mut(&node) {
-            rect.posy = value;
-        }
+        let rect = self.rect.entry(node).or_default();
+        rect.posy = value;
     }
 
     fn set_left(&mut self, node: Self::Item, value: f32) {

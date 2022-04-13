@@ -21,7 +21,7 @@ use crate::BevyContext;
 /// ) {
 ///   # commands.spawn_bundle(UICameraBundle::new());
 ///   #
-///   font_mapping.add("Roboto", asset_server.load("roboto.kayak_font"));
+///   font_mapping.set_default(asset_server.load("roboto.kayak_font"));
 ///   // ...
 ///   #
 ///   # let context = BevyContext::new(|context| {
@@ -60,6 +60,11 @@ impl FontMapping {
             self.new_fonts.push(key.clone());
             self.font_handles.insert(key, handle);
         }
+    }
+
+    /// Set a default `KayakFont`
+    pub fn set_default(&mut self, handle: Handle<KayakFont>) {
+        self.add(kayak_core::DEFAULT_FONT, handle);
     }
 
     pub(crate) fn mark_all_as_new(&mut self) {

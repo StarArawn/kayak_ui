@@ -18,6 +18,7 @@ mod keys;
 mod layout;
 pub mod layout_cache;
 mod layout_dispatcher;
+mod lifetime;
 mod multi_state;
 pub mod node;
 mod on_event;
@@ -53,6 +54,9 @@ pub use resources::Resources;
 pub use tree::{Tree, WidgetTree};
 pub use vec::{VecTracker, VecTrackerProps};
 pub use widget::{BaseWidget, Widget, WidgetProps};
+
+/// The default font name used by Kayak
+pub const DEFAULT_FONT: &str = "Kayak-Default";
 
 /// Type alias for dynamic widget objects. We use [BaseWidget] so that we can be object-safe
 type BoxedWidget = Box<dyn BaseWidget>;

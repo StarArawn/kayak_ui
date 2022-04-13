@@ -68,6 +68,24 @@ impl From<&Style> for RenderPrimitive {
             style.border_color.resolve()
         };
 
+        let font = if matches!(style.font, StyleProp::Default) {
+            String::from(crate::DEFAULT_FONT)
+        } else {
+            style.font.resolve()
+        };
+
+        let font_size = if matches!(style.font_size, StyleProp::Default) {
+            14.0
+        } else {
+            style.font_size.resolve()
+        };
+
+        let line_height = if matches!(style.line_height, StyleProp::Default) {
+            font_size * 1.2
+        } else {
+            style.line_height.resolve()
+        };
+
         match render_command {
             RenderCommand::Empty => Self::Empty,
             RenderCommand::Layout => Self::Empty,
@@ -81,20 +99,14 @@ impl From<&Style> for RenderPrimitive {
                 border: style.border.resolve(),
                 layout: Rect::default(),
             },
-            RenderCommand::Text {
-                content,
-                font,
-                line_height,
-                parent_size,
-                size,
-            } => Self::Text {
+            RenderCommand::Text { content } => Self::Text {
                 color: style.color.resolve(),
                 content,
                 font,
                 layout: Rect::default(),
                 line_height,
-                parent_size,
-                size,
+                parent_size: (0.0, 0.0),
+                size: font_size,
             },
             RenderCommand::Image { handle } => Self::Image {
                 border_radius: style.border_radius.resolve(),

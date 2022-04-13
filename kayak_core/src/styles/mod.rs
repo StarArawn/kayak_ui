@@ -228,12 +228,25 @@ define_styles! {
         pub col_between: StyleProp<Units>,
         /// The cursor icon to display when hovering this widget
         pub cursor: StyleProp<CursorIcon>,
+        /// The font name for this widget
+        ///
+        /// Only applies to [`RenderCommand::Text`]
+        pub font: StyleProp<String>,
+        /// The font size for this widget, in pixels
+        ///
+        /// Only applies to [`RenderCommand::Text`]
+        pub font_size: StyleProp<f32>,
         /// The height of this widget
         pub height: StyleProp<Units>,
         /// The layout method for children of this widget
         pub layout_type: StyleProp<LayoutType>,
         /// The distance between the left edge of this widget and the left edge of its containing widget
         pub left: StyleProp<Units>,
+        /// The line height for this widget, in pixels
+        ///
+        /// Only applies to [`RenderCommand::Text`]
+        pub line_height: StyleProp<f32>,
+        /// The maximum height of this widget
         pub max_height: StyleProp<Units>,
         /// The maximum width of this widget
         pub max_width: StyleProp<Units>,
@@ -318,8 +331,11 @@ impl Style {
             color: StyleProp::Inherit,
             cursor: StyleProp::Inherit,
             col_between: StyleProp::Default,
+            font: StyleProp::Inherit,
+            font_size: StyleProp::Inherit,
             height: StyleProp::Default,
             layout_type: StyleProp::Default,
+            line_height: StyleProp::Inherit,
             left: StyleProp::Default,
             max_height: StyleProp::Default,
             max_width: StyleProp::Default,

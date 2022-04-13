@@ -1,7 +1,13 @@
 use indexmap::IndexSet;
+use kayak_font::{CoordinateSystem, KayakFont};
+use morphorm::Units;
+use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
+use crate::assets::Assets;
 use crate::layout_cache::Rect;
+use crate::lifetime::WidgetLifetime;
+use crate::styles::StyleProp;
 use crate::{
     focus_tree::FocusTracker,
     focus_tree::FocusTree,
@@ -11,7 +17,7 @@ use crate::{
     render_primitive::RenderPrimitive,
     styles::Style,
     tree::Tree,
-    Arena, BoxedWidget, Index, Widget, WidgetProps,
+    Arena, Binding, Bound, BoxedWidget, Index, Widget, WidgetProps,
 };
 // use as_any::Downcast;
 
@@ -21,6 +27,8 @@ pub struct WidgetManager {
     pub(crate) dirty_render_nodes: IndexSet<Index>,
     pub(crate) dirty_nodes: Arc<Mutex<IndexSet<Index>>>,
     pub(crate) nodes: Arena<Option<Node>>,
+    /// A mapping of widgets to their lifetime
+    widget_lifetimes: HashMap<Index, WidgetLifetime>,
     /// A tree containing all widgets in the hierarchy.
     pub tree: Tree,
     /// A tree containing only the widgets with layouts in the hierarchy.
@@ -45,6 +53,7 @@ impl WidgetManager {
             focus_tree: FocusTree::default(),
             focus_tracker: FocusTracker::default(),
             current_z: 0.0,
+            widget_lifetimes: HashMap::new(),
         }
     }
 
@@ -169,10 +178,25 @@ impl WidgetManager {
         None
     }
 
-    pub fn render(&mut self) {
+    /// Render the widget tree.
+    ///
+    /// This will call [`calculate_layout`] automatically and recurse if any widget
+    /// has unresolved layout dependencies (up to a maximum recursion depth of 2).
+    ///
+    /// [`calculate_layout`]: Self::calculate_layout
+    pub fn render(&mut self, assets: &mut Assets) {
+        self.render_internal(assets, 0);
+    }
+
+    fn render_internal(&mut self, assets: &mut Assets, depth: usize) {
+        // This is the maximum recursion depth for this method.
+        // Recursion involves recalculating layout which should be done sparingly.
+        const MAX_RECURSION_DEPTH: usize = 2;
+
         let initial_styles = Style::initial();
         let default_styles = Style::new_default();
-        for dirty_node_index in self.dirty_render_nodes.drain(..) {
+        let nodes: Vec<_> = self.dirty_render_nodes.drain(..).collect();
+        for dirty_node_index in nodes {
             let dirty_widget = self.current_widgets[dirty_node_index].as_ref().unwrap();
             // Get the parent styles. Will be one of the following:
             // 1. Already-resolved node styles (best)
@@ -224,6 +248,8 @@ impl WidgetManager {
             // Fill in all `inherited` values for any `inherit` property
             styles.inherit(&parent_styles);
 
+            let primitive = self.create_primitive(dirty_node_index, &mut styles, assets);
+
             let children = self
                 .tree
                 .children
@@ -235,6 +261,7 @@ impl WidgetManager {
                 .with_id(dirty_node_index)
                 .with_styles(styles, raw_styles)
                 .with_children(children)
+                .with_primitive(primitive)
                 .build();
             node.z = current_z;
 
@@ -242,10 +269,79 @@ impl WidgetManager {
         }
 
         self.node_tree = self.build_nodes_tree();
+        self.calculate_layout();
+
+        if !self.dirty_render_nodes.is_empty() && depth < MAX_RECURSION_DEPTH {
+            // If not empty, then there are nodes that need layout to be re-calculated
+            // before they can properly render.
+            self.render_internal(assets, depth + 1);
+        }
     }
 
     pub fn calculate_layout(&mut self) {
         morphorm::layout(&mut self.layout_cache, &self.node_tree, &self.nodes);
+    }
+
+    fn create_primitive(
+        &mut self,
+        id: Index,
+        styles: &mut Style,
+        assets: &mut Assets,
+    ) -> RenderPrimitive {
+        let mut render_primitive = RenderPrimitive::from(&styles.clone());
+        let mut needs_layout = false;
+
+        match &mut render_primitive {
+            RenderPrimitive::Text {
+                parent_size,
+                content,
+                font,
+                size,
+                line_height,
+                ..
+            } => {
+                // --- Bind to Font Asset --- //
+                let asset = assets.get_asset::<KayakFont, _>(font.clone());
+                self.bind(id, &asset);
+
+                if let Some(font) = asset.get() {
+                    if let Some(parent_id) = self.get_valid_parent(id) {
+                        if let Some(parent_layout) = self.get_layout(&parent_id) {
+                            if *parent_layout == Rect::default() {
+                                // needs_layout = true;
+                            }
+                            *parent_size = (parent_layout.width, parent_layout.height);
+
+                            // --- Calculate Text Layout --- //
+                            let measurement = font.measure(
+                                CoordinateSystem::PositiveYDown,
+                                &content,
+                                *size,
+                                *line_height,
+                                *parent_size,
+                            );
+
+                            // --- Apply Layout --- //
+                            if matches!(styles.width, StyleProp::Default) {
+                                styles.width = StyleProp::Value(Units::Pixels(measurement.0));
+                            }
+                            if matches!(styles.height, StyleProp::Default) {
+                                styles.height = StyleProp::Value(Units::Pixels(measurement.1));
+                            }
+                        } else {
+                            needs_layout = true;
+                        }
+                    }
+                }
+            }
+            _ => {}
+        }
+
+        if needs_layout {
+            self.needs_layout(id);
+        }
+
+        render_primitive
     }
 
     fn recurse_node_tree_to_build_primitives(
@@ -260,7 +356,7 @@ impl WidgetManager {
 
         if let Some(node) = nodes.get(current_node).unwrap() {
             if let Some(layout) = layout_cache.rect.get(&current_node) {
-                let mut render_primitive: RenderPrimitive = (&node.resolved_styles).into();
+                let mut render_primitive = node.primitive.clone();
                 let mut layout = *layout;
                 let new_z_index = if matches!(render_primitive, RenderPrimitive::Clip { .. }) {
                     main_z_index - 0.1
@@ -309,6 +405,13 @@ impl WidgetManager {
         }
 
         render_primitives
+    }
+
+    /// Forces layout to be recalculated before rendering.
+    ///
+    /// This should be used _sparingly_, if at all.
+    pub fn needs_layout(&mut self, id: Index) {
+        self.dirty_render_nodes.insert(id);
     }
 
     pub fn build_render_primitives(&self) -> Vec<RenderPrimitive> {
@@ -404,6 +507,45 @@ impl WidgetManager {
 
     pub fn get_node(&self, id: &Index) -> Option<Node> {
         self.nodes[*id].clone()
+    }
+
+    /// Bind a widget so that it re-renders when the binding changes
+    ///
+    /// # Arguments
+    ///
+    /// * `id`: The ID of the widget
+    /// * `binding`: the binding to watch
+    ///
+    pub(crate) fn bind<T>(&mut self, id: Index, binding: &Binding<T>)
+    where
+        T: resources::Resource + Clone + PartialEq,
+    {
+        let dirty_nodes = self.dirty_nodes.clone();
+        let lifetime = self.widget_lifetimes.entry(id).or_default();
+        lifetime.add(binding, move || {
+            if let Ok(mut dirty_nodes) = dirty_nodes.lock() {
+                dirty_nodes.insert(id);
+            }
+        });
+    }
+
+    /// Unbinds a binding from a widget
+    ///
+    /// Returns true if the binding was successfully removed, or false if the binding
+    /// does not exist on the given widget.
+    ///
+    /// # Arguments
+    ///
+    /// * `id`: The ID of the widget
+    /// * `binding_id`: The ID of the binding
+    ///
+    #[allow(dead_code)]
+    pub(crate) fn unbind(&mut self, id: Index, binding_id: crate::flo_binding::Uuid) -> bool {
+        if let Some(lifetime) = self.widget_lifetimes.get_mut(&id) {
+            lifetime.remove(binding_id).is_some()
+        } else {
+            false
+        }
     }
 
     pub fn get_focusable(&self, index: Index) -> Option<bool> {

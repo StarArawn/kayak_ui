@@ -1,3 +1,4 @@
+use crate::render_primitive::RenderPrimitive;
 use crate::{
     styles::{Style, StyleProp},
     Arena, Index,
@@ -14,6 +15,8 @@ pub struct Node {
     pub resolved_styles: Style,
     /// The raw styles for this node, before style resolution
     pub raw_styles: Option<Style>,
+    /// The generated [`RenderPrimitive`] of this node
+    pub primitive: RenderPrimitive,
     /// The z-index of this node, used for controlling layering
     pub z: f32,
 }
@@ -32,6 +35,7 @@ impl NodeBuilder {
                 id: Index::default(),
                 resolved_styles: Style::default(),
                 raw_styles: None,
+                primitive: RenderPrimitive::Empty,
                 z: 0.0,
             },
         }
@@ -45,6 +49,7 @@ impl NodeBuilder {
                 id,
                 resolved_styles: styles,
                 raw_styles: None,
+                primitive: RenderPrimitive::Empty,
                 z: 0.0,
             },
         }
@@ -66,6 +71,12 @@ impl NodeBuilder {
     pub fn with_styles(mut self, resolved_styles: Style, raw_styles: Option<Style>) -> Self {
         self.node.resolved_styles = resolved_styles;
         self.node.raw_styles = raw_styles;
+        self
+    }
+
+    /// Sets the [`RenderPrimitive`] of the node being built
+    pub fn with_primitive(mut self, primitive: RenderPrimitive) -> Self {
+        self.node.primitive = primitive;
         self
     }
 

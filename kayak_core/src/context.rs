@@ -1,4 +1,4 @@
-use crate::assets::AssetStorage;
+use crate::assets::Assets;
 use crate::layout_dispatcher::LayoutEventDispatcher;
 use crate::{Binding, Changeable, CursorIcon, KayakContextRef};
 use std::collections::HashMap;
@@ -19,7 +19,7 @@ use crate::{
 /// the other hand, will likely need to work with this struct directly so they can
 /// control when to render, dispatch events, load assets, etc.
 pub struct KayakContext {
-    assets: resources::Resources,
+    assets: Assets,
     pub(crate) current_effect_index: usize,
     pub(crate) current_state_index: usize,
     /// Processes and dispatches all events
@@ -57,7 +57,7 @@ impl KayakContext {
     /// Creates a new [`KayakContext`].
     pub fn new() -> Self {
         Self {
-            assets: resources::Resources::default(),
+            assets: Assets::default(),
             current_effect_index: 0,
             current_state_index: 0,
             cursor_icon: CursorIcon::Default,
@@ -558,8 +558,7 @@ impl KayakContext {
         }
 
         // self.widget_manager.dirty_nodes.clear();
-        self.widget_manager.render();
-        self.widget_manager.calculate_layout();
+        self.widget_manager.render(&mut self.assets);
         LayoutEventDispatcher::dispatch(self);
         self.update_cursor();
     }
@@ -720,12 +719,7 @@ impl KayakContext {
         &mut self,
         key: impl Into<PathBuf>,
     ) -> Binding<Option<T>> {
-        self.create_asset_storage::<T>();
-        if let Ok(mut asset_storage) = self.assets.get_mut::<AssetStorage<T>>() {
-            asset_storage.get_asset(key).clone()
-        } else {
-            panic!("Couldn't find asset storage but it should exist!");
-        }
+        self.assets.get_asset(key)
     }
 
     /// Stores an asset along with a key to access it
@@ -740,18 +734,7 @@ impl KayakContext {
         key: impl Into<PathBuf>,
         asset: T,
     ) {
-        self.create_asset_storage::<T>();
-        if let Ok(mut asset_storage) = self.assets.get_mut::<AssetStorage<T>>() {
-            asset_storage.set_asset(key, asset);
-        } else {
-            panic!("Couldn't find asset storage but it should exist!");
-        }
-    }
-
-    fn create_asset_storage<T: 'static + Send + Sync + Clone + PartialEq>(&mut self) {
-        if !self.assets.contains::<AssetStorage<T>>() {
-            self.assets.insert(AssetStorage::<T>::new());
-        }
+        self.assets.set_asset(key, asset);
     }
 
     /// Get the ID of the widget that was last clicked

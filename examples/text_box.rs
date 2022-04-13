@@ -11,7 +11,7 @@ use kayak_ui::core::{
     styles::{Style, StyleProp, Units},
     widget, Index,
 };
-use kayak_ui::widgets::{App, OnChange, Window, TextBox};
+use kayak_ui::widgets::{App, OnChange, Window, TextBox, SpinBox};
 
 #[widget]
 fn TextBoxExample() {
@@ -51,6 +51,7 @@ fn TextBoxExample() {
                 placeholder={Some("This is a placeholder".to_string())}
             />
             <TextBox styles={Some(red_text_styles)} value={red_value} on_change={Some(on_change_red)} />
+            <SpinBox styles={Some(input_styles)} />
         </Window>
     }
 }

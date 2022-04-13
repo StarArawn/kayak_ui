@@ -72,7 +72,7 @@ pub struct FocusSpinbox(pub bool);
 /// | `on_layout` | ✅        |
 /// | `focusable` | ✅        |
 ///
-pub fn TextBox(props: SpinBoxProps) {
+pub fn SpinBox(props: SpinBoxProps) {
     let SpinBoxProps {
         on_change,
         placeholder,

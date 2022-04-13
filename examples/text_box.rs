@@ -5,13 +5,13 @@ use bevy::{
 };
 use kayak_core::Color;
 use kayak_render_macros::use_state;
-use kayak_ui::bevy::{BevyContext, BevyKayakUIPlugin, FontMapping, UICameraBundle};
+use kayak_ui::{bevy::{BevyContext, BevyKayakUIPlugin, FontMapping, UICameraBundle}};
 use kayak_ui::core::{
     render, rsx,
     styles::{Style, StyleProp, Units},
     widget, Index,
 };
-use kayak_ui::widgets::{App, OnChange, TextBox, Window};
+use kayak_ui::widgets::{App, OnChange, Window, TextBox};
 
 #[widget]
 fn TextBoxExample() {

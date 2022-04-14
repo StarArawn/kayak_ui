@@ -2,7 +2,7 @@ use crate::{
     color::Color,
     layout_cache::Rect,
     render_command::RenderCommand,
-    styles::{Corner, Edge, Style, StyleProp},
+    styles::{Corner, Edge, Style},
 };
 
 #[derive(Debug, Clone, PartialEq)]
@@ -56,35 +56,17 @@ impl From<&Style> for RenderPrimitive {
     fn from(style: &Style) -> Self {
         let render_command = style.render_command.resolve();
 
-        let background_color = if matches!(style.background_color, StyleProp::Default) {
-            Color::TRANSPARENT
-        } else {
-            style.background_color.resolve()
-        };
+        let background_color = style.background_color.resolve_or(Color::TRANSPARENT);
 
-        let border_color = if matches!(style.border_color, StyleProp::Default) {
-            Color::TRANSPARENT
-        } else {
-            style.border_color.resolve()
-        };
+        let border_color = style.border_color.resolve_or(Color::TRANSPARENT);
 
-        let font = if matches!(style.font, StyleProp::Default) {
-            String::from(crate::DEFAULT_FONT)
-        } else {
-            style.font.resolve()
-        };
+        let font = style
+            .font
+            .resolve_or_else(|| String::from(crate::DEFAULT_FONT));
 
-        let font_size = if matches!(style.font_size, StyleProp::Default) {
-            14.0
-        } else {
-            style.font_size.resolve()
-        };
+        let font_size = style.font_size.resolve_or(14.0);
 
-        let line_height = if matches!(style.line_height, StyleProp::Default) {
-            font_size * 1.2
-        } else {
-            style.line_height.resolve()
-        };
+        let line_height = style.line_height.resolve_or(font_size * 1.2);
 
         match render_command {
             RenderCommand::Empty => Self::Empty,

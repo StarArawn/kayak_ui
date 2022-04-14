@@ -17,7 +17,7 @@ pub struct TextProps {
     pub line_height: Option<f32>,
     /// If true, displays the default text cursor when hovered.
     ///
-    /// This _will_ override `cursor` values set by styles.
+    /// This _will_ override the `cursor` style.
     pub show_cursor: bool,
     /// The font size (in pixels)
     ///

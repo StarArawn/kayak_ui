@@ -15,6 +15,10 @@ pub struct TextProps {
     pub font: Option<String>,
     /// The height of a line of text (currently in pixels)
     pub line_height: Option<f32>,
+    /// If true, displays the default text cursor when hovered.
+    ///
+    /// This _will_ override `cursor` values set by styles.
+    pub show_cursor: bool,
     /// The font size (in pixels)
     ///
     /// Negative values have no effect
@@ -35,6 +39,7 @@ impl Default for TextProps {
             content: String::new(),
             font: None,
             line_height: None,
+            show_cursor: false,
             size: -1.0,
             styles: None,
             on_event: None,
@@ -70,6 +75,9 @@ pub fn Text(props: TextProps) {
     if let Some(ref font) = props.font {
         styles.font = StyleProp::Value(font.clone());
     }
+    if props.show_cursor {
+        styles.cursor = StyleProp::Value(CursorIcon::Text);
+    }
     if props.size >= 0.0 {
         styles.font_size = StyleProp::Value(props.size);
     }
@@ -77,8 +85,5 @@ pub fn Text(props: TextProps) {
         styles.line_height = StyleProp::Value(line_height);
     }
 
-    props.styles = Some(styles.with_style(&props.styles).with_style(Style {
-        cursor: StyleProp::Value(CursorIcon::Text),
-        ..Default::default()
-    }));
+    props.styles = Some(styles.with_style(&props.styles));
 }

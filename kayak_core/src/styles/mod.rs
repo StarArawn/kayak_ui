@@ -60,6 +60,30 @@ where
         }
     }
 
+    /// Returns the concrete value of this style property or the provided default.
+    ///
+    /// If this style property is not [`StyleProp::Value`], then the provided default
+    /// will be returned.
+    pub fn resolve_or(&self, default: T) -> T {
+        if let Self::Value(value) = self {
+            value.clone()
+        } else {
+            default
+        }
+    }
+
+    /// Returns the concrete value of this style property or computes it from a closure.
+    ///
+    /// If this style property is not [`StyleProp::Value`], then the return value will be
+    /// computed from the provided closure.
+    pub fn resolve_or_else<F: FnOnce() -> T>(&self, f: F) -> T {
+        if let Self::Value(value) = self {
+            value.clone()
+        } else {
+            f()
+        }
+    }
+
     /// Returns the first property to not be [unset](StyleProp::Unset)
     ///
     /// If none found, returns [`StyleProp::Unset`]
@@ -505,5 +529,14 @@ mod tests {
         let property: StyleProp<_> = expected_width.into();
 
         assert_eq!(expected, property);
+    }
+
+    #[test]
+    fn value_should_resolve_with_given_value() {
+        let expected = 123.0;
+        let property = StyleProp::Default;
+
+        assert_eq!(expected, property.resolve_or(expected));
+        assert_eq!(expected, property.resolve_or_else(|| expected));
     }
 }

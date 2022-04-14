@@ -45,7 +45,7 @@ impl<T> StyleProp<T>
 where
     T: Default + Clone,
 {
-    /// Resolves this style property into a concrete value
+    /// Resolves this style property into a concrete value.
     ///
     /// # Panics
     ///
@@ -81,6 +81,18 @@ where
             value.clone()
         } else {
             f()
+        }
+    }
+
+    /// Returns the concrete value of this style property or the default value.
+    ///
+    /// This is similar to the standard [`resolve`](Self::resolve) method, however, it
+    /// will _not_ panic on a [`StyleProp::Inherit`].
+    pub fn resolve_or_default(&self) -> T {
+        if let Self::Value(value) = self {
+            value.clone()
+        } else {
+            T::default()
         }
     }
 
@@ -533,10 +545,11 @@ mod tests {
 
     #[test]
     fn value_should_resolve_with_given_value() {
-        let expected = 123.0;
+        let expected: f32 = 123.0;
         let property = StyleProp::Default;
 
         assert_eq!(expected, property.resolve_or(expected));
         assert_eq!(expected, property.resolve_or_else(|| expected));
+        assert_eq!(f32::default(), property.resolve_or_default());
     }
 }

@@ -1,5 +1,5 @@
 use indexmap::IndexSet;
-use kayak_font::{CoordinateSystem, KayakFont};
+use kayak_font::{Alignment, CoordinateSystem, KayakFont, TextProperties};
 use morphorm::Units;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
@@ -307,19 +307,17 @@ impl WidgetManager {
                 if let Some(font) = asset.get() {
                     if let Some(parent_id) = self.get_valid_parent(id) {
                         if let Some(parent_layout) = self.get_layout(&parent_id) {
-                            if *parent_layout == Rect::default() {
-                                // needs_layout = true;
-                            }
                             *parent_size = (parent_layout.width, parent_layout.height);
 
                             // --- Calculate Text Layout --- //
-                            let measurement = font.measure(
-                                CoordinateSystem::PositiveYDown,
-                                &content,
-                                *size,
-                                *line_height,
-                                *parent_size,
-                            );
+                            let properties = TextProperties {
+                                font_size: *size,
+                                max_size: Some(*parent_size),
+                                alignment: Alignment::Start,
+                                line_height: *line_height,
+                            };
+                            let layout = font.measure(&content, properties);
+                            let measurement = layout.size();
 
                             // --- Apply Layout --- //
                             if matches!(styles.width, StyleProp::Default) {

@@ -2,8 +2,10 @@ use std::collections::HashMap;
 
 #[cfg(feature = "bevy_renderer")]
 use bevy::{prelude::Handle, reflect::TypeUuid, render::texture::Image};
+use unicode_segmentation::UnicodeSegmentation;
 
-use crate::Sdf;
+use crate::layout::{Alignment, Line, TextLayout};
+use crate::{utility, Sdf, TextProperties};
 
 #[cfg(feature = "bevy_renderer")]
 #[derive(Debug, Clone, TypeUuid, PartialEq)]
@@ -32,13 +34,6 @@ pub struct LayoutRect {
 pub enum CoordinateSystem {
     PositiveYUp,
     PositiveYDown,
-}
-
-#[derive(Copy, Clone, PartialEq)]
-pub enum Alignment {
-    Start,
-    Middle,
-    End,
 }
 
 impl KayakFont {
@@ -85,63 +80,75 @@ impl KayakFont {
         width
     }
 
-    pub fn measure(
-        &self,
-        axis_alignment: CoordinateSystem,
-        content: &String,
-        font_size: f32,
-        line_height: f32,
-        max_size: (f32, f32),
-    ) -> (f32, f32) {
+    /// Measures the given text content and calculates an appropriate layout
+    /// given a set of properties.
+    ///
+    /// # Arguments
+    ///
+    /// * `content`: The textual content to measure.
+    /// * `properties`: The text properties to use.
+    ///
+    pub fn measure(&self, content: &str, properties: TextProperties) -> TextLayout {
         let mut size: (f32, f32) = (0.0, 0.0);
-        let split_chars = vec![' ', '\t', '-'];
-        let missing_chars: Vec<char> = content
-            .chars()
-            .filter(|c| split_chars.iter().any(|c2| c == c2))
-            .collect();
+        let mut lines = Vec::new();
 
-        let shift_sign = match axis_alignment {
-            CoordinateSystem::PositiveYDown => -1.0,
-            CoordinateSystem::PositiveYUp => 1.0,
-        };
+        let mut line = Line::default();
+        let mut grapheme_index = 0;
 
-        let mut x = 0.0;
-        let mut y = 0.0;
-        let mut i = 0;
-        for word in content.split(&split_chars[..]) {
-            let word_width = self.get_word_width(word, font_size);
-            if x + word_width > max_size.0 {
-                y -= shift_sign * line_height;
-                x = 0.0;
+        // We'll now split up the text content so that we can measure the layout.
+        // This is the "text pipeline" for this function:
+        //   1. Split the text by their UAX #29 word boundaries.
+        //   2. Split each word by its UAX #29 grapheme clusters.
+        //      This step is important since "a̐" is technically two characters (codepoints),
+        //      but rendered as a single glyph.
+        //   3. Process each character within the grapheme cluster.
+        //
+        // FIXME: I think #3 is wrong— we probably need to process the full grapheme cluster
+        //        rather than each character individually,— however, this can probably be
+        //        addressed later. Once resolved, this comment should be updated accordingly.
+
+        for word in content.split_word_bounds() {
+            let word_width = self.get_word_width(word, properties.font_size);
+
+            // === Confine to Bounds === //
+            if let Some((max_width, _)) = properties.max_size {
+                if line.width + word_width > max_width {
+                    // Word exceeds bounds -> New line
+                    lines.push(line);
+                    line = Line {
+                        index: grapheme_index,
+                        ..Default::default()
+                    };
+                }
             }
-            for c in word.chars() {
-                if c == '\n' {
-                    y -= shift_sign * line_height;
-                    x = 0.0;
-                }
-                if let Some(glyph) = self.sdf.glyphs.iter().find(|glyph| glyph.unicode == c) {
-                    x += glyph.advance * font_size;
-                    size.0 = size.0.max(x);
-                }
-            }
 
-            if let Some(next_missing) = missing_chars.get(i) {
-                if let Some(glyph) = self
-                    .sdf
-                    .glyphs
-                    .iter()
-                    .find(|glyph| glyph.unicode == *next_missing)
-                {
-                    x += glyph.advance * font_size;
+            // === Iterate Grapheme Clusters === //
+            for grapheme in word.graphemes(true) {
+                // Updated first so that any new lines are using the correct index
+                grapheme_index += 1;
+
+                for c in grapheme.chars() {
+                    if utility::is_newline(c) {
+                        // Character is new line -> New line
+                        lines.push(line);
+                        line = Line {
+                            index: grapheme_index,
+                            ..Default::default()
+                        };
+                    }
+
+                    if let Some(glyph) = self.sdf.glyphs.iter().find(|glyph| glyph.unicode == c) {
+                        line.width += glyph.advance * properties.font_size;
+                        size.0 = size.0.max(line.width);
+                    }
                 }
-                i += 1;
             }
         }
-        // One last shift..
-        y -= shift_sign * line_height;
-        size.1 = y.abs();
 
-        size
+        lines.push(line);
+        size.1 = properties.line_height * lines.len() as f32;
+
+        TextLayout::new(lines, size, properties)
     }
 
     pub fn get_layout(

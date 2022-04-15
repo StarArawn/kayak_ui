@@ -1,12 +1,15 @@
 mod atlas;
 mod font;
 mod glyph;
+mod layout;
 mod metrics;
 mod sdf;
+mod utility;
 
 pub use atlas::*;
 pub use font::*;
 pub use glyph::*;
+pub use layout::*;
 pub use metrics::*;
 pub use sdf::*;
 
@@ -29,6 +32,7 @@ pub mod bevy {
         },
         utils::HashSet,
     };
+
     pub struct KayakFontPlugin;
 
     impl Plugin for KayakFontPlugin {

@@ -1,5 +1,5 @@
 use bevy::{math::Vec2, prelude::Component, render::color::Color};
-use kayak_font::Alignment;
+use kayak_font::layout::Alignment;
 
 #[derive(Component)]
 pub struct Text {

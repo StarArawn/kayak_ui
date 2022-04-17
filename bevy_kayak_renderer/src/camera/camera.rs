@@ -1,5 +1,5 @@
 use bevy::{
-    prelude::{Bundle, GlobalTransform, Transform},
+    prelude::{Bundle, GlobalTransform, Transform, Component},
     render::{
         camera::{Camera, CameraProjection, DepthCalculation, WindowOrigin},
         primitives::Frustum,
@@ -9,6 +9,9 @@ use bevy::{
 
 use super::ortho::UIOrthographicProjection;
 
+#[derive(Component, Default)]
+pub struct CameraUiKayak;
+
 #[derive(Bundle)]
 pub struct UICameraBundle {
     pub camera: Camera,
@@ -17,6 +20,7 @@ pub struct UICameraBundle {
     pub frustum: Frustum,
     pub transform: Transform,
     pub global_transform: GlobalTransform,
+    pub marker: CameraUiKayak
 }
 
 impl UICameraBundle {
@@ -44,15 +48,13 @@ impl UICameraBundle {
             orthographic_projection.far(),
         );
         UICameraBundle {
-            camera: Camera {
-                name: Some(Self::UI_CAMERA.to_string()),
-                ..Default::default()
-            },
+            camera: Default::default(),
             orthographic_projection,
             frustum,
             visible_entities: VisibleEntities::default(),
             transform,
             global_transform: Default::default(),
+            marker: CameraUiKayak
         }
     }
 }

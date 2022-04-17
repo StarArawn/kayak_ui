@@ -16,9 +16,9 @@ use bevy::{
             BindGroup, BindGroupDescriptor, BindGroupEntry, BindGroupLayout,
             BindGroupLayoutDescriptor, BindGroupLayoutEntry, BindingResource, BindingType,
             BlendComponent, BlendFactor, BlendOperation, BlendState, BufferBindingType, BufferSize,
-            BufferUsages, BufferVec, CachedPipelineId, ColorTargetState, ColorWrites,
+            BufferUsages, BufferVec, CachedRenderPipelineId, ColorTargetState, ColorWrites,
             DynamicUniformVec, Extent3d, FragmentState, FrontFace, MultisampleState, PolygonMode,
-            PrimitiveState, PrimitiveTopology, RenderPipelineCache, RenderPipelineDescriptor,
+            PrimitiveState, PrimitiveTopology, PipelineCache, RenderPipelineDescriptor,
             SamplerBindingType, SamplerDescriptor, Shader, ShaderStages, TextureDescriptor,
             TextureDimension, TextureFormat, TextureSampleType, TextureUsages,
             TextureViewDescriptor, TextureViewDimension, VertexAttribute, VertexBufferLayout,
@@ -46,7 +46,7 @@ pub struct UnifiedPipeline {
     types_layout: BindGroupLayout,
     pub(crate) font_image_layout: BindGroupLayout,
     image_layout: BindGroupLayout,
-    pipeline: CachedPipelineId,
+    pipeline: CachedRenderPipelineId,
     empty_font_texture: (GpuImage, BindGroup),
     default_image: (GpuImage, BindGroup),
 }
@@ -70,7 +70,7 @@ impl FromWorld for UnifiedPipeline {
     fn from_world(world: &mut World) -> Self {
         let world = world.cell();
         let render_device = world.get_resource::<RenderDevice>().unwrap();
-        let mut pipeline_cache = world.get_resource_mut::<RenderPipelineCache>().unwrap();
+        let mut pipeline_cache = world.get_resource_mut::<PipelineCache>().unwrap();
 
         let view_layout = render_device.create_bind_group_layout(&BindGroupLayoutDescriptor {
             entries: &[BindGroupLayoutEntry {
@@ -269,6 +269,7 @@ impl FromWorld for UnifiedPipeline {
                 width: 1.0,
                 height: 1.0,
             },
+            texture_format: TextureFormat::Rgba8UnormSrgb
         };
 
         let binding = render_device.create_bind_group(&BindGroupDescriptor {
@@ -287,7 +288,7 @@ impl FromWorld for UnifiedPipeline {
         });
 
         UnifiedPipeline {
-            pipeline: pipeline_cache.queue(pipeline_desc),
+            pipeline: pipeline_cache.queue_render_pipeline(pipeline_desc),
             view_layout,
             font_image_layout,
             empty_font_texture,
@@ -547,7 +548,7 @@ pub struct DrawUI {
     params: SystemState<(
         SRes<QuadMeta>,
         SRes<UnifiedPipeline>,
-        SRes<RenderPipelineCache>,
+        SRes<PipelineCache>,
         SRes<FontTextureCache>,
         SRes<ImageBindGroups>,
         SRes<WindowSize>,
@@ -610,7 +611,7 @@ impl Draw<TransparentUI> for DrawUI {
             return;
         }
 
-        if let Some(pipeline) = pipelines.into_inner().get(item.pipeline) {
+        if let Some(pipeline) = pipelines.into_inner().get_render_pipeline(item.pipeline) {
             pass.set_render_pipeline(pipeline);
             pass.set_vertex_buffer(0, quad_meta.vertices.buffer().unwrap().slice(..));
             pass.set_bind_group(

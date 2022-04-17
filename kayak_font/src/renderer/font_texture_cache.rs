@@ -154,6 +154,7 @@ impl FontTextureCache {
                 width: size.0 as f32,
                 height: size.1 as f32,
             },
+            texture_format: format
         };
 
         images.insert(font_handle, image);
@@ -198,6 +199,7 @@ impl FontTextureCache {
                 width: 1.0,
                 height: 1.0,
             },
+            texture_format: TextureFormat::Rgba8Unorm
         };
 
         let binding = device.create_bind_group(&BindGroupDescriptor {

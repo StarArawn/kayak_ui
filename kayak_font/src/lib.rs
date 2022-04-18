@@ -171,10 +171,8 @@ pub mod bevy {
                     load_context.get_handle(atlas_image_path.clone()),
                 );
 
-                font.generate_char_ids();
-
-                load_context
-                    .set_default_asset(LoadedAsset::new(font).with_dependency(atlas_image_path));
+                let asset = LoadedAsset::new(font).with_dependency(atlas_image_path);
+                load_context.set_default_asset(asset);
 
                 Ok(())
             })

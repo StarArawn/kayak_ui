@@ -3,7 +3,7 @@ use bevy::{
     prelude::{Assets, Commands, Handle, Query, Res},
     sprite::Rect,
 };
-use kayak_font::{CoordinateSystem, KayakFont};
+use kayak_font::{Alignment, KayakFont, TextProperties};
 
 use super::{
     pipeline::{ExtractCharBundle, ExtractedChar},
@@ -19,19 +19,26 @@ pub fn extract(
 
     for (text, font_handle) in texts.iter() {
         if let Some(font) = fonts.get(font_handle) {
-            let layouts = font.get_layout(
-                CoordinateSystem::PositiveYUp,
-                text.horz_alignment,
-                (text.position.x, text.position.y),
-                (text.size.x, text.size.y),
+
+            let properties = TextProperties {
+                font_size: text.font_size,
+                line_height: text.line_height,
+                max_size: (text.size.x, text.size.y),
+                alignment: text.horz_alignment,
+                ..Default::default()
+            };
+
+            let text_layout = font.measure(
                 &text.content,
-                text.line_height,
-                text.font_size,
+                properties
             );
 
-            for layout in layouts {
-                let position = layout.position.into();
-                let size: Vec2 = layout.size.into();
+            for glyph_rect in text_layout.glyphs() {
+                let mut position = Vec2::from(glyph_rect.position);
+                position.y *= -1.0;
+                position += text.position;
+
+                let size = Vec2::from(glyph_rect.size);
 
                 extracted_texts.push(ExtractCharBundle {
                     extracted_quad: ExtractedChar {
@@ -42,7 +49,7 @@ pub fn extract(
                         },
                         color: text.color,
                         vertex_index: 0,
-                        char_id: font.get_char_id(layout.content).unwrap(),
+                        char_id: font.get_char_id(glyph_rect.content).unwrap(),
                         z_index: 0.0,
                     },
                 });

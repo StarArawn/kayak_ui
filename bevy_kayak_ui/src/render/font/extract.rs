@@ -4,7 +4,7 @@ use bevy::{
     sprite::Rect,
 };
 use kayak_core::render_primitive::RenderPrimitive;
-use kayak_font::{Alignment, CoordinateSystem, KayakFont};
+use kayak_font::{Alignment, KayakFont, TextProperties};
 
 use crate::to_bevy_color;
 use bevy_kayak_renderer::{
@@ -52,19 +52,27 @@ pub fn extract_texts(
 
     let font = font.unwrap();
 
-    let chars_layouts = font.get_layout(
-        CoordinateSystem::PositiveYDown,
-        Alignment::Start,
-        (layout.posx, layout.posy + font_size),
-        (parent_size.0, parent_size.1),
-        content,
-        *line_height,
+    let properties = TextProperties {
+        alignment: Alignment::Start,
         font_size,
+        line_height: *line_height,
+        max_size: (parent_size.0, parent_size.1),
+        ..Default::default()
+    };
+
+    let text_layout = font.measure(
+        content,
+        properties,
     );
 
-    for char_layout in chars_layouts {
-        let position = char_layout.position.into();
-        let size: Vec2 = char_layout.size.into();
+    let base_position = Vec2::new(layout.posx, layout.posy + font_size);
+
+    for glyph_rect in text_layout.glyphs() {
+        let mut position = Vec2::from(glyph_rect.position);
+        position += base_position;
+
+        let size = Vec2::from(glyph_rect.size);
+
         extracted_texts.push(ExtractQuadBundle {
             extracted_quad: ExtractedQuad {
                 font_handle: Some(font_handle.clone()),
@@ -74,7 +82,7 @@ pub fn extract_texts(
                 },
                 color: to_bevy_color(background_color),
                 vertex_index: 0,
-                char_id: font.get_char_id(char_layout.content).unwrap(),
+                char_id: font.get_char_id(glyph_rect.content).unwrap(),
                 z_index: layout.z_index,
                 quad_type: UIQuadType::Text,
                 type_index: 0,

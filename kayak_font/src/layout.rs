@@ -1,5 +1,12 @@
 use std::cmp::Ordering;
 
+#[derive(Default, Debug, Clone, Copy, PartialEq)]
+pub struct GlyphRect {
+    pub position: (f32, f32),
+    pub size: (f32, f32),
+    pub content: char,
+}
+
 /// The text alignment.
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Alignment {
@@ -16,25 +23,43 @@ pub struct TextProperties {
     /// The line height (in pixels).
     pub line_height: f32,
     /// The maximum width and height a block of text can take up (in pixels).
-    pub max_size: Option<(f32, f32)>,
+    pub max_size: (f32, f32),
     /// The text alignment.
     pub alignment: Alignment,
+    /// The size of a tab (`'\t'`) character in equivalent spaces.
+    pub tab_size: u8,
+}
+
+impl Default for TextProperties {
+    fn default() -> Self {
+        Self {
+            font_size: 14.0,
+            line_height: 14.0 * 1.2,
+            max_size: (f32::MAX, f32::MAX),
+            tab_size: 4,
+            alignment: Alignment::Start,
+        }
+    }
 }
 
 /// Contains details for a calculated line of text.
 #[derive(Copy, Clone, Debug, Default, PartialEq)]
 pub struct Line {
     /// The index of the starting grapheme cluster within the text content.
-    pub index: usize,
+    pub grapheme_index: usize,
+    /// The index of the starting char within the text content.
+    pub char_index: usize,
     /// The total number of grapheme clusters in this line.
-    pub len: usize,
+    pub grapheme_len: usize,
+    /// The total number of chars in this line.
+    pub char_len: usize,
     /// The total width of this line (in pixels).
     pub width: f32,
 }
 
 impl PartialOrd for Line {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        self.index.partial_cmp(&other.index)
+        self.grapheme_index.partial_cmp(&other.grapheme_index)
     }
 }
 
@@ -43,6 +68,7 @@ impl PartialOrd for Line {
 /// This can be retrieved using [`measure`](crate::KayakFont::measure).
 #[derive(Clone, Debug, PartialEq)]
 pub struct TextLayout {
+    glyphs: Vec<GlyphRect>,
     lines: Vec<Line>,
     size: (f32, f32),
     properties: TextProperties,
@@ -50,17 +76,18 @@ pub struct TextLayout {
 
 impl TextLayout {
     /// Create a new [`TextLayout`].
-    pub fn new(lines: Vec<Line>, size: (f32, f32), properties: TextProperties) -> Self {
-        Self {
-            lines,
-            size,
-            properties,
-        }
+    pub fn new(glyphs: Vec<GlyphRect>, lines: Vec<Line>, size: (f32, f32), properties: TextProperties) -> Self {
+        Self { glyphs, lines, size, properties }
     }
 
     /// Returns the calculated lines for the text content.
     pub fn lines(&self) -> &Vec<Line> {
         &self.lines
+    }
+
+    /// Returns the calculated glyph rects for the text content.
+    pub fn glyphs(&self) -> &Vec<GlyphRect> {
+        &self.glyphs
     }
 
     /// Returns the total width and height of the text content (in pixels).

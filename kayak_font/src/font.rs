@@ -9,7 +9,7 @@ use xi_unicode::LineBreakIterator;
 
 use crate::layout::{Alignment, Line, TextLayout};
 use crate::{utility, Sdf, TextProperties, Glyph, GlyphRect};
-use crate::utility::{BreakableWord, BreakableWordIter, SPACE};
+use crate::utility::{BreakableWord, BreakableWordIter, MISSING, SPACE};
 
 #[cfg(feature = "bevy_renderer")]
 #[derive(Debug, Clone, TypeUuid, PartialEq)]
@@ -17,6 +17,7 @@ use crate::utility::{BreakableWord, BreakableWordIter, SPACE};
 pub struct KayakFont {
     pub sdf: Sdf,
     pub atlas_image: Handle<Image>,
+    pub missing_glyph: Option<char>,
     char_ids: HashMap<char, u32>,
     max_glyph_size: (f32, f32),
 }
@@ -25,6 +26,7 @@ pub struct KayakFont {
 #[derive(Debug, Clone)]
 pub struct KayakFont {
     pub sdf: Sdf,
+    pub missing_glyph: Option<char>,
     char_ids: HashMap<char, u32>,
     max_glyph_size: (f32, f32),
 }
@@ -48,12 +50,23 @@ impl KayakFont {
     pub fn new(sdf: Sdf, #[cfg(feature = "bevy_renderer")] atlas_image: Handle<Image>) -> Self {
         let max_glyph_size = sdf.max_glyph_size();
         assert!(sdf.glyphs.len() < u32::MAX as usize, "SDF contains too many glyphs");
-        let char_ids = sdf.glyphs.iter().enumerate().map(|(idx, glyph)| (glyph.unicode, idx as u32)).collect();
+        
+        let char_ids: HashMap<char, u32> = sdf.glyphs.iter().enumerate().map(|(idx, glyph)| (glyph.unicode, idx as u32)).collect();
+
+        let missing_glyph = if char_ids.contains_key(&MISSING) {
+            Some(MISSING)
+        } else if char_ids.contains_key(&SPACE) {
+            Some(SPACE)
+        } else {
+            None
+        };
+
 
         Self {
             sdf,
             #[cfg(feature = "bevy_renderer")]
             atlas_image,
+            missing_glyph,
             char_ids,
             max_glyph_size,
         }
@@ -192,33 +205,41 @@ impl KayakFont {
                         line.width += space_width;
                     } else if utility::is_tab(c) {
                         line.width += tab_width;
-                    } else if let Some(glyph) = self.get_glyph(c) {
-                        // Character is valid glyph -> calculate its size and position
-                        let plane_bounds = glyph.plane_bounds.as_ref();
-                        let (left, top, _width, _height) = match plane_bounds {
-                            Some(rect) => (
-                                rect.left,
-                                rect.top,
-                                rect.width() * properties.font_size,
-                                rect.height() * properties.font_size,
-                            ),
-                            None => (0.0, 0.0, 0.0, 0.0),
-                        };
-
-                        // Calculate position relative to line and normalized glyph bounds
-                        let pos_x = line.width + left * properties.font_size;
-                        let mut pos_y = properties.line_height * lines.len() as f32;
-                        pos_y -= top * properties.font_size;
-
-                        glyph_rects.push(GlyphRect {
-                            position: (pos_x, pos_y),
-                            size: norm_glyph_bounds,
-                            content: c,
+                    } else {
+                        let glyph = self.get_glyph(c).or_else(|| if let Some(missing) = self.missing_glyph {
+                            self.get_glyph(missing)
+                        } else {
+                            None
                         });
 
-                        char_index += 1;
-                        line.char_len += 1;
-                        line.width += glyph.advance * properties.font_size;
+                        if let Some(glyph) = glyph {
+                            // Character is valid glyph -> calculate its size and position
+                            let plane_bounds = glyph.plane_bounds.as_ref();
+                            let (left, top, _width, _height) = match plane_bounds {
+                                Some(rect) => (
+                                    rect.left,
+                                    rect.top,
+                                    rect.width() * properties.font_size,
+                                    rect.height() * properties.font_size,
+                                ),
+                                None => (0.0, 0.0, 0.0, 0.0),
+                            };
+
+                            // Calculate position relative to line and normalized glyph bounds
+                            let pos_x = line.width + left * properties.font_size;
+                            let mut pos_y = properties.line_height * lines.len() as f32;
+                            pos_y -= top * properties.font_size;
+
+                            glyph_rects.push(GlyphRect {
+                                position: (pos_x, pos_y),
+                                size: norm_glyph_bounds,
+                                content: glyph.unicode,
+                            });
+
+                            char_index += 1;
+                            line.char_len += 1;
+                            line.width += glyph.advance * properties.font_size;
+                        }
                     }
 
                     size.0 = size.0.max(line.width);
@@ -278,7 +299,7 @@ impl KayakFont {
 
         if curr.hard_break {
             // Hard break -> break before next word
-            return (Some(next_index), None)
+            return (Some(next_index), None);
         }
 
         let mut total_width = self.get_word_width(curr.content, properties);

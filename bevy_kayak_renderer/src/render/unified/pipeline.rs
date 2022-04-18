@@ -17,8 +17,8 @@ use bevy::{
             BindGroupLayoutDescriptor, BindGroupLayoutEntry, BindingResource, BindingType,
             BlendComponent, BlendFactor, BlendOperation, BlendState, BufferBindingType, BufferSize,
             BufferUsages, BufferVec, CachedRenderPipelineId, ColorTargetState, ColorWrites,
-            DynamicUniformVec, Extent3d, FragmentState, FrontFace, MultisampleState, PolygonMode,
-            PrimitiveState, PrimitiveTopology, PipelineCache, RenderPipelineDescriptor,
+            DynamicUniformVec, Extent3d, FragmentState, FrontFace, MultisampleState, PipelineCache,
+            PolygonMode, PrimitiveState, PrimitiveTopology, RenderPipelineDescriptor,
             SamplerBindingType, SamplerDescriptor, Shader, ShaderStages, TextureDescriptor,
             TextureDimension, TextureFormat, TextureSampleType, TextureUsages,
             TextureViewDescriptor, TextureViewDimension, VertexAttribute, VertexBufferLayout,
@@ -269,7 +269,7 @@ impl FromWorld for UnifiedPipeline {
                 width: 1.0,
                 height: 1.0,
             },
-            texture_format: TextureFormat::Rgba8UnormSrgb
+            texture_format: TextureFormat::Rgba8UnormSrgb,
         };
 
         let binding = render_device.create_bind_group(&BindGroupDescriptor {

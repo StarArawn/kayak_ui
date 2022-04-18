@@ -1,12 +1,12 @@
 use bevy::{
     prelude::{CoreStage, Plugin},
-    render::camera::{CameraTypePlugin},
+    render::camera::CameraTypePlugin,
 };
 
 mod camera;
 mod ortho;
 
-pub use camera::{UICameraBundle,CameraUiKayak};
+pub use camera::{CameraUiKayak, UICameraBundle};
 pub(crate) use ortho::UIOrthographicProjection;
 
 pub struct KayakUICameraPlugin;

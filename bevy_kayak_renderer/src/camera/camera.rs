@@ -1,5 +1,5 @@
 use bevy::{
-    prelude::{Bundle, GlobalTransform, Transform, Component},
+    prelude::{Bundle, Component, GlobalTransform, Transform},
     render::{
         camera::{Camera, CameraProjection, DepthCalculation, WindowOrigin},
         primitives::Frustum,
@@ -20,7 +20,7 @@ pub struct UICameraBundle {
     pub frustum: Frustum,
     pub transform: Transform,
     pub global_transform: GlobalTransform,
-    pub marker: CameraUiKayak
+    pub marker: CameraUiKayak,
 }
 
 impl UICameraBundle {
@@ -54,7 +54,7 @@ impl UICameraBundle {
             visible_entities: VisibleEntities::default(),
             transform,
             global_transform: Default::default(),
-            marker: CameraUiKayak
+            marker: CameraUiKayak,
         }
     }
 }

@@ -1,7 +1,7 @@
 use bevy::core::FloatOrd;
 use bevy::ecs::prelude::*;
 use bevy::render::render_phase::{DrawFunctionId, PhaseItem};
-use bevy::render::render_resource::{CachedPipelineId, RenderPassColorAttachment};
+use bevy::render::render_resource::{CachedRenderPipelineId, RenderPassColorAttachment};
 use bevy::render::{
     render_graph::{Node, NodeRunError, RenderGraphContext, SlotInfo, SlotType},
     render_phase::{DrawFunctions, RenderPhase, TrackedRenderPass},
@@ -13,7 +13,7 @@ use bevy::render::{
 pub struct TransparentUI {
     pub sort_key: FloatOrd,
     pub entity: Entity,
-    pub pipeline: CachedPipelineId,
+    pub pipeline: CachedRenderPipelineId,
     pub draw_function: DrawFunctionId,
 }
 

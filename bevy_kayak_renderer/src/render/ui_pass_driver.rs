@@ -1,11 +1,10 @@
-use bevy::ecs::world::World;
 use bevy::render::{
-    camera::ExtractedCameraNames,
     render_graph::{Node, NodeRunError, RenderGraphContext, SlotValue},
     renderer::RenderContext,
 };
+use bevy::{ecs::world::World, render::camera::ActiveCamera};
 
-use crate::UICameraBundle;
+use crate::CameraUiKayak;
 
 pub struct UIPassDriverNode;
 
@@ -16,11 +15,10 @@ impl Node for UIPassDriverNode {
         _render_context: &mut RenderContext,
         world: &World,
     ) -> Result<(), NodeRunError> {
-        let extracted_cameras = world.get_resource::<ExtractedCameraNames>().unwrap();
-        if let Some(camera_ui) = extracted_cameras.entities.get(UICameraBundle::UI_CAMERA) {
+        if let Some(camera_ui) = world.resource::<ActiveCamera<CameraUiKayak>>().get() {
             graph.run_sub_graph(
                 super::draw_ui_graph::NAME,
-                vec![SlotValue::Entity(*camera_ui)],
+                vec![SlotValue::Entity(camera_ui)],
             )?;
         }
 

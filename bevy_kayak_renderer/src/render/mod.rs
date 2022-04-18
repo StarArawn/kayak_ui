@@ -2,7 +2,7 @@ use bevy::{
     core_pipeline::node::MAIN_PASS_DRIVER,
     prelude::{Commands, Plugin, Res},
     render::{
-        camera::ActiveCameras,
+        camera::ActiveCamera,
         render_graph::{EmptyNode, RenderGraph, SlotInfo, SlotType},
         render_phase::{DrawFunctions, RenderPhase},
         RenderApp, RenderStage,
@@ -13,7 +13,7 @@ use crate::{
     render::{
         ui_pass::MainPassUINode, ui_pass_driver::UIPassDriverNode, unified::UnifiedRenderPlugin,
     },
-    UICameraBundle,
+    CameraUiKayak,
 };
 
 use self::ui_pass::TransparentUI;
@@ -81,13 +81,11 @@ impl Plugin for BevyKayakUIRenderPlugin {
 
 pub fn extract_core_pipeline_camera_phases(
     mut commands: Commands,
-    active_cameras: Res<ActiveCameras>,
+    active_camera: Res<ActiveCamera<CameraUiKayak>>,
 ) {
-    if let Some(camera_2d) = active_cameras.get(UICameraBundle::UI_CAMERA) {
-        if let Some(entity) = camera_2d.entity {
-            commands
-                .get_or_spawn(entity)
-                .insert(RenderPhase::<TransparentUI>::default());
-        }
+    if let Some(entity) = active_camera.get() {
+        commands
+            .get_or_spawn(entity)
+            .insert(RenderPhase::<TransparentUI>::default());
     }
 }

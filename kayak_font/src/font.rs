@@ -147,7 +147,7 @@ impl KayakFont {
         for (index, word) in words.iter().enumerate() {
 
             // Check if this is the last word of the line.
-            let will_break = break_index.map(|idx| index + 1 == idx).unwrap_or_default();
+            let mut will_break = break_index.map(|idx| index + 1 == idx).unwrap_or_default();
 
             // === Line Break === //
             // If the `break_index` is set, see if it applies.
@@ -168,6 +168,7 @@ impl KayakFont {
                         let (next_break, next_skip) = self.find_next_break(index, line.width, properties, &words);
                         break_index = next_break;
                         skip_until_index = next_skip;
+                        will_break |= break_index.map(|idx| index + 1 == idx).unwrap_or_default();
                     }
                 }
             }

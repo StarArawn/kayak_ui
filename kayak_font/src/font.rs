@@ -118,16 +118,12 @@ impl KayakFont {
         let mut glyph_rects = Vec::new();
         let mut lines = Vec::new();
 
-        // The current line being calculated
-        let mut line = Line::default();
-        // The current grapheme cluster index
-        let mut grapheme_index = 0;
-        // The current character index
-        let mut char_index = 0;
-
         // This is the normalized glyph bounds for all glyphs in the atlas.
         // It's needed to ensure all glyphs render proportional to each other.
         let norm_glyph_bounds = self.calc_glyph_size(properties.font_size);
+
+        // The current line being calculated
+        let mut line = Line::default();
 
         // The word index to break a line before
         let mut break_index = None;
@@ -158,11 +154,7 @@ impl KayakFont {
             if let Some(idx) = break_index {
                 if idx == index {
                     lines.push(line);
-                    line = Line {
-                        grapheme_index,
-                        char_index,
-                        ..Default::default()
-                    };
+                    line = Line::new_after(line);
                     break_index = None;
                 }
             }
@@ -182,11 +174,11 @@ impl KayakFont {
 
             // === Iterate Grapheme Clusters === //
             for grapheme in word.content.graphemes(true) {
-                // Updated first so that any new lines are using the correct index
-                grapheme_index += 1;
                 line.grapheme_len += 1;
 
                 for c in grapheme.chars() {
+                    line.char_len += 1;
+
                     if utility::is_newline(c) {
                         // Newlines (hard breaks) are already accounted for by the line break algorithm
                         continue;
@@ -230,8 +222,7 @@ impl KayakFont {
                                 content: glyph.unicode,
                             });
 
-                            char_index += 1;
-                            line.char_len += 1;
+                            line.glyph_len += 1;
                             line.width += glyph.advance * properties.font_size;
                         }
                     }
@@ -253,8 +244,8 @@ impl KayakFont {
                 Alignment::End => properties.max_size.0 - line.width,
             };
 
-            let start = line.char_index;
-            let end = start + line.char_len;
+            let start = line.glyph_index;
+            let end = start + line.glyph_len;
 
             for index in start..end {
                 let rect = &mut glyph_rects[index];

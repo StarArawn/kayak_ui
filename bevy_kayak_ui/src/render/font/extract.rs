@@ -4,7 +4,7 @@ use bevy::{
     sprite::Rect,
 };
 use kayak_core::render_primitive::RenderPrimitive;
-use kayak_font::{Alignment, KayakFont, TextProperties};
+use kayak_font::KayakFont;
 
 use crate::to_bevy_color;
 use bevy_kayak_renderer::{

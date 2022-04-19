@@ -1,5 +1,5 @@
 use indexmap::IndexSet;
-use kayak_font::{Alignment, KayakFont, TextProperties};
+use kayak_font::KayakFont;
 use morphorm::Units;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};

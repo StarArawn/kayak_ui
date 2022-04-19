@@ -1,15 +1,12 @@
 use std::collections::HashMap;
-use std::iter::Peekable;
 
 #[cfg(feature = "bevy_renderer")]
 use bevy::{prelude::Handle, reflect::TypeUuid, render::texture::Image};
-use serde_json::de::Read;
 use unicode_segmentation::UnicodeSegmentation;
-use xi_unicode::LineBreakIterator;
 
 use crate::layout::{Alignment, Line, TextLayout};
 use crate::{utility, Sdf, TextProperties, Glyph, GlyphRect};
-use crate::utility::{BreakableWord, BreakableWordIter, MISSING, SPACE};
+use crate::utility::{BreakableWord, MISSING, SPACE};
 
 #[cfg(feature = "bevy_renderer")]
 #[derive(Debug, Clone, TypeUuid, PartialEq)]
@@ -143,7 +140,7 @@ impl KayakFont {
         //        careful thought and consideration, so it should probably be addressed later.
         //        Once resolved, this comment should be updated accordingly.
 
-        let mut words = utility::split_breakable_words(content).collect::<Vec<_>>();
+        let words = utility::split_breakable_words(content).collect::<Vec<_>>();
         for (index, word) in words.iter().enumerate() {
 
             // Check if this is the last word of the line.

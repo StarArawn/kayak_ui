@@ -3,6 +3,7 @@ use unicode_segmentation::UnicodeSegmentation;
 use xi_unicode::LineBreakIterator;
 
 pub const NEWLINE: char = '\n';
+pub const CARRIAGE: char = '\r';
 pub const SPACE: char = ' ';
 pub const NBSP: char = '\u{a0}';
 pub const TAB: char = '\t';
@@ -10,7 +11,7 @@ pub const MISSING: char = '�';
 
 /// Returns true if the given character is a newline.
 pub fn is_newline(c: char) -> bool {
-    c == NEWLINE
+    c == NEWLINE || c == CARRIAGE
 }
 
 /// Returns true if the given character is a space.

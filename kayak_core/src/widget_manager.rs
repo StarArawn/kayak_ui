@@ -293,11 +293,10 @@ impl WidgetManager {
 
         match &mut render_primitive {
             RenderPrimitive::Text {
-                parent_size,
                 content,
                 font,
-                size,
-                line_height,
+                properties,
+                text_layout,
                 ..
             } => {
                 // --- Bind to Font Asset --- //
@@ -307,18 +306,11 @@ impl WidgetManager {
                 if let Some(font) = asset.get() {
                     if let Some(parent_id) = self.get_valid_parent(id) {
                         if let Some(parent_layout) = self.get_layout(&parent_id) {
-                            *parent_size = (parent_layout.width, parent_layout.height);
+                            properties.max_size = (parent_layout.width, parent_layout.height);
 
                             // --- Calculate Text Layout --- //
-                            let properties = TextProperties {
-                                font_size: *size,
-                                max_size: *parent_size,
-                                alignment: Alignment::Start,
-                                line_height: *line_height,
-                                ..Default::default()
-                            };
-                            let layout = font.measure(&content, properties);
-                            let measurement = layout.size();
+                            *text_layout = font.measure(&content, *properties);
+                            let measurement = text_layout.size();
 
                             // --- Apply Layout --- //
                             if matches!(styles.width, StyleProp::Default) {

@@ -1,3 +1,5 @@
+use morphorm::layout;
+use kayak_font::{TextLayout, TextProperties};
 use crate::{
     color::Color,
     layout_cache::Rect,
@@ -22,10 +24,9 @@ pub enum RenderPrimitive {
         color: Color,
         content: String,
         font: String,
+        text_layout: TextLayout,
         layout: Rect,
-        line_height: f32,
-        parent_size: (f32, f32),
-        size: f32,
+        properties: TextProperties,
     },
     Image {
         border_radius: Corner<f32>,
@@ -85,10 +86,13 @@ impl From<&Style> for RenderPrimitive {
                 color: style.color.resolve(),
                 content,
                 font,
+                text_layout: TextLayout::default(),
                 layout: Rect::default(),
-                line_height,
-                parent_size: (0.0, 0.0),
-                size: font_size,
+                properties: TextProperties {
+                    font_size,
+                    line_height,
+                    ..Default::default()
+                },
             },
             RenderCommand::Image { handle } => Self::Image {
                 border_radius: style.border_radius.resolve(),

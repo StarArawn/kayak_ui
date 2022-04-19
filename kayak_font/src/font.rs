@@ -50,7 +50,7 @@ impl KayakFont {
     pub fn new(sdf: Sdf, #[cfg(feature = "bevy_renderer")] atlas_image: Handle<Image>) -> Self {
         let max_glyph_size = sdf.max_glyph_size();
         assert!(sdf.glyphs.len() < u32::MAX as usize, "SDF contains too many glyphs");
-        
+
         let char_ids: HashMap<char, u32> = sdf.glyphs.iter().enumerate().map(|(idx, glyph)| (glyph.unicode, idx as u32)).collect();
 
         let missing_glyph = if char_ids.contains_key(&MISSING) {
@@ -134,26 +134,6 @@ impl KayakFont {
         // The word index until attempting to find another line break
         let mut skip_until_index = None;
 
-        /// Local function to apply the line break, if any
-        fn try_break_line(index: usize, char_index: usize, grapheme_index: usize, line: &mut Line, lines: &mut Vec<Line>, break_index: &mut Option<usize>) {
-            if let Some(idx) = break_index {
-                if *idx == index {
-                    add_line(char_index, grapheme_index, line, lines);
-                    *break_index = None;
-                }
-            }
-        }
-
-        /// Local function to finalize the current line and start a new one
-        fn add_line(char_index: usize, grapheme_index: usize, line: &mut Line, lines: &mut Vec<Line>) {
-            lines.push(*line);
-            *line = Line {
-                grapheme_index,
-                char_index,
-                ..Default::default()
-            };
-        }
-
         // We'll now split up the text content so that we can measure the layout.
         // This is the "text pipeline" for this function:
         //   1. Split the text by their UAX #29 word boundaries.
@@ -170,23 +150,35 @@ impl KayakFont {
         let mut words = utility::split_breakable_words(content).collect::<Vec<_>>();
         for (index, word) in words.iter().enumerate() {
 
+            // Check if this is the last word of the line.
+            let will_break = break_index.map(|idx| index + 1 == idx).unwrap_or_default();
+
             // === Line Break === //
-            // If the `break_index` is set, apply it.
-            try_break_line(index, char_index, grapheme_index, &mut line, &mut lines, &mut break_index);
+            // If the `break_index` is set, see if it applies.
+            if let Some(idx) = break_index {
+                if idx == index {
+                    lines.push(line);
+                    line = Line {
+                        grapheme_index,
+                        char_index,
+                        ..Default::default()
+                    };
+                    break_index = None;
+                }
+            }
+
             if break_index.is_none() {
                 match skip_until_index {
                     Some(idx) if index < idx => {
                         // Skip finding a line break since we're guaranteed not to find one until `idx`
                     }
                     _ => {
-                        let (next_break, next_skip) = self.find_next_break(index, &words, line.width, properties);
+                        let (next_break, next_skip) = self.find_next_break(index, line.width, properties, &words);
                         break_index = next_break;
                         skip_until_index = next_skip;
                     }
                 }
             }
-            // If the `break_index` is set, apply it
-            try_break_line(index, char_index, grapheme_index, &mut line, &mut lines, &mut break_index);
 
             // === Iterate Grapheme Clusters === //
             for grapheme in word.content.graphemes(true) {
@@ -196,13 +188,15 @@ impl KayakFont {
 
                 for c in grapheme.chars() {
                     if utility::is_newline(c) {
-                        // Character is new line -> New line
-                        add_line(char_index, grapheme_index, &mut line, &mut lines);
+                        // Newlines (hard breaks) are already accounted for by the line break algorithm
                         continue;
                     }
 
                     if utility::is_space(c) {
-                        line.width += space_width;
+                        if !will_break {
+                            // Don't add the space if we're about to break the line
+                            line.width += space_width;
+                        }
                     } else if utility::is_tab(c) {
                         line.width += tab_width;
                     } else {
@@ -273,23 +267,56 @@ impl KayakFont {
 
     /// Attempts to find the next line break for a given set of [breakable words](BreakableWord).
     ///
+    /// Each line break returned is guaranteed to be a _future_ index. That is, a line break will
+    /// never occur before the given index. This ensures you can always prepare for a line break
+    /// (e.g. remove extraneous trailing spaces) ahead of time.
+    ///
     /// # Returns
     ///
     /// A tuple. The first field of the tuple indicates which word index to break _before_, if any.
-    /// The second field indicates which word index to wait _until_ before calling this method again
-    /// (exclusive), if any. The reason for the second field is that there are cases where the line
-    /// break behavior can be accounted for ahead of time.
+    /// The second field indicates which word index to wait _until_ before calling this method again,
+    /// if any. The reason for the second field is that there are cases where the line break behavior
+    /// can be accounted for ahead of time.
+    ///
+    /// It's important that the skip index is used. Aside from it being inefficient, it may also result
+    /// in unexpected behavior.
     ///
     /// # Arguments
     ///
-    /// * `index`: The current word index
-    /// * `words`: The list of breakable words
+    /// * `curr_index`: The current word index
     /// * `line_width`: The current line's current width
     /// * `properties`: The associated text properties
+    /// * `words`: The list of breakable words
     ///
-    fn find_next_break(&self, index: usize, words: &[BreakableWord], line_width: f32, properties: TextProperties) -> (Option<usize>, Option<usize>) {
-        let curr_index = index;
-        let mut next_index = index + 1;
+    fn find_next_break(&self, curr_index: usize, line_width: f32, properties: TextProperties, words: &[BreakableWord]) -> (Option<usize>, Option<usize>) {
+        // Line Break Rules:
+        //
+        // Break before Next if...
+        // 1. Current is hard break.
+        // 2. Next (end-trimmed) width > Max width.
+        // 3. Next (end-trimmed) width + Current width > Max width.
+        // 4. Next (end-trimmed) width + Current width + Line width > Max width.
+        //
+        // Break after Next if...
+        // 5. Next is hard break.
+        //
+        // No break if...
+        // 6. Next ends in whitespace.
+        //
+        // Collect joined Chain of words.
+        //
+        // No break if...
+        // 7. Chain width + Current width + Line width <= Max width.
+        //
+        // Add Current width to Chain width if Current does not end in whitespace.
+        //
+        // Break before Next if...
+        // 8. Chain width <= Max width.
+        //
+        // Otherwise...
+        // 9. Break after Best point in Chain.
+
+        let next_index = curr_index + 1;
 
         let curr = if let Some(curr) = words.get(curr_index) {
             curr
@@ -297,72 +324,84 @@ impl KayakFont {
             return (None, None);
         };
 
+        // 1.
         if curr.hard_break {
-            // Hard break -> break before next word
             return (Some(next_index), None);
         }
 
-        let mut total_width = self.get_word_width(curr.content, properties);
-
-        if curr.content.ends_with(char::is_whitespace) {
-            // End in whitespace -> allow line break if needed
-
-            let next = if let Some(next) = words.get(next_index) {
-                next
-            } else {
-                return (None, None);
-            };
-            total_width += self.get_word_width(next.content.trim_end(), properties);
-
-            // Current word will not be joining the next word
-            return if total_width + line_width > properties.max_size.0 {
-                // Break before the next word
-                (Some(next_index), None)
-            } else {
-                // No break needed
-                (None, None)
-            };
-        }
-
-        let mut best_break_point = if total_width + line_width <= properties.max_size.0 {
-            // Joined word could fit on current line
-            Some(next_index)
+        let next = if let Some(next) = words.get(next_index) {
+            next
         } else {
-            // Joined word should start on new line
-            Some(index)
+            return (None, None);
         };
 
-        while let Some(word) = words.get(next_index) {
-            total_width += self.get_word_width(word.content, properties);
+        let next_trimmed_width = self.get_word_width(next.content.trim_end(), properties);
 
-            if total_width + line_width <= properties.max_size.0 {
-                // Still within confines of LINE -> break line here if needed
-                best_break_point = Some(next_index + 1);
-            }
+        // 2.
+        if next_trimmed_width > properties.max_size.0 {
+            return (Some(next_index), None);
+        }
 
-            if word.content.ends_with(char::is_whitespace) {
-                // End of joining words
+        let curr_width = self.get_word_width(curr.content, properties);
+
+        // 3.
+        if next_trimmed_width + curr_width > properties.max_size.0 {
+            return (Some(next_index), None);
+        }
+
+        // 4.
+        if next_trimmed_width + curr_width + line_width > properties.max_size.0 {
+            return (Some(next_index), None);
+        }
+
+        // 5.
+        if next.hard_break {
+            return (Some(next_index + 1), None);
+        }
+
+        // 6.
+        if next.content.ends_with(char::is_whitespace) {
+            return (None, None);
+        }
+
+        let mut peek_index = next_index;
+        let mut chain_width = 0.0;
+        let mut best_break_index = next_index;
+
+        while let Some(peek) = words.get(peek_index) {
+            chain_width += self.get_word_width(peek.content, properties);
+
+            if peek.content.ends_with(char::is_whitespace) {
+                // End of joined chain
                 break;
             }
 
-            next_index += 1;
+            if chain_width + curr_width + line_width < properties.max_size.0 {
+                // Still within confines of line -> break line after here if needed
+                best_break_index = peek_index + 1;
+            }
+
+            peek_index += 1;
         }
 
-        // The index to skip until (i.e. the last joined word).
-        let skip_until_index = next_index - 1;
-
-        if total_width + line_width <= properties.max_size.0 {
-            // Still within confines of LINE -> no need to break
-            return (None, Some(skip_until_index));
+        // 7.
+        if chain_width + curr_width + line_width <= properties.max_size.0 {
+            return (None, Some(peek_index));
         }
 
-        if total_width <= properties.max_size.0 {
-            // Still within confines of MAX (can fit within a single line)
-            return (Some(index), Some(skip_until_index));
+        if !curr.content.ends_with(char::is_whitespace) {
+            // Include the current word as part of the chain (if it is a part of it).
+            // This is only for checking if the entire chain can fit on its own line.
+            chain_width += curr_width;
         }
 
-        // Attempt to break at the best possible point
-        (best_break_point, Some(skip_until_index))
+        // 8.
+        if chain_width <= properties.max_size.0 {
+            return (Some(next_index), Some(peek_index));
+        }
+
+        // 9.
+        return (Some(best_break_index), Some(best_break_index));
     }
 
     /// Returns the pixel width of a space.

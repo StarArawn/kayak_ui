@@ -1,5 +1,5 @@
 use indexmap::IndexSet;
-use kayak_font::{Alignment, CoordinateSystem, KayakFont, TextProperties};
+use kayak_font::{Alignment, KayakFont, TextProperties};
 use morphorm::Units;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
@@ -312,9 +312,10 @@ impl WidgetManager {
                             // --- Calculate Text Layout --- //
                             let properties = TextProperties {
                                 font_size: *size,
-                                max_size: Some(*parent_size),
+                                max_size: *parent_size,
                                 alignment: Alignment::Start,
                                 line_height: *line_height,
+                                ..Default::default()
                             };
                             let layout = font.measure(&content, properties);
                             let measurement = layout.size();

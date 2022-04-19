@@ -92,8 +92,18 @@ pub struct TextLayout {
 
 impl TextLayout {
     /// Create a new [`TextLayout`].
-    pub fn new(glyphs: Vec<GlyphRect>, lines: Vec<Line>, size: (f32, f32), properties: TextProperties) -> Self {
-        Self { glyphs, lines, size, properties }
+    pub fn new(
+        glyphs: Vec<GlyphRect>,
+        lines: Vec<Line>,
+        size: (f32, f32),
+        properties: TextProperties,
+    ) -> Self {
+        Self {
+            glyphs,
+            lines,
+            size,
+            properties,
+        }
     }
 
     /// Returns the calculated lines for the text content.

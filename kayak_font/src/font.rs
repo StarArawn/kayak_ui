@@ -5,8 +5,8 @@ use bevy::{prelude::Handle, reflect::TypeUuid, render::texture::Image};
 use unicode_segmentation::UnicodeSegmentation;
 
 use crate::layout::{Alignment, Line, TextLayout};
-use crate::{utility, Sdf, TextProperties, Glyph, GlyphRect};
 use crate::utility::{BreakableWord, MISSING, SPACE};
+use crate::{utility, Glyph, GlyphRect, Sdf, TextProperties};
 
 #[cfg(feature = "bevy_renderer")]
 #[derive(Debug, Clone, TypeUuid, PartialEq)]
@@ -31,9 +31,17 @@ pub struct KayakFont {
 impl KayakFont {
     pub fn new(sdf: Sdf, #[cfg(feature = "bevy_renderer")] atlas_image: Handle<Image>) -> Self {
         let max_glyph_size = sdf.max_glyph_size();
-        assert!(sdf.glyphs.len() < u32::MAX as usize, "SDF contains too many glyphs");
+        assert!(
+            sdf.glyphs.len() < u32::MAX as usize,
+            "SDF contains too many glyphs"
+        );
 
-        let char_ids: HashMap<char, u32> = sdf.glyphs.iter().enumerate().map(|(idx, glyph)| (glyph.unicode, idx as u32)).collect();
+        let char_ids: HashMap<char, u32> = sdf
+            .glyphs
+            .iter()
+            .enumerate()
+            .map(|(idx, glyph)| (glyph.unicode, idx as u32))
+            .collect();
 
         let missing_glyph = if char_ids.contains_key(&MISSING) {
             Some(MISSING)
@@ -42,7 +50,6 @@ impl KayakFont {
         } else {
             None
         };
-
 
         Self {
             sdf,
@@ -127,7 +134,6 @@ impl KayakFont {
 
         let words = utility::split_breakable_words(content).collect::<Vec<_>>();
         for (index, word) in words.iter().enumerate() {
-
             // Check if this is the last word of the line.
             let mut will_break = break_index.map(|idx| index + 1 == idx).unwrap_or_default();
 
@@ -147,7 +153,8 @@ impl KayakFont {
                         // Skip finding a line break since we're guaranteed not to find one until `idx`
                     }
                     _ => {
-                        let (next_break, next_skip) = self.find_next_break(index, line.width, properties, &words);
+                        let (next_break, next_skip) =
+                            self.find_next_break(index, line.width, properties, &words);
                         break_index = next_break;
                         skip_until_index = next_skip;
                         will_break |= break_index.map(|idx| index + 1 == idx).unwrap_or_default();
@@ -175,10 +182,12 @@ impl KayakFont {
                     } else if utility::is_tab(c) {
                         line.width += tab_width;
                     } else {
-                        let glyph = self.get_glyph(c).or_else(|| if let Some(missing) = self.missing_glyph {
-                            self.get_glyph(missing)
-                        } else {
-                            None
+                        let glyph = self.get_glyph(c).or_else(|| {
+                            if let Some(missing) = self.missing_glyph {
+                                self.get_glyph(missing)
+                            } else {
+                                None
+                            }
                         });
 
                         if let Some(glyph) = glyph {
@@ -262,7 +271,13 @@ impl KayakFont {
     /// * `properties`: The associated text properties
     /// * `words`: The list of breakable words
     ///
-    fn find_next_break(&self, curr_index: usize, line_width: f32, properties: TextProperties, words: &[BreakableWord]) -> (Option<usize>, Option<usize>) {
+    fn find_next_break(
+        &self,
+        curr_index: usize,
+        line_width: f32,
+        properties: TextProperties,
+        words: &[BreakableWord],
+    ) -> (Option<usize>, Option<usize>) {
         // Line Break Rules:
         //
         // Break before Next if...
@@ -396,7 +411,9 @@ impl KayakFont {
     ///
     /// Returns `None` if no glyph was found.
     pub fn get_glyph(&self, c: char) -> Option<&Glyph> {
-        self.char_ids.get(&c).and_then(|index| self.sdf.glyphs.get(*index as usize))
+        self.char_ids
+            .get(&c)
+            .and_then(|index| self.sdf.glyphs.get(*index as usize))
     }
 
     /// Calculates the appropriate glyph size for a desired font size.
@@ -405,6 +422,9 @@ impl KayakFont {
     /// in the atlas.
     fn calc_glyph_size(&self, font_size: f32) -> (f32, f32) {
         let font_scale = font_size / self.sdf.atlas.font_size;
-        (self.max_glyph_size.0 * font_scale, self.max_glyph_size.1 * font_scale)
+        (
+            self.max_glyph_size.0 * font_scale,
+            self.max_glyph_size.1 * font_scale,
+        )
     }
 }

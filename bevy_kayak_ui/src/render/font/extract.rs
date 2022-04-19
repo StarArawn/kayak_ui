@@ -21,51 +21,32 @@ pub fn extract_texts(
     _dpi: f32,
 ) -> Vec<ExtractQuadBundle> {
     let mut extracted_texts = Vec::new();
-    let (background_color, layout, font_size, content, font, parent_size, line_height) =
+    let (background_color, text_layout, layout, font, properties) =
         match render_primitive {
             RenderPrimitive::Text {
                 color,
+                text_layout,
                 layout,
-                size,
-                content,
                 font,
-                parent_size,
-                line_height,
+                properties,
+                ..
             } => (
                 color,
+                text_layout,
                 layout,
-                *size,
-                content,
                 font,
-                parent_size,
-                line_height,
+                *properties,
             ),
             _ => panic!(""),
         };
 
     let font_handle = font_mapping.get_handle(font.clone()).unwrap();
-    let font = fonts.get(font_handle.clone());
-
-    if font.is_none() {
-        return vec![];
-    }
-
-    let font = font.unwrap();
-
-    let properties = TextProperties {
-        alignment: Alignment::Start,
-        font_size,
-        line_height: *line_height,
-        max_size: (parent_size.0, parent_size.1),
-        ..Default::default()
+    let font = match fonts.get(font_handle.clone()) {
+        Some(font) => font,
+        None => return Vec::new()
     };
 
-    let text_layout = font.measure(
-        content,
-        properties,
-    );
-
-    let base_position = Vec2::new(layout.posx, layout.posy + font_size);
+    let base_position = Vec2::new(layout.posx, layout.posy + properties.font_size);
 
     for glyph_rect in text_layout.glyphs() {
         let mut position = Vec2::from(glyph_rect.position);

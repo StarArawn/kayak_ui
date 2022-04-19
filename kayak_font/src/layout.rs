@@ -82,7 +82,7 @@ impl PartialOrd for Line {
 /// Calculated text layout.
 ///
 /// This can be retrieved using [`measure`](crate::KayakFont::measure).
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Default, PartialEq)]
 pub struct TextLayout {
     glyphs: Vec<GlyphRect>,
     lines: Vec<Line>,

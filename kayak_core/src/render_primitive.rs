@@ -1,10 +1,10 @@
-use kayak_font::{TextLayout, TextProperties};
 use crate::{
     color::Color,
     layout_cache::Rect,
     render_command::RenderCommand,
     styles::{Corner, Edge, Style},
 };
+use kayak_font::{TextLayout, TextProperties};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum RenderPrimitive {

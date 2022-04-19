@@ -19,7 +19,6 @@ pub fn extract(
 
     for (text, font_handle) in texts.iter() {
         if let Some(font) = fonts.get(font_handle) {
-
             let properties = TextProperties {
                 font_size: text.font_size,
                 line_height: text.line_height,
@@ -28,10 +27,7 @@ pub fn extract(
                 ..Default::default()
             };
 
-            let text_layout = font.measure(
-                &text.content,
-                properties
-            );
+            let text_layout = font.measure(&text.content, properties);
 
             for glyph_rect in text_layout.glyphs() {
                 let mut position = Vec2::from(glyph_rect.position);

@@ -55,7 +55,11 @@ pub struct BreakableWordIter<'a> {
 
 impl<'a> BreakableWordIter<'a> {
     pub fn new(text: &'a str) -> Self {
-        Self { text, iter: LineBreakIterator::new(text), index: 0 }
+        Self {
+            text,
+            iter: LineBreakIterator::new(text),
+            index: 0,
+        }
     }
 }
 
@@ -78,4 +82,3 @@ impl<'a> Iterator for BreakableWordIter<'a> {
         self.iter.size_hint()
     }
 }
-

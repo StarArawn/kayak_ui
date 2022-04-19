@@ -1,12 +1,15 @@
 use bevy::{
-    DefaultPlugins,
     math::{const_vec2, Vec2},
-    prelude::{App as BevyApp, AssetServer, Commands, Component, Handle, Input, KeyCode, Query, Res, ResMut, Sprite, SpriteBundle, Transform, With, Without},
+    prelude::{
+        App as BevyApp, AssetServer, Commands, Component, Handle, Input, KeyCode, Query, Res,
+        ResMut, Sprite, SpriteBundle, Transform, With, Without,
+    },
     render::{camera::OrthographicCameraBundle, color::Color},
     window::WindowDescriptor,
+    DefaultPlugins,
 };
 
-use kayak_font::{Alignment, bevy::KayakFontPlugin, KayakFont};
+use kayak_font::{bevy::KayakFontPlugin, Alignment, KayakFont};
 use renderer::{FontRenderPlugin, Text};
 
 mod renderer;
@@ -14,7 +17,8 @@ mod renderer;
 const FONT_SIZE: f32 = 24.0;
 const INITIAL_SIZE: Vec2 = const_vec2!([400.0, 300.0]);
 const INITIAL_POS: Vec2 = const_vec2!([-200.0, 0.0]);
-const INSTRUCTIONS: &str = "Press 'A' and 'D' to shrink and grow the text box.\nPress 'Space' to cycle text alignment.";
+const INSTRUCTIONS: &str =
+    "Press 'A' and 'D' to shrink and grow the text box.\nPress 'Space' to cycle text alignment.";
 
 #[derive(Component)]
 struct Instructions;
@@ -37,16 +41,19 @@ fn startup(mut commands: Commands, asset_server: Res<AssetServer>) {
         })
         .insert(font_handle.clone());
 
-    commands.spawn()
-        .insert_bundle(SpriteBundle {
-            sprite: Sprite {
-                color: Color::DARK_GRAY,
-                custom_size: Some(INITIAL_SIZE),
-                ..Default::default()
-            },
-            transform: Transform::from_xyz((INITIAL_SIZE.x / 2.0) + INITIAL_POS.x, (-INITIAL_SIZE.y / 4.0) - 20.0, -0.05),
+    commands.spawn().insert_bundle(SpriteBundle {
+        sprite: Sprite {
+            color: Color::DARK_GRAY,
+            custom_size: Some(INITIAL_SIZE),
             ..Default::default()
-        });
+        },
+        transform: Transform::from_xyz(
+            (INITIAL_SIZE.x / 2.0) + INITIAL_POS.x,
+            (-INITIAL_SIZE.y / 4.0) - 20.0,
+            -0.05,
+        ),
+        ..Default::default()
+    });
 
     commands
         .spawn()
@@ -63,12 +70,18 @@ fn startup(mut commands: Commands, asset_server: Res<AssetServer>) {
         .insert(font_handle.clone());
 }
 
-fn control_text(keyboard_input: ResMut<Input<KeyCode>>, mut text_box: Query<&mut Text, Without<Instructions>>, mut instructions: Query<&mut Text, With<Instructions>>, mut bg: Query<&mut Sprite>) {
-    let speed = if keyboard_input.pressed(KeyCode::LShift) || keyboard_input.pressed(KeyCode::RShift) {
-        2.5
-    } else {
-        1.0
-    };
+fn control_text(
+    keyboard_input: ResMut<Input<KeyCode>>,
+    mut text_box: Query<&mut Text, Without<Instructions>>,
+    mut instructions: Query<&mut Text, With<Instructions>>,
+    mut bg: Query<&mut Sprite>,
+) {
+    let speed =
+        if keyboard_input.pressed(KeyCode::LShift) || keyboard_input.pressed(KeyCode::RShift) {
+            2.5
+        } else {
+            1.0
+        };
 
     if keyboard_input.just_pressed(KeyCode::Space) {
         for mut text in text_box.iter_mut() {
@@ -95,7 +108,9 @@ fn control_text(keyboard_input: ResMut<Input<KeyCode>>, mut text_box: Query<&mut
 
         let mut instructions = instructions.single_mut();
         instructions.content = String::from(INSTRUCTIONS);
-        instructions.content.push_str(&format!("\nSize: {}", text.size.x));
+        instructions
+            .content
+            .push_str(&format!("\nSize: {}", text.size.x));
     }
 
     for mut sprite in bg.iter_mut() {

@@ -47,14 +47,30 @@ impl Default for TextProperties {
 pub struct Line {
     /// The index of the starting grapheme cluster within the text content.
     pub grapheme_index: usize,
+    /// The index of the starting glyph within the text content.
+    pub glyph_index: usize,
     /// The index of the starting char within the text content.
     pub char_index: usize,
     /// The total number of grapheme clusters in this line.
     pub grapheme_len: usize,
+    /// The total number of glyphs in this line.
+    pub glyph_len: usize,
     /// The total number of chars in this line.
     pub char_len: usize,
     /// The total width of this line (in pixels).
     pub width: f32,
+}
+
+impl Line {
+    /// Creates a new [`Line`] following the given one.
+    pub fn new_after(previous: Self) -> Self {
+        Self {
+            grapheme_index: previous.grapheme_index + previous.grapheme_len,
+            glyph_index: previous.glyph_index + previous.glyph_len,
+            char_index: previous.char_index + previous.char_len,
+            ..Default::default()
+        }
+    }
 }
 
 impl PartialOrd for Line {

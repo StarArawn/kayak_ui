@@ -1,8 +1,7 @@
 use bevy::{
     DefaultPlugins,
-    input::keyboard::KeyboardInput,
     math::{const_vec2, Vec2},
-    prelude::{App as BevyApp, AssetServer, Commands, Component, EventReader, Handle, Input, KeyCode, Query, Res, ResMut, Sprite, SpriteBundle, Transform, With, Without},
+    prelude::{App as BevyApp, AssetServer, Commands, Component, Handle, Input, KeyCode, Query, Res, ResMut, Sprite, SpriteBundle, Transform, With, Without},
     render::{camera::OrthographicCameraBundle, color::Color},
     window::WindowDescriptor,
 };
@@ -64,7 +63,7 @@ fn startup(mut commands: Commands, asset_server: Res<AssetServer>) {
         .insert(font_handle.clone());
 }
 
-fn control_text(mut keyboard_input: ResMut<Input<KeyCode>>, mut text_box: Query<&mut Text, Without<Instructions>>, mut instructions: Query<&mut Text, With<Instructions>>, mut bg: Query<&mut Sprite>) {
+fn control_text(keyboard_input: ResMut<Input<KeyCode>>, mut text_box: Query<&mut Text, Without<Instructions>>, mut instructions: Query<&mut Text, With<Instructions>>, mut bg: Query<&mut Sprite>) {
     let speed = if keyboard_input.pressed(KeyCode::LShift) || keyboard_input.pressed(KeyCode::RShift) {
         2.5
     } else {

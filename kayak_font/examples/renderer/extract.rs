@@ -3,7 +3,7 @@ use bevy::{
     prelude::{Assets, Commands, Handle, Query, Res},
     sprite::Rect,
 };
-use kayak_font::{Alignment, KayakFont, TextProperties};
+use kayak_font::{KayakFont, TextProperties};
 
 use super::{
     pipeline::{ExtractCharBundle, ExtractedChar},

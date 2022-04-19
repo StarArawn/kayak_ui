@@ -166,7 +166,7 @@ pub mod bevy {
                 let path = load_context.path();
                 let path = path.with_extension("png");
                 let atlas_image_path = AssetPath::new(path, None);
-                let mut font = KayakFont::new(
+                let font = KayakFont::new(
                     Sdf::from_bytes(bytes),
                     load_context.get_handle(atlas_image_path.clone()),
                 );

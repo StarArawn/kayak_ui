@@ -1,5 +1,3 @@
-use std::str::{CharIndices, Split};
-use unicode_segmentation::UnicodeSegmentation;
 use xi_unicode::LineBreakIterator;
 
 pub const NEWLINE: char = '\n';

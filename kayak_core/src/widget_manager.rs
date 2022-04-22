@@ -1,5 +1,5 @@
 use indexmap::IndexSet;
-use kayak_font::{CoordinateSystem, KayakFont};
+use kayak_font::KayakFont;
 use morphorm::Units;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
@@ -293,11 +293,10 @@ impl WidgetManager {
 
         match &mut render_primitive {
             RenderPrimitive::Text {
-                parent_size,
                 content,
                 font,
-                size,
-                line_height,
+                properties,
+                text_layout,
                 ..
             } => {
                 // --- Bind to Font Asset --- //
@@ -307,19 +306,11 @@ impl WidgetManager {
                 if let Some(font) = asset.get() {
                     if let Some(parent_id) = self.get_valid_parent(id) {
                         if let Some(parent_layout) = self.get_layout(&parent_id) {
-                            if *parent_layout == Rect::default() {
-                                // needs_layout = true;
-                            }
-                            *parent_size = (parent_layout.width, parent_layout.height);
+                            properties.max_size = (parent_layout.width, parent_layout.height);
 
                             // --- Calculate Text Layout --- //
-                            let measurement = font.measure(
-                                CoordinateSystem::PositiveYDown,
-                                &content,
-                                *size,
-                                *line_height,
-                                *parent_size,
-                            );
+                            *text_layout = font.measure(&content, *properties);
+                            let measurement = text_layout.size();
 
                             // --- Apply Layout --- //
                             if matches!(styles.width, StyleProp::Default) {

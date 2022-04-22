@@ -20,7 +20,7 @@ pub trait FontRenderingPipeline {
     fn get_font_image_layout(&self) -> &BindGroupLayout;
 }
 
-pub const MAX_CHARACTERS: u32 = 100;
+pub const MAX_CHARACTERS: u32 = 500;
 
 pub struct FontTextureCache {
     images: HashMap<Handle<KayakFont>, GpuImage>,

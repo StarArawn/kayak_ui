@@ -4,7 +4,7 @@ use bevy::{
     sprite::Rect,
 };
 use kayak_core::render_primitive::RenderPrimitive;
-use kayak_font::{Alignment, CoordinateSystem, KayakFont};
+use kayak_font::KayakFont;
 
 use crate::to_bevy_color;
 use bevy_kayak_renderer::{
@@ -21,50 +21,32 @@ pub fn extract_texts(
     _dpi: f32,
 ) -> Vec<ExtractQuadBundle> {
     let mut extracted_texts = Vec::new();
-    let (background_color, layout, font_size, content, font, parent_size, line_height) =
-        match render_primitive {
-            RenderPrimitive::Text {
-                color,
-                layout,
-                size,
-                content,
-                font,
-                parent_size,
-                line_height,
-            } => (
-                color,
-                layout,
-                *size,
-                content,
-                font,
-                parent_size,
-                line_height,
-            ),
-            _ => panic!(""),
-        };
+    let (background_color, text_layout, layout, font, properties) = match render_primitive {
+        RenderPrimitive::Text {
+            color,
+            text_layout,
+            layout,
+            font,
+            properties,
+            ..
+        } => (color, text_layout, layout, font, *properties),
+        _ => panic!(""),
+    };
 
     let font_handle = font_mapping.get_handle(font.clone()).unwrap();
-    let font = fonts.get(font_handle.clone());
+    let font = match fonts.get(font_handle.clone()) {
+        Some(font) => font,
+        None => return Vec::new(),
+    };
 
-    if font.is_none() {
-        return vec![];
-    }
+    let base_position = Vec2::new(layout.posx, layout.posy + properties.font_size);
 
-    let font = font.unwrap();
+    for glyph_rect in text_layout.glyphs() {
+        let mut position = Vec2::from(glyph_rect.position);
+        position += base_position;
 
-    let chars_layouts = font.get_layout(
-        CoordinateSystem::PositiveYDown,
-        Alignment::Start,
-        (layout.posx, layout.posy + font_size),
-        (parent_size.0, parent_size.1),
-        content,
-        *line_height,
-        font_size,
-    );
+        let size = Vec2::from(glyph_rect.size);
 
-    for char_layout in chars_layouts {
-        let position = char_layout.position.into();
-        let size: Vec2 = char_layout.size.into();
         extracted_texts.push(ExtractQuadBundle {
             extracted_quad: ExtractedQuad {
                 font_handle: Some(font_handle.clone()),
@@ -74,7 +56,7 @@ pub fn extract_texts(
                 },
                 color: to_bevy_color(background_color),
                 vertex_index: 0,
-                char_id: font.get_char_id(char_layout.content).unwrap(),
+                char_id: font.get_char_id(glyph_rect.content).unwrap(),
                 z_index: layout.z_index,
                 quad_type: UIQuadType::Text,
                 type_index: 0,

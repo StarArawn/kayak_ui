@@ -1,12 +1,15 @@
 mod atlas;
 mod font;
 mod glyph;
+mod layout;
 mod metrics;
 mod sdf;
+mod utility;
 
 pub use atlas::*;
 pub use font::*;
 pub use glyph::*;
+pub use layout::*;
 pub use metrics::*;
 pub use sdf::*;
 
@@ -29,6 +32,7 @@ pub mod bevy {
         },
         utils::HashSet,
     };
+
     pub struct KayakFontPlugin;
 
     impl Plugin for KayakFontPlugin {
@@ -162,15 +166,13 @@ pub mod bevy {
                 let path = load_context.path();
                 let path = path.with_extension("png");
                 let atlas_image_path = AssetPath::new(path, None);
-                let mut font = KayakFont::new(
+                let font = KayakFont::new(
                     Sdf::from_bytes(bytes),
                     load_context.get_handle(atlas_image_path.clone()),
                 );
 
-                font.generate_char_ids();
-
-                load_context
-                    .set_default_asset(LoadedAsset::new(font).with_dependency(atlas_image_path));
+                let asset = LoadedAsset::new(font).with_dependency(atlas_image_path);
+                load_context.set_default_asset(asset);
 
                 Ok(())
             })

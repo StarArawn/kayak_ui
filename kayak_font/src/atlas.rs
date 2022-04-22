@@ -24,7 +24,8 @@ pub struct Atlas {
     pub sdf_type: SDFType,
     #[serde(alias = "distanceRange")]
     pub distance_range: f32,
-    pub size: f32,
+    #[serde(alias = "size")]
+    pub font_size: f32,
     pub width: u32,
     pub height: u32,
     #[serde(alias = "yOrigin")]

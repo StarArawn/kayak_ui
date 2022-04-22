@@ -15,11 +15,11 @@ use bevy::{
             BindGroup, BindGroupDescriptor, BindGroupEntry, BindGroupLayout,
             BindGroupLayoutDescriptor, BindGroupLayoutEntry, BindingType, BlendComponent,
             BlendFactor, BlendOperation, BlendState, BufferBindingType, BufferSize, BufferUsages,
-            BufferVec, CachedPipelineId, ColorTargetState, ColorWrites, FragmentState, FrontFace,
-            MultisampleState, PolygonMode, PrimitiveState, PrimitiveTopology, RenderPipelineCache,
-            RenderPipelineDescriptor, SamplerBindingType, Shader, ShaderStages, TextureFormat,
-            TextureSampleType, TextureViewDimension, VertexAttribute, VertexBufferLayout,
-            VertexFormat, VertexState, VertexStepMode,
+            BufferVec, CachedRenderPipelineId, ColorTargetState, ColorWrites, FragmentState,
+            FrontFace, MultisampleState, PipelineCache, PolygonMode, PrimitiveState,
+            PrimitiveTopology, RenderPipelineDescriptor, SamplerBindingType, Shader, ShaderStages,
+            TextureFormat, TextureSampleType, TextureViewDimension, VertexAttribute,
+            VertexBufferLayout, VertexFormat, VertexState, VertexStepMode,
         },
         renderer::{RenderDevice, RenderQueue},
         texture::{BevyDefault, GpuImage},
@@ -38,7 +38,7 @@ use super::FONT_SHADER_HANDLE;
 pub struct FontPipeline {
     view_layout: BindGroupLayout,
     pub(crate) font_image_layout: BindGroupLayout,
-    pipeline: CachedPipelineId,
+    pipeline: CachedRenderPipelineId,
     empty_font_texture: (GpuImage, BindGroup),
 }
 
@@ -61,7 +61,7 @@ impl FromWorld for FontPipeline {
     fn from_world(world: &mut World) -> Self {
         let world = world.cell();
         let render_device = world.get_resource::<RenderDevice>().unwrap();
-        let mut pipeline_cache = world.get_resource_mut::<RenderPipelineCache>().unwrap();
+        let mut pipeline_cache = world.get_resource_mut::<PipelineCache>().unwrap();
 
         let view_layout = render_device.create_bind_group_layout(&BindGroupLayoutDescriptor {
             entries: &[BindGroupLayoutEntry {
@@ -180,7 +180,7 @@ impl FromWorld for FontPipeline {
         };
 
         FontPipeline {
-            pipeline: pipeline_cache.queue(pipeline_desc),
+            pipeline: pipeline_cache.queue_render_pipeline(pipeline_desc),
             view_layout,
             font_image_layout,
             empty_font_texture,
@@ -335,7 +335,7 @@ pub struct DrawUI {
     params: SystemState<(
         SRes<QuadMeta>,
         SRes<FontPipeline>,
-        SRes<RenderPipelineCache>,
+        SRes<PipelineCache>,
         SRes<FontTextureCache>,
         SQuery<Read<ViewUniformOffset>>,
         SQuery<Read<ExtractedChar>>,
@@ -364,7 +364,7 @@ impl Draw<Transparent2d> for DrawUI {
         let view_uniform = views.get(view).unwrap();
         let quad_meta = quad_meta.into_inner();
         let extracted_quad = quads.get(item.entity).unwrap();
-        if let Some(pipeline) = pipelines.into_inner().get(item.pipeline) {
+        if let Some(pipeline) = pipelines.into_inner().get_render_pipeline(item.pipeline) {
             pass.set_render_pipeline(pipeline);
             pass.set_vertex_buffer(0, quad_meta.vertices.buffer().unwrap().slice(..));
             pass.set_bind_group(

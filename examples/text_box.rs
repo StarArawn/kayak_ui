@@ -5,19 +5,20 @@ use bevy::{
 };
 use kayak_core::Color;
 use kayak_render_macros::use_state;
-use kayak_ui::{bevy::{BevyContext, BevyKayakUIPlugin, FontMapping, UICameraBundle}};
+use kayak_ui::bevy::{BevyContext, BevyKayakUIPlugin, FontMapping, UICameraBundle};
 use kayak_ui::core::{
     render, rsx,
     styles::{Style, StyleProp, Units},
     widget, Index,
 };
-use kayak_ui::widgets::{App, OnChange, Window, TextBox, SpinBox};
+use kayak_ui::widgets::{App, Inspector, OnChange, SpinBox, TextBox, Window};
 
 #[widget]
 fn TextBoxExample() {
     let (value, set_value, _) = use_state!("I started with a value!".to_string());
     let (empty_value, set_empty_value, _) = use_state!("".to_string());
     let (red_value, set_red_value, _) = use_state!("This text is red".to_string());
+    let (spin_value, set_spin_value, _) = use_state!("3".to_string());
 
     let input_styles = Style {
         top: StyleProp::Value(Units::Pixels(10.0)),
@@ -41,8 +42,12 @@ fn TextBoxExample() {
         set_red_value(event.value);
     });
 
+    let on_change_spin = OnChange::new(move |event| {
+        set_spin_value(event.value);
+    });
+
     rsx! {
-        <Window position={(50.0, 50.0)} size={(300.0, 300.0)} title={"TextBox Example".to_string()}>
+        <Window position={(50.0, 50.0)} size={(500.0, 300.0)} title={"TextBox Example".to_string()}>
             <TextBox styles={Some(input_styles)} value={value} on_change={Some(on_change)} />
             <TextBox
                 styles={Some(input_styles)}
@@ -51,7 +56,7 @@ fn TextBoxExample() {
                 placeholder={Some("This is a placeholder".to_string())}
             />
             <TextBox styles={Some(red_text_styles)} value={red_value} on_change={Some(on_change_red)} />
-            <SpinBox styles={Some(input_styles)} />
+            <SpinBox styles={Some(input_styles)} value={spin_value} on_change={Some(on_change_spin)} />
         </Window>
     }
 }
@@ -69,6 +74,7 @@ fn startup(
         render! {
             <App>
                 <TextBoxExample />
+                <Inspector />
             </App>
         }
     });

@@ -1,14 +1,20 @@
-use crate::{core::{
-    render_command::RenderCommand,
-    rsx,
-    styles::{Corner, Style, Units},
-    widget, Bound, Children, Color, EventType, MutableBound, OnEvent, WidgetProps,
-}, widgets::ChangeEvent};
-use kayak_core::{OnLayout, CursorIcon};
+use crate::{
+    core::{
+        render_command::RenderCommand,
+        rsx,
+        styles::{Corner, Style, Units},
+        widget, Bound, Children, Color, EventType, MutableBound, OnEvent, WidgetProps,
+    },
+    widgets::{Button, ChangeEvent},
+};
+use kayak_core::{
+    styles::{LayoutType, StyleProp},
+    CursorIcon, OnLayout,
+};
 
-use crate::widgets::{Background, Clip, Text, OnChange};
+use crate::widgets::{Background, Clip, OnChange, Text};
 
-#[derive(Default, Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct SpinBoxProps {
     /// If true, prevents the widget from being focused (and consequently edited)
     pub disabled: bool,
@@ -22,10 +28,33 @@ pub struct SpinBoxProps {
     /// You can use the [`on_change`] callback to update this prop as the user types.
     pub value: String,
     pub styles: Option<Style>,
+    /// Text on increment button defaults to `>`
+    pub incr_str: String,
+    /// Text on decrement button defaults to `<`
+    pub decr_str: String,
     pub children: Option<Children>,
     pub on_event: Option<OnEvent>,
     pub on_layout: Option<OnLayout>,
     pub focusable: Option<bool>,
+}
+
+
+impl Default for SpinBoxProps {
+    fn default() -> SpinBoxProps {
+        SpinBoxProps { 
+            incr_str: ">".into(),
+            decr_str: "<".into(),
+            disabled: Default::default(),
+            on_change:  Default::default(),
+            placeholder: Default::default(),
+            value: Default::default(),
+            styles: Default::default(),
+            children: Default::default(),
+            on_event: Default::default(),
+            on_layout: Default::default(),
+            focusable: Default::default(),
+        }
+    }
 }
 
 impl WidgetProps for SpinBoxProps {
@@ -58,11 +87,11 @@ impl WidgetProps for SpinBoxProps {
 pub struct FocusSpinbox(pub bool);
 
 #[widget]
-/// A widget that displays a text input field
+/// A widget that displays a spinnable text field
 ///
 /// # Props
 ///
-/// __Type:__ [`TextBoxProps`]
+/// __Type:__ [`SpinBoxProps`]
 ///
 /// | Common Prop | Accepted |
 /// | :---------: | :------: |
@@ -145,8 +174,17 @@ pub fn SpinBox(props: SpinBoxProps) {
             ..Style::default()
         }
     } else {
-        Style::default()
+        Style {
+            width: Units::Stretch(100.0).into(),
+            ..Style::default()
+        }
     };
+
+    let button_style = Some(Style {
+        height: Units::Pixels(24.0).into(),
+        width: Units::Pixels(24.0).into(),
+        ..Default::default()
+    });
 
     let value = if value.is_empty() {
         placeholder.unwrap_or_else(|| value.clone())
@@ -154,20 +192,32 @@ pub fn SpinBox(props: SpinBoxProps) {
         value
     };
 
+    let inline_style = Style {
+        layout_type: StyleProp::Value(LayoutType::Row),
+        ..Style::default()
+    };
+
+    let incr_str = props.clone().incr_str;
+    let decr_str = props.clone().decr_str;
+
     rsx! {
         <Background styles={Some(background_styles)}>
-            <Clip>
+            <Clip styles={Some(inline_style)}>
+                <Button styles={button_style}>
+                    <Text content={decr_str} />
+                </Button>
                 <Text
                     content={value}
                     size={14.0}
-                    line_height={Some(22.0)}
                     styles={Some(text_styles)}
                 />
+                <Button styles={button_style}>
+                    <Text content={incr_str} />
+                </Button>
             </Clip>
         </Background>
     }
 }
-
 
 /// Checks if the given character contains the "Backspace" sequence
 ///
@@ -175,4 +225,3 @@ pub fn SpinBox(props: SpinBoxProps) {
 fn is_backspace(c: char) -> bool {
     c == '\u{8}' || c == '\u{7f}'
 }
-

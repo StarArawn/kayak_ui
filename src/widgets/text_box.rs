@@ -1,12 +1,15 @@
-use crate::{core::{
-    render_command::RenderCommand,
-    rsx,
-    styles::{Corner, Style, Units},
-    widget, Bound, Children, Color, EventType, MutableBound, OnEvent, WidgetProps,
-}, widgets::ChangeEvent};
+use crate::{
+    core::{
+        render_command::RenderCommand,
+        rsx,
+        styles::{Corner, Style, Units},
+        widget, Bound, Children, Color, EventType, MutableBound, OnEvent, WidgetProps,
+    },
+    widgets::ChangeEvent,
+};
 use kayak_core::{CursorIcon, OnLayout};
 
-use crate::widgets::{Background, Clip, Text, OnChange};
+use crate::widgets::{Background, Clip, OnChange, Text};
 
 /// Props used by the [`TextBox`] widget
 #[derive(Default, Debug, PartialEq, Clone)]

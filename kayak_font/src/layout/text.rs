@@ -1,4 +1,4 @@
-use crate::{GlyphRect, Line};
+use crate::{GlyphRect, Line, RowCol};
 use std::cmp::Ordering;
 
 /// The text alignment.
@@ -70,12 +70,12 @@ impl TextLayout {
     }
 
     /// Returns the calculated lines for the text content.
-    pub fn lines(&self) -> &Vec<Line> {
+    pub fn lines(&self) -> &[Line] {
         &self.lines
     }
 
     /// Returns the calculated glyph rects for the text content.
-    pub fn glyphs(&self) -> &Vec<GlyphRect> {
+    pub fn glyphs(&self) -> &[GlyphRect] {
         &self.glyphs
     }
 
@@ -115,13 +115,10 @@ impl TextLayout {
             .unwrap_or_default()
     }
 
-    /// Searches for the line containing the grapheme at the given grapheme index.
+    /// Performs a binary search to find the grapheme at the given index.
     ///
-    /// Utilizes a binary search in order to find the correct line.
-    ///
-    /// If the appropriate line could not be found, `None` is returned. Otherwise, a tuple containing
-    /// the line index and the line itself are returned.
-    pub fn find_line_by_grapheme(&self, index: usize) -> Option<(usize, &Line)> {
+    /// If the grapheme could not be found, `None` is returned.
+    pub fn find_grapheme(&self, index: usize) -> Option<RowCol> {
         self.lines
             .binary_search_by(|line| {
                 if index < line.grapheme_index() {
@@ -135,7 +132,13 @@ impl TextLayout {
                     Ordering::Equal
                 }
             })
-            .map(|line_index| (line_index, &self.lines[line_index]))
+            .map(|row| {
+                let line = &self.lines[row];
+                let col = index - line.grapheme_index();
+                let grapheme = line[col];
+
+                RowCol { row, col, grapheme }
+            })
             .ok()
     }
 }

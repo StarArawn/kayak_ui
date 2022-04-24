@@ -1,5 +1,7 @@
 use crate::layout::grapheme::Grapheme;
 use std::cmp::Ordering;
+use std::ops::Index;
+use std::slice::SliceIndex;
 
 /// Contains details for a calculated line of text.
 #[derive(Clone, Debug, PartialEq)]
@@ -7,6 +9,19 @@ pub struct Line {
     grapheme_index: usize,
     graphemes: Vec<Grapheme>,
     width: f32,
+}
+
+/// A reference to the grapheme at a specific row and column of a given line of text.
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub struct RowCol {
+    /// The row this line belongs to (zero-indexed).
+    pub row: usize,
+    /// The column this grapheme belongs to (zero-indexed).
+    ///
+    /// This is the same as the grapheme index localized to within a line.
+    pub col: usize,
+    /// The grapheme at this row and column.
+    pub grapheme: Grapheme,
 }
 
 impl Line {
@@ -31,6 +46,22 @@ impl Line {
     /// The total width of this line (in pixels).
     pub fn width(&self) -> f32 {
         self.width
+    }
+
+    /// Returns the grapheme at the given index within this line, if any.
+    ///
+    /// If the grapheme does
+    pub fn get_grapheme<I: SliceIndex<[Grapheme]>>(&self, index: I) -> Option<&I::Output> {
+        self.graphemes.get(index)
+    }
+
+    /// Returns the grapheme at the given index within this line.
+    ///
+    /// # Panics
+    ///
+    /// Will panic if the given index is out of bounds of this line.
+    pub fn grapheme<I: SliceIndex<[Grapheme]>>(&self, index: I) -> &I::Output {
+        &self.graphemes[index]
     }
 
     /// The list of grapheme clusters in this line.
@@ -100,5 +131,13 @@ impl Line {
 impl PartialOrd for Line {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         self.grapheme_index.partial_cmp(&other.grapheme_index)
+    }
+}
+
+impl<I: SliceIndex<[Grapheme]>> Index<I> for Line {
+    type Output = I::Output;
+
+    fn index(&self, index: I) -> &Self::Output {
+        self.grapheme(index)
     }
 }

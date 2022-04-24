@@ -277,9 +277,9 @@ mod tests {
         ];
 
         for (line_index, (line_start, line_end)) in lines.into_iter().enumerate() {
-            let result = layout.find_line_by_grapheme(line_start).unwrap().0;
+            let result = layout.find_grapheme(line_start).unwrap().row;
             assert_eq!(line_index, result);
-            let result = layout.find_line_by_grapheme(line_end).unwrap().0;
+            let result = layout.find_grapheme(line_end).unwrap().row;
             assert_eq!(line_index, result);
         }
     }

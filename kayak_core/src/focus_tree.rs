@@ -245,8 +245,7 @@ mod tests {
         focus_tree.add(a_a_a_b, &tree);
         focus_tree.add(a_b_a, &tree);
 
-        assert_eq!(None, focus_tree.current_focus);
-        assert_eq!(Some(a), focus_tree.next());
+        assert_eq!(Some(a), focus_tree.current_focus);
         assert_eq!(Some(a_a), focus_tree.next());
         assert_eq!(Some(a_a_a), focus_tree.next());
         assert_eq!(Some(a_a_a_a), focus_tree.next());
@@ -288,8 +287,7 @@ mod tests {
         focus_tree.add(a_a_a_b, &tree);
         focus_tree.add(a_b_a, &tree);
 
-        assert_eq!(None, focus_tree.current_focus);
-        assert_eq!(Some(a), focus_tree.prev());
+        assert_eq!(Some(a), focus_tree.current_focus);
         assert_eq!(Some(a_b_a), focus_tree.prev());
         assert_eq!(Some(a_b), focus_tree.prev());
         assert_eq!(Some(a_a_a_b), focus_tree.prev());

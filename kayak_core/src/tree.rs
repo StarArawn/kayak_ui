@@ -1,6 +1,6 @@
+use std::iter::Rev;
 use std::{
     collections::HashMap,
-    iter::Rev,
     sync::{Arc, RwLock},
 };
 
@@ -177,26 +177,16 @@ impl Tree {
         if self.root_node.is_none() {
             return Vec::new();
         }
-        let iterator = DownwardIterator {
-            tree: &self,
-            current_node: Some(self.root_node.unwrap()),
-            starting: true,
-        };
 
-        iterator.collect::<Vec<_>>()
+        DownwardIterator::new(&self, Some(self.root_node.unwrap()), true).collect::<Vec<_>>()
     }
 
     pub fn flatten_node(&self, root_node: Index) -> Vec<Index> {
         if self.root_node.is_none() {
             return Vec::new();
         }
-        let iterator = DownwardIterator {
-            tree: &self,
-            current_node: Some(root_node),
-            starting: true,
-        };
 
-        iterator.collect::<Vec<_>>()
+        DownwardIterator::new(&self, Some(root_node), true).collect::<Vec<_>>()
     }
 
     pub fn get_parent(&self, index: Index) -> Option<Index> {
@@ -620,62 +610,126 @@ impl Tree {
     }
 }
 
+/// An iterator that performs a depth-first traversal down a tree starting
+/// from a given node.
 pub struct DownwardIterator<'a> {
     tree: &'a Tree,
+    starting_node: Option<Index>,
     current_node: Option<Index>,
-    starting: bool,
+    include_self: bool,
 }
 
-impl<'a> DownwardIterator<'a> {}
+impl<'a> DownwardIterator<'a> {
+    /// Creates a new [`DownwardIterator`] for the given [tree] and [node].
+    ///
+    /// # Arguments
+    ///
+    /// * `tree`: The tree to be iterated.
+    /// * `starting_node`: The node to start iterating from.
+    /// * `include_self`: Whether or not to include the starting node in the output.
+    ///
+    ///
+    /// [tree]: Tree
+    /// [node]: Index
+    pub fn new(tree: &'a Tree, starting_node: Option<Index>, include_self: bool) -> Self {
+        Self {
+            tree,
+            starting_node,
+            current_node: starting_node,
+            include_self,
+        }
+    }
+}
 
 impl<'a> Iterator for DownwardIterator<'a> {
     type Item = Index;
-    fn next(&mut self) -> Option<Index> {
-        if self.starting {
-            self.starting = false;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.include_self {
+            self.include_self = false;
             return self.current_node;
         }
 
         if let Some(current_index) = self.current_node {
             if let Some(first_child) = self.tree.get_first_child(current_index) {
+                // Descend!
                 self.current_node = Some(first_child);
                 return Some(first_child);
             } else if let Some(next_sibling) = self.tree.get_next_sibling(current_index) {
+                // Continue from the next sibling
                 self.current_node = Some(next_sibling);
                 return Some(next_sibling);
+            } else if self.current_node == self.starting_node {
+                // We've somehow made our way back up to the starting node -> end iteration
+                return None;
             } else {
                 let mut current_parent = self.tree.get_parent(current_index);
                 while current_parent.is_some() {
+                    if current_parent == self.starting_node {
+                        // Parent is starting node so no need to continue -> end iteration
+                        return None;
+                    }
                     if let Some(current_parent) = current_parent {
                         if let Some(next_parent_sibling) =
                             self.tree.get_next_sibling(current_parent)
                         {
+                            // Continue from the sibling of the parent
                             self.current_node = Some(next_parent_sibling);
                             return Some(next_parent_sibling);
                         }
                     }
+                    // Go back up the tree to find the next available node
                     current_parent = self.tree.get_parent(current_parent.unwrap());
                 }
             }
         }
 
-        return None;
+        return self.current_node;
     }
 }
 
-// pub struct UpwardIterator<'a> {
-//     tree: &'a Tree,
-//     current_node: Option<NodeIndex>,
-// }
+/// An iterator that performs a single-path traversal up a tree starting
+/// from a given node.
+pub struct UpwardIterator<'a> {
+    tree: &'a Tree,
+    current_node: Option<Index>,
+    include_self: bool,
+}
 
-// impl<'a> Iterator for UpwardIterator<'a> {
-//     type Item = NodeIndex;
+impl<'a> UpwardIterator<'a> {
+    /// Creates a new [`UpwardIterator`] for the given [tree] and [node].
+    ///
+    /// # Arguments
+    ///
+    /// * `tree`: The tree to be iterated.
+    /// * `starting_node`: The node to start iterating from.
+    /// * `include_self`: Whether or not to include the starting node in the output.
+    ///
+    ///
+    /// [tree]: Tree
+    /// [node]: Index
+    pub fn new(tree: &'a Tree, starting_node: Option<Index>, include_self: bool) -> Self {
+        Self {
+            tree,
+            current_node: starting_node,
+            include_self,
+        }
+    }
+}
 
-//     // TODO - Needs Testing
-//     fn next(&mut self) -> Option<NodeIndex> {
-//         None
-//     }
-// }
+impl<'a> Iterator for UpwardIterator<'a> {
+    type Item = Index;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.include_self {
+            self.include_self = false;
+            return self.current_node;
+        }
+
+        self.current_node = self.tree.get_parent(self.current_node?);
+        return self.current_node;
+    }
+}
 
 pub struct ChildIterator<'a> {
     pub tree: &'a Tree,
@@ -696,17 +750,18 @@ impl<'a> Iterator for ChildIterator<'a> {
 
 impl<'a> Hierarchy<'a> for Tree {
     type Item = Index;
-    type DownIter = std::vec::IntoIter<Index>;
+    type DownIter = DownwardIterator<'a>;
     type UpIter = Rev<std::vec::IntoIter<Index>>;
     type ChildIter = ChildIterator<'a>;
 
     fn up_iter(&'a self) -> Self::UpIter {
-        let up_iter = self.flatten().into_iter().rev();
-        up_iter
+        // We need to convert the downwards iterator into a Vec so that we can reverse it.
+        // Morphorm expects the iteration to be the same as Self::DownIter but "in reverse".
+        self.flatten().into_iter().rev()
     }
 
     fn down_iter(&'a self) -> Self::DownIter {
-        self.flatten().into_iter()
+        DownwardIterator::new(self, self.root_node, true)
     }
 
     fn child_iter(&'a self, node: Self::Item) -> Self::ChildIter {
@@ -778,6 +833,7 @@ impl WidgetTree {
 #[cfg(test)]
 mod tests {
     use crate::node::NodeBuilder;
+    use crate::tree::{DownwardIterator, UpwardIterator};
     use crate::{Arena, Index, Tree};
 
     #[test]
@@ -817,6 +873,132 @@ mod tests {
         assert!(mapped[2] == 2);
         assert!(mapped[3] == 3);
         assert!(mapped[4] == 4);
+    }
+
+    #[test]
+    fn should_descend_tree() {
+        let mut tree = Tree::default();
+
+        // Tree Structure:
+        //      A
+        //    B   C
+        //   D E  F
+        //   G
+
+        let a = Index::from_raw_parts(0, 0);
+        let b = Index::from_raw_parts(1, 0);
+        let c = Index::from_raw_parts(2, 0);
+        let d = Index::from_raw_parts(3, 0);
+        let e = Index::from_raw_parts(4, 0);
+        let f = Index::from_raw_parts(5, 0);
+        let g = Index::from_raw_parts(6, 0);
+
+        tree.add(a, None);
+        tree.add(b, Some(a));
+        tree.add(c, Some(a));
+        tree.add(d, Some(b));
+        tree.add(e, Some(b));
+        tree.add(g, Some(d));
+        tree.add(f, Some(c));
+
+        macro_rules! assert_descent {
+            ($title: literal : $start: ident -> [ $($node: ident),* $(,)? ] ) => {
+                let iter = DownwardIterator::new(&tree, Some($start), true);
+                let expected_nodes = vec![$start, $($node),*];
+
+                let mut total = 0;
+                for (index, node) in iter.enumerate() {
+                    let expected = expected_nodes.get(index);
+                    assert_eq!(expected, Some(&node), "{} (including self) - expected {:?}, but got {:?}", $title, expected, node);
+                    total += 1;
+                }
+                assert_eq!(expected_nodes.len(), total, "{} (including self) - expected {} nodes, but got {}", $title, expected_nodes.len(), total);
+
+                let iter = DownwardIterator::new(&tree, Some($start), false);
+                let expected_nodes = vec![$($node),*];
+
+                let mut total = 0;
+                for (index, node) in iter.enumerate() {
+                    let expected = expected_nodes.get(index);
+                    assert_eq!(expected, Some(&node), "{} (excluding self) - expected {:?}, but got {:?}", $title, expected, node);
+                    total += 1;
+                }
+                assert_eq!(expected_nodes.len(), total, "{} (excluding self) - expected {} nodes, but got {}", $title, expected_nodes.len(), total);
+            };
+
+        }
+
+        assert_descent!("A": a -> [b, d, g, e, c, f]);
+        assert_descent!("B": b -> [d, g, e]);
+        assert_descent!("C": c -> [f]);
+        assert_descent!("D": d -> [g]);
+        assert_descent!("E": e -> []);
+        assert_descent!("F": f -> []);
+        assert_descent!("G": g -> []);
+    }
+
+    #[test]
+    fn should_ascend_tree() {
+        let mut tree = Tree::default();
+
+        // Tree Structure:
+        //      A
+        //    B   C
+        //   D E  F
+        //   G
+
+        let a = Index::from_raw_parts(0, 0);
+        let b = Index::from_raw_parts(1, 0);
+        let c = Index::from_raw_parts(2, 0);
+        let d = Index::from_raw_parts(3, 0);
+        let e = Index::from_raw_parts(4, 0);
+        let f = Index::from_raw_parts(5, 0);
+        let g = Index::from_raw_parts(6, 0);
+
+        tree.add(a, None);
+        tree.add(b, Some(a));
+        tree.add(c, Some(a));
+        tree.add(d, Some(b));
+        tree.add(e, Some(b));
+        tree.add(g, Some(d));
+        tree.add(f, Some(c));
+
+        macro_rules! assert_ascent {
+            ($title: literal : $start: ident -> [ $($node: ident),* $(,)? ] ) => {
+                let iter = UpwardIterator::new(&tree, Some($start), true);
+                let expected_nodes = vec![$start, $($node),*];
+
+                let mut total = 0;
+                for (index, node) in iter.enumerate() {
+                    let expected = expected_nodes.get(index);
+                    assert_eq!(expected, Some(&node), "{} (including self) - expected {:?}, but got {:?}", $title, expected, node);
+                    total += 1;
+                }
+                assert_eq!(expected_nodes.len(), total, "{} (including self) - expected {} nodes, but got {}", $title, expected_nodes.len(), total);
+
+
+                let iter = UpwardIterator::new(&tree, Some($start), false);
+                let expected_nodes = vec![$($node),*];
+
+                let mut total = 0;
+                for (index, node) in iter.enumerate() {
+                    let expected = expected_nodes.get(index);
+                    assert_eq!(expected, Some(&node), "{} (excluding self) - expected {:?}, but got {:?}", $title, expected, node);
+                    total += 1;
+                }
+                assert_eq!(expected_nodes.len(), total, "{} (excluding self) - expected {} nodes, but got {}", $title, expected_nodes.len(), total);
+
+            };
+
+        }
+
+        assert_ascent!("A": a -> []);
+        assert_ascent!("B": b -> [a]);
+        assert_ascent!("C": c -> [a]);
+        assert_ascent!("D": d -> [b, a]);
+        assert_ascent!("E": e -> [b, a]);
+        assert_ascent!("F": f -> [c, a]);
+        assert_ascent!("G": g -> [d, b, a]);
     }
 
     #[test]

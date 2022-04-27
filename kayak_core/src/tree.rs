@@ -610,6 +610,8 @@ impl Tree {
     }
 }
 
+/// An iterator that performs a depth-first traversal down a tree starting
+/// from a given node.
 pub struct DownwardIterator<'a> {
     tree: &'a Tree,
     starting_node: Option<Index>,
@@ -618,6 +620,17 @@ pub struct DownwardIterator<'a> {
 }
 
 impl<'a> DownwardIterator<'a> {
+    /// Creates a new [`DownwardIterator`] for the given [tree] and [node].
+    ///
+    /// # Arguments
+    ///
+    /// * `tree`: The tree to be iterated.
+    /// * `starting_node`: The node to start iterating from.
+    /// * `include_self`: Whether or not to include the starting node in the output.
+    ///
+    ///
+    /// [tree]: Tree
+    /// [node]: Index
     pub fn new(tree: &'a Tree, starting_node: Option<Index>, include_self: bool) -> Self {
         Self { tree, starting_node, current_node: starting_node, include_self }
     }
@@ -634,36 +647,44 @@ impl<'a> Iterator for DownwardIterator<'a> {
 
         if let Some(current_index) = self.current_node {
             if let Some(first_child) = self.tree.get_first_child(current_index) {
+                // Descend!
                 self.current_node = Some(first_child);
                 return Some(first_child);
             } else if let Some(next_sibling) = self.tree.get_next_sibling(current_index) {
+                // Continue from the next sibling
                 self.current_node = Some(next_sibling);
                 return Some(next_sibling);
             } else if self.current_node == self.starting_node {
+                // We've somehow made our way back up to the starting node -> end iteration
                 return None;
             } else {
                 let mut current_parent = self.tree.get_parent(current_index);
                 while current_parent.is_some() {
                     if current_parent == self.starting_node {
+                        // Parent is starting node so no need to continue -> end iteration
                         return None;
                     }
                     if let Some(current_parent) = current_parent {
                         if let Some(next_parent_sibling) =
                         self.tree.get_next_sibling(current_parent)
                         {
+                            // Continue from the sibling of the parent
                             self.current_node = Some(next_parent_sibling);
                             return Some(next_parent_sibling);
                         }
                     }
+                    // Go back up the tree to find the next available node
                     current_parent = self.tree.get_parent(current_parent.unwrap());
                 }
             }
         }
 
-        return None;
+        return self.current_node;
     }
 }
 
+/// An iterator that performs a single-path traversal up a tree starting
+/// from a given node.
 pub struct UpwardIterator<'a> {
     tree: &'a Tree,
     current_node: Option<Index>,
@@ -671,6 +692,17 @@ pub struct UpwardIterator<'a> {
 }
 
 impl<'a> UpwardIterator<'a> {
+    /// Creates a new [`UpwardIterator`] for the given [tree] and [node].
+    ///
+    /// # Arguments
+    ///
+    /// * `tree`: The tree to be iterated.
+    /// * `starting_node`: The node to start iterating from.
+    /// * `include_self`: Whether or not to include the starting node in the output.
+    ///
+    ///
+    /// [tree]: Tree
+    /// [node]: Index
     pub fn new(tree: &'a Tree, starting_node: Option<Index>, include_self: bool) -> Self {
         Self { tree, current_node: starting_node, include_self }
     }

@@ -1,8 +1,8 @@
+use std::iter::Rev;
 use std::{
     collections::HashMap,
     sync::{Arc, RwLock},
 };
-use std::iter::Rev;
 
 use morphorm::Hierarchy;
 
@@ -346,8 +346,8 @@ impl Tree {
                     let parent_b = parent_b.unwrap();
                     parent_a != parent_b
                         || (parent_a == parent_b
-                        && *node != children_a.get(*id).unwrap().1
-                        && children_a.iter().any(|(_, node_b)| node == node_b))
+                            && *node != children_a.get(*id).unwrap().1
+                            && children_a.iter().any(|(_, node_b)| node == node_b))
                 } else {
                     false
                 };
@@ -468,8 +468,8 @@ impl Tree {
                     let parent_b = parent_b.unwrap();
                     parent_a != parent_b
                         || (parent_a == parent_b
-                        && *node != tree1.get(*id).unwrap().1
-                        && tree1.iter().any(|(_, node_b)| node == node_b))
+                            && *node != tree1.get(*id).unwrap().1
+                            && tree1.iter().any(|(_, node_b)| node == node_b))
                 } else {
                     false
                 };
@@ -632,7 +632,12 @@ impl<'a> DownwardIterator<'a> {
     /// [tree]: Tree
     /// [node]: Index
     pub fn new(tree: &'a Tree, starting_node: Option<Index>, include_self: bool) -> Self {
-        Self { tree, starting_node, current_node: starting_node, include_self }
+        Self {
+            tree,
+            starting_node,
+            current_node: starting_node,
+            include_self,
+        }
     }
 }
 
@@ -666,7 +671,7 @@ impl<'a> Iterator for DownwardIterator<'a> {
                     }
                     if let Some(current_parent) = current_parent {
                         if let Some(next_parent_sibling) =
-                        self.tree.get_next_sibling(current_parent)
+                            self.tree.get_next_sibling(current_parent)
                         {
                             // Continue from the sibling of the parent
                             self.current_node = Some(next_parent_sibling);
@@ -704,7 +709,11 @@ impl<'a> UpwardIterator<'a> {
     /// [tree]: Tree
     /// [node]: Index
     pub fn new(tree: &'a Tree, starting_node: Option<Index>, include_self: bool) -> Self {
-        Self { tree, current_node: starting_node, include_self }
+        Self {
+            tree,
+            current_node: starting_node,
+            include_self,
+        }
     }
 }
 
@@ -824,8 +833,8 @@ impl WidgetTree {
 #[cfg(test)]
 mod tests {
     use crate::node::NodeBuilder;
-    use crate::{Arena, Index, Tree};
     use crate::tree::{DownwardIterator, UpwardIterator};
+    use crate::{Arena, Index, Tree};
 
     #[test]
     fn test_tree() {

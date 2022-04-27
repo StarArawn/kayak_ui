@@ -1,8 +1,8 @@
 use std::{
     collections::HashMap,
-    iter::Rev,
     sync::{Arc, RwLock},
 };
+use std::iter::Rev;
 
 use morphorm::Hierarchy;
 
@@ -664,19 +664,31 @@ impl<'a> Iterator for DownwardIterator<'a> {
     }
 }
 
-// pub struct UpwardIterator<'a> {
-//     tree: &'a Tree,
-//     current_node: Option<NodeIndex>,
-// }
+pub struct UpwardIterator<'a> {
+    tree: &'a Tree,
+    current_node: Option<Index>,
+    include_self: bool,
+}
 
-// impl<'a> Iterator for UpwardIterator<'a> {
-//     type Item = NodeIndex;
+impl<'a> UpwardIterator<'a> {
+    pub fn new(tree: &'a Tree, starting_node: Option<Index>, include_self: bool) -> Self {
+        Self { tree, current_node: starting_node, include_self }
+    }
+}
 
-//     // TODO - Needs Testing
-//     fn next(&mut self) -> Option<NodeIndex> {
-//         None
-//     }
-// }
+impl<'a> Iterator for UpwardIterator<'a> {
+    type Item = Index;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.include_self {
+            self.include_self = false;
+            return self.current_node;
+        }
+
+        self.current_node = self.tree.get_parent(self.current_node?);
+        return self.current_node;
+    }
+}
 
 pub struct ChildIterator<'a> {
     pub tree: &'a Tree,
@@ -702,8 +714,9 @@ impl<'a> Hierarchy<'a> for Tree {
     type ChildIter = ChildIterator<'a>;
 
     fn up_iter(&'a self) -> Self::UpIter {
-        let up_iter = self.flatten().into_iter().rev();
-        up_iter
+        // We need to convert the downwards iterator into a Vec so that we can reverse it.
+        // Morphorm expects the iteration to be the same as Self::DownIter but "in reverse".
+        self.flatten().into_iter().rev()
     }
 
     fn down_iter(&'a self) -> Self::DownIter {
@@ -780,7 +793,7 @@ impl WidgetTree {
 mod tests {
     use crate::node::NodeBuilder;
     use crate::{Arena, Index, Tree};
-    use crate::tree::DownwardIterator;
+    use crate::tree::{DownwardIterator, UpwardIterator};
 
     #[test]
     fn test_tree() {
@@ -881,6 +894,70 @@ mod tests {
         assert_descent!("E": e -> []);
         assert_descent!("F": f -> []);
         assert_descent!("G": g -> []);
+    }
+
+    #[test]
+    fn should_ascend_tree() {
+        let mut tree = Tree::default();
+
+        // Tree Structure:
+        //      A
+        //    B   C
+        //   D E  F
+        //   G
+
+        let a = Index::from_raw_parts(0, 0);
+        let b = Index::from_raw_parts(1, 0);
+        let c = Index::from_raw_parts(2, 0);
+        let d = Index::from_raw_parts(3, 0);
+        let e = Index::from_raw_parts(4, 0);
+        let f = Index::from_raw_parts(5, 0);
+        let g = Index::from_raw_parts(6, 0);
+
+        tree.add(a, None);
+        tree.add(b, Some(a));
+        tree.add(c, Some(a));
+        tree.add(d, Some(b));
+        tree.add(e, Some(b));
+        tree.add(g, Some(d));
+        tree.add(f, Some(c));
+
+        macro_rules! assert_ascent {
+            ($title: literal : $start: ident -> [ $($node: ident),* $(,)? ] ) => {
+                let iter = UpwardIterator::new(&tree, Some($start), true);
+                let expected_nodes = vec![$start, $($node),*];
+
+                let mut total = 0;
+                for (index, node) in iter.enumerate() {
+                    let expected = expected_nodes.get(index);
+                    assert_eq!(expected, Some(&node), "{} (including self) - expected {:?}, but got {:?}", $title, expected, node);
+                    total += 1;
+                }
+                assert_eq!(expected_nodes.len(), total, "{} (including self) - expected {} nodes, but got {}", $title, expected_nodes.len(), total);
+
+
+                let iter = UpwardIterator::new(&tree, Some($start), false);
+                let expected_nodes = vec![$($node),*];
+
+                let mut total = 0;
+                for (index, node) in iter.enumerate() {
+                    let expected = expected_nodes.get(index);
+                    assert_eq!(expected, Some(&node), "{} (excluding self) - expected {:?}, but got {:?}", $title, expected, node);
+                    total += 1;
+                }
+                assert_eq!(expected_nodes.len(), total, "{} (excluding self) - expected {} nodes, but got {}", $title, expected_nodes.len(), total);
+
+            };
+
+        }
+
+        assert_ascent!("A": a -> []);
+        assert_ascent!("B": b -> [a]);
+        assert_ascent!("C": c -> [a]);
+        assert_ascent!("D": d -> [b, a]);
+        assert_ascent!("E": e -> [b, a]);
+        assert_ascent!("F": f -> [c, a]);
+        assert_ascent!("G": g -> [d, b, a]);
     }
 
     #[test]

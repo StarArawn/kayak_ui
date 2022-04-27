@@ -4,9 +4,10 @@ use std::collections::HashMap;
 use bevy::{prelude::Handle, reflect::TypeUuid, render::texture::Image};
 use unicode_segmentation::UnicodeSegmentation;
 
-use crate::layout::{Alignment, Line, TextLayout};
 use crate::utility::{BreakableWord, MISSING, SPACE};
-use crate::{utility, Glyph, GlyphRect, Sdf, TextProperties};
+use crate::{
+    utility, Alignment, Glyph, GlyphRect, Grapheme, Line, Sdf, TextLayout, TextProperties,
+};
 
 #[cfg(feature = "bevy_renderer")]
 #[derive(Debug, Clone, TypeUuid, PartialEq)]
@@ -112,7 +113,9 @@ impl KayakFont {
         let norm_glyph_bounds = self.calc_glyph_size(properties.font_size);
 
         // The current line being calculated
-        let mut line = Line::default();
+        let mut line = Line::new(0);
+        let mut glyph_index = 0;
+        let mut char_index = 0;
 
         // The word index to break a line before
         let mut break_index = None;
@@ -141,8 +144,9 @@ impl KayakFont {
             // If the `break_index` is set, see if it applies.
             if let Some(idx) = break_index {
                 if idx == index {
+                    let next_line = Line::new_after(&line);
                     lines.push(line);
-                    line = Line::new_after(line);
+                    line = next_line;
                     break_index = None;
                 }
             }
@@ -154,7 +158,7 @@ impl KayakFont {
                     }
                     _ => {
                         let (next_break, next_skip) =
-                            self.find_next_break(index, line.width, properties, &words);
+                            self.find_next_break(index, line.width(), properties, &words);
                         break_index = next_break;
                         skip_until_index = next_skip;
                         will_break |= break_index.map(|idx| index + 1 == idx).unwrap_or_default();
@@ -163,11 +167,17 @@ impl KayakFont {
             }
 
             // === Iterate Grapheme Clusters === //
-            for grapheme in word.content.graphemes(true) {
-                line.grapheme_len += 1;
+            for grapheme_content in word.content.graphemes(true) {
+                let mut grapheme = Grapheme {
+                    position: (line.width(), properties.line_height * lines.len() as f32),
+                    glyph_index,
+                    char_index,
+                    ..Default::default()
+                };
 
-                for c in grapheme.chars() {
-                    line.char_len += 1;
+                for c in grapheme_content.chars() {
+                    char_index += 1;
+                    grapheme.char_total += 1;
 
                     if utility::is_newline(c) {
                         // Newlines (hard breaks) are already accounted for by the line break algorithm
@@ -177,10 +187,10 @@ impl KayakFont {
                     if utility::is_space(c) {
                         if !will_break {
                             // Don't add the space if we're about to break the line
-                            line.width += space_width;
+                            grapheme.size.0 += space_width;
                         }
                     } else if utility::is_tab(c) {
-                        line.width += tab_width;
+                        grapheme.size.0 += tab_width;
                     } else {
                         let glyph = self.get_glyph(c).or_else(|| {
                             if let Some(missing) = self.missing_glyph {
@@ -204,9 +214,10 @@ impl KayakFont {
                             };
 
                             // Calculate position relative to line and normalized glyph bounds
-                            let pos_x = line.width + left * properties.font_size;
-                            let mut pos_y = properties.line_height * lines.len() as f32;
-                            pos_y -= top * properties.font_size;
+                            let pos_x = (grapheme.position.0 + grapheme.size.0)
+                                + left * properties.font_size;
+                            let pos_y = (grapheme.position.1 + grapheme.size.1)
+                                - top * properties.font_size;
 
                             glyph_rects.push(GlyphRect {
                                 position: (pos_x, pos_y),
@@ -214,13 +225,15 @@ impl KayakFont {
                                 content: glyph.unicode,
                             });
 
-                            line.glyph_len += 1;
-                            line.width += glyph.advance * properties.font_size;
+                            glyph_index += 1;
+                            grapheme.glyph_total += 1;
+                            grapheme.size.0 += glyph.advance * properties.font_size;
                         }
                     }
-
-                    size.0 = size.0.max(line.width);
                 }
+
+                line.add_grapheme(grapheme);
+                size.0 = size.0.max(line.width());
             }
         }
 
@@ -232,12 +245,12 @@ impl KayakFont {
         for line in lines.iter() {
             let shift_x = match properties.alignment {
                 Alignment::Start => 0.0,
-                Alignment::Middle => (properties.max_size.0 - line.width) / 2.0,
-                Alignment::End => properties.max_size.0 - line.width,
+                Alignment::Middle => (properties.max_size.0 - line.width()) / 2.0,
+                Alignment::End => properties.max_size.0 - line.width(),
             };
 
-            let start = line.glyph_index;
-            let end = start + line.glyph_len;
+            let start = line.glyph_index();
+            let end = line.glyph_index() + line.total_glyphs();
 
             for index in start..end {
                 let rect = &mut glyph_rects[index];

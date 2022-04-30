@@ -3,6 +3,7 @@ use std::{
     collections::HashMap,
     sync::{Arc, RwLock},
 };
+use std::collections::HashSet;
 
 use morphorm::Hierarchy;
 
@@ -189,6 +190,57 @@ impl Tree {
         DownwardIterator::new(&self, Some(root_node), true).collect::<Vec<_>>()
     }
 
+    /// Finds the deepest [_inclusive_] ancestor shared between two nodes.
+    ///
+    /// If A is a descendant of B, then B is returned. If both A and B are descendants of
+    /// C, then C is returned. If A and B are not in the same tree, then `None` is returned.
+    ///
+    /// [_inclusive_]: https://dom.spec.whatwg.org/#concept-tree-inclusive-ancestor
+    pub fn get_common_ancestor(&self, a: Index, b: Index) -> Option<Index> {
+        if a == b {
+            return Some(a);
+        }
+
+        // Note: This algorithm could be improved by utilizing an Eulerian Path
+        // (see https://en.wikipedia.org/wiki/Euler_tour_technique).
+        // However, this can be done when/if this method is found to be a bottleneck.
+        // Otherwise, we risk negatively impacting performance as nodes are added/removed
+        // fairly frequently.
+
+        let mut a_parent = self.get_parent(a);
+        let mut b_parent = self.get_parent(b);
+
+        let mut parents = HashSet::new();
+        parents.insert(a);
+        parents.insert(b);
+
+        // At each step, this will update the current parent for A and B, then
+        // check if either have already been found (if so, then return it). Do this
+        // until the root has been reached. If the root is shared, return it,
+        // otherwise `None`.
+        while a_parent.is_some() || b_parent.is_some() {
+
+            if let Some(a_par) = a_parent {
+                let is_new = parents.insert(a_par);
+                if !is_new {
+                    return Some(a_par);
+                }
+
+                a_parent = self.get_parent(a_par);
+            }
+            if let Some(b_par) = b_parent {
+                let is_new = parents.insert(b_par);
+                if !is_new {
+                    return Some(b_par);
+                }
+
+                b_parent = self.get_parent(b_par);
+            }
+        }
+
+        None
+    }
+
     pub fn get_parent(&self, index: Index) -> Option<Index> {
         self.parents
             .get(&index)
@@ -346,8 +398,8 @@ impl Tree {
                     let parent_b = parent_b.unwrap();
                     parent_a != parent_b
                         || (parent_a == parent_b
-                            && *node != children_a.get(*id).unwrap().1
-                            && children_a.iter().any(|(_, node_b)| node == node_b))
+                        && *node != children_a.get(*id).unwrap().1
+                        && children_a.iter().any(|(_, node_b)| node == node_b))
                 } else {
                     false
                 };
@@ -468,8 +520,8 @@ impl Tree {
                     let parent_b = parent_b.unwrap();
                     parent_a != parent_b
                         || (parent_a == parent_b
-                            && *node != tree1.get(*id).unwrap().1
-                            && tree1.iter().any(|(_, node_b)| node == node_b))
+                        && *node != tree1.get(*id).unwrap().1
+                        && tree1.iter().any(|(_, node_b)| node == node_b))
                 } else {
                     false
                 };
@@ -671,7 +723,7 @@ impl<'a> Iterator for DownwardIterator<'a> {
                     }
                     if let Some(current_parent) = current_parent {
                         if let Some(next_parent_sibling) =
-                            self.tree.get_next_sibling(current_parent)
+                        self.tree.get_next_sibling(current_parent)
                         {
                             // Continue from the sibling of the parent
                             self.current_node = Some(next_parent_sibling);
@@ -1208,5 +1260,60 @@ mod tests {
         assert_eq!(2, tree.len());
         tree.add(grandchild, Some(child));
         assert_eq!(3, tree.len());
+    }
+
+    #[test]
+    fn should_be_common_ancestor() {
+        let mut tree = Tree::default();
+        let root = Index::from_raw_parts(0, 0);
+        tree.add(root, None);
+
+        // Ancestor subtree
+        //      A
+        //    B   C
+        //   D E  F
+        //   G
+        //
+        //
+        let a = Index::from_raw_parts(1, 0);
+        let b = Index::from_raw_parts(2, 0);
+        let c = Index::from_raw_parts(3, 0);
+        let d = Index::from_raw_parts(4, 0);
+        let e = Index::from_raw_parts(5, 0);
+        let f = Index::from_raw_parts(6, 0);
+        let g = Index::from_raw_parts(7, 0);
+
+        tree.add(a, Some(root));
+        tree.add(b, Some(a));
+        tree.add(c, Some(a));
+        tree.add(d, Some(b));
+        tree.add(e, Some(b));
+        tree.add(g, Some(d));
+        tree.add(f, Some(c));
+
+
+        let common_ancestor = tree.get_common_ancestor(d, e);
+        assert_eq!(Some(b), common_ancestor, "D and E should share B in common");
+        let common_ancestor = tree.get_common_ancestor(e, d);
+        assert_eq!(Some(b), common_ancestor, "E and D should share B in common");
+
+        let common_ancestor = tree.get_common_ancestor(d, g);
+        assert_eq!(Some(d), common_ancestor, "D and G should share D in common");
+        let common_ancestor = tree.get_common_ancestor(g, d);
+        assert_eq!(Some(d), common_ancestor, "G and D should share D in common");
+
+        let common_ancestor = tree.get_common_ancestor(g, f);
+        assert_eq!(Some(a), common_ancestor, "G and F should share A in common");
+        let common_ancestor = tree.get_common_ancestor(f, g);
+        assert_eq!(Some(a), common_ancestor, "F and G should share A in common");
+
+        let common_ancestor = tree.get_common_ancestor(a, a);
+        assert_eq!(Some(a), common_ancestor, "A and A should share A in common");
+        let common_ancestor = tree.get_common_ancestor(b, b);
+        assert_eq!(Some(b), common_ancestor, "B and B should share B in common");
+
+        let z = Index::from_raw_parts(123, 0);
+        let common_ancestor = tree.get_common_ancestor(a, z);
+        assert_eq!(None, common_ancestor, "A and Z should share nothing in common");
     }
 }

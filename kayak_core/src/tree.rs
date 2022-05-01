@@ -3,6 +3,7 @@ use std::{
     collections::HashMap,
     sync::{Arc, RwLock},
 };
+use std::cmp::Ordering;
 
 use morphorm::Hierarchy;
 
@@ -166,11 +167,16 @@ impl Tree {
         self.depths.get(&index).copied().unwrap_or_default()
     }
 
-    /// Returns true if the given node is in this tree
+    /// Returns true if the given node is in this tree.
     pub fn contains(&self, index: Index) -> bool {
         Some(index) == self.root_node
             || self.parents.contains_key(&index)
             || self.children.contains_key(&index)
+    }
+
+    /// Returns the root node of this tree (if any).
+    pub fn root(&self) -> Option<Index> {
+        self.root_node
     }
 
     /// Get the number of nodes in this tree
@@ -189,6 +195,20 @@ impl Tree {
 
     /// Returns true if the given node is a descendant of another node
     pub fn is_descendant(&self, descendant: Index, of_node: Index) -> bool {
+        let descendant_depth = self.depths.get(&descendant);
+        let node_depth = self.depths.get(&of_node);
+        if let Some(descendant_depth) = descendant_depth {
+            if let Some(node_depth) = node_depth {
+                if node_depth >= descendant_depth {
+                    return false;
+                }
+            } else {
+                return false;
+            }
+        } else {
+            return false;
+        }
+
         let mut index = descendant;
         while let Some(parent) = self.get_parent(index) {
             index = parent;
@@ -197,6 +217,64 @@ impl Tree {
             }
         }
         false
+    }
+
+    /// Compare two nodes.
+    ///
+    /// Node A is determined to be __greater__ than Node B if any of the following are true:
+    /// 1. Node A is a descendant of Node B
+    /// 2. Node A is further right than Node B
+    ///
+    /// In other words, the order in which a node appears during a left-to-right depth-first search
+    /// is what determines its [comparative ordering](Ordering).
+    ///
+    /// Returns `None` if the two nodes cannot be compared, such as when they are not part of the
+    /// same tree.
+    pub fn partial_cmp(&self, a: Index, b: Index) -> Option<Ordering> {
+        if a == b {
+            return Some(Ordering::Equal);
+        }
+
+        let a_depth = *self.depths.get(&a)?;
+        let b_depth = *self.depths.get(&b)?;
+
+        let mut node_a = Some(a);
+        let mut node_b = Some(b);
+
+        if a_depth > b_depth {
+            // A is deeper than B
+            for _ in 0..(a_depth - b_depth) {
+                node_a = self.get_parent(node_a?);
+
+                if node_a == Some(b) {
+                    // B is ancestor of A
+                    return Some(Ordering::Greater);
+                }
+            }
+        } else {
+            // B is deeper than A
+            for _ in 0..(b_depth - a_depth) {
+                node_b = self.get_parent(node_b?);
+
+                if node_b == Some(a) {
+                    // A is ancestor of B
+                    return Some(Ordering::Less);
+                }
+            }
+        }
+
+        while node_a.is_some() && node_b.is_some() {
+            if self.get_parent(node_a.unwrap()) == self.get_parent(node_b.unwrap()) {
+                let order_a = self.get_sibling_order(node_a.unwrap());
+                let order_b = self.get_sibling_order(node_b.unwrap());
+                return order_a.partial_cmp(&order_b);
+            }
+            node_a = self.get_parent(node_a.unwrap());
+            node_b = self.get_parent(node_b.unwrap());
+        }
+
+        // Unreachable since we already check that they exist in the same tree (i.e. always share the root node in common)
+        unreachable!("nodes `{:?}` and `{:?}` do not share a common ancestor— but definitely should!", a, b);
     }
 
     pub fn flatten(&self) -> Vec<Index> {
@@ -267,10 +345,48 @@ impl Tree {
         unreachable!("nodes `{:?}` and `{:?}` do not share a common ancestor— but definitely should!", a, b);
     }
 
+    /// Get the parent of the given node.
+    ///
+    /// Returns `None` if the node is not part of this tree or it is the root element.
     pub fn get_parent(&self, index: Index) -> Option<Index> {
         self.parents
             .get(&index)
             .map_or(None, |parent| Some(*parent))
+    }
+
+    /// Get the children of a given node.
+    ///
+    /// Returns `None` if the node is not part of this tree or it contains no children.
+    pub fn get_children(&self, index: Index) -> Option<&[Index]> {
+        self.children.get(&index).map(|children| children.as_slice())
+    }
+
+    /// Returns the total number of children for a given node.
+    pub fn child_count(&self, index: Index) -> usize {
+        self.children.get(&index).map(|children| children.len()).unwrap_or_default()
+    }
+
+    /// Get the child at an offset within the given node's children.
+    ///
+    /// Returns `None` if the node is not part of this tree, it contains no children,
+    /// or the offset is out of bounds.
+    pub fn get_child_at(&self, index: Index, offset: usize) -> Option<Index> {
+        self.children.get(&index).map(|children| children.get(offset).copied())?
+    }
+
+    /// Get the order of a node among its siblings.
+    ///
+    /// This does _not_ check if the node exists in the tree and will return `0`
+    /// by default (or if it is the root element). If needed, use [`contains`](Self::contains)
+    /// to check if the tree contains a node.
+    pub fn get_sibling_order(&self, index: Index) -> usize {
+        if let Some(parent) = self.get_parent(index) {
+            self.children.get(&parent)
+                .map(|children| children.iter().position(|child| *child == index).unwrap_or_default())
+                .unwrap_or_default()
+        } else {
+            0
+        }
     }
 
     pub fn get_first_child(&self, index: Index) -> Option<Index> {
@@ -920,6 +1036,7 @@ impl WidgetTree {
 
 #[cfg(test)]
 mod tests {
+    use std::cmp::Ordering;
     use crate::node::NodeBuilder;
     use crate::tree::{DownwardIterator, UpwardIterator};
     use crate::{Arena, Index, Tree};
@@ -1386,5 +1503,60 @@ mod tests {
         let z = Index::from_raw_parts(123, 0);
         let common_ancestor = tree.get_common_ancestor(a, z);
         assert_eq!(None, common_ancestor, "A and Z should share nothing in common");
+    }
+
+    #[test]
+    fn should_compare_nodes() {
+        let mut tree = Tree::default();
+        let root = Index::from_raw_parts(0, 0);
+        tree.add(root, None);
+
+        // Ancestor subtree
+        //      A
+        //    B   C
+        //   D E  F
+        //   G
+        //
+        //
+        let a = Index::from_raw_parts(1, 0);
+        let b = Index::from_raw_parts(2, 0);
+        let c = Index::from_raw_parts(3, 0);
+        let d = Index::from_raw_parts(4, 0);
+        let e = Index::from_raw_parts(5, 0);
+        let f = Index::from_raw_parts(6, 0);
+        let g = Index::from_raw_parts(7, 0);
+
+        tree.add(a, Some(root));
+        tree.add(b, Some(a));
+        tree.add(c, Some(a));
+        tree.add(d, Some(b));
+        tree.add(e, Some(b));
+        tree.add(g, Some(d));
+        tree.add(f, Some(c));
+
+
+        let ordering = tree.partial_cmp(d, e);
+        assert_eq!(Some(Ordering::Less), ordering, "D should be less than E");
+        let ordering = tree.partial_cmp(e, d);
+        assert_eq!(Some(Ordering::Greater), ordering, "E should be greater than D");
+
+        let ordering = tree.partial_cmp(d, g);
+        assert_eq!(Some(Ordering::Less), ordering, "D should be less than G");
+        let ordering = tree.partial_cmp(g, d);
+        assert_eq!(Some(Ordering::Greater), ordering, "G should be greater than D");
+
+        let ordering = tree.partial_cmp(g, f);
+        assert_eq!(Some(Ordering::Less), ordering, "G should be less than F");
+        let ordering = tree.partial_cmp(f, g);
+        assert_eq!(Some(Ordering::Greater), ordering, "F should be greater than G");
+
+        let ordering = tree.partial_cmp(a, a);
+        assert_eq!(Some(Ordering::Equal), ordering, "A should be equal to A");
+        let ordering = tree.partial_cmp(b, b);
+        assert_eq!(Some(Ordering::Equal), ordering, "B should be equal to B");
+
+        let z = Index::from_raw_parts(123, 0);
+        let ordering = tree.partial_cmp(a, z);
+        assert_eq!(None, ordering, "A and Z should be incomparable");
     }
 }

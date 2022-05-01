@@ -14,6 +14,7 @@ pub struct Tree {
     pub children: HashMap<Index, Vec<Index>>,
     pub parents: HashMap<Index, Index>,
     pub root_node: Option<Index>,
+    depths: HashMap<Index, usize>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -53,6 +54,10 @@ impl Tree {
     pub fn add(&mut self, index: Index, parent: Option<Index>) {
         if let Some(parent_index) = parent {
             self.parents.insert(index, parent_index);
+
+            let parent_depth = *self.depths.get(&parent_index).expect("parent should have a specified depth");
+            self.depths.insert(index, parent_depth + 1);
+
             if let Some(parent_children) = self.children.get_mut(&parent_index) {
                 parent_children.push(index);
             } else {
@@ -60,11 +65,13 @@ impl Tree {
             }
         } else {
             self.root_node = Some(index);
+            self.depths.insert(index, 0);
         }
     }
 
     /// Remove the given node and recursively removes its descendants
     pub fn remove(&mut self, index: Index) -> Vec<Index> {
+        self.depths.remove(&index);
         let parent = self.parents.remove(&index);
         if let Some(parent) = parent {
             let children = self
@@ -85,6 +92,7 @@ impl Tree {
             self.root_node = None;
             self.parents.clear();
             self.children.clear();
+            self.depths.clear();
 
             Vec::default()
         }
@@ -96,6 +104,7 @@ impl Tree {
     ///
     /// Panics if called on the root node
     pub fn remove_and_reparent(&mut self, index: Index) {
+        let depth = self.depths.remove(&index).expect("node should have specified depth");
         let parent = self.parents.remove(&index);
         if let Some(parent) = parent {
             let mut insertion_index = 0usize;
@@ -108,7 +117,10 @@ impl Tree {
             // === Reparent Children === //
             if let Some(children) = self.children.remove(&index) {
                 for child in children.iter() {
+                    self.depths.insert(*child, depth);
                     self.parents.insert(*child, parent);
+
+                    Self::update_depths(&mut self.depths, &self.children, *child, depth);
                 }
                 if let Some(siblings) = self.children.get_mut(&parent) {
                     siblings.splice(insertion_index..insertion_index + 1, children);
@@ -123,6 +135,9 @@ impl Tree {
     pub fn replace(&mut self, index: Index, replace_with: Index) {
         // === Update Parent === //
         if let Some(parent) = self.parents.remove(&index) {
+            let depth = self.depths.remove(&index).expect("node should have a specified depth");
+            self.depths.insert(replace_with, depth);
+
             self.parents.insert(replace_with, parent);
             if let Some(siblings) = self.children.get_mut(&parent) {
                 let idx = siblings.iter().position(|node| *node == index).unwrap();
@@ -130,6 +145,8 @@ impl Tree {
             }
         } else {
             self.root_node = Some(replace_with);
+            self.depths.remove(&index);
+            self.depths.insert(replace_with, 0);
         }
 
         // === Update Children === //
@@ -139,6 +156,15 @@ impl Tree {
             }
             self.children.insert(replace_with, children);
         }
+    }
+
+    /// Get the depth of the given node.
+    ///
+    /// This does _not_ check if the node exists in the tree and will return `0`
+    /// by default. If needed, use [`contains`](Self::contains) to check if the
+    /// tree contains a node.
+    pub fn depth(&self, index: Index) -> usize {
+        self.depths.get(&index).copied().unwrap_or_default()
     }
 
     /// Returns true if the given node is in this tree
@@ -219,7 +245,6 @@ impl Tree {
         // until the root has been reached. If the root is shared, return it,
         // otherwise `None`.
         while a_parent.is_some() || b_parent.is_some() {
-
             if let Some(a_par) = a_parent {
                 let is_new = parents.insert(a_par);
                 if !is_new {
@@ -660,6 +685,16 @@ impl Tree {
             }
         }
     }
+
+    /// Recursively updates the depths of a given node and its children.
+    fn update_depths(depths: &mut HashMap<Index, usize>, children: &HashMap<Index, Vec<Index>>, index: Index, depth: usize) {
+        depths.insert(index, depth);
+        if let Some(childs) = children.get(&index) {
+            for child in childs {
+                Self::update_depths(depths, children, *child, depth + 1);
+            }
+        }
+    }
 }
 
 /// An iterator that performs a depth-first traversal down a tree starting
@@ -925,6 +960,41 @@ mod tests {
         assert!(mapped[2] == 2);
         assert!(mapped[3] == 3);
         assert!(mapped[4] == 4);
+    }
+
+    #[test]
+    fn should_have_correct_depth() {
+        let mut tree = Tree::default();
+
+        // Tree Structure:
+        //      A
+        //    B   C
+        //   D E  F
+        //   G
+
+        let a = Index::from_raw_parts(0, 0);
+        let b = Index::from_raw_parts(1, 0);
+        let c = Index::from_raw_parts(2, 0);
+        let d = Index::from_raw_parts(3, 0);
+        let e = Index::from_raw_parts(4, 0);
+        let f = Index::from_raw_parts(5, 0);
+        let g = Index::from_raw_parts(6, 0);
+
+        tree.add(a, None);
+        tree.add(b, Some(a));
+        tree.add(c, Some(a));
+        tree.add(d, Some(b));
+        tree.add(e, Some(b));
+        tree.add(g, Some(d));
+        tree.add(f, Some(c));
+
+        assert_eq!(0, tree.depth(a));
+        assert_eq!(1, tree.depth(b));
+        assert_eq!(1, tree.depth(c));
+        assert_eq!(2, tree.depth(d));
+        assert_eq!(2, tree.depth(e));
+        assert_eq!(2, tree.depth(f));
+        assert_eq!(3, tree.depth(g));
     }
 
     #[test]

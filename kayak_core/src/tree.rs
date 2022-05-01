@@ -3,7 +3,6 @@ use std::{
     collections::HashMap,
     sync::{Arc, RwLock},
 };
-use std::collections::HashSet;
 
 use morphorm::Hierarchy;
 
@@ -227,43 +226,45 @@ impl Tree {
             return Some(a);
         }
 
-        // Note: This algorithm could be improved by utilizing an Eulerian Path
-        // (see https://en.wikipedia.org/wiki/Euler_tour_technique).
-        // However, this can be done when/if this method is found to be a bottleneck.
-        // Otherwise, we risk negatively impacting performance as nodes are added/removed
-        // fairly frequently.
+        let a_depth = *self.depths.get(&a)?;
+        let b_depth = *self.depths.get(&b)?;
 
         let mut a_parent = self.get_parent(a);
         let mut b_parent = self.get_parent(b);
 
-        let mut parents = HashSet::new();
-        parents.insert(a);
-        parents.insert(b);
-
-        // At each step, this will update the current parent for A and B, then
-        // check if either have already been found (if so, then return it). Do this
-        // until the root has been reached. If the root is shared, return it,
-        // otherwise `None`.
-        while a_parent.is_some() || b_parent.is_some() {
-            if let Some(a_par) = a_parent {
-                let is_new = parents.insert(a_par);
-                if !is_new {
-                    return Some(a_par);
+        if a_depth != b_depth {
+            // Match up parent depths
+            if a_depth > b_depth {
+                // A is deeper than B
+                for _ in 0..(a_depth - b_depth) {
+                    if a_parent == Some(b) {
+                        // B is ancestor of A
+                        return a_parent;
+                    }
+                    a_parent = self.get_parent(a_parent?)
                 }
-
-                a_parent = self.get_parent(a_par);
-            }
-            if let Some(b_par) = b_parent {
-                let is_new = parents.insert(b_par);
-                if !is_new {
-                    return Some(b_par);
+            } else {
+                // B is deeper than A
+                for _ in 0..(b_depth - a_depth) {
+                    if b_parent == Some(a) {
+                        // A is ancestor of B
+                        return b_parent;
+                    }
+                    b_parent = self.get_parent(b_parent?)
                 }
-
-                b_parent = self.get_parent(b_par);
             }
         }
 
-        None
+        while a_parent.is_some() && b_parent.is_some() {
+            if a_parent == b_parent {
+                return a_parent;
+            }
+            a_parent = self.get_parent(a_parent.unwrap());
+            b_parent = self.get_parent(b_parent.unwrap());
+        }
+
+        // Unreachable since we already check that they exist in the same tree (i.e. always share the root node in common)
+        unreachable!("nodes `{:?}` and `{:?}` do not share a common ancestor— but definitely should!", a, b);
     }
 
     pub fn get_parent(&self, index: Index) -> Option<Index> {

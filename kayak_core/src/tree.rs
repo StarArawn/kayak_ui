@@ -501,38 +501,22 @@ impl Tree {
     }
 
     pub fn get_next_sibling(&self, index: Index) -> Option<Index> {
-        if let Some(parent_index) = self.get_parent(index) {
-            self.children.get(&parent_index).map_or(None, |children| {
-                children
-                    .iter()
-                    .position(|child| *child == index)
-                    .map_or(None, |child_index| {
-                        children
-                            .get(child_index + 1)
-                            .map_or(None, |next_child| Some(*next_child))
-                    })
-            })
+        let order = self.get_sibling_order(index);
+        if let Some(children) = self.get_children(index) {
+            children.get(order + 1).map(|sibling| *sibling)
         } else {
             None
         }
     }
 
     pub fn get_prev_sibling(&self, index: Index) -> Option<Index> {
-        if let Some(parent_index) = self.get_parent(index) {
-            self.children.get(&parent_index).map_or(None, |children| {
-                children
-                    .iter()
-                    .position(|child| *child == index)
-                    .map_or(None, |child_index| {
-                        if child_index > 0 {
-                            children
-                                .get(child_index - 1)
-                                .map_or(None, |prev_child| Some(*prev_child))
-                        } else {
-                            None
-                        }
-                    })
-            })
+        let order = self.get_sibling_order(index);
+        if order == 0 {
+            return None;
+        }
+
+        if let Some(children) = self.get_children(index) {
+            children.get(order - 1).map(|sibling| *sibling)
         } else {
             None
         }

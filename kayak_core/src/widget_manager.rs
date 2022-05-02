@@ -63,7 +63,7 @@ impl WidgetManager {
     pub fn dirty(&mut self, force: bool) {
         // Force tree to re-render from root.
         if let Ok(mut dirty_nodes) = self.dirty_nodes.lock() {
-            dirty_nodes.insert(self.tree.root_node.unwrap());
+            dirty_nodes.insert(self.tree.root().unwrap());
 
             if force {
                 for (node_index, _) in self.current_widgets.iter() {
@@ -81,7 +81,7 @@ impl WidgetManager {
         parent: Option<Index>,
     ) -> (bool, Index) {
         let widget_id = if let Some(parent) = parent.clone() {
-            if let Some(parent_children) = self.tree.children.get_mut(&parent) {
+            if let Some(parent_children) = self.tree.get_children(parent) {
                 parent_children.get(index).cloned()
             } else {
                 None
@@ -203,10 +203,10 @@ impl WidgetManager {
             // 2. Unresolved widget prop styles
             // 3. Unresolved default styles
             let parent_styles =
-                if let Some(parent_widget_id) = self.tree.parents.get(&dirty_node_index) {
-                    if let Some(parent) = self.nodes[*parent_widget_id].as_ref() {
+                if let Some(parent_widget_id) = self.tree.get_parent(dirty_node_index) {
+                    if let Some(parent) = self.nodes[parent_widget_id].as_ref() {
                         parent.resolved_styles.clone()
-                    } else if let Some(parent) = self.current_widgets[*parent_widget_id].as_ref() {
+                    } else if let Some(parent) = self.current_widgets[parent_widget_id].as_ref() {
                         if let Some(styles) = parent.get_props().get_styles() {
                             styles
                         } else {
@@ -220,9 +220,9 @@ impl WidgetManager {
                 };
 
             // Get parent Z
-            let parent_z = if let Some(parent_widget_id) = self.tree.parents.get(&dirty_node_index)
+            let parent_z = if let Some(parent_widget_id) = self.tree.get_parent(dirty_node_index)
             {
-                if let Some(parent) = &self.nodes[*parent_widget_id] {
+                if let Some(parent) = &self.nodes[parent_widget_id] {
                     parent.z
                 } else {
                     -1.0
@@ -252,10 +252,9 @@ impl WidgetManager {
 
             let children = self
                 .tree
-                .children
-                .get(&dirty_node_index)
-                .cloned()
-                .unwrap_or(vec![]);
+                .get_children(dirty_node_index)
+                .unwrap_or_default()
+                .to_vec();
 
             let mut node = NodeBuilder::empty()
                 .with_id(dirty_node_index)
@@ -366,8 +365,8 @@ impl WidgetManager {
 
                 prev_clip = new_prev_clip.clone();
 
-                if node_tree.children.contains_key(&current_node) {
-                    for child in node_tree.children.get(&current_node).unwrap() {
+                if let Some(children) = node_tree.get_children(current_node) {
+                    for child in children {
                         main_z_index += 1.0;
                         render_primitives.extend(Self::recurse_node_tree_to_build_primitives(
                             node_tree,
@@ -406,7 +405,7 @@ impl WidgetManager {
     }
 
     pub fn build_render_primitives(&self) -> Vec<RenderPrimitive> {
-        if self.node_tree.root_node.is_none() {
+        if self.node_tree.root().is_none() {
             return vec![];
         }
 
@@ -414,20 +413,16 @@ impl WidgetManager {
             &self.node_tree,
             &self.layout_cache,
             &self.nodes,
-            self.node_tree.root_node.unwrap(),
+            self.node_tree.root().unwrap(),
             0.0,
             RenderPrimitive::Empty,
         )
     }
 
     fn build_nodes_tree(&mut self) -> Tree {
-        let mut tree = Tree::default();
         let (root_node_id, _) = self.current_widgets.iter().next().unwrap();
-        tree.root_node = Some(root_node_id);
-        tree.children.insert(
-            tree.root_node.unwrap(),
-            self.get_valid_node_children(tree.root_node.unwrap()),
-        );
+        let mut tree = Tree::new(root_node_id);
+        tree.add_children(self.get_valid_node_children(root_node_id), root_node_id);
 
         let old_focus = self.focus_tree.current();
         self.focus_tree.clear();
@@ -438,12 +433,10 @@ impl WidgetManager {
             if let Some(widget_styles) = widget_styles {
                 // Only add widgets who have renderable nodes.
                 if widget_styles.render_command.resolve() != RenderCommand::Empty {
-                    let valid_children = self.get_valid_node_children(widget_id);
-                    tree.children.insert(widget_id, valid_children);
                     let valid_parent = self.get_valid_parent(widget_id);
-                    if let Some(valid_parent) = valid_parent {
-                        tree.parents.insert(widget_id, valid_parent);
-                    }
+                    tree.insert_direct(widget_id, valid_parent);
+                    let valid_children = self.get_valid_node_children(widget_id);
+                    tree.insert_children_direct(valid_children, widget_id);
                 }
             }
 
@@ -459,12 +452,14 @@ impl WidgetManager {
             }
         }
 
+        tree.recalculate_depths(None);
+
         tree
     }
 
     pub fn get_valid_node_children(&self, node_id: Index) -> Vec<Index> {
         let mut children = Vec::new();
-        if let Some(node_children) = self.tree.children.get(&node_id) {
+        if let Some(node_children) = self.tree.get_children(node_id) {
             for child_id in node_children {
                 if let Some(child_widget) = &self.current_widgets[*child_id] {
                     if let Some(child_styles) = child_widget.get_props().get_styles() {
@@ -484,13 +479,13 @@ impl WidgetManager {
     }
 
     pub fn get_valid_parent(&self, node_id: Index) -> Option<Index> {
-        if let Some(parent_id) = self.tree.parents.get(&node_id) {
-            if let Some(parent_widget) = &self.nodes[*parent_id] {
+        if let Some(parent_id) = self.tree.get_parent(node_id) {
+            if let Some(parent_widget) = &self.nodes[parent_id] {
                 if parent_widget.resolved_styles.render_command.resolve() != RenderCommand::Empty {
-                    return Some(*parent_id);
+                    return Some(parent_id);
                 }
             }
-            return self.get_valid_parent(*parent_id);
+            return self.get_valid_parent(parent_id);
         }
         // assert!(node_id.into_raw_parts().0 == 0);
         None
@@ -508,8 +503,8 @@ impl WidgetManager {
     /// * `binding`: the binding to watch
     ///
     pub(crate) fn bind<T>(&mut self, id: Index, binding: &Binding<T>)
-    where
-        T: resources::Resource + Clone + PartialEq,
+        where
+            T: resources::Resource + Clone + PartialEq,
     {
         let dirty_nodes = self.dirty_nodes.clone();
         let lifetime = self.widget_lifetimes.entry(id).or_default();

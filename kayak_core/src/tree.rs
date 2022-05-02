@@ -11,9 +11,9 @@ use crate::{Arena, BoxedWidget, Index};
 
 #[derive(Default, Debug, PartialEq)]
 pub struct Tree {
-    pub children: HashMap<Index, Vec<Index>>,
-    pub parents: HashMap<Index, Index>,
-    pub root_node: Option<Index>,
+    children: HashMap<Index, Vec<Index>>,
+    parents: HashMap<Index, Index>,
+    root_node: Option<Index>,
     depths: HashMap<Index, usize>,
 }
 
@@ -51,11 +51,17 @@ impl From<Vec<(usize, Index, Index, Vec<Change>)>> for ChildChanges {
 }
 
 impl Tree {
+    pub fn new(root: Index) -> Self {
+        let mut tree = Self::default();
+        tree.add(root, None);
+        tree
+    }
+
     pub fn add(&mut self, index: Index, parent: Option<Index>) {
         if let Some(parent_index) = parent {
             self.parents.insert(index, parent_index);
 
-            let parent_depth = *self.depths.get(&parent_index).expect("parent should have a specified depth");
+            let parent_depth = self.depths.get(&parent_index).copied().unwrap_or_default();
             self.depths.insert(index, parent_depth + 1);
 
             if let Some(parent_children) = self.children.get_mut(&parent_index) {
@@ -66,6 +72,29 @@ impl Tree {
         } else {
             self.root_node = Some(index);
             self.depths.insert(index, 0);
+        }
+    }
+
+    /// Add a collection of children to a node in the tree.
+    ///
+    /// If the node already contains children, the new child nodes will be appended to the list.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the given parent node does not already exist within the tree.
+    pub fn add_children(&mut self, children: Vec<Index>, parent: Index) {
+        assert!(self.contains(parent), "parent should exist in the tree before adding children");
+
+        let parent_depth = self.depths.get(&parent).copied().unwrap_or_default();
+        for child in children.iter() {
+            self.parents.insert(*child, parent);
+            self.depths.insert(*child, parent_depth + 1);
+        }
+
+        if let Some(parent_children) = self.children.get_mut(&parent) {
+            parent_children.extend(children);
+        } else {
+            self.children.insert(parent, children);
         }
     }
 
@@ -102,9 +131,11 @@ impl Tree {
     ///
     /// Children fill at the original index of the removed node amongst its siblings.
     ///
-    /// Panics if called on the root node
+    /// # Panics
+    ///
+    /// Panics if called on the root node.
     pub fn remove_and_reparent(&mut self, index: Index) {
-        let depth = self.depths.remove(&index).expect("node should have specified depth");
+        let depth = self.depths.remove(&index).unwrap_or_default();
         let parent = self.parents.remove(&index);
         if let Some(parent) = parent {
             let mut insertion_index = 0usize;
@@ -135,7 +166,7 @@ impl Tree {
     pub fn replace(&mut self, index: Index, replace_with: Index) {
         // === Update Parent === //
         if let Some(parent) = self.parents.remove(&index) {
-            let depth = self.depths.remove(&index).expect("node should have a specified depth");
+            let depth = self.depths.remove(&index).unwrap_or_default();
             self.depths.insert(replace_with, depth);
 
             self.parents.insert(replace_with, parent);
@@ -155,6 +186,50 @@ impl Tree {
                 self.parents.insert(*child, replace_with);
             }
             self.children.insert(replace_with, children);
+        }
+    }
+
+    /// Directly inserts a parent into the tree.
+    ///
+    /// This does not run any other checks or additional logic, and should only be used for
+    /// intermediate tree mutations— after which, the tree should be corrected to a valid state.
+    pub(crate) fn insert_direct(&mut self, index: Index, parent: Option<Index>) {
+        if let Some(parent) = parent {
+            self.parents.insert(index, parent);
+        }
+    }
+
+    /// Directly inserts a collection of children into the tree.
+    ///
+    /// This does not run any other checks or additional logic, and should only be used for
+    /// intermediate tree mutations— after which, the tree should be corrected to a valid state.
+    pub(crate) fn insert_children_direct(&mut self, children: Vec<Index>, parent: Index) {
+        self.children.insert(parent, children);
+    }
+
+    /// Recalculates the depths for the tree or subtree of nodes.
+    ///
+    /// Correct depth mappings are vital for various calculations, including
+    /// [`is_descendant`], [`get_common_ancestor`], and [`partial_cmp`]. This is often
+    /// properly maintained internally, however, it will often fall into a broken state
+    /// if child nodes are inserted into the tree before their parents. Therefore, it's
+    /// a good idea to run this method once the tree contains all desired nodes or after
+    /// performing a [merge].
+    ///
+    /// # Arguments
+    ///
+    /// * `from`: The node from which to recalculate. If `None` the root node is used. If
+    ///           a node is given, make sure it has the proper depth set, otherwise, an
+    ///           incorrect depth will be propagated to its descendants.
+    ///
+    /// [`is_descendant`]: Self::is_descendant
+    /// [`get_common_ancestor`]: Self::get_common_ancestor
+    /// [`partial_cmp`]: Self::partial_cmp
+    /// [merge]: Self::merge
+    pub fn recalculate_depths(&mut self, from: Option<Index>) {
+        if let Some(node) = from.or(self.root_node) {
+            let depth = self.depth(node);
+            Self::update_depths(&mut self.depths, &self.children, node, depth);
         }
     }
 
@@ -789,11 +864,12 @@ impl Tree {
         let indent = "\t".repeat(depth);
         let raw_parts = start_index.into_raw_parts();
         println!(
-            "{}{} [{}:{}]",
+            "{}{} [{}.{} @ {}]",
             indent,
             name.unwrap_or_default(),
             raw_parts.0,
-            raw_parts.1
+            raw_parts.1,
+            self.depth(start_index)
         );
 
         if let Some(children) = self.children.get(&start_index) {
@@ -977,8 +1053,8 @@ impl<'a> Hierarchy<'a> for Tree {
     }
 
     fn parent(&self, node: Self::Item) -> Option<Self::Item> {
-        if let Some(parent_index) = self.parents.get(&node) {
-            return Some(*parent_index);
+        if let Some(parent_index) = self.get_parent(node) {
+            return Some(parent_index);
         }
 
         None
@@ -1078,6 +1154,27 @@ mod tests {
         assert!(mapped[2] == 2);
         assert!(mapped[3] == 3);
         assert!(mapped[4] == 4);
+    }
+
+    #[test]
+    fn should_add_children() {
+        let mut tree = Tree::default();
+
+        let a = Index::from_raw_parts(0, 0);
+        let b = Index::from_raw_parts(1, 0);
+        let c = Index::from_raw_parts(2, 0);
+        let d = Index::from_raw_parts(3, 0);
+
+        tree.add(a, None);
+        tree.add_children(vec![b, c, d], a);
+
+        let mut expected = Tree::default();
+        expected.add(a, None);
+        expected.add(b, Some(a));
+        expected.add(c, Some(a));
+        expected.add(d, Some(a));
+
+        assert_eq!(expected, tree);
     }
 
     #[test]

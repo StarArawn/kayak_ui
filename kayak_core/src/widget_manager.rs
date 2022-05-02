@@ -220,8 +220,7 @@ impl WidgetManager {
                 };
 
             // Get parent Z
-            let parent_z = if let Some(parent_widget_id) = self.tree.get_parent(dirty_node_index)
-            {
+            let parent_z = if let Some(parent_widget_id) = self.tree.get_parent(dirty_node_index) {
                 if let Some(parent) = &self.nodes[parent_widget_id] {
                     parent.z
                 } else {
@@ -503,8 +502,8 @@ impl WidgetManager {
     /// * `binding`: the binding to watch
     ///
     pub(crate) fn bind<T>(&mut self, id: Index, binding: &Binding<T>)
-        where
-            T: resources::Resource + Clone + PartialEq,
+    where
+        T: resources::Resource + Clone + PartialEq,
     {
         let dirty_nodes = self.dirty_nodes.clone();
         let lifetime = self.widget_lifetimes.entry(id).or_default();

@@ -1,9 +1,9 @@
+use std::cmp::Ordering;
 use std::iter::Rev;
 use std::{
     collections::HashMap,
     sync::{Arc, RwLock},
 };
-use std::cmp::Ordering;
 
 use morphorm::Hierarchy;
 
@@ -83,7 +83,10 @@ impl Tree {
     ///
     /// Panics if the given parent node does not already exist within the tree.
     pub fn add_children(&mut self, children: Vec<Index>, parent: Index) {
-        assert!(self.contains(parent), "parent should exist in the tree before adding children");
+        assert!(
+            self.contains(parent),
+            "parent should exist in the tree before adding children"
+        );
 
         let parent_depth = self.depths.get(&parent).copied().unwrap_or_default();
         for child in children.iter() {
@@ -349,7 +352,10 @@ impl Tree {
         }
 
         // Unreachable since we already check that they exist in the same tree (i.e. always share the root node in common)
-        unreachable!("nodes `{:?}` and `{:?}` do not share a common ancestor— but definitely should!", a, b);
+        unreachable!(
+            "nodes `{:?}` and `{:?}` do not share a common ancestor— but definitely should!",
+            a, b
+        );
     }
 
     pub fn flatten(&self) -> Vec<Index> {
@@ -417,7 +423,10 @@ impl Tree {
         }
 
         // Unreachable since we already check that they exist in the same tree (i.e. always share the root node in common)
-        unreachable!("nodes `{:?}` and `{:?}` do not share a common ancestor— but definitely should!", a, b);
+        unreachable!(
+            "nodes `{:?}` and `{:?}` do not share a common ancestor— but definitely should!",
+            a, b
+        );
     }
 
     /// Get the parent of the given node.
@@ -433,12 +442,17 @@ impl Tree {
     ///
     /// Returns `None` if the node is not part of this tree or it contains no children.
     pub fn get_children(&self, index: Index) -> Option<&[Index]> {
-        self.children.get(&index).map(|children| children.as_slice())
+        self.children
+            .get(&index)
+            .map(|children| children.as_slice())
     }
 
     /// Returns the total number of children for a given node.
     pub fn child_count(&self, index: Index) -> usize {
-        self.children.get(&index).map(|children| children.len()).unwrap_or_default()
+        self.children
+            .get(&index)
+            .map(|children| children.len())
+            .unwrap_or_default()
     }
 
     /// Get the child at an offset within the given node's children.
@@ -446,7 +460,9 @@ impl Tree {
     /// Returns `None` if the node is not part of this tree, it contains no children,
     /// or the offset is out of bounds.
     pub fn get_child_at(&self, index: Index, offset: usize) -> Option<Index> {
-        self.children.get(&index).map(|children| children.get(offset).copied())?
+        self.children
+            .get(&index)
+            .map(|children| children.get(offset).copied())?
     }
 
     /// Get the order of a node among its siblings.
@@ -456,8 +472,14 @@ impl Tree {
     /// to check if the tree contains a node.
     pub fn get_sibling_order(&self, index: Index) -> usize {
         if let Some(parent) = self.get_parent(index) {
-            self.children.get(&parent)
-                .map(|children| children.iter().position(|child| *child == index).unwrap_or_default())
+            self.children
+                .get(&parent)
+                .map(|children| {
+                    children
+                        .iter()
+                        .position(|child| *child == index)
+                        .unwrap_or_default()
+                })
                 .unwrap_or_default()
         } else {
             0
@@ -615,8 +637,8 @@ impl Tree {
                     let parent_b = parent_b.unwrap();
                     parent_a != parent_b
                         || (parent_a == parent_b
-                        && *node != children_a.get(*id).unwrap().1
-                        && children_a.iter().any(|(_, node_b)| node == node_b))
+                            && *node != children_a.get(*id).unwrap().1
+                            && children_a.iter().any(|(_, node_b)| node == node_b))
                 } else {
                     false
                 };
@@ -737,8 +759,8 @@ impl Tree {
                     let parent_b = parent_b.unwrap();
                     parent_a != parent_b
                         || (parent_a == parent_b
-                        && *node != tree1.get(*id).unwrap().1
-                        && tree1.iter().any(|(_, node_b)| node == node_b))
+                            && *node != tree1.get(*id).unwrap().1
+                            && tree1.iter().any(|(_, node_b)| node == node_b))
                 } else {
                     false
                 };
@@ -880,7 +902,12 @@ impl Tree {
     }
 
     /// Recursively updates the depths of a given node and its children.
-    fn update_depths(depths: &mut HashMap<Index, usize>, children: &HashMap<Index, Vec<Index>>, index: Index, depth: usize) {
+    fn update_depths(
+        depths: &mut HashMap<Index, usize>,
+        children: &HashMap<Index, Vec<Index>>,
+        index: Index,
+        depth: usize,
+    ) {
         depths.insert(index, depth);
         if let Some(childs) = children.get(&index) {
             for child in childs {
@@ -951,7 +978,7 @@ impl<'a> Iterator for DownwardIterator<'a> {
                     }
                     if let Some(current_parent) = current_parent {
                         if let Some(next_parent_sibling) =
-                        self.tree.get_next_sibling(current_parent)
+                            self.tree.get_next_sibling(current_parent)
                         {
                             // Continue from the sibling of the parent
                             self.current_node = Some(next_parent_sibling);
@@ -1112,10 +1139,10 @@ impl WidgetTree {
 
 #[cfg(test)]
 mod tests {
-    use std::cmp::Ordering;
     use crate::node::NodeBuilder;
     use crate::tree::{DownwardIterator, UpwardIterator};
     use crate::{Arena, Index, Tree};
+    use std::cmp::Ordering;
 
     #[test]
     fn test_tree() {
@@ -1576,7 +1603,6 @@ mod tests {
         tree.add(g, Some(d));
         tree.add(f, Some(c));
 
-
         let common_ancestor = tree.get_common_ancestor(d, e);
         assert_eq!(Some(b), common_ancestor, "D and E should share B in common");
         let common_ancestor = tree.get_common_ancestor(e, d);
@@ -1599,7 +1625,10 @@ mod tests {
 
         let z = Index::from_raw_parts(123, 0);
         let common_ancestor = tree.get_common_ancestor(a, z);
-        assert_eq!(None, common_ancestor, "A and Z should share nothing in common");
+        assert_eq!(
+            None, common_ancestor,
+            "A and Z should share nothing in common"
+        );
     }
 
     #[test]
@@ -1631,21 +1660,32 @@ mod tests {
         tree.add(g, Some(d));
         tree.add(f, Some(c));
 
-
         let ordering = tree.partial_cmp(d, e);
         assert_eq!(Some(Ordering::Less), ordering, "D should be less than E");
         let ordering = tree.partial_cmp(e, d);
-        assert_eq!(Some(Ordering::Greater), ordering, "E should be greater than D");
+        assert_eq!(
+            Some(Ordering::Greater),
+            ordering,
+            "E should be greater than D"
+        );
 
         let ordering = tree.partial_cmp(d, g);
         assert_eq!(Some(Ordering::Less), ordering, "D should be less than G");
         let ordering = tree.partial_cmp(g, d);
-        assert_eq!(Some(Ordering::Greater), ordering, "G should be greater than D");
+        assert_eq!(
+            Some(Ordering::Greater),
+            ordering,
+            "G should be greater than D"
+        );
 
         let ordering = tree.partial_cmp(g, f);
         assert_eq!(Some(Ordering::Less), ordering, "G should be less than F");
         let ordering = tree.partial_cmp(f, g);
-        assert_eq!(Some(Ordering::Greater), ordering, "F should be greater than G");
+        assert_eq!(
+            Some(Ordering::Greater),
+            ordering,
+            "F should be greater than G"
+        );
 
         let ordering = tree.partial_cmp(a, a);
         assert_eq!(Some(Ordering::Equal), ordering, "A should be equal to A");

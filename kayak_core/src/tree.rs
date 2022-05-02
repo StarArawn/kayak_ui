@@ -1189,6 +1189,58 @@ mod tests {
     }
 
     #[test]
+    fn should_recalculate_depths() {
+        let a = Index::from_raw_parts(0, 0);
+        let b = Index::from_raw_parts(1, 0);
+        let c = Index::from_raw_parts(2, 0);
+        let d = Index::from_raw_parts(3, 0);
+
+        let mut expected = Tree::default();
+        expected.add(a, None);
+        expected.add(b, Some(a));
+        expected.add(c, Some(b));
+        expected.add(d, Some(c));
+
+        // Test: Reverse-insertion order and recalculate from root
+        let mut tree = Tree::default();
+        tree.add(c, Some(b));
+        tree.add(b, Some(a));
+        tree.add(d, Some(c));
+        tree.add(a, None);
+
+        assert_eq!(expected.root_node, tree.root_node);
+        assert_eq!(expected.parents, tree.parents);
+        assert_eq!(expected.children, tree.children);
+        assert_ne!(expected.depths, tree.depths);
+
+        tree.recalculate_depths(None);
+
+        assert_eq!(expected.root_node, tree.root_node);
+        assert_eq!(expected.parents, tree.parents);
+        assert_eq!(expected.children, tree.children);
+        assert_eq!(expected.depths, tree.depths);
+
+        // Test: Swapped insertions and recalculate from parent
+        let mut tree = Tree::default();
+        tree.add(a, None);
+        tree.add(b, Some(a));
+        tree.add(d, Some(c));
+        tree.add(c, Some(b));
+
+        assert_eq!(expected.root_node, tree.root_node);
+        assert_eq!(expected.parents, tree.parents);
+        assert_eq!(expected.children, tree.children);
+        assert_ne!(expected.depths, tree.depths);
+
+        tree.recalculate_depths(Some(b));
+
+        assert_eq!(expected.root_node, tree.root_node);
+        assert_eq!(expected.parents, tree.parents);
+        assert_eq!(expected.children, tree.children);
+        assert_eq!(expected.depths, tree.depths);
+    }
+
+    #[test]
     fn should_have_correct_depth() {
         let mut tree = Tree::default();
 

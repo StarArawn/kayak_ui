@@ -66,6 +66,13 @@ pub fn extract_nine_patch(
         uv_min: None,
     };
 
+    let top_uv_min_y = (image_size.y - border.top) / image_size.y;
+    let top_uv_max_y = 1.0;
+    let bottom_uv_min_y = 0.0;
+    let bottom_uv_max_y = border.bottom / image_size.y;
+    let middle_uv_min_y = border.bottom / image_size.y;
+    let middle_uv_max_y = (image_size.y - border.top) / image_size.y;
+
     // TOP
     let top_left_quad = ExtractQuadBundle {
         extracted_quad: ExtractedQuad {
@@ -73,8 +80,8 @@ pub fn extract_nine_patch(
                 min: Vec2::new(layout.posx, layout.posy),
                 max: Vec2::new(layout.posx + border.left, layout.posy + border.top),
             },
-            uv_min: Some(Vec2::new(0.0, border.top / image_size.y)),
-            uv_max: Some(Vec2::new(border.left / image_size.x, 0.0)),
+            uv_min: Some(Vec2::new(0.0, top_uv_min_y)),
+            uv_max: Some(Vec2::new(border.left / image_size.x, top_uv_max_y)),
             ..extracted_quad_template.clone()
         },
     };
@@ -89,9 +96,9 @@ pub fn extract_nine_patch(
             },
             uv_min: Some(Vec2::new(
                 (image_size.x - border.left) / image_size.x,
-                border.top / image_size.y,
+                top_uv_min_y,
             )),
-            uv_max: Some(Vec2::new(1.0, 0.0)),
+            uv_max: Some(Vec2::new(1.0, top_uv_max_y)),
             ..extracted_quad_template.clone()
         },
     };
@@ -110,9 +117,9 @@ pub fn extract_nine_patch(
             },
             uv_min: Some(Vec2::new(
                 border.left / image_size.x,
-                border.top / image_size.y,
+                top_uv_min_y,
             )),
-            uv_max: Some(Vec2::new((image_size.x - border.left) / image_size.x, 0.0)),
+            uv_max: Some(Vec2::new((image_size.x - border.left) / image_size.x, top_uv_max_y)),
             ..extracted_quad_template.clone()
         },
     };
@@ -126,10 +133,10 @@ pub fn extract_nine_patch(
                 min: Vec2::new(layout.posx, bottom_y_pos),
                 max: Vec2::new(layout.posx + border.left, bottom_y_pos + border.bottom),
             },
-            uv_min: Some(Vec2::new(0.0, 1.0)),
+            uv_min: Some(Vec2::new(0.0, bottom_uv_min_y)),
             uv_max: Some(Vec2::new(
                 border.left / image_size.x,
-                (image_size.y - border.bottom) / image_size.y,
+                bottom_uv_max_y,
             )),
             ..extracted_quad_template.clone()
         },
@@ -143,10 +150,10 @@ pub fn extract_nine_patch(
                 min: Vec2::new(bottom_right_pos_x, bottom_y_pos),
                 max: Vec2::new(bottom_right_pos_x + border.left, bottom_y_pos + border.top),
             },
-            uv_min: Some(Vec2::new((image_size.x - border.left) / image_size.x, 1.0)),
+            uv_min: Some(Vec2::new((image_size.x - border.left) / image_size.x, bottom_uv_min_y)),
             uv_max: Some(Vec2::new(
                 1.0,
-                (image_size.y - border.bottom) / image_size.y,
+                bottom_uv_max_y,
             )),
             ..extracted_quad_template.clone()
         },
@@ -164,10 +171,10 @@ pub fn extract_nine_patch(
                     bottom_y_pos + border.top,
                 ),
             },
-            uv_min: Some(Vec2::new(border.left / image_size.x, 1.0)),
+            uv_min: Some(Vec2::new(border.left / image_size.x, bottom_uv_min_y)),
             uv_max: Some(Vec2::new(
                 (image_size.x - border.left) / image_size.x,
-                (image_size.y - border.bottom) / image_size.y,
+                bottom_uv_max_y,
             )),
             ..extracted_quad_template.clone()
         },
@@ -188,11 +195,11 @@ pub fn extract_nine_patch(
             },
             uv_min: Some(Vec2::new(
                 0.0,
-                (image_size.y - border.bottom) / image_size.y,
+                middle_uv_min_y,
             )),
             uv_max: Some(Vec2::new(
                 border.left / image_size.x,
-                border.top / image_size.y,
+                middle_uv_max_y,
             )),
             ..extracted_quad_template.clone()
         },
@@ -213,9 +220,9 @@ pub fn extract_nine_patch(
             },
             uv_min: Some(Vec2::new(
                 (image_size.x - border.left) / image_size.x,
-                (image_size.y - border.bottom) / image_size.y,
+                middle_uv_min_y,
             )),
-            uv_max: Some(Vec2::new(1.0, border.top / image_size.y)),
+            uv_max: Some(Vec2::new(1.0, middle_uv_max_y)),
             ..extracted_quad_template.clone()
         },
     };
@@ -234,11 +241,11 @@ pub fn extract_nine_patch(
             },
             uv_min: Some(Vec2::new(
                 border.left / image_size.x,
-                border.top / image_size.y,
+                middle_uv_min_y,
             )),
             uv_max: Some(Vec2::new(
                 (image_size.x - border.right) / image_size.x,
-                (image_size.y - border.bottom) / image_size.y,
+                middle_uv_max_y,
             )),
             ..extracted_quad_template.clone()
         },

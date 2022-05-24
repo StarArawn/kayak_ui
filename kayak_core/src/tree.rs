@@ -1,3 +1,4 @@
+use std::cmp::Ordering;
 use std::iter::Rev;
 use std::{
     collections::HashMap,
@@ -10,9 +11,10 @@ use crate::{Arena, BoxedWidget, Index};
 
 #[derive(Default, Debug, PartialEq)]
 pub struct Tree {
-    pub children: HashMap<Index, Vec<Index>>,
-    pub parents: HashMap<Index, Index>,
-    pub root_node: Option<Index>,
+    children: HashMap<Index, Vec<Index>>,
+    parents: HashMap<Index, Index>,
+    root_node: Option<Index>,
+    depths: HashMap<Index, usize>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -49,9 +51,19 @@ impl From<Vec<(usize, Index, Index, Vec<Change>)>> for ChildChanges {
 }
 
 impl Tree {
+    pub fn new(root: Index) -> Self {
+        let mut tree = Self::default();
+        tree.add(root, None);
+        tree
+    }
+
     pub fn add(&mut self, index: Index, parent: Option<Index>) {
         if let Some(parent_index) = parent {
             self.parents.insert(index, parent_index);
+
+            let parent_depth = self.depths.get(&parent_index).copied().unwrap_or_default();
+            self.depths.insert(index, parent_depth + 1);
+
             if let Some(parent_children) = self.children.get_mut(&parent_index) {
                 parent_children.push(index);
             } else {
@@ -59,11 +71,39 @@ impl Tree {
             }
         } else {
             self.root_node = Some(index);
+            self.depths.insert(index, 0);
+        }
+    }
+
+    /// Add a collection of children to a node in the tree.
+    ///
+    /// If the node already contains children, the new child nodes will be appended to the list.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the given parent node does not already exist within the tree.
+    pub fn add_children(&mut self, children: Vec<Index>, parent: Index) {
+        assert!(
+            self.contains(parent),
+            "parent should exist in the tree before adding children"
+        );
+
+        let parent_depth = self.depths.get(&parent).copied().unwrap_or_default();
+        for child in children.iter() {
+            self.parents.insert(*child, parent);
+            self.depths.insert(*child, parent_depth + 1);
+        }
+
+        if let Some(parent_children) = self.children.get_mut(&parent) {
+            parent_children.extend(children);
+        } else {
+            self.children.insert(parent, children);
         }
     }
 
     /// Remove the given node and recursively removes its descendants
     pub fn remove(&mut self, index: Index) -> Vec<Index> {
+        self.depths.remove(&index);
         let parent = self.parents.remove(&index);
         if let Some(parent) = parent {
             let children = self
@@ -84,6 +124,7 @@ impl Tree {
             self.root_node = None;
             self.parents.clear();
             self.children.clear();
+            self.depths.clear();
 
             Vec::default()
         }
@@ -93,8 +134,11 @@ impl Tree {
     ///
     /// Children fill at the original index of the removed node amongst its siblings.
     ///
-    /// Panics if called on the root node
+    /// # Panics
+    ///
+    /// Panics if called on the root node.
     pub fn remove_and_reparent(&mut self, index: Index) {
+        let depth = self.depths.remove(&index).unwrap_or_default();
         let parent = self.parents.remove(&index);
         if let Some(parent) = parent {
             let mut insertion_index = 0usize;
@@ -107,7 +151,10 @@ impl Tree {
             // === Reparent Children === //
             if let Some(children) = self.children.remove(&index) {
                 for child in children.iter() {
+                    self.depths.insert(*child, depth);
                     self.parents.insert(*child, parent);
+
+                    Self::update_depths(&mut self.depths, &self.children, *child, depth);
                 }
                 if let Some(siblings) = self.children.get_mut(&parent) {
                     siblings.splice(insertion_index..insertion_index + 1, children);
@@ -122,6 +169,9 @@ impl Tree {
     pub fn replace(&mut self, index: Index, replace_with: Index) {
         // === Update Parent === //
         if let Some(parent) = self.parents.remove(&index) {
+            let depth = self.depths.remove(&index).unwrap_or_default();
+            self.depths.insert(replace_with, depth);
+
             self.parents.insert(replace_with, parent);
             if let Some(siblings) = self.children.get_mut(&parent) {
                 let idx = siblings.iter().position(|node| *node == index).unwrap();
@@ -129,6 +179,8 @@ impl Tree {
             }
         } else {
             self.root_node = Some(replace_with);
+            self.depths.remove(&index);
+            self.depths.insert(replace_with, 0);
         }
 
         // === Update Children === //
@@ -140,11 +192,69 @@ impl Tree {
         }
     }
 
-    /// Returns true if the given node is in this tree
+    /// Directly inserts a parent into the tree.
+    ///
+    /// This does not run any other checks or additional logic, and should only be used for
+    /// intermediate tree mutations— after which, the tree should be corrected to a valid state.
+    pub(crate) fn insert_direct(&mut self, index: Index, parent: Option<Index>) {
+        if let Some(parent) = parent {
+            self.parents.insert(index, parent);
+        }
+    }
+
+    /// Directly inserts a collection of children into the tree.
+    ///
+    /// This does not run any other checks or additional logic, and should only be used for
+    /// intermediate tree mutations— after which, the tree should be corrected to a valid state.
+    pub(crate) fn insert_children_direct(&mut self, children: Vec<Index>, parent: Index) {
+        self.children.insert(parent, children);
+    }
+
+    /// Recalculates the depths for the tree or subtree of nodes.
+    ///
+    /// Correct depth mappings are vital for various calculations, including
+    /// [`is_descendant`], [`get_common_ancestor`], and [`partial_cmp`]. This is often
+    /// properly maintained internally, however, it will often fall into a broken state
+    /// if child nodes are inserted into the tree before their parents. Therefore, it's
+    /// a good idea to run this method once the tree contains all desired nodes or after
+    /// performing a [merge].
+    ///
+    /// # Arguments
+    ///
+    /// * `from`: The node from which to recalculate. If `None` the root node is used. If
+    ///           a node is given, make sure it has the proper depth set, otherwise, an
+    ///           incorrect depth will be propagated to its descendants.
+    ///
+    /// [`is_descendant`]: Self::is_descendant
+    /// [`get_common_ancestor`]: Self::get_common_ancestor
+    /// [`partial_cmp`]: Self::partial_cmp
+    /// [merge]: Self::merge
+    pub fn recalculate_depths(&mut self, from: Option<Index>) {
+        if let Some(node) = from.or(self.root_node) {
+            let depth = self.depth(node);
+            Self::update_depths(&mut self.depths, &self.children, node, depth);
+        }
+    }
+
+    /// Get the depth of the given node.
+    ///
+    /// This does _not_ check if the node exists in the tree and will return `0`
+    /// by default. If needed, use [`contains`](Self::contains) to check if the
+    /// tree contains a node.
+    pub fn depth(&self, index: Index) -> usize {
+        self.depths.get(&index).copied().unwrap_or_default()
+    }
+
+    /// Returns true if the given node is in this tree.
     pub fn contains(&self, index: Index) -> bool {
         Some(index) == self.root_node
             || self.parents.contains_key(&index)
             || self.children.contains_key(&index)
+    }
+
+    /// Returns the root node of this tree (if any).
+    pub fn root(&self) -> Option<Index> {
+        self.root_node
     }
 
     /// Get the number of nodes in this tree
@@ -163,6 +273,20 @@ impl Tree {
 
     /// Returns true if the given node is a descendant of another node
     pub fn is_descendant(&self, descendant: Index, of_node: Index) -> bool {
+        let descendant_depth = self.depths.get(&descendant);
+        let node_depth = self.depths.get(&of_node);
+        if let Some(descendant_depth) = descendant_depth {
+            if let Some(node_depth) = node_depth {
+                if node_depth >= descendant_depth {
+                    return false;
+                }
+            } else {
+                return false;
+            }
+        } else {
+            return false;
+        }
+
         let mut index = descendant;
         while let Some(parent) = self.get_parent(index) {
             index = parent;
@@ -171,6 +295,67 @@ impl Tree {
             }
         }
         false
+    }
+
+    /// Compare two nodes.
+    ///
+    /// Node A is determined to be __greater__ than Node B if any of the following are true:
+    /// 1. Node A is a descendant of Node B
+    /// 2. Node A is further right than Node B
+    ///
+    /// In other words, the order in which a node appears during a left-to-right depth-first search
+    /// is what determines its [comparative ordering](Ordering).
+    ///
+    /// Returns `None` if the two nodes cannot be compared, such as when they are not part of the
+    /// same tree.
+    pub fn partial_cmp(&self, a: Index, b: Index) -> Option<Ordering> {
+        if a == b {
+            return Some(Ordering::Equal);
+        }
+
+        let a_depth = *self.depths.get(&a)?;
+        let b_depth = *self.depths.get(&b)?;
+
+        let mut node_a = Some(a);
+        let mut node_b = Some(b);
+
+        if a_depth > b_depth {
+            // A is deeper than B
+            for _ in 0..(a_depth - b_depth) {
+                node_a = self.get_parent(node_a?);
+
+                if node_a == Some(b) {
+                    // B is ancestor of A
+                    return Some(Ordering::Greater);
+                }
+            }
+        } else {
+            // B is deeper than A
+            for _ in 0..(b_depth - a_depth) {
+                node_b = self.get_parent(node_b?);
+
+                if node_b == Some(a) {
+                    // A is ancestor of B
+                    return Some(Ordering::Less);
+                }
+            }
+        }
+
+        while node_a.is_some() && node_b.is_some() {
+            if self.get_parent(node_a.unwrap()) == self.get_parent(node_b.unwrap()) {
+                let order_a = self.get_sibling_order(node_a.unwrap());
+                let order_b = self.get_sibling_order(node_b.unwrap());
+                return order_a.partial_cmp(&order_b);
+            }
+            node_a = self.get_parent(node_a.unwrap());
+            node_b = self.get_parent(node_b.unwrap());
+        }
+
+        // Unreachable since we already check that they exist in the same tree (i.e. always share the root node in common)
+        unreachable!(
+            "nodes `{:?}` and `{:?}` do not share a common ancestor— but definitely should!",
+            a, b
+        );
     }
 
     pub fn flatten(&self) -> Vec<Index> {
@@ -189,10 +374,116 @@ impl Tree {
         DownwardIterator::new(&self, Some(root_node), true).collect::<Vec<_>>()
     }
 
+    /// Finds the deepest [_inclusive_] ancestor shared between two nodes.
+    ///
+    /// If A is a descendant of B, then B is returned. If both A and B are descendants of
+    /// C, then C is returned. If A and B are not in the same tree, then `None` is returned.
+    ///
+    /// [_inclusive_]: https://dom.spec.whatwg.org/#concept-tree-inclusive-ancestor
+    pub fn get_common_ancestor(&self, a: Index, b: Index) -> Option<Index> {
+        if a == b {
+            return Some(a);
+        }
+
+        let a_depth = *self.depths.get(&a)?;
+        let b_depth = *self.depths.get(&b)?;
+
+        let mut a_parent = self.get_parent(a);
+        let mut b_parent = self.get_parent(b);
+
+        if a_depth != b_depth {
+            // Match up parent depths
+            if a_depth > b_depth {
+                // A is deeper than B
+                for _ in 0..(a_depth - b_depth) {
+                    if a_parent == Some(b) {
+                        // B is ancestor of A
+                        return a_parent;
+                    }
+                    a_parent = self.get_parent(a_parent?)
+                }
+            } else {
+                // B is deeper than A
+                for _ in 0..(b_depth - a_depth) {
+                    if b_parent == Some(a) {
+                        // A is ancestor of B
+                        return b_parent;
+                    }
+                    b_parent = self.get_parent(b_parent?)
+                }
+            }
+        }
+
+        while a_parent.is_some() && b_parent.is_some() {
+            if a_parent == b_parent {
+                return a_parent;
+            }
+            a_parent = self.get_parent(a_parent.unwrap());
+            b_parent = self.get_parent(b_parent.unwrap());
+        }
+
+        // Unreachable since we already check that they exist in the same tree (i.e. always share the root node in common)
+        unreachable!(
+            "nodes `{:?}` and `{:?}` do not share a common ancestor— but definitely should!",
+            a, b
+        );
+    }
+
+    /// Get the parent of the given node.
+    ///
+    /// Returns `None` if the node is not part of this tree or it is the root element.
     pub fn get_parent(&self, index: Index) -> Option<Index> {
         self.parents
             .get(&index)
             .map_or(None, |parent| Some(*parent))
+    }
+
+    /// Get the children of a given node.
+    ///
+    /// Returns `None` if the node is not part of this tree or it contains no children.
+    pub fn get_children(&self, index: Index) -> Option<&[Index]> {
+        self.children
+            .get(&index)
+            .map(|children| children.as_slice())
+    }
+
+    /// Returns the total number of children for a given node.
+    pub fn child_count(&self, index: Index) -> usize {
+        self.children
+            .get(&index)
+            .map(|children| children.len())
+            .unwrap_or_default()
+    }
+
+    /// Get the child at an offset within the given node's children.
+    ///
+    /// Returns `None` if the node is not part of this tree, it contains no children,
+    /// or the offset is out of bounds.
+    pub fn get_child_at(&self, index: Index, offset: usize) -> Option<Index> {
+        self.children
+            .get(&index)
+            .map(|children| children.get(offset).copied())?
+    }
+
+    /// Get the order of a node among its siblings.
+    ///
+    /// This does _not_ check if the node exists in the tree and will return `0`
+    /// by default (or if it is the root element). If needed, use [`contains`](Self::contains)
+    /// to check if the tree contains a node.
+    pub fn get_sibling_order(&self, index: Index) -> usize {
+        if let Some(parent) = self.get_parent(index) {
+            self.children
+                .get(&parent)
+                .map(|children| {
+                    children
+                        .iter()
+                        .position(|child| *child == index)
+                        .unwrap_or_default()
+                })
+                .unwrap_or_default()
+        } else {
+            0
+        }
     }
 
     pub fn get_first_child(&self, index: Index) -> Option<Index> {
@@ -210,38 +501,22 @@ impl Tree {
     }
 
     pub fn get_next_sibling(&self, index: Index) -> Option<Index> {
-        if let Some(parent_index) = self.get_parent(index) {
-            self.children.get(&parent_index).map_or(None, |children| {
-                children
-                    .iter()
-                    .position(|child| *child == index)
-                    .map_or(None, |child_index| {
-                        children
-                            .get(child_index + 1)
-                            .map_or(None, |next_child| Some(*next_child))
-                    })
-            })
+        let order = self.get_sibling_order(index);
+        if let Some(children) = self.get_children(index) {
+            children.get(order + 1).map(|sibling| *sibling)
         } else {
             None
         }
     }
 
     pub fn get_prev_sibling(&self, index: Index) -> Option<Index> {
-        if let Some(parent_index) = self.get_parent(index) {
-            self.children.get(&parent_index).map_or(None, |children| {
-                children
-                    .iter()
-                    .position(|child| *child == index)
-                    .map_or(None, |child_index| {
-                        if child_index > 0 {
-                            children
-                                .get(child_index - 1)
-                                .map_or(None, |prev_child| Some(*prev_child))
-                        } else {
-                            None
-                        }
-                    })
-            })
+        let order = self.get_sibling_order(index);
+        if order == 0 {
+            return None;
+        }
+
+        if let Some(children) = self.get_children(index) {
+            children.get(order - 1).map(|sibling| *sibling)
         } else {
             None
         }
@@ -595,16 +870,32 @@ impl Tree {
         let indent = "\t".repeat(depth);
         let raw_parts = start_index.into_raw_parts();
         println!(
-            "{}{} [{}:{}]",
+            "{}{} [{}.{} @ {}]",
             indent,
             name.unwrap_or_default(),
             raw_parts.0,
-            raw_parts.1
+            raw_parts.1,
+            self.depth(start_index)
         );
 
         if let Some(children) = self.children.get(&start_index) {
             for node_index in children {
                 self.dump_at_internal(*node_index, depth + 1, widgets);
+            }
+        }
+    }
+
+    /// Recursively updates the depths of a given node and its children.
+    fn update_depths(
+        depths: &mut HashMap<Index, usize>,
+        children: &HashMap<Index, Vec<Index>>,
+        index: Index,
+        depth: usize,
+    ) {
+        depths.insert(index, depth);
+        if let Some(childs) = children.get(&index) {
+            for child in childs {
+                Self::update_depths(depths, children, *child, depth + 1);
             }
         }
     }
@@ -773,8 +1064,8 @@ impl<'a> Hierarchy<'a> for Tree {
     }
 
     fn parent(&self, node: Self::Item) -> Option<Self::Item> {
-        if let Some(parent_index) = self.parents.get(&node) {
-            return Some(*parent_index);
+        if let Some(parent_index) = self.get_parent(node) {
+            return Some(parent_index);
         }
 
         None
@@ -835,6 +1126,7 @@ mod tests {
     use crate::node::NodeBuilder;
     use crate::tree::{DownwardIterator, UpwardIterator};
     use crate::{Arena, Index, Tree};
+    use std::cmp::Ordering;
 
     #[test]
     fn test_tree() {
@@ -873,6 +1165,114 @@ mod tests {
         assert!(mapped[2] == 2);
         assert!(mapped[3] == 3);
         assert!(mapped[4] == 4);
+    }
+
+    #[test]
+    fn should_add_children() {
+        let mut tree = Tree::default();
+
+        let a = Index::from_raw_parts(0, 0);
+        let b = Index::from_raw_parts(1, 0);
+        let c = Index::from_raw_parts(2, 0);
+        let d = Index::from_raw_parts(3, 0);
+
+        tree.add(a, None);
+        tree.add_children(vec![b, c, d], a);
+
+        let mut expected = Tree::default();
+        expected.add(a, None);
+        expected.add(b, Some(a));
+        expected.add(c, Some(a));
+        expected.add(d, Some(a));
+
+        assert_eq!(expected, tree);
+    }
+
+    #[test]
+    fn should_recalculate_depths() {
+        let a = Index::from_raw_parts(0, 0);
+        let b = Index::from_raw_parts(1, 0);
+        let c = Index::from_raw_parts(2, 0);
+        let d = Index::from_raw_parts(3, 0);
+
+        let mut expected = Tree::default();
+        expected.add(a, None);
+        expected.add(b, Some(a));
+        expected.add(c, Some(b));
+        expected.add(d, Some(c));
+
+        // Test: Reverse-insertion order and recalculate from root
+        let mut tree = Tree::default();
+        tree.add(c, Some(b));
+        tree.add(b, Some(a));
+        tree.add(d, Some(c));
+        tree.add(a, None);
+
+        assert_eq!(expected.root_node, tree.root_node);
+        assert_eq!(expected.parents, tree.parents);
+        assert_eq!(expected.children, tree.children);
+        assert_ne!(expected.depths, tree.depths);
+
+        tree.recalculate_depths(None);
+
+        assert_eq!(expected.root_node, tree.root_node);
+        assert_eq!(expected.parents, tree.parents);
+        assert_eq!(expected.children, tree.children);
+        assert_eq!(expected.depths, tree.depths);
+
+        // Test: Swapped insertions and recalculate from parent
+        let mut tree = Tree::default();
+        tree.add(a, None);
+        tree.add(b, Some(a));
+        tree.add(d, Some(c));
+        tree.add(c, Some(b));
+
+        assert_eq!(expected.root_node, tree.root_node);
+        assert_eq!(expected.parents, tree.parents);
+        assert_eq!(expected.children, tree.children);
+        assert_ne!(expected.depths, tree.depths);
+
+        tree.recalculate_depths(Some(b));
+
+        assert_eq!(expected.root_node, tree.root_node);
+        assert_eq!(expected.parents, tree.parents);
+        assert_eq!(expected.children, tree.children);
+        assert_eq!(expected.depths, tree.depths);
+    }
+
+    #[test]
+    fn should_have_correct_depth() {
+        let mut tree = Tree::default();
+
+        // Tree Structure:
+        //      A
+        //    B   C
+        //   D E  F
+        //   G
+
+        let a = Index::from_raw_parts(0, 0);
+        let b = Index::from_raw_parts(1, 0);
+        let c = Index::from_raw_parts(2, 0);
+        let d = Index::from_raw_parts(3, 0);
+        let e = Index::from_raw_parts(4, 0);
+        let f = Index::from_raw_parts(5, 0);
+        let g = Index::from_raw_parts(6, 0);
+
+        tree.add(a, None);
+        tree.add(b, Some(a));
+        tree.add(c, Some(a));
+        tree.add(d, Some(b));
+        tree.add(e, Some(b));
+        tree.add(g, Some(d));
+        tree.add(f, Some(c));
+
+        assert_eq!(0, tree.depth(a));
+        assert_eq!(1, tree.depth(b));
+        assert_eq!(1, tree.depth(c));
+        assert_eq!(2, tree.depth(d));
+        assert_eq!(2, tree.depth(e));
+        assert_eq!(2, tree.depth(f));
+        assert_eq!(3, tree.depth(g));
     }
 
     #[test]
@@ -1208,5 +1608,128 @@ mod tests {
         assert_eq!(2, tree.len());
         tree.add(grandchild, Some(child));
         assert_eq!(3, tree.len());
+    }
+
+    #[test]
+    fn should_be_common_ancestor() {
+        let mut tree = Tree::default();
+        let root = Index::from_raw_parts(0, 0);
+        tree.add(root, None);
+
+        // Ancestor subtree
+        //      A
+        //    B   C
+        //   D E  F
+        //   G
+        //
+        //
+        let a = Index::from_raw_parts(1, 0);
+        let b = Index::from_raw_parts(2, 0);
+        let c = Index::from_raw_parts(3, 0);
+        let d = Index::from_raw_parts(4, 0);
+        let e = Index::from_raw_parts(5, 0);
+        let f = Index::from_raw_parts(6, 0);
+        let g = Index::from_raw_parts(7, 0);
+
+        tree.add(a, Some(root));
+        tree.add(b, Some(a));
+        tree.add(c, Some(a));
+        tree.add(d, Some(b));
+        tree.add(e, Some(b));
+        tree.add(g, Some(d));
+        tree.add(f, Some(c));
+
+        let common_ancestor = tree.get_common_ancestor(d, e);
+        assert_eq!(Some(b), common_ancestor, "D and E should share B in common");
+        let common_ancestor = tree.get_common_ancestor(e, d);
+        assert_eq!(Some(b), common_ancestor, "E and D should share B in common");
+
+        let common_ancestor = tree.get_common_ancestor(d, g);
+        assert_eq!(Some(d), common_ancestor, "D and G should share D in common");
+        let common_ancestor = tree.get_common_ancestor(g, d);
+        assert_eq!(Some(d), common_ancestor, "G and D should share D in common");
+
+        let common_ancestor = tree.get_common_ancestor(g, f);
+        assert_eq!(Some(a), common_ancestor, "G and F should share A in common");
+        let common_ancestor = tree.get_common_ancestor(f, g);
+        assert_eq!(Some(a), common_ancestor, "F and G should share A in common");
+
+        let common_ancestor = tree.get_common_ancestor(a, a);
+        assert_eq!(Some(a), common_ancestor, "A and A should share A in common");
+        let common_ancestor = tree.get_common_ancestor(b, b);
+        assert_eq!(Some(b), common_ancestor, "B and B should share B in common");
+
+        let z = Index::from_raw_parts(123, 0);
+        let common_ancestor = tree.get_common_ancestor(a, z);
+        assert_eq!(
+            None, common_ancestor,
+            "A and Z should share nothing in common"
+        );
+    }
+
+    #[test]
+    fn should_compare_nodes() {
+        let mut tree = Tree::default();
+        let root = Index::from_raw_parts(0, 0);
+        tree.add(root, None);
+
+        // Ancestor subtree
+        //      A
+        //    B   C
+        //   D E  F
+        //   G
+        //
+        //
+        let a = Index::from_raw_parts(1, 0);
+        let b = Index::from_raw_parts(2, 0);
+        let c = Index::from_raw_parts(3, 0);
+        let d = Index::from_raw_parts(4, 0);
+        let e = Index::from_raw_parts(5, 0);
+        let f = Index::from_raw_parts(6, 0);
+        let g = Index::from_raw_parts(7, 0);
+
+        tree.add(a, Some(root));
+        tree.add(b, Some(a));
+        tree.add(c, Some(a));
+        tree.add(d, Some(b));
+        tree.add(e, Some(b));
+        tree.add(g, Some(d));
+        tree.add(f, Some(c));
+
+        let ordering = tree.partial_cmp(d, e);
+        assert_eq!(Some(Ordering::Less), ordering, "D should be less than E");
+        let ordering = tree.partial_cmp(e, d);
+        assert_eq!(
+            Some(Ordering::Greater),
+            ordering,
+            "E should be greater than D"
+        );
+
+        let ordering = tree.partial_cmp(d, g);
+        assert_eq!(Some(Ordering::Less), ordering, "D should be less than G");
+        let ordering = tree.partial_cmp(g, d);
+        assert_eq!(
+            Some(Ordering::Greater),
+            ordering,
+            "G should be greater than D"
+        );
+
+        let ordering = tree.partial_cmp(g, f);
+        assert_eq!(Some(Ordering::Less), ordering, "G should be less than F");
+        let ordering = tree.partial_cmp(f, g);
+        assert_eq!(
+            Some(Ordering::Greater),
+            ordering,
+            "F should be greater than G"
+        );
+
+        let ordering = tree.partial_cmp(a, a);
+        assert_eq!(Some(Ordering::Equal), ordering, "A should be equal to A");
+        let ordering = tree.partial_cmp(b, b);
+        assert_eq!(Some(Ordering::Equal), ordering, "B should be equal to B");
+
+        let z = Index::from_raw_parts(123, 0);
+        let ordering = tree.partial_cmp(a, z);
+        assert_eq!(None, ordering, "A and Z should be incomparable");
     }
 }

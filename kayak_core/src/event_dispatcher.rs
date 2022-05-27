@@ -253,7 +253,7 @@ impl EventDispatcher {
         let mut event_stream = Vec::<Event>::new();
         let mut states: HashMap<EventType, EventState> = HashMap::new();
 
-        let root = if let Some(root) = widget_manager.node_tree.root() {
+        let root = if let Some(root) = widget_manager.node_tree.root_node {
             root
         } else {
             return event_stream;
@@ -351,7 +351,7 @@ impl EventDispatcher {
 
                 // --- Push Children to Stack --- //
                 if enter_children {
-                    if let Some(children) = widget_manager.node_tree.get_children(current) {
+                    if let Some(children) = widget_manager.node_tree.children.get(&current) {
                         for child in children {
                             stack.push((*child, depth + 1));
                         }

@@ -36,7 +36,7 @@ impl FocusTree {
             }
         }
 
-        if self.tree.root().is_none() {
+        if self.tree.root_node.is_none() {
             // Set root node
             self.tree.add(index, None);
             self.focus(index);
@@ -49,7 +49,7 @@ impl FocusTree {
             self.blur();
         }
 
-        if self.tree.root() == Some(index) {
+        if self.tree.root_node == Some(index) {
             self.tree.remove(index);
         } else {
             self.tree.remove_and_reparent(index);
@@ -76,7 +76,7 @@ impl FocusTree {
     ///
     /// This returns focus to the root node
     pub fn blur(&mut self) {
-        self.current_focus = self.tree.root();
+        self.current_focus = self.tree.root_node;
     }
 
     /// Get the currently focused index
@@ -120,7 +120,7 @@ impl FocusTree {
         }
 
         // Default to root node to begin the cycle again
-        self.tree.root()
+        self.tree.root_node
     }
 
     /// Peek the previous focusable index without actually changing focus
@@ -149,7 +149,7 @@ impl FocusTree {
             return Some(next);
         }
 
-        self.tree.root()
+        self.tree.root_node
     }
 
     pub fn tree(&self) -> &Tree {

@@ -591,9 +591,9 @@ impl KayakContext {
 
     #[allow(dead_code)]
     fn get_all_parents(&self, current: Index, parents: &mut Vec<Index>) {
-        if let Some(parent) = self.widget_manager.tree.get_parent(current) {
-            parents.push(parent);
-            self.get_all_parents(parent, parents);
+        if let Some(parent) = self.widget_manager.tree.parents.get(&current) {
+            parents.push(*parent);
+            self.get_all_parents(*parent, parents);
         }
     }
 

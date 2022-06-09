@@ -13,6 +13,11 @@ pub enum RenderCommand {
     Image {
         handle: u16,
     },
+    TextureAtlas {
+        position: (f32, f32),
+        size: (f32, f32),
+        handle: u16,
+    },
     NinePatch {
         border: Edge<f32>,
         handle: u16,

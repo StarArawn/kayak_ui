@@ -18,7 +18,7 @@ fn TextBoxExample() {
     let (value, set_value, _) = use_state!("I started with a value!".to_string());
     let (empty_value, set_empty_value, _) = use_state!("".to_string());
     let (red_value, set_red_value, _) = use_state!("This text is red".to_string());
-    let (spin_value, set_spin_value, _) = use_state!("3".to_string());
+    let (spin_value, set_spin_value, _) = use_state!(3.0f32);
 
     let input_styles = Style {
         top: StyleProp::Value(Units::Pixels(10.0)),
@@ -43,7 +43,7 @@ fn TextBoxExample() {
     });
 
     let on_change_spin = OnChange::new(move |event| {
-        set_spin_value(event.value);
+        set_spin_value(32.0);
     });
 
     rsx! {
@@ -56,7 +56,7 @@ fn TextBoxExample() {
                 placeholder={Some("This is a placeholder".to_string())}
             />
             <TextBox styles={Some(red_text_styles)} value={red_value} on_change={Some(on_change_red)} />
-            <SpinBox styles={Some(input_styles)} value={spin_value} on_change={Some(on_change_spin)} />
+            <SpinBox<f32> styles={Some(input_styles)} value={spin_value} on_change={Some(on_change_spin)} />
         </Window>
     }
 }

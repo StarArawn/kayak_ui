@@ -71,7 +71,7 @@ fn fragment(in: VertexOutput) -> [[location(0)]] vec4<f32> {
             bs,
         );
         rect_dist = 1.0 - smoothStep(0.0, fwidth(rect_dist), rect_dist);
-        return vec4<f32>(in.color.rgb, rect_dist);
+        return vec4<f32>(in.color.rgb, rect_dist * in.color.a);
     }
     if (quad_type.t == 1) {
         var px_range = 3.5;

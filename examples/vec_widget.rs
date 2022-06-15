@@ -4,7 +4,7 @@ use bevy::{
     DefaultPlugins,
 };
 use kayak_ui::bevy::{BevyContext, BevyKayakUIPlugin, FontMapping, UICameraBundle};
-use kayak_ui::core::{constructor, render, Index, VecTracker};
+use kayak_ui::core::{constructor, render, VecTracker};
 use kayak_ui::widgets::{App, Text};
 
 fn startup(

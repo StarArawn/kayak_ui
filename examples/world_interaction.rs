@@ -20,7 +20,7 @@ use kayak_ui::{
     core::{
         render, rsx,
         styles::{Edge, Style, StyleProp, Units},
-        use_state, widget, EventType, Index, OnEvent,
+        use_state, widget, EventType, OnEvent,
     },
     widgets::{App, Button, Text, Window},
 };

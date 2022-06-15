@@ -7,7 +7,7 @@ use kayak_ui::bevy::{BevyContext, BevyKayakUIPlugin, FontMapping, ImageManager, 
 use kayak_ui::core::{
     render, rsx,
     styles::{Edge, LayoutType, Style, StyleProp, Units},
-    widget, Bound, Children, EventType, Index, MutableBound, OnEvent, WidgetProps,
+    widget, Bound, Children, EventType, MutableBound, OnEvent, WidgetProps,
 };
 use kayak_ui::widgets::{App, NinePatch, Text};
 

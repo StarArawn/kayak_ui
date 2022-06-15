@@ -9,7 +9,7 @@ use kayak_ui::{
     core::{
         render, rsx,
         styles::{Style, StyleProp, Units},
-        use_state, widget, Color, EventType, Handler, Index, OnEvent,
+        use_state, widget, Color, EventType, Handler, OnEvent,
     },
     widgets::{App, Background, Button, Fold, If, Text, Window},
 };

@@ -16,7 +16,7 @@ use bevy::{
 };
 use kayak_ui::{
     bevy::{BevyContext, BevyKayakUIPlugin, FontMapping, UICameraBundle},
-    core::{render, rsx, use_effect, use_state, widget, EventType, Index, OnEvent},
+    core::{render, rsx, use_effect, use_state, widget, EventType, OnEvent},
     widgets::{App, Button, Text, Window},
 };
 

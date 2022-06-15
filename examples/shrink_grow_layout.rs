@@ -21,7 +21,7 @@ use kayak_ui::{
     widgets::Button,
 };
 use kayak_ui::{
-    core::{render, rsx, widget, Index},
+    core::{render, rsx, widget},
     widgets::Background,
 };
 

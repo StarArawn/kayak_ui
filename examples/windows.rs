@@ -4,7 +4,6 @@ use bevy::{
     DefaultPlugins,
 };
 use kayak_ui::bevy::{BevyContext, BevyKayakUIPlugin, FontMapping, UICameraBundle};
-use kayak_ui::core::Index;
 use kayak_ui::core::{render, rsx, widget};
 use kayak_ui::widgets::{App, Inspector, Window};
 

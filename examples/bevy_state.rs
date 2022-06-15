@@ -4,9 +4,7 @@ use bevy::{
     DefaultPlugins,
 };
 use kayak_ui::bevy::{BevyContext, BevyKayakUIPlugin, FontMapping, UICameraBundle};
-use kayak_ui::core::{
-    render, rsx, widget, Event, EventType, Index, KayakContextRef, KeyCode, OnEvent,
-};
+use kayak_ui::core::{render, rsx, widget, Event, EventType, KayakContextRef, KeyCode, OnEvent};
 use kayak_ui::widgets::{App, Text};
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]

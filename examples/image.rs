@@ -8,7 +8,6 @@ use kayak_ui::bevy::{BevyContext, BevyKayakUIPlugin, ImageManager, UICameraBundl
 use kayak_ui::core::{
     render,
     styles::{Corner, Style, StyleProp, Units},
-    Index,
 };
 use kayak_ui::widgets::{App, Image};
 

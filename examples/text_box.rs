@@ -11,7 +11,7 @@ use kayak_ui::core::{
     styles::{Style, StyleProp, Units},
     widget, Index,
 };
-use kayak_ui::widgets::{App, Inspector, OnChange, SpinBox, TextBox, Window};
+use kayak_ui::widgets::{App, Inspector, OnChange, SpinBox, SpinBoxStyle, TextBox, Window};
 
 #[widget]
 fn TextBoxExample() {
@@ -46,6 +46,8 @@ fn TextBoxExample() {
         set_spin_value(event.value);
     });
 
+    let vert = SpinBoxStyle::Vertical;
+
     rsx! {
         <Window position={(50.0, 50.0)} size={(500.0, 300.0)} title={"TextBox Example".to_string()}>
             <TextBox styles={Some(input_styles)} value={value} on_change={Some(on_change)} />
@@ -56,7 +58,21 @@ fn TextBoxExample() {
                 placeholder={Some("This is a placeholder".to_string())}
             />
             <TextBox styles={Some(red_text_styles)} value={red_value} on_change={Some(on_change_red)} />
-            <SpinBox styles={Some(input_styles)} value={spin_value} on_change={Some(on_change_spin)} />
+            <SpinBox
+                styles={Some(input_styles)}
+                value={spin_value}
+                on_change={Some(on_change_spin)}
+                min_val={0.0}
+                max_val={10.0}
+            />
+            <SpinBox
+                spin_button_style={vert}
+                styles={Some(input_styles)}
+                value={spin_value}
+                on_change={Some(on_change_spin)}
+                min_val={0.0}
+                max_val={10.0}
+            />
         </Window>
     }
 }
@@ -74,7 +90,6 @@ fn startup(
         render! {
             <App>
                 <TextBoxExample />
-                <Inspector />
             </App>
         }
     });

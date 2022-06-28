@@ -1,3 +1,5 @@
+use std::{fmt::Debug, fmt::Formatter, sync::Arc};
+
 use crate::{
     core::{
         render_command::RenderCommand,
@@ -11,8 +13,21 @@ use kayak_core::{
     styles::{LayoutType, StyleProp},
     CursorIcon, OnLayout,
 };
+use kayak_render_macros::use_state;
 
 use crate::widgets::{Background, Clip, OnChange, Text};
+
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub enum SpinBoxStyle {
+    Horizontal,
+    Vertical,
+}
+
+impl Default for SpinBoxStyle {
+    fn default() -> Self {
+        SpinBoxStyle::Horizontal
+    }
+}
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct SpinBoxProps {
@@ -22,6 +37,8 @@ pub struct SpinBoxProps {
     pub on_change: Option<OnChange>,
     /// The text to display when the user input is empty
     pub placeholder: Option<String>,
+    /// Whether spinbox is horizontally or vertically aligned.
+    pub spin_button_style: SpinBoxStyle,
     /// The user input
     ///
     /// This is a controlled state. You _must_ set this to the value to you wish to be displayed.
@@ -32,25 +49,55 @@ pub struct SpinBoxProps {
     pub incr_str: String,
     /// Text on decrement button defaults to `<`
     pub decr_str: String,
-    pub children: Option<Children>,
+    /// Events on increment button press
+    pub on_incr_event: Option<OnEvent>,
+    /// Events on decrement button press
+    pub on_decr_event: Option<OnEvent>,
+    /// Events for text edit
     pub on_event: Option<OnEvent>,
+    /// Minimal value
+    pub min_val: f32,
+    /// Maximal value
+    pub max_val: f32,
+    pub children: Option<Children>,
     pub on_layout: Option<OnLayout>,
     pub focusable: Option<bool>,
 }
 
+impl SpinBoxProps {
+    pub fn get_float(&self) -> f32 {
+        self.value.parse::<f32>().unwrap_or_default()
+    }
+
+    pub fn get_int(&self) -> i16 {
+        let temp_float = self.get_float();
+        if temp_float > f32::from(i16::MAX) {
+            i16::MAX
+        } else if temp_float < f32::from(i16::MIN) {
+            i16::MIN
+        } else {
+            temp_float.round() as i16
+        }
+    }
+}
 
 impl Default for SpinBoxProps {
     fn default() -> SpinBoxProps {
-        SpinBoxProps { 
-            incr_str: ">".into(),
-            decr_str: "<".into(),
+        SpinBoxProps {
+            incr_str: "+".into(),
+            decr_str: "-".into(),
             disabled: Default::default(),
-            on_change:  Default::default(),
+            on_change: Default::default(),
             placeholder: Default::default(),
             value: Default::default(),
             styles: Default::default(),
+            spin_button_style: Default::default(),
             children: Default::default(),
+            on_incr_event: Default::default(),
+            on_decr_event: Default::default(),
             on_event: Default::default(),
+            min_val: f32::MIN,
+            max_val: f32::MAX,
             on_layout: Default::default(),
             focusable: Default::default(),
         }
@@ -106,6 +153,9 @@ pub fn SpinBox(props: SpinBoxProps) {
         on_change,
         placeholder,
         value,
+        max_val,
+        min_val,
+        spin_button_style,
         ..
     } = props.clone();
 
@@ -180,11 +230,19 @@ pub fn SpinBox(props: SpinBoxProps) {
         }
     };
 
-    let button_style = Some(Style {
-        height: Units::Pixels(24.0).into(),
-        width: Units::Pixels(24.0).into(),
-        ..Default::default()
-    });
+    let button_style = match spin_button_style {
+        SpinBoxStyle::Horizontal => Some(Style {
+            height: Units::Pixels(24.0).into(),
+            width: Units::Pixels(24.0).into(),
+            ..Default::default()
+        }),
+        SpinBoxStyle::Vertical => Some(Style {
+            height: Units::Pixels(12.0).into(),
+            width: Units::Pixels(24.0).into(),
+
+            ..Default::default()
+        }),
+    };
 
     let value = if value.is_empty() {
         placeholder.unwrap_or_else(|| value.clone())
@@ -192,30 +250,97 @@ pub fn SpinBox(props: SpinBoxProps) {
         value
     };
 
-    let inline_style = Style {
+    let row = Style {
         layout_type: StyleProp::Value(LayoutType::Row),
+        ..Style::default()
+    };
+
+    let col = Style {
+        layout_type: StyleProp::Value(LayoutType::Column),
+        height: Units::Stretch(100.0).into(),
+        width: Units::Pixels(26.0).into(),
         ..Style::default()
     };
 
     let incr_str = props.clone().incr_str;
     let decr_str = props.clone().decr_str;
 
-    rsx! {
-        <Background styles={Some(background_styles)}>
-            <Clip styles={Some(inline_style)}>
-                <Button styles={button_style}>
-                    <Text content={decr_str} />
-                </Button>
-                <Text
-                    content={value}
-                    size={14.0}
-                    styles={Some(text_styles)}
-                />
-                <Button styles={button_style}>
-                    <Text content={incr_str} />
-                </Button>
-            </Clip>
-        </Background>
+    let (spin_value, set_val, _) = use_state!(value);
+    let x = spin_value.parse::<f32>().unwrap_or_default();
+    let decr_fn = set_val.clone();
+    let incr_fn = set_val.clone();
+
+    let incr_event = if let Some(event) = props.clone().on_incr_event {
+        event
+    } else {
+        OnEvent::new(move |_, event| match event.event_type {
+            EventType::Click(_) => {
+                if x >= max_val {
+                    return;
+                }
+                incr_fn((x + 1.0f32).to_string());
+            }
+            _ => {}
+        })
+    };
+
+    let decr_event = if let Some(event) = props.clone().on_decr_event {
+        event
+    } else {
+        OnEvent::new(move |_, event| match event.event_type {
+            EventType::Click(_) => {
+                if x <= min_val {
+                    return;
+                }
+                decr_fn((x - 1.0f32).to_string());
+            }
+            _ => {}
+        })
+    };
+
+    match spin_button_style {
+        SpinBoxStyle::Horizontal => {
+            rsx! {
+                <Background styles={Some(background_styles)}>
+                    <Clip styles={Some(row)}>
+                        <Button styles={button_style} on_event={Some(decr_event)}>
+                            <Text content={decr_str} />
+                        </Button>
+                        <Text
+                            content={spin_value}
+                            size={14.0}
+                            styles={Some(text_styles)}
+                        />
+                        <Button styles={button_style} on_event={Some(incr_event)}>
+                            <Text content={incr_str} />
+                        </Button>
+                    </Clip>
+                </Background>
+            }
+        }
+        SpinBoxStyle::Vertical => {
+            rsx! {
+                <Background styles={Some(background_styles)}>
+
+                    <Clip styles={Some(row)}>
+                        <Text
+                            content={spin_value}
+                            size={14.0}
+                            styles={Some(text_styles)}
+                        />
+                        <Clip styles={Some(col)}>
+
+                            <Button styles={button_style} on_event={Some(incr_event)}>
+                                <Text content={incr_str} size={11.0} />
+                            </Button>
+                            <Button styles={button_style} on_event={Some(decr_event)}>
+                                <Text content={decr_str} size={11.0}/>
+                            </Button>
+                        </Clip>
+                    </Clip>
+                </Background>
+            }
+        }
     }
 }
 

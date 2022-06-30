@@ -36,7 +36,7 @@ pub fn render(input: TokenStream) -> TokenStream {
 
     let result = quote! {
         let mut context = #kayak_core::KayakContextRef::new(context, None);
-        let parent_id: Option<Index> = None;
+        let parent_id: Option<#kayak_core::Index> = None;
         let children: Option<#kayak_core::Children> = None;
         #widget
         context.commit();

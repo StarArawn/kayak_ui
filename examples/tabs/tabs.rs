@@ -15,7 +15,7 @@ use kayak_ui::{
     core::{
         constructor, render, rsx,
         styles::{Style, StyleProp, Units},
-        widget, Color, Index,
+        widget, Color,
     },
     widgets::{App, Text, Window},
 };

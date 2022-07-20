@@ -1,13 +1,15 @@
-use crate::core::{
-    render_command::RenderCommand,
-    rsx,
-    styles::{Corner, Style, Units},
-    widget, Bound, Children, Color, EventType, MutableBound, OnEvent, WidgetProps,
+use crate::{
+    core::{
+        render_command::RenderCommand,
+        rsx,
+        styles::{Corner, Style, Units},
+        widget, Bound, Children, Color, EventType, MutableBound, OnEvent, WidgetProps,
+    },
+    widgets::ChangeEvent,
 };
 use kayak_core::{CursorIcon, OnLayout};
-use std::sync::{Arc, RwLock};
 
-use crate::widgets::{Background, Clip, Text};
+use crate::widgets::{Background, Clip, OnChange, Text};
 
 /// Props used by the [`TextBox`] widget
 #[derive(Default, Debug, PartialEq, Clone)]
@@ -53,32 +55,6 @@ impl WidgetProps for TextBoxProps {
 
     fn get_focusable(&self) -> Option<bool> {
         Some(!self.disabled)
-    }
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct ChangeEvent {
-    pub value: String,
-}
-
-#[derive(Clone)]
-pub struct OnChange(pub Arc<RwLock<dyn FnMut(ChangeEvent) + Send + Sync + 'static>>);
-
-impl OnChange {
-    pub fn new<F: FnMut(ChangeEvent) + Send + Sync + 'static>(f: F) -> OnChange {
-        OnChange(Arc::new(RwLock::new(f)))
-    }
-}
-
-impl PartialEq for OnChange {
-    fn eq(&self, _other: &Self) -> bool {
-        true
-    }
-}
-
-impl std::fmt::Debug for OnChange {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_tuple("OnChange").finish()
     }
 }
 

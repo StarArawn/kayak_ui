@@ -1,5 +1,5 @@
 use bevy::{
-    prelude::{App as BevyApp, AssetServer, Commands, Res, ResMut, EventWriter, EventReader},
+    prelude::{App as BevyApp, AssetServer, Commands, EventReader, EventWriter, Res, ResMut},
     window::WindowDescriptor,
     DefaultPlugins,
 };
@@ -34,7 +34,7 @@ fn EventWindow() {
     let on_event = OnEvent::new(move |ctx, event| match event.event_type {
         EventType::Click(..) => {
             ctx.query_world::<EventWriter<MyEvent>, _, ()>(|mut writer| writer.send(MyEvent));
-        },
+        }
         _ => {}
     });
 

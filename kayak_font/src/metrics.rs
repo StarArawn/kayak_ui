@@ -1,15 +1,15 @@
-use serde::Deserialize;
+use nanoserde::DeJson;
 
-#[derive(Deserialize, Debug, Copy, Clone, PartialEq)]
+#[derive(DeJson, Debug, Copy, Clone, PartialEq)]
 pub struct Metrics {
-    #[serde(alias = "emSize")]
+    #[nserde(rename = "emSize")]
     em_size: f32,
-    #[serde(alias = "lineHeight")]
+    #[nserde(rename = "lineHeight")]
     line_height: f32,
     ascender: f32,
     descender: f32,
-    #[serde(alias = "underlineY")]
+    #[nserde(rename = "underlineY")]
     underline_y: f32,
-    #[serde(alias = "underlineThickness")]
+    #[nserde(rename = "underlineThickness")]
     underline_thickness: f32,
 }

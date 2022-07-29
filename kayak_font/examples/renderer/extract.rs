@@ -1,7 +1,7 @@
 use bevy::{
     math::Vec2,
     prelude::{Assets, Commands, Handle, Query, Res},
-    sprite::Rect,
+    sprite::Rect, render::Extract,
 };
 use kayak_font::{KayakFont, TextProperties};
 
@@ -12,8 +12,8 @@ use super::{
 
 pub fn extract(
     mut commands: Commands,
-    fonts: Res<Assets<KayakFont>>,
-    texts: Query<(&Text, &Handle<KayakFont>)>,
+    fonts: Extract<Res<Assets<KayakFont>>>,
+    texts: Extract<Query<(&Text, &Handle<KayakFont>)>>,
 ) {
     let mut extracted_texts = Vec::new();
 

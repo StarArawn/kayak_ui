@@ -1,6 +1,7 @@
 use crate::KayakFont;
 use bevy::prelude::{AssetEvent, Assets, EventReader, Handle, Image, Local, Res, ResMut};
-use bevy::render::render_resource::{FilterMode, TextureFormat, TextureUsages};
+use bevy::render::render_resource::{FilterMode, SamplerDescriptor, TextureFormat, TextureUsages};
+use bevy::render::texture::ImageSampler;
 
 pub fn init_font_texture(
     mut not_processed: Local<Vec<Handle<KayakFont>>>,
@@ -23,9 +24,13 @@ pub fn init_font_texture(
         if let Some(font) = fonts.get(&font_handle) {
             if let Some(mut texture) = images.get_mut(&font.atlas_image) {
                 texture.texture_descriptor.format = TextureFormat::Rgba8Unorm;
-                texture.sampler_descriptor.min_filter = FilterMode::Linear;
-                texture.sampler_descriptor.mipmap_filter = FilterMode::Linear;
-                texture.sampler_descriptor.mag_filter = FilterMode::Linear;
+                texture.sampler_descriptor = ImageSampler::Descriptor(SamplerDescriptor {
+                    label: Some("Present Sampler"),
+                    mag_filter: FilterMode::Linear,
+                    min_filter: FilterMode::Linear,
+
+                    ..Default::default()
+                });
                 texture.texture_descriptor.usage = TextureUsages::TEXTURE_BINDING
                     | TextureUsages::COPY_DST
                     | TextureUsages::COPY_SRC;

@@ -21,7 +21,12 @@ unicode-segmentation = "1.9"
 xi-unicode = "0.3"
 
 [dependencies.bevy]
-version = "0.7.0"
+version = "0.8.0"
+git = "https://github.com/bevyengine/bevy.git"
 optional = true
 default-features = false
-features = ["bevy_render"]
+features = [
+    "bevy_asset",
+    "bevy_render",
+    "bevy_core_pipeline"
+]

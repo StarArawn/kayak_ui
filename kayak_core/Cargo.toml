@@ -11,7 +11,6 @@ bevy_renderer = ["bevy", "kayak_font/bevy_renderer"]
 
 [dependencies]
 as-any = "0.2"
-bevy = { version = "0.7.0", optional = true, default-features = false }
 desync = { version = "0.7" }
 flo_rope = { version = "0.1" }
 futures = { version = "0.3" }
@@ -21,3 +20,8 @@ morphorm = { git = "https://github.com/geom3trik/morphorm", rev = "1243152d4cebe
 resources = "1.1"
 uuid = { version = "0.8", features = ["v4"] }
 indexmap = "1.8"
+
+[dependencies.bevy]
+version = "0.8.0"
+optional = true
+default-features = false

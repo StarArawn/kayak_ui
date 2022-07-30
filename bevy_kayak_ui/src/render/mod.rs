@@ -16,6 +16,7 @@ use kayak_font::KayakFont;
 pub mod font;
 pub mod image;
 mod nine_patch;
+mod texture_atlas;
 mod quad;
 
 pub struct BevyKayakUIExtractPlugin;
@@ -78,6 +79,11 @@ pub fn extract(
                 let nine_patch_quads =
                     nine_patch::extract_nine_patch(&render_primitive, &image_manager, &images, dpi);
                 extracted_quads.extend(nine_patch_quads);
+            }
+            RenderPrimitive::TextureAtlas { .. } => {
+                let texture_atlas_quads =
+                    texture_atlas::extract_texture_atlas(&render_primitive, &image_manager, &images, dpi);
+                extracted_quads.extend(texture_atlas_quads);
             }
             RenderPrimitive::Clip { layout } => {
                 extracted_quads.push(ExtractQuadBundle {

@@ -32,6 +32,12 @@ pub enum RenderPrimitive {
         layout: Rect,
         handle: u16,
     },
+    TextureAtlas {
+        size: (f32, f32),
+        position: (f32, f32),
+        layout: Rect,
+        handle: u16,
+    },
     NinePatch {
         border: Edge<f32>,
         layout: Rect,
@@ -47,6 +53,7 @@ impl RenderPrimitive {
             RenderPrimitive::Text { layout, .. } => *layout = new_layout,
             RenderPrimitive::Image { layout, .. } => *layout = new_layout,
             RenderPrimitive::NinePatch { layout, .. } => *layout = new_layout,
+            RenderPrimitive::TextureAtlas { layout, .. } => *layout = new_layout,
             _ => (),
         }
     }
@@ -97,6 +104,12 @@ impl From<&Style> for RenderPrimitive {
                 border_radius: style.border_radius.resolve(),
                 layout: Rect::default(),
                 handle,
+            },
+            RenderCommand::TextureAtlas { handle, size, position,  } => Self::TextureAtlas {
+                handle,
+                layout: Rect::default(),
+                size,
+                position,
             },
             RenderCommand::NinePatch { handle, border } => Self::NinePatch {
                 border,

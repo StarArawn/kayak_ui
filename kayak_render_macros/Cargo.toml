@@ -10,7 +10,7 @@ proc-macro = true
 default = []
 
 [dependencies]
-syn = { version = "1.0", features = ["full"] }
+syn = { version = "1.0", features = ["full", "extra-traits"] }
 quote = "1.0"
 proc-macro2 = "1.0"
 proc-macro-error = "1.0"
@@ -18,4 +18,4 @@ proc-macro-crate = "1.1"
 
 [dev-dependencies]
 kayak_core = { path = "../kayak_core", version = "0.1.0" }
-pretty_assertions = "0.3.4"
+pretty_assertions = "1.2.1"

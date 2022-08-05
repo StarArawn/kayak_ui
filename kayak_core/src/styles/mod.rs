@@ -4,6 +4,8 @@ mod corner;
 mod edge;
 mod option_ref;
 
+use std::ops::Add;
+
 pub use corner::Corner;
 pub use edge::Edge;
 pub use morphorm::{LayoutType, PositionType, Units};
@@ -394,6 +396,18 @@ impl Style {
     }
 }
 
+impl Add for Style {
+    type Output = Style;
+
+    /// Defines the `+` operator for [`Style`]. This is a convenience wrapper of the `self.with_style()` method and useful for concatenating many small `Style` variables. 
+    /// Similar to `with_style()` In a `StyleA + StyleB` operation, values from `StyleB` are applied to any field of StyleA that are marked as [`StyleProp::Unset`].
+    ///
+    /// Note: since the changes are applied only to unset fields, addition is *not* commutative. This means StyleA + StyleB != StyleB + StyleA for most cases.
+    fn add(self, other: Style) -> Style {
+        self.with_style(other)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::{Edge, Style, StyleProp, Units};
@@ -531,6 +545,36 @@ mod tests {
             });
 
         assert_eq!(expected, style);
+    }
+
+    #[test]
+    fn styles_should_add() {
+        let expected_left = StyleProp::Default;
+        let expected_width = StyleProp::Value(Units::Stretch(1.0));
+        let expected_height = StyleProp::Inherit;
+
+        let expected = Style {
+            left: expected_left.clone(),
+            width: expected_width.clone(),
+            height: expected_height.clone(),
+            ..Default::default()
+        };
+
+        let style_a = Style::default();
+        let style_b = Style {
+            height: expected_height,
+            ..Default::default()
+        };
+        let style_c = Style {
+            left: expected_left,
+            ..Default::default()
+        };
+        let style_d = Style {
+            width: expected_width,
+            ..Default::default()
+        };
+
+        assert_eq!(expected, style_a + style_b + style_c + style_d);
     }
 
     #[test]

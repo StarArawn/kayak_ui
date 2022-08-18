@@ -43,11 +43,11 @@ Kayak UI is in the very early stages of development. Important features are miss
 <img src="images/screen1.png" alt="Kayak UI" width="600" />
 
 ## Usage
-Use bevy 0.7!
+Use bevy 0.8!
 
 ```rust
 kayak_ui = { git="https://github.com/StarArawn/kayak_ui", rev="{INSERT_COMMIT_SHA_HERE}", features = ["bevy_renderer"] }
-bevy = "0.7.0"
+bevy = "0.8.0"
 ```
 
 ## Declarative

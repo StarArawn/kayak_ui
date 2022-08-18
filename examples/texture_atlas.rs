@@ -1,5 +1,6 @@
 use bevy::{
     prelude::{App as BevyApp, AssetServer, Commands, Handle, Res, ResMut},
+    render::texture::ImageSettings,
     window::WindowDescriptor,
     DefaultPlugins,
 };
@@ -8,7 +9,6 @@ use kayak_ui::bevy::{BevyContext, BevyKayakUIPlugin, ImageManager, UICameraBundl
 use kayak_ui::core::{
     render,
     styles::{Style, StyleProp, Units},
-    Index,
 };
 use kayak_ui::widgets::{App, TextureAtlas};
 
@@ -26,7 +26,12 @@ fn startup(
     let tile_size = 16;
     let columns = 272 / tile_size;
     let rows = 128 / tile_size;
-    let atlas = bevy::sprite::TextureAtlas::from_grid(image_handle, bevy::prelude::Vec2::splat(tile_size as f32), columns, rows);
+    let atlas = bevy::sprite::TextureAtlas::from_grid(
+        image_handle,
+        bevy::prelude::Vec2::splat(tile_size as f32),
+        columns,
+        rows,
+    );
 
     //The sign in the top right of the image would be index 16
     let sign_index = 16;
@@ -51,15 +56,15 @@ fn startup(
 
         render! {
             <App>
-                <TextureAtlas styles={Some(atlas_styles)} 
-                handle={ui_image_handle} 
-                position={(sign_position.x, sign_position.y)} 
-                tile_size={(sign_size.x, sign_size.y)} 
+                <TextureAtlas styles={Some(atlas_styles)}
+                handle={ui_image_handle}
+                position={(sign_position.x, sign_position.y)}
+                tile_size={(sign_size.x, sign_size.y)}
                  />
-                <TextureAtlas styles={Some(atlas_styles)} 
-                handle={ui_image_handle} 
-                position={(flower_position.x, flower_position.y)} 
-                tile_size={(flower_size.x, flower_size.y)} 
+                <TextureAtlas styles={Some(atlas_styles)}
+                handle={ui_image_handle}
+                position={(flower_position.x, flower_position.y)}
+                tile_size={(flower_size.x, flower_size.y)}
                  />
             </App>
         }
@@ -76,9 +81,9 @@ fn main() {
             title: String::from("UI Example"),
             ..Default::default()
         })
+        .insert_resource(ImageSettings::default_nearest())
         .add_plugins(DefaultPlugins)
         .add_plugin(BevyKayakUIPlugin)
         .add_startup_system(startup)
         .run();
 }
-

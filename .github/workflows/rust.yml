@@ -20,6 +20,7 @@ jobs:
     steps:
     - name: Install alsa and udev
       run: sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev libudev-dev
+      if: runner.os == 'linux'
     - name: Build
       run: cargo build --verbose --workspace
 #     - name: Run tests

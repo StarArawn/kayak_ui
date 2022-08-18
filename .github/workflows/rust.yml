@@ -18,7 +18,6 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-    - uses: actions/checkout@v2
     - name: Install alsa and udev
       run: sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev libudev-dev
     - name: Build

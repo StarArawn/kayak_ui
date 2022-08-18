@@ -44,7 +44,7 @@ fn fragment(in: VertexOutput) -> @location(0) vec4<f32> {
     var px_range = 2.5;
     var tex_dimensions = textureDimensions(font_texture);
     var msdf_unit = vec2<f32>(px_range, px_range) / vec2<f32>(f32(tex_dimensions.x), f32(tex_dimensions.y));
-    var x = textureSample(font_texture, font_sampler, vec2<f32>(in.uv.x, in.uv.y), i32(in.uv.z)); 
+    var x = textureSample(font_texture, font_sampler, vec2<f32>(in.uv.x, in.uv.y), i32(in.uv.z));
     var v = max(min(x.r, x.g), min(max(x.r, x.g), x.b));
     var sig_dist = (v - 0.5) * dot(msdf_unit, 0.5 / fwidth(in.uv.xy));
     var a = clamp(sig_dist + 0.5, 0.0, 1.0);

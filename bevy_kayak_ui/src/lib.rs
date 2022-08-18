@@ -2,7 +2,7 @@ use bevy::{
     input::{
         keyboard::KeyboardInput,
         mouse::{MouseButtonInput, MouseScrollUnit, MouseWheel},
-        ElementState,
+        ButtonState,
     },
     math::Vec2,
     prelude::{EventReader, IntoExclusiveSystem, MouseButton, Plugin, Res, World},
@@ -99,9 +99,9 @@ pub fn process_events(world: &mut World) {
                     for event in mouse_button_input_events.iter() {
                         match event.button {
                             MouseButton::Left => {
-                                if event.state == ElementState::Pressed {
+                                if event.state == ButtonState::Pressed {
                                     input_events.push(InputEvent::MouseLeftPress);
-                                } else if event.state == ElementState::Released {
+                                } else if event.state == ButtonState::Released {
                                     input_events.push(InputEvent::MouseLeftRelease);
                                 }
                             }
@@ -126,7 +126,7 @@ pub fn process_events(world: &mut World) {
                             let kayak_key_code = key::convert_virtual_key_code(key_code);
                             input_events.push(InputEvent::Keyboard {
                                 key: kayak_key_code,
-                                is_pressed: matches!(event.state, ElementState::Pressed),
+                                is_pressed: matches!(event.state, ButtonState::Pressed),
                             });
                         }
                     }

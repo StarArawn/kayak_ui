@@ -2,7 +2,7 @@ use crate::{BevyContext, FontMapping, ImageManager};
 use bevy::{
     math::Vec2,
     prelude::{Assets, Commands, Plugin, Res},
-    render::{color::Color, texture::Image, RenderApp, RenderStage},
+    render::{color::Color, texture::Image, Extract, RenderApp, RenderStage},
     sprite::Rect,
     window::Windows,
 };
@@ -32,18 +32,18 @@ impl Plugin for BevyKayakUIExtractPlugin {
 
 pub fn extract(
     mut commands: Commands,
-    context: Option<Res<BevyContext>>,
-    fonts: Res<Assets<KayakFont>>,
-    font_mapping: Res<FontMapping>,
-    image_manager: Res<ImageManager>,
-    images: Res<Assets<Image>>,
-    windows: Res<Windows>,
+    context: Extract<Option<Res<BevyContext>>>,
+    fonts: Extract<Res<Assets<KayakFont>>>,
+    font_mapping: Extract<Res<FontMapping>>,
+    image_manager: Extract<Res<ImageManager>>,
+    images: Extract<Res<Assets<Image>>>,
+    windows: Extract<Res<Windows>>,
 ) {
     if context.is_none() {
         return;
     }
 
-    let context = context.unwrap();
+    let context = context.as_ref().unwrap();
 
     let render_primitives = if let Ok(context) = context.kayak_context.read() {
         context.widget_manager.build_render_primitives()

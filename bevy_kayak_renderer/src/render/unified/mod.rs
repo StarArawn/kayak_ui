@@ -1,7 +1,9 @@
 use bevy::{
     prelude::{Assets, Commands, HandleUntyped, Plugin, Res},
     reflect::TypeUuid,
-    render::{render_phase::DrawFunctions, render_resource::Shader, RenderApp, RenderStage},
+    render::{
+        render_phase::DrawFunctions, render_resource::Shader, Extract, RenderApp, RenderStage,
+    },
     window::Windows,
 };
 
@@ -55,8 +57,8 @@ pub struct Dpi(f32);
 
 pub fn extract_baseline(
     mut commands: Commands,
-    windows: Res<Windows>,
-    window_size: Res<WindowSize>,
+    windows: Extract<Res<Windows>>,
+    window_size: Extract<Res<WindowSize>>,
 ) {
     let dpi = if let Some(window) = windows.get_primary() {
         window.scale_factor() as f32
@@ -64,6 +66,6 @@ pub fn extract_baseline(
         1.0
     };
 
-    commands.insert_resource(*window_size);
+    commands.insert_resource(window_size.clone());
     commands.insert_resource(Dpi(dpi));
 }

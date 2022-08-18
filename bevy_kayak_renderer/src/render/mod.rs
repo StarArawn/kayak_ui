@@ -1,31 +1,21 @@
 use bevy::{
-    core_pipeline::node::MAIN_PASS_DRIVER,
-    prelude::{Commands, Plugin, Res},
+    prelude::{Commands, Entity, Plugin, Query, With},
     render::{
-        camera::ActiveCamera,
-        render_graph::{EmptyNode, RenderGraph, SlotInfo, SlotType},
+        render_graph::{RenderGraph, SlotInfo, SlotType},
         render_phase::{DrawFunctions, RenderPhase},
-        RenderApp, RenderStage,
+        Extract, RenderApp, RenderStage,
     },
 };
 
 use crate::{
-    render::{
-        ui_pass::MainPassUINode, ui_pass_driver::UIPassDriverNode, unified::UnifiedRenderPlugin,
-    },
+    render::{ui_pass::MainPassUINode, unified::UnifiedRenderPlugin},
     CameraUiKayak,
 };
 
 use self::ui_pass::TransparentUI;
 
 mod ui_pass;
-mod ui_pass_driver;
 pub mod unified;
-
-pub mod node {
-    pub const UI_PASS_DEPENDENCIES: &str = "kayak_ui_pass_dependencies";
-    pub const UI_PASS_DRIVER: &str = "kayak_ui_pass_driver";
-}
 
 pub mod draw_ui_graph {
     pub const NAME: &str = "kayak_draw_ui";
@@ -66,14 +56,7 @@ impl Plugin for BevyKayakUIRenderPlugin {
             .unwrap();
         graph.add_sub_graph(draw_ui_graph::NAME, draw_ui_graph);
 
-        graph.add_node(node::UI_PASS_DEPENDENCIES, EmptyNode);
-        graph.add_node(node::UI_PASS_DRIVER, UIPassDriverNode);
-        graph
-            .add_node_edge(node::UI_PASS_DEPENDENCIES, node::UI_PASS_DRIVER)
-            .unwrap();
-        graph
-            .add_node_edge(MAIN_PASS_DRIVER, node::UI_PASS_DRIVER)
-            .unwrap();
+        // graph.add_node_edge(MAIN_PASS, draw_ui_graph::NAME).unwrap();
 
         app.add_plugin(UnifiedRenderPlugin);
     }
@@ -81,9 +64,9 @@ impl Plugin for BevyKayakUIRenderPlugin {
 
 pub fn extract_core_pipeline_camera_phases(
     mut commands: Commands,
-    active_camera: Res<ActiveCamera<CameraUiKayak>>,
+    active_camera: Extract<Query<Entity, With<CameraUiKayak>>>,
 ) {
-    if let Some(entity) = active_camera.get() {
+    if let Ok(entity) = active_camera.get_single() {
         commands
             .get_or_spawn(entity)
             .insert(RenderPhase::<TransparentUI>::default());

@@ -1,12 +1,11 @@
-use bevy::math::Size;
-use bevy::render::render_resource::std140::AsStd140;
+use bevy::render::render_resource::{DynamicUniformBuffer, ShaderType};
+use bevy::utils::FloatOrd;
 use bevy::{
-    core::FloatOrd,
     ecs::system::{
         lifetimeless::{Read, SQuery, SRes},
         SystemState,
     },
-    math::{const_vec3, Mat4, Quat, Vec2, Vec3, Vec4},
+    math::{Mat4, Quat, Vec2, Vec3, Vec4},
     prelude::{Bundle, Component, Entity, FromWorld, Handle, Query, Res, ResMut, World},
     render::{
         color::Color,
@@ -17,12 +16,12 @@ use bevy::{
             BindGroupLayoutDescriptor, BindGroupLayoutEntry, BindingResource, BindingType,
             BlendComponent, BlendFactor, BlendOperation, BlendState, BufferBindingType, BufferSize,
             BufferUsages, BufferVec, CachedRenderPipelineId, ColorTargetState, ColorWrites,
-            DynamicUniformVec, Extent3d, FragmentState, FrontFace, MultisampleState, PipelineCache,
-            PolygonMode, PrimitiveState, PrimitiveTopology, RenderPipelineDescriptor,
-            SamplerBindingType, SamplerDescriptor, Shader, ShaderStages, TextureDescriptor,
-            TextureDimension, TextureFormat, TextureSampleType, TextureUsages,
-            TextureViewDescriptor, TextureViewDimension, VertexAttribute, VertexBufferLayout,
-            VertexFormat, VertexState, VertexStepMode,
+            Extent3d, FragmentState, FrontFace, MultisampleState, PipelineCache, PolygonMode,
+            PrimitiveState, PrimitiveTopology, RenderPipelineDescriptor, SamplerBindingType,
+            SamplerDescriptor, Shader, ShaderStages, TextureDescriptor, TextureDimension,
+            TextureFormat, TextureSampleType, TextureUsages, TextureViewDescriptor,
+            TextureViewDimension, VertexAttribute, VertexBufferLayout, VertexFormat, VertexState,
+            VertexStepMode,
         },
         renderer::{RenderDevice, RenderQueue},
         texture::{BevyDefault, GpuImage, Image},
@@ -52,12 +51,12 @@ pub struct UnifiedPipeline {
 }
 
 const QUAD_VERTEX_POSITIONS: &[Vec3] = &[
-    const_vec3!([0.0, 1.0, 0.0]),
-    const_vec3!([1.0, 0.0, 0.0]),
-    const_vec3!([0.0, 0.0, 0.0]),
-    const_vec3!([0.0, 1.0, 0.0]),
-    const_vec3!([1.0, 1.0, 0.0]),
-    const_vec3!([1.0, 0.0, 0.0]),
+    Vec3::from_array([0.0, 1.0, 0.0]),
+    Vec3::from_array([1.0, 0.0, 0.0]),
+    Vec3::from_array([0.0, 0.0, 0.0]),
+    Vec3::from_array([0.0, 1.0, 0.0]),
+    Vec3::from_array([1.0, 1.0, 0.0]),
+    Vec3::from_array([1.0, 0.0, 0.0]),
 ];
 
 impl FontRenderingPipeline for UnifiedPipeline {
@@ -190,7 +189,7 @@ impl FromWorld for UnifiedPipeline {
                 shader: UNIFIED_SHADER_HANDLE.typed::<Shader>(),
                 shader_defs: vec![],
                 entry_point: "fragment".into(),
-                targets: vec![ColorTargetState {
+                targets: vec![Some(ColorTargetState {
                     format: TextureFormat::bevy_default(),
                     blend: Some(BlendState {
                         color: BlendComponent {
@@ -205,7 +204,7 @@ impl FromWorld for UnifiedPipeline {
                         },
                     }),
                     write_mask: ColorWrites::ALL,
-                }],
+                })],
             }),
             layout: Some(vec![
                 view_layout.clone(),
@@ -265,10 +264,7 @@ impl FromWorld for UnifiedPipeline {
             texture,
             sampler,
             texture_view,
-            size: Size {
-                width: 1.0,
-                height: 1.0,
-            },
+            size: Vec2::new(1.0, 1.0),
             texture_format: TextureFormat::Rgba8UnormSrgb,
         };
 
@@ -338,7 +334,7 @@ struct QuadVertex {
 }
 
 #[repr(C)]
-#[derive(Copy, Clone, AsStd140)]
+#[derive(Copy, Clone, ShaderType)]
 struct QuadType {
     pub t: i32,
 }
@@ -346,7 +342,7 @@ struct QuadType {
 pub struct QuadMeta {
     vertices: BufferVec<QuadVertex>,
     view_bind_group: Option<BindGroup>,
-    types_buffer: DynamicUniformVec<QuadType>,
+    types_buffer: DynamicUniformBuffer<QuadType>,
     types_bind_group: Option<BindGroup>,
 }
 
@@ -355,7 +351,7 @@ impl Default for QuadMeta {
         Self {
             vertices: BufferVec::new(BufferUsages::VERTEX),
             view_bind_group: None,
-            types_buffer: DynamicUniformVec::default(),
+            types_buffer: DynamicUniformBuffer::default(),
             types_bind_group: None,
         }
     }
@@ -379,7 +375,7 @@ pub fn prepare_quads(
     }
 
     sprite_meta.types_buffer.clear();
-    sprite_meta.types_buffer.reserve(2, &render_device);
+    // sprite_meta.types_buffer.reserve(2, &render_device);
     let quad_type_offset = sprite_meta.types_buffer.push(QuadType { t: 0 });
     let text_type_offset = sprite_meta.types_buffer.push(QuadType { t: 1 });
     let image_type_offset = sprite_meta.types_buffer.push(QuadType { t: 2 });

@@ -11,7 +11,7 @@ use kayak_ui::core::{
     styles::{Style, StyleProp, Units},
     widget,
 };
-use kayak_ui::widgets::{App, Inspector, OnChange, SpinBox, SpinBoxStyle, TextBox, Window};
+use kayak_ui::widgets::{App, OnChange, SpinBox, SpinBoxStyle, TextBox, Window};
 
 #[widget]
 fn TextBoxExample() {

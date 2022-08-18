@@ -31,7 +31,7 @@ pub struct TextureAtlasProps {
 #[widget]
 /// A widget that renders a texture atlas
 /// Allows for the use of a partial square of an image such as in a sprite sheet
-/// 
+///
 /// # Props
 ///
 /// __Type:__ [`TextureAtlasProps`]

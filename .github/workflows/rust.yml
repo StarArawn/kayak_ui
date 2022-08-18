@@ -32,7 +32,7 @@ jobs:
       run: sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev libudev-dev
       if: runner.os == 'linux'
     - name: Build
-      run: cargo build --verbose --workspace
+      run: cargo build --verbose --workspace --features "bevy/x11"
 #     - name: Run tests
 #       run: cargo test --verbose --workspace
     - name: Run fmt check

@@ -1,4 +1,3 @@
-use bevy::core::FloatOrd;
 use bevy::ecs::prelude::*;
 use bevy::render::render_phase::{DrawFunctionId, PhaseItem};
 use bevy::render::render_resource::{CachedRenderPipelineId, RenderPassColorAttachment};
@@ -9,6 +8,7 @@ use bevy::render::{
     renderer::RenderContext,
     view::{ExtractedView, ViewTarget},
 };
+use bevy::utils::FloatOrd;
 
 pub struct TransparentUI {
     pub sort_key: FloatOrd,
@@ -62,22 +62,24 @@ impl Node for MainPassUINode {
         world: &World,
     ) -> Result<(), NodeRunError> {
         let view_entity = graph.get_input_entity(Self::IN_VIEW)?;
-        let (transparent_phase, target) = self
-            .query
-            .get_manual(world, view_entity)
-            .expect("view entity should exist");
+        // adapted from bevy itself;
+        // see: <https://github.com/bevyengine/bevy/commit/09a3d8abe062984479bf0e99fcc1508bb722baf6>
+        let (transparent_phase, target) = match self.query.get_manual(world, view_entity) {
+            Ok(it) => it,
+            _ => return Ok(()),
+        };
         // let clear_color = world.get_resource::<ClearColor>().unwrap();
         {
             let pass_descriptor = RenderPassDescriptor {
                 label: Some("main_transparent_pass_UI"),
-                color_attachments: &[RenderPassColorAttachment {
+                color_attachments: &[Some(RenderPassColorAttachment {
                     view: &target.view,
                     resolve_target: None,
                     ops: Operations {
                         load: LoadOp::Load, //Clear(clear_color.0.into()),
                         store: true,
                     },
-                }],
+                })],
                 depth_stencil_attachment: None,
             };
 

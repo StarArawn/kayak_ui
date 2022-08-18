@@ -1,5 +1,6 @@
 use bevy::{
     prelude::{App as BevyApp, AssetServer, Commands, Handle, Res, ResMut},
+    render::texture::ImageSettings,
     window::WindowDescriptor,
     DefaultPlugins,
 };
@@ -8,7 +9,6 @@ use kayak_ui::bevy::{BevyContext, BevyKayakUIPlugin, ImageManager, UICameraBundl
 use kayak_ui::core::{
     render,
     styles::{Corner, Style, StyleProp, Units},
-    Index,
 };
 use kayak_ui::widgets::{App, Image};
 
@@ -51,6 +51,7 @@ fn main() {
             title: String::from("UI Example"),
             ..Default::default()
         })
+        .insert_resource(ImageSettings::default_nearest())
         .add_plugins(DefaultPlugins)
         .add_plugin(BevyKayakUIPlugin)
         .add_startup_system(startup)

@@ -1,6 +1,6 @@
 use bevy::{
     prelude::{CoreStage, Plugin},
-    render::camera::CameraTypePlugin,
+    render::{camera::CameraProjectionPlugin, extract_component::ExtractComponentPlugin},
 };
 
 mod camera;
@@ -17,6 +17,7 @@ impl Plugin for KayakUICameraPlugin {
             CoreStage::PostUpdate,
             bevy::render::camera::camera_system::<UIOrthographicProjection>,
         )
-        .add_plugin(CameraTypePlugin::<CameraUiKayak>::default());
+        .add_plugin(CameraProjectionPlugin::<UIOrthographicProjection>::default())
+        .add_plugin(ExtractComponentPlugin::<CameraUiKayak>::default());
     }
 }

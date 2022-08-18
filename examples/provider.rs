@@ -19,7 +19,7 @@ use kayak_ui::{
     core::{
         render, rsx,
         styles::{Edge, LayoutType, Style, StyleProp, Units},
-        widget, Bound, Color, EventType, Index, MutableBound, OnEvent, WidgetProps,
+        widget, Bound, Color, EventType, MutableBound, OnEvent, WidgetProps,
     },
     widgets::{App, Background, Element, If, Text, TooltipConsumer, TooltipProvider, Window},
 };

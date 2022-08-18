@@ -1,7 +1,7 @@
 use crate::{atlas::Atlas, glyph::Glyph, metrics::Metrics};
-use serde::Deserialize;
+use nanoserde::DeJson;
 
-#[derive(Deserialize, Debug, Clone, PartialEq)]
+#[derive(DeJson, Debug, Clone, PartialEq)]
 pub struct Sdf {
     pub atlas: Atlas,
     metrics: Metrics,
@@ -9,7 +9,7 @@ pub struct Sdf {
     kerning: Vec<KerningData>,
 }
 
-#[derive(Deserialize, Debug, Clone, Copy, PartialEq)]
+#[derive(DeJson, Debug, Clone, Copy, PartialEq)]
 pub struct KerningData {
     pub unicode1: u32,
     pub unicode2: u32,
@@ -18,14 +18,10 @@ pub struct KerningData {
 
 impl Sdf {
     pub fn from_string(data: String) -> Sdf {
-        let value: Sdf = match serde_path_to_error::deserialize(
-            &mut serde_json::Deserializer::from_str(&data),
-        ) {
+        let value: Sdf = match DeJson::deserialize_json(data.as_str()) {
             Ok(v) => v,
             Err(err) => {
-                let path = err.path().to_string();
-                dbg!(err);
-                panic!("failed to deserialize json! path: {}", path);
+                panic!("{}", dbg!(err));
             }
         };
 
@@ -33,14 +29,10 @@ impl Sdf {
     }
 
     pub fn from_bytes(data: &[u8]) -> Sdf {
-        let value: Sdf = match serde_path_to_error::deserialize(
-            &mut serde_json::Deserializer::from_slice(&data),
-        ) {
+        let value: Sdf = match DeJson::deserialize_json(std::str::from_utf8(data).unwrap()) {
             Ok(v) => v,
             Err(err) => {
-                let path = err.path().to_string();
-                dbg!(err);
-                panic!("failed to deserialize json! path: {}", path);
+                panic!("{}", dbg!(err));
             }
         };
 
@@ -49,6 +41,7 @@ impl Sdf {
 
     pub fn max_glyph_size(&self) -> (f32, f32) {
         let mut size = (0.0, 0.0);
+
         self.glyphs.iter().for_each(|glyph| {
             if let Some(atlas_bounds) = glyph.atlas_bounds {
                 let atlas_size = atlas_bounds.size();

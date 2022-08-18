@@ -1,5 +1,5 @@
 use bevy::{
-    prelude::{App as BevyApp, AssetServer, Commands, Res, ResMut},
+    prelude::{App as BevyApp, AssetServer, Commands, EventReader, EventWriter, Res, ResMut},
     window::WindowDescriptor,
     DefaultPlugins,
 };
@@ -7,38 +7,32 @@ use kayak_ui::bevy::{BevyContext, BevyKayakUIPlugin, FontMapping, UICameraBundle
 use kayak_ui::core::{
     render, rsx,
     styles::{Style, StyleProp, Units},
-    widget, Bound, EventType, MutableBound, OnEvent,
+    widget, EventType, OnEvent,
 };
-use kayak_ui::widgets::{App, Button, If, Text, Window};
+use kayak_ui::widgets::{App, Button, Text, Window};
+
+pub struct MyEvent;
 
 #[widget]
-fn Removal() {
-    let text_styles = Style {
-        bottom: StyleProp::Value(Units::Stretch(1.0)),
-        left: StyleProp::Value(Units::Stretch(0.1)),
-        right: StyleProp::Value(Units::Stretch(0.1)),
-        top: StyleProp::Value(Units::Stretch(1.0)),
+fn EventWindow() {
+    let button_text_styles = Style {
+        left: StyleProp::Value(Units::Stretch(1.0)),
+        right: StyleProp::Value(Units::Stretch(1.0)),
         ..Default::default()
     };
 
-    let is_visible = context.create_state(true).unwrap();
-    let cloned_is_visible = is_visible.clone();
-    let on_event = OnEvent::new(move |_, event| match event.event_type {
+    let on_event = OnEvent::new(move |ctx, event| match event.event_type {
         EventType::Click(..) => {
-            cloned_is_visible.set(!cloned_is_visible.get());
+            ctx.query_world::<EventWriter<MyEvent>, _, ()>(|mut writer| writer.send(MyEvent));
         }
         _ => {}
     });
 
-    let is_visible = is_visible.get();
     rsx! {
         <>
-            <Window position={(50.0, 50.0)} size={(300.0, 300.0)} title={"If Example".to_string()}>
-                <If condition={is_visible}>
-                    <Text styles={Some(text_styles)} size={32.0} content={"Hello!".to_string()} />
-                </If>
+            <Window draggable={true} position={(50.0, 50.0)} size={(300.0, 300.0)} title={"Bevy Event Example".to_string()}>
                 <Button on_event={Some(on_event)}>
-                    <Text line_height={Some(40.0)} size={24.0} content={"Swap!".to_string()} />
+                    <Text styles={Some(button_text_styles)} line_height={Some(40.0)} size={24.0} content={"Send bevy event".to_string()}>{}</Text>
                 </Button>
             </Window>
         </>
@@ -57,12 +51,18 @@ fn startup(
     let context = BevyContext::new(|context| {
         render! {
             <App>
-                <Removal />
+                <EventWindow />
             </App>
         }
     });
 
     commands.insert_resource(context);
+}
+
+fn on_my_event(mut reader: EventReader<MyEvent>) {
+    for _ in reader.iter() {
+        println!("MyEvent detected");
+    }
 }
 
 fn main() {
@@ -74,7 +74,9 @@ fn main() {
             ..Default::default()
         })
         .add_plugins(DefaultPlugins)
+        .add_event::<MyEvent>()
         .add_plugin(BevyKayakUIPlugin)
         .add_startup_system(startup)
+        .add_system(on_my_event)
         .run();
 }

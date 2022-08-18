@@ -5,10 +5,15 @@ edition = "2021"
 
 [dependencies]
 bytemuck = "1.7.2"
-bevy = { version = "0.7.0" }
 kayak_core = { path = "../kayak_core" }
 kayak_font = { path = "../kayak_font" }
 bevy_kayak_renderer = { path = "../bevy_kayak_renderer" }
 serde = "1.0"
 serde_json = "1.0"
 serde_path_to_error = "0.1"
+log = "0.4"
+
+[dependencies.bevy]
+version = "0.8.0"
+features = ["bevy_winit"]
+default-features = false

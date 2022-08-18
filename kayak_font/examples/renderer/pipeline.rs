@@ -1,12 +1,10 @@
-use bevy::render::render_resource::std140::AsStd140;
 use bevy::{
-    core::FloatOrd,
-    core_pipeline::Transparent2d,
+    core_pipeline::core_2d::Transparent2d,
     ecs::system::{
         lifetimeless::{Read, SQuery, SRes},
         SystemState,
     },
-    math::{const_vec3, Mat4, Quat, Vec2, Vec3, Vec4},
+    math::{Mat4, Quat, Vec2, Vec3, Vec4},
     prelude::{Bundle, Component, Entity, FromWorld, Handle, Query, Res, ResMut, World},
     render::{
         color::Color,
@@ -18,7 +16,7 @@ use bevy::{
             BufferVec, CachedRenderPipelineId, ColorTargetState, ColorWrites, FragmentState,
             FrontFace, MultisampleState, PipelineCache, PolygonMode, PrimitiveState,
             PrimitiveTopology, RenderPipelineDescriptor, SamplerBindingType, Shader, ShaderStages,
-            TextureFormat, TextureSampleType, TextureViewDimension, VertexAttribute,
+            ShaderType, TextureFormat, TextureSampleType, TextureViewDimension, VertexAttribute,
             VertexBufferLayout, VertexFormat, VertexState, VertexStepMode,
         },
         renderer::{RenderDevice, RenderQueue},
@@ -26,6 +24,7 @@ use bevy::{
         view::{ViewUniformOffset, ViewUniforms},
     },
     sprite::Rect,
+    utils::FloatOrd,
 };
 use bytemuck::{Pod, Zeroable};
 use kayak_font::{
@@ -43,12 +42,12 @@ pub struct FontPipeline {
 }
 
 const QUAD_VERTEX_POSITIONS: &[Vec3] = &[
-    const_vec3!([0.0, 0.0, 0.0]),
-    const_vec3!([1.0, 1.0, 0.0]),
-    const_vec3!([0.0, 1.0, 0.0]),
-    const_vec3!([0.0, 0.0, 0.0]),
-    const_vec3!([1.0, 0.0, 0.0]),
-    const_vec3!([1.0, 1.0, 0.0]),
+    Vec3::from_array([0.0, 0.0, 0.0]),
+    Vec3::from_array([1.0, 1.0, 0.0]),
+    Vec3::from_array([0.0, 1.0, 0.0]),
+    Vec3::from_array([0.0, 0.0, 0.0]),
+    Vec3::from_array([1.0, 0.0, 0.0]),
+    Vec3::from_array([1.0, 1.0, 0.0]),
 ];
 
 impl FontRenderingPipeline for FontPipeline {
@@ -70,8 +69,6 @@ impl FromWorld for FontPipeline {
                 ty: BindingType::Buffer {
                     ty: BufferBindingType::Uniform,
                     has_dynamic_offset: true,
-                    // TODO: change this to ViewUniform::std140_size_static once crevice fixes this!
-                    // Context: https://github.com/LPGhatguy/crevice/issues/29
                     min_binding_size: BufferSize::new(144),
                 },
                 count: None,
@@ -143,7 +140,7 @@ impl FromWorld for FontPipeline {
                 shader: FONT_SHADER_HANDLE.typed::<Shader>(),
                 shader_defs: vec![],
                 entry_point: "fragment".into(),
-                targets: vec![ColorTargetState {
+                targets: vec![Some(ColorTargetState {
                     format: TextureFormat::bevy_default(),
                     blend: Some(BlendState {
                         color: BlendComponent {
@@ -158,7 +155,7 @@ impl FromWorld for FontPipeline {
                         },
                     }),
                     write_mask: ColorWrites::ALL,
-                }],
+                })],
             }),
             layout: Some(vec![view_layout.clone(), font_image_layout.clone()]),
             primitive: PrimitiveState {
@@ -213,7 +210,7 @@ struct QuadVertex {
 }
 
 #[repr(C)]
-#[derive(Copy, Clone, AsStd140)]
+#[derive(Copy, Clone, ShaderType)]
 struct QuadType {
     pub t: i32,
 }

@@ -1,7 +1,10 @@
 use crate::bevy::renderer::FontTextureCache;
 use crate::KayakFont;
 use bevy::prelude::{AssetEvent, Assets, Commands, EventReader, Handle, Image, Local, Res, ResMut};
-use bevy::render::render_resource::{TextureFormat, TextureUsages};
+use bevy::render::{
+    render_resource::{TextureFormat, TextureUsages},
+    Extract,
+};
 use bevy::utils::HashSet;
 
 #[derive(Default)]
@@ -12,9 +15,9 @@ pub struct ExtractedFonts {
 pub(crate) fn extract_fonts(
     mut not_processed: Local<Vec<Handle<KayakFont>>>,
     mut commands: Commands,
-    font_assets: Res<Assets<KayakFont>>,
-    mut events: EventReader<AssetEvent<KayakFont>>,
-    textures: Res<Assets<Image>>,
+    font_assets: Extract<Res<Assets<KayakFont>>>,
+    mut events: Extract<EventReader<AssetEvent<KayakFont>>>,
+    textures: Extract<Res<Assets<Image>>>,
 ) {
     let mut extracted_fonts = ExtractedFonts { fonts: Vec::new() };
     let mut changed_assets = HashSet::default();

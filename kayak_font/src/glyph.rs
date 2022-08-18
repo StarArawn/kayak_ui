@@ -1,28 +1,50 @@
-use serde::{Deserialize, Deserializer};
+use nanoserde::{DeJson, DeJsonErr, DeJsonState, SerJson, SerJsonState};
 
-fn from_u32<'de, D>(deserializer: D) -> Result<char, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    let number: u32 = Deserialize::deserialize(deserializer)?;
-    match char::from_u32(number) {
-        Some(c) => Ok(c),
-        None => Err(serde::de::Error::custom("Can't deserialize char from u32!")),
+pub struct UnicodeChar(char);
+
+impl DeJson for UnicodeChar {
+    fn de_json(state: &mut DeJsonState, input: &mut std::str::Chars) -> Result<Self, DeJsonErr> {
+        u32::de_json(state, input).and_then(|a| {
+            if let Some(a) = char::from_u32(a) {
+                Ok(Self(a))
+            } else {
+                Err(state.err_parse("Not unicode"))
+            }
+        })
     }
 }
 
-#[derive(Deserialize, Debug, Clone, Copy, PartialEq)]
+impl SerJson for UnicodeChar {
+    fn ser_json(&self, d: usize, s: &mut SerJsonState) {
+        let out = self.0 as u32;
+        out.ser_json(d, s)
+    }
+}
+
+impl From<&char> for UnicodeChar {
+    fn from(c: &char) -> Self {
+        Self(*c)
+    }
+}
+
+impl From<&UnicodeChar> for char {
+    fn from(uc: &UnicodeChar) -> Self {
+        uc.0
+    }
+}
+
+#[derive(DeJson, Debug, Clone, Copy, PartialEq)]
 pub struct Glyph {
-    #[serde(deserialize_with = "from_u32")]
+    #[nserde(proxy = "UnicodeChar")]
     pub unicode: char,
     pub advance: f32,
-    #[serde(alias = "atlasBounds")]
+    #[nserde(rename = "atlasBounds")]
     pub atlas_bounds: Option<Rect>,
-    #[serde(alias = "planeBounds")]
+    #[nserde(rename = "planeBounds")]
     pub plane_bounds: Option<Rect>,
 }
 
-#[derive(Deserialize, Default, Clone, Copy, Debug, PartialEq)]
+#[derive(DeJson, Default, Clone, Copy, Debug, PartialEq)]
 pub struct Rect {
     pub left: f32,
     pub bottom: f32,

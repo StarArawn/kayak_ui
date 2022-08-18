@@ -1,33 +1,33 @@
-use serde::Deserialize;
+use nanoserde::DeJson;
 
-#[derive(Deserialize, Debug, Copy, Clone, PartialEq)]
+#[derive(DeJson, Debug, Copy, Clone, PartialEq)]
 pub enum SDFType {
-    #[serde(alias = "msdf")]
+    #[nserde(rename = "msdf")]
     Msdf,
 }
 
-#[derive(Deserialize, Debug, Copy, Clone, PartialEq)]
+#[derive(DeJson, Debug, Copy, Clone, PartialEq)]
 pub enum Origin {
-    #[serde(alias = "bottom")]
+    #[nserde(rename = "bottom")]
     Bottom,
-    #[serde(alias = "left")]
+    #[nserde(rename = "left")]
     Left,
-    #[serde(alias = "right")]
+    #[nserde(rename = "right")]
     Right,
-    #[serde(alias = "top")]
+    #[nserde(rename = "top")]
     Top,
 }
 
-#[derive(Deserialize, Debug, Copy, Clone, PartialEq)]
+#[derive(DeJson, Debug, Copy, Clone, PartialEq)]
 pub struct Atlas {
-    #[serde(alias = "type")]
+    #[nserde(rename = "type")]
     pub sdf_type: SDFType,
-    #[serde(alias = "distanceRange")]
+    #[nserde(rename = "distanceRange")]
     pub distance_range: f32,
-    #[serde(alias = "size")]
+    #[nserde(rename = "size")]
     pub font_size: f32,
     pub width: u32,
     pub height: u32,
-    #[serde(alias = "yOrigin")]
+    #[nserde(rename = "yOrigin")]
     pub y_origin: Origin,
 }

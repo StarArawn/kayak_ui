@@ -1,10 +1,10 @@
 use bevy::{
-    math::{const_vec2, Vec2},
+    math::Vec2,
     prelude::{
-        App as BevyApp, AssetServer, Commands, Component, Handle, Input, KeyCode, Query, Res,
-        ResMut, Sprite, SpriteBundle, Transform, With, Without,
+        App as BevyApp, AssetServer, Camera2dBundle, Commands, Component, Handle, Input, KeyCode,
+        Query, Res, ResMut, Sprite, SpriteBundle, Transform, With, Without,
     },
-    render::{camera::OrthographicCameraBundle, color::Color},
+    render::color::Color,
     window::WindowDescriptor,
     DefaultPlugins,
 };
@@ -15,8 +15,8 @@ use renderer::{FontRenderPlugin, Text};
 mod renderer;
 
 const FONT_SIZE: f32 = 24.0;
-const INITIAL_SIZE: Vec2 = const_vec2!([400.0, 300.0]);
-const INITIAL_POS: Vec2 = const_vec2!([-200.0, 0.0]);
+const INITIAL_SIZE: Vec2 = Vec2::from_array([400.0, 300.0]);
+const INITIAL_POS: Vec2 = Vec2::from_array([-200.0, 0.0]);
 const INSTRUCTIONS: &str =
     "Press 'A' and 'D' to shrink and grow the text box.\nPress 'Space' to cycle text alignment.";
 
@@ -24,7 +24,7 @@ const INSTRUCTIONS: &str =
 struct Instructions;
 
 fn startup(mut commands: Commands, asset_server: Res<AssetServer>) {
-    commands.spawn_bundle(OrthographicCameraBundle::new_2d());
+    commands.spawn_bundle(Camera2dBundle::default());
 
     let font_handle: Handle<KayakFont> = asset_server.load("roboto.kayak_font");
 

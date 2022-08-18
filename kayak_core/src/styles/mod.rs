@@ -399,7 +399,7 @@ impl Style {
 impl Add for Style {
     type Output = Style;
 
-    /// Defines the `+` operator for [`Style`]. This is a convenience wrapper of the `self.with_style()` method and useful for concatenating many small `Style` variables. 
+    /// Defines the `+` operator for [`Style`]. This is a convenience wrapper of the `self.with_style()` method and useful for concatenating many small `Style` variables.
     /// Similar to `with_style()` In a `StyleA + StyleB` operation, values from `StyleB` are applied to any field of StyleA that are marked as [`StyleProp::Unset`].
     ///
     /// Note: since the changes are applied only to unset fields, addition is *not* commutative. This means StyleA + StyleB != StyleB + StyleA for most cases.

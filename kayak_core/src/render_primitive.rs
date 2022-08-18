@@ -105,7 +105,11 @@ impl From<&Style> for RenderPrimitive {
                 layout: Rect::default(),
                 handle,
             },
-            RenderCommand::TextureAtlas { handle, size, position,  } => Self::TextureAtlas {
+            RenderCommand::TextureAtlas {
+                handle,
+                size,
+                position,
+            } => Self::TextureAtlas {
                 handle,
                 layout: Rect::default(),
                 size,

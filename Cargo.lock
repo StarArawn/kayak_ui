@@ -497,6 +497,7 @@ dependencies = [
  "bytemuck",
  "kayak_core",
  "kayak_font",
+ "log",
  "serde",
  "serde_json",
  "serde_path_to_error",

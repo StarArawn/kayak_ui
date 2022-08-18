@@ -63,10 +63,12 @@ pub fn process_events(world: &mut World) {
         if let Some(window) = windows.get_primary() {
             Vec2::new(window.width(), window.height())
         } else {
-            panic!("Couldn't find primary window!");
+            log::warn!("Couldn't find primiary window!");
+            return;
         }
     } else {
-        panic!("Couldn't find primary window!");
+        log::warn!("Couldn't find primiary window!");
+        return;
     };
 
     if let Some(bevy_context) = world.remove_resource::<BevyContext>() {

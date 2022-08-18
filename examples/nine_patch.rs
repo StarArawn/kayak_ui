@@ -1,5 +1,6 @@
 use bevy::{
     prelude::{App as BevyApp, AssetServer, Commands, Handle, Res, ResMut},
+    render::texture::ImageSettings,
     window::WindowDescriptor,
     DefaultPlugins,
 };
@@ -72,6 +73,7 @@ fn main() {
             title: String::from("UI Example"),
             ..Default::default()
         })
+        .insert_resource(ImageSettings::default_nearest())
         .add_plugins(DefaultPlugins)
         .add_plugin(BevyKayakUIPlugin)
         .add_startup_system(startup)

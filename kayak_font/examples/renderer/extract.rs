@@ -1,7 +1,8 @@
 use bevy::{
     math::Vec2,
     prelude::{Assets, Commands, Handle, Query, Res},
-    sprite::Rect, render::Extract,
+    render::Extract,
+    sprite::Rect,
 };
 use kayak_font::{KayakFont, TextProperties};
 

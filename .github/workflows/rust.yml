@@ -11,13 +11,16 @@ env:
 
 jobs:
   build:
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
 
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
 
     steps:
     - uses: actions/checkout@v2
     - name: Install alsa and udev
-      run: sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev libudev-dev libwayland-dev libxkbcommon-dev
+      run: sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev libudev-dev
     - name: Build
       run: cargo build --verbose --workspace
 #     - name: Run tests

@@ -1,4 +1,3 @@
-use bevy::core::FloatOrd;
 use bevy::ecs::prelude::*;
 use bevy::render::render_phase::{DrawFunctionId, PhaseItem};
 use bevy::render::render_resource::{CachedRenderPipelineId, RenderPassColorAttachment};
@@ -9,6 +8,7 @@ use bevy::render::{
     renderer::RenderContext,
     view::{ExtractedView, ViewTarget},
 };
+use bevy::utils::FloatOrd;
 
 pub struct TransparentUI {
     pub sort_key: FloatOrd,
@@ -72,14 +72,14 @@ impl Node for MainPassUINode {
         {
             let pass_descriptor = RenderPassDescriptor {
                 label: Some("main_transparent_pass_UI"),
-                color_attachments: &[RenderPassColorAttachment {
+                color_attachments: &[Some(RenderPassColorAttachment {
                     view: &target.view,
                     resolve_target: None,
                     ops: Operations {
                         load: LoadOp::Load, //Clear(clear_color.0.into()),
                         store: true,
                     },
-                }],
+                })],
                 depth_stencil_attachment: None,
             };
 

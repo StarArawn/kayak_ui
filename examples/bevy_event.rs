@@ -7,7 +7,7 @@ use kayak_ui::bevy::{BevyContext, BevyKayakUIPlugin, FontMapping, UICameraBundle
 use kayak_ui::core::{
     render, rsx,
     styles::{Style, StyleProp, Units},
-    use_state, widget, EventType, OnEvent,
+    widget, EventType, OnEvent,
 };
 use kayak_ui::widgets::{App, Button, Text, Window};
 
@@ -15,16 +15,6 @@ pub struct MyEvent;
 
 #[widget]
 fn EventWindow() {
-    let text_styles = Style {
-        bottom: StyleProp::Value(Units::Stretch(1.0)),
-        left: StyleProp::Value(Units::Stretch(0.1)),
-        right: StyleProp::Value(Units::Stretch(0.1)),
-        top: StyleProp::Value(Units::Stretch(1.0)),
-        width: StyleProp::Value(Units::Stretch(1.0)),
-        height: StyleProp::Value(Units::Pixels(28.0)),
-        ..Default::default()
-    };
-
     let button_text_styles = Style {
         left: StyleProp::Value(Units::Stretch(1.0)),
         right: StyleProp::Value(Units::Stretch(1.0)),

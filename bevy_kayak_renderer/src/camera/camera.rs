@@ -1,7 +1,9 @@
 use bevy::{
-    prelude::{Bundle, Component, GlobalTransform, Transform},
+    ecs::query::QueryItem,
+    prelude::{Bundle, Component, GlobalTransform, Transform, With},
     render::{
-        camera::{Camera, CameraProjection, DepthCalculation, WindowOrigin},
+        camera::{Camera, CameraProjection, CameraRenderGraph, DepthCalculation, WindowOrigin},
+        extract_component::ExtractComponent,
         primitives::Frustum,
         view::VisibleEntities,
     },
@@ -9,12 +11,22 @@ use bevy::{
 
 use super::ortho::UIOrthographicProjection;
 
-#[derive(Component, Default)]
+#[derive(Component, Clone, Default)]
 pub struct CameraUiKayak;
+
+impl ExtractComponent for CameraUiKayak {
+    type Query = &'static Self;
+    type Filter = With<Camera>;
+
+    fn extract_component(item: QueryItem<Self::Query>) -> Self {
+        item.clone()
+    }
+}
 
 #[derive(Bundle)]
 pub struct UICameraBundle {
     pub camera: Camera,
+    pub camera_render_graph: CameraRenderGraph,
     pub orthographic_projection: UIOrthographicProjection,
     pub visible_entities: VisibleEntities,
     pub frustum: Frustum,
@@ -48,7 +60,11 @@ impl UICameraBundle {
             orthographic_projection.far(),
         );
         UICameraBundle {
-            camera: Default::default(),
+            camera: Camera {
+                priority: isize::MAX - 1,
+                ..Default::default()
+            },
+            camera_render_graph: CameraRenderGraph::new(crate::render::draw_ui_graph::NAME),
             orthographic_projection,
             frustum,
             visible_entities: VisibleEntities::default(),

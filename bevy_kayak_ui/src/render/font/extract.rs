@@ -34,7 +34,7 @@ pub fn extract_texts(
     };
 
     let font_handle = font_mapping.get_handle(font.clone()).unwrap();
-    let font = match fonts.get(font_handle.clone()) {
+    let font = match fonts.get(&font_handle) {
         Some(font) => font,
         None => return Vec::new(),
     };

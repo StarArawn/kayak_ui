@@ -6,11 +6,11 @@
 //! behavior.
 
 use bevy::{
-    math::{const_vec2, Vec3Swizzles, Vec4Swizzles},
+    math::{Vec3Swizzles, Vec4Swizzles},
     prelude::{
-        App as BevyApp, AssetServer, Color as BevyColor, Commands, Component, CursorMoved,
-        EventReader, GlobalTransform, Input, MouseButton, OrthographicCameraBundle, Query, Res,
-        ResMut, Sprite, SpriteBundle, Transform, Vec2, Windows, With, Without,
+        App as BevyApp, AssetServer, Camera2dBundle, Color as BevyColor, Commands, Component,
+        CursorMoved, EventReader, GlobalTransform, Input, MouseButton, Query, Res, ResMut, Sprite,
+        SpriteBundle, Transform, Vec2, Windows, With, Without,
     },
     window::WindowDescriptor,
     DefaultPlugins,
@@ -25,7 +25,7 @@ use kayak_ui::{
     widgets::{App, Button, Text, Window},
 };
 
-const TILE_SIZE: Vec2 = const_vec2!([50.0, 50.0]);
+const TILE_SIZE: Vec2 = Vec2::from_array([50.0, 50.0]);
 const COLORS: &[BevyColor] = &[BevyColor::TEAL, BevyColor::MAROON, BevyColor::INDIGO];
 
 /// This is the system that sets the active tile's target position
@@ -223,7 +223,7 @@ fn on_color_change(
 /// A system that sets up the world
 fn world_setup(mut commands: Commands, active_color: Res<ActiveColor>) {
     commands
-        .spawn_bundle(OrthographicCameraBundle::new_2d())
+        .spawn_bundle(Camera2dBundle::default())
         .insert(WorldCamera);
     commands
         .spawn_bundle(SpriteBundle {

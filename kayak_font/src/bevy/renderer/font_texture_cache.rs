@@ -1,6 +1,6 @@
 use crate::{KayakFont, Sdf};
 use bevy::{
-    math::{Size, Vec2},
+    math::Vec2,
     prelude::{Handle, Res},
     render::{
         render_asset::RenderAssets,
@@ -150,9 +150,9 @@ impl FontTextureCache {
             texture,
             sampler,
             texture_view,
-            size: Size {
-                width: size.0 as f32,
-                height: size.1 as f32,
+            size: Vec2 {
+                x: size.0 as f32,
+                y: size.1 as f32,
             },
             texture_format: format,
         };
@@ -195,9 +195,9 @@ impl FontTextureCache {
             texture,
             sampler,
             texture_view,
-            size: Size {
-                width: 1.0,
-                height: 1.0,
+            size: Vec2 {
+                x: 1.0,
+                y: 1.0,
             },
             texture_format: TextureFormat::Rgba8Unorm,
         };

@@ -21,8 +21,8 @@ pub fn extract_texture_atlas(
 
     let (size, position, layout, handle) = match render_primitive {
         RenderPrimitive::TextureAtlas {
-        size,
-        position,
+            size,
+            position,
             layout,
             handle,
         } => (size, position, layout, handle),
@@ -57,21 +57,21 @@ pub fn extract_texture_atlas(
             },
             uv_min: Some(Vec2::new(
                 position.0 / image_size.x,
-                1.0 - ((position.1 + size.1) / image_size.y)
+                1.0 - ((position.1 + size.1) / image_size.y),
             )),
             uv_max: Some(Vec2::new(
                 (position.0 + size.0) / image_size.x,
                 1.0 - (position.1 / image_size.y),
             )),
-        color: Color::WHITE,
-        vertex_index: 0,
-        char_id: 0,
-        z_index: layout.z_index,
-        font_handle: None,
-        quad_type: UIQuadType::Image,
-        type_index: 0,
-        border_radius: Corner::default(),
-        image: image_handle,
+            color: Color::WHITE,
+            vertex_index: 0,
+            char_id: 0,
+            z_index: layout.z_index,
+            font_handle: None,
+            quad_type: UIQuadType::Image,
+            type_index: 0,
+            border_radius: Corner::default(),
+            image: image_handle,
         },
     };
     extracted_quads.push(quad);

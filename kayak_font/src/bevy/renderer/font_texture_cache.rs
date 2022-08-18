@@ -195,10 +195,7 @@ impl FontTextureCache {
             texture,
             sampler,
             texture_view,
-            size: Vec2 {
-                x: 1.0,
-                y: 1.0,
-            },
+            size: Vec2 { x: 1.0, y: 1.0 },
             texture_format: TextureFormat::Rgba8Unorm,
         };
 

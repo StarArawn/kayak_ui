@@ -7,7 +7,11 @@ var<uniform> view: View;
 
 struct QuadType {
     t: i32,
+    _unused_1: i32,
+    _unused_2: i32,
+    _unused_3: i32,
 };
+
 @group(2) @binding(0)
 var<uniform> quad_type: QuadType;
 
@@ -19,6 +23,7 @@ struct VertexOutput {
     @location(3) size: vec2<f32>,
     @location(4) border_radius: f32,
     @location(5) pixel_position: vec2<f32>,
+    @location(6) _unused: f32,
 };
 
 @vertex
@@ -36,6 +41,7 @@ fn vertex(
     out.uv = vertex_uv.xyz;
     out.size = vertex_pos_size.zw;
     out.border_radius = vertex_uv.w;
+    out._unused = 0.0;
     return out;
 }
 

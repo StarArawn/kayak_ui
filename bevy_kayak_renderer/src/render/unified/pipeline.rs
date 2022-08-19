@@ -96,7 +96,7 @@ impl FromWorld for UnifiedPipeline {
                     has_dynamic_offset: true,
                     // TODO: change this to ViewUniform::std140_size_static once crevice fixes this!
                     // Context: https://github.com/LPGhatguy/crevice/issues/29
-                    min_binding_size: BufferSize::new(4),
+                    min_binding_size: BufferSize::new(16),
                 },
                 count: None,
             }],

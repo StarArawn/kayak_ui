@@ -337,9 +337,9 @@ struct QuadVertex {
 #[derive(Copy, Clone, ShaderType)]
 struct QuadType {
     pub t: i32,
-    pub _unused_1: i32,
-    pub _unused_2: i32,
-    pub _unused_3: i32,
+    pub _padding_1: i32,
+    pub _padding_2: i32,
+    pub _padding_3: i32,
 }
 
 pub struct QuadMeta {
@@ -381,21 +381,21 @@ pub fn prepare_quads(
     // sprite_meta.types_buffer.reserve(2, &render_device);
     let quad_type_offset = sprite_meta.types_buffer.push(QuadType {
         t: 0,
-        _unused_1: 0,
-        _unused_2: 0,
-        _unused_3: 0,
+        _padding_1: 0,
+        _padding_2: 0,
+        _padding_3: 0,
     });
     let text_type_offset = sprite_meta.types_buffer.push(QuadType {
         t: 1,
-        _unused_1: 0,
-        _unused_2: 0,
-        _unused_3: 0,
+        _padding_1: 0,
+        _padding_2: 0,
+        _padding_3: 0,
     });
     let image_type_offset = sprite_meta.types_buffer.push(QuadType {
         t: 2,
-        _unused_1: 0,
-        _unused_2: 0,
-        _unused_3: 0,
+        _padding_1: 0,
+        _padding_2: 0,
+        _padding_3: 0,
     });
 
     sprite_meta

@@ -7,7 +7,11 @@ var<uniform> view: View;
 
 struct QuadType {
     t: i32,
+    _padding_1: i32,
+    _padding_2: i32,
+    _padding_3: i32,
 };
+
 @group(2) @binding(0)
 var<uniform> quad_type: QuadType;
 

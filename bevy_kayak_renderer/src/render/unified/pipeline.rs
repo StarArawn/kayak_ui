@@ -96,7 +96,7 @@ impl FromWorld for UnifiedPipeline {
                     has_dynamic_offset: true,
                     // TODO: change this to ViewUniform::std140_size_static once crevice fixes this!
                     // Context: https://github.com/LPGhatguy/crevice/issues/29
-                    min_binding_size: BufferSize::new(4),
+                    min_binding_size: BufferSize::new(16),
                 },
                 count: None,
             }],
@@ -337,6 +337,9 @@ struct QuadVertex {
 #[derive(Copy, Clone, ShaderType)]
 struct QuadType {
     pub t: i32,
+    pub _padding_1: i32,
+    pub _padding_2: i32,
+    pub _padding_3: i32,
 }
 
 pub struct QuadMeta {
@@ -376,9 +379,25 @@ pub fn prepare_quads(
 
     sprite_meta.types_buffer.clear();
     // sprite_meta.types_buffer.reserve(2, &render_device);
-    let quad_type_offset = sprite_meta.types_buffer.push(QuadType { t: 0 });
-    let text_type_offset = sprite_meta.types_buffer.push(QuadType { t: 1 });
-    let image_type_offset = sprite_meta.types_buffer.push(QuadType { t: 2 });
+    let quad_type_offset = sprite_meta.types_buffer.push(QuadType {
+        t: 0,
+        _padding_1: 0,
+        _padding_2: 0,
+        _padding_3: 0,
+    });
+    let text_type_offset = sprite_meta.types_buffer.push(QuadType {
+        t: 1,
+        _padding_1: 0,
+        _padding_2: 0,
+        _padding_3: 0,
+    });
+    let image_type_offset = sprite_meta.types_buffer.push(QuadType {
+        t: 2,
+        _padding_1: 0,
+        _padding_2: 0,
+        _padding_3: 0,
+    });
+
     sprite_meta
         .types_buffer
         .write_buffer(&render_device, &render_queue);

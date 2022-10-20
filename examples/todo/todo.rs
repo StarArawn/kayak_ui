@@ -1,97 +1,31 @@
-use bevy::{
-    prelude::{App as BevyApp, AssetServer, Commands, Res, ResMut},
-    window::WindowDescriptor,
-    DefaultPlugins,
-};
-use kayak_ui::bevy::{BevyContext, BevyKayakUIPlugin, FontMapping, UICameraBundle};
-use kayak_ui::core::{
-    render, rsx,
-    styles::{LayoutType, Style, StyleProp, Units},
-    use_state, widget, EventType, Handler, OnEvent,
-};
-use kayak_ui::widgets::{App, Element, OnChange, TextBox, Window};
+use bevy::prelude::*;
+use kayak_ui::prelude::{widgets::*, *};
 
-mod add_button;
-mod card;
-mod cards;
-mod delete_button;
-use add_button::AddButton;
-use cards::Cards;
+mod input;
+mod items;
 
-#[derive(Debug, Clone, PartialEq)]
-pub struct Todo {
-    name: String,
+use crate::input::*;
+use items::*;
+
+// A bit of state management.
+// Consider this like "global" state.
+#[derive(Resource)]
+pub struct TodoList {
+    pub new_item: String,
+    pub items: Vec<String>,
 }
 
-#[widget]
-fn TodoApp() {
-    let (todos, set_todos, ..) = use_state!(vec![
-        Todo {
-            name: "Use bevy to make a game!".to_string(),
-        },
-        Todo {
-            name: "Help contribute to bevy!".to_string(),
-        },
-        Todo {
-            name: "Join the bevy discord!".to_string(),
-        },
-    ]);
-
-    let (new_todo_value, set_new_todo_value, ..) = use_state!("".to_string());
-
-    let text_box_styles = Style {
-        right: StyleProp::Value(Units::Pixels(10.0)),
-        ..Style::default()
-    };
-
-    let top_area_styles = Style {
-        layout_type: StyleProp::Value(LayoutType::Row),
-        bottom: StyleProp::Value(Units::Pixels(10.0)),
-        height: StyleProp::Value(Units::Pixels(30.0)),
-        padding_top: StyleProp::Value(Units::Stretch(1.0)),
-        padding_bottom: StyleProp::Value(Units::Stretch(1.0)),
-        ..Style::default()
-    };
-
-    let on_change = OnChange::new(move |event| {
-        set_new_todo_value(event.value);
-    });
-
-    let new_todo_value_cloned = new_todo_value.clone();
-    let mut todos_cloned = todos.clone();
-    let cloned_set_todos = set_todos.clone();
-    let add_events = OnEvent::new(move |_, event| match event.event_type {
-        EventType::Click(..) => {
-            if !new_todo_value_cloned.is_empty() {
-                todos_cloned.push(Todo {
-                    name: new_todo_value_cloned.clone(),
-                });
-                cloned_set_todos(todos_cloned.clone());
-            }
+impl TodoList {
+    pub fn new() -> Self {
+        Self {
+            new_item: "".into(),
+            items: vec![
+                "Buy milk".into(),
+                "Paint Shed".into(),
+                "Eat Dinner".into(),
+                "Write new Bevy UI library".into(),
+            ],
         }
-        _ => {}
-    });
-
-    let mut todos_cloned = todos.clone();
-    let cloned_set_todos = set_todos.clone();
-    let handle_delete = Handler::new(move |card_id: usize| {
-        todos_cloned.remove(card_id);
-        cloned_set_todos(todos_cloned.clone());
-    });
-
-    rsx! {
-        <Window draggable={true} position={(415.0, 50.0)} size={(450.0, 600.0)} title={"Todo!".to_string()}>
-            <Element styles={Some(top_area_styles)}>
-                <TextBox
-                    styles={Some(text_box_styles)}
-                    value={new_todo_value}
-                    placeholder={Some("Type here to add a new todo!".to_string())}
-                    on_change={Some(on_change)}
-                />
-                <AddButton on_event={Some(add_events)} />
-            </Element>
-            <Cards cards={todos} on_delete={handle_delete} />
-        </Window>
     }
 }
 
@@ -100,6 +34,7 @@ fn startup(
     mut font_mapping: ResMut<FontMapping>,
     asset_server: Res<AssetServer>,
 ) {
+<<<<<<< HEAD
     commands.spawn_bundle(UICameraBundle::new());
 
     font_mapping.set_default(asset_server.load("roboto.kayak_font"));
@@ -127,4 +62,45 @@ fn main() {
         .add_plugin(BevyKayakUIPlugin)
         .add_startup_system(startup)
         .run();
+=======
+    font_mapping.set_default(asset_server.load("roboto.kayak_font"));
+
+    commands.spawn(UICameraBundle::new());
+
+    let mut widget_context = Context::new();
+    widget_context.add_widget_system(TodoItemsProps::default().get_name(), update_todo_items);
+    widget_context.add_widget_system(TodoInputProps::default().get_name(), update_todo_input);
+    let parent_id = None;
+    rsx! {
+        <KayakAppBundle>
+            <WindowBundle
+                window={KWindow {
+                    title: "Todo App".into(),
+                    draggable: true,
+                    position: Vec2::new((1280.0 / 2.0) - (350.0 / 2.0), (720.0 / 2.0) - (600.0 / 2.0)),
+                    size: Vec2::new(400.0, 600.0),
+                    ..Default::default()
+                }}
+            >
+                <TodoInputBundle />
+                <ScrollContextProviderBundle>
+                    <ScrollBoxBundle>
+                        <TodoItemsBundle />
+                    </ScrollBoxBundle>
+                </ScrollContextProviderBundle>
+            </WindowBundle>
+        </KayakAppBundle>
+    }
+    commands.insert_resource(widget_context);
+}
+
+fn main() {
+    App::new()
+        .add_plugins(DefaultPlugins)
+        .add_plugin(ContextPlugin)
+        .add_plugin(KayakWidgets)
+        .insert_non_send_resource(TodoList::new())
+        .add_startup_system(startup)
+        .run()
+>>>>>>> exp/main
 }

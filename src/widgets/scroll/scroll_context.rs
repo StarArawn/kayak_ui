@@ -1,5 +1,15 @@
+use bevy::prelude::{Bundle, Changed, Commands, Component, Entity, In, Or, Query, Vec2, With};
+
+use crate::{
+    children::KChildren,
+    context::{Mounted, WidgetName},
+    prelude::WidgetContext,
+    styles::KStyle,
+    widget::Widget,
+};
+
 /// Context data provided by a [`ScrollBox`](crate::ScrollBox) widget
-#[derive(Default, Debug, Copy, Clone, PartialEq)]
+#[derive(Component, Default, Debug, Copy, Clone, PartialEq)]
 pub struct ScrollContext {
     pub(super) scroll_x: f32,
     pub(super) scroll_y: f32,
@@ -10,6 +20,9 @@ pub struct ScrollContext {
     pub(super) pad_x: f32,
     pub(super) pad_y: f32,
     pub(super) mode: ScrollMode,
+    pub(super) is_dragging: bool,
+    pub(super) start_pos: Vec2,
+    pub(super) start_offset: Vec2,
 }
 
 #[non_exhaustive]
@@ -119,4 +132,52 @@ impl ScrollContext {
     fn clamped(value: f32, min: f32, max: f32) -> f32 {
         value.clamp(min, max)
     }
+}
+
+#[derive(Component, Default)]
+pub struct ScrollContextProvider {
+    initial_value: ScrollContext,
+}
+
+impl Widget for ScrollContextProvider {}
+
+#[derive(Bundle)]
+pub struct ScrollContextProviderBundle {
+    pub scroll_context_provider: ScrollContextProvider,
+    pub children: KChildren,
+    pub styles: KStyle,
+    pub widget_name: WidgetName,
+}
+
+impl Default for ScrollContextProviderBundle {
+    fn default() -> Self {
+        Self {
+            scroll_context_provider: Default::default(),
+            children: KChildren::default(),
+            styles: Default::default(),
+            widget_name: ScrollContextProvider::default().get_name(),
+        }
+    }
+}
+
+pub fn update_scroll_context(
+    In((widget_context, entity)): In<(WidgetContext, Entity)>,
+    mut commands: Commands,
+    mut query: Query<
+        (&ScrollContextProvider, &KChildren),
+        Or<(
+            Changed<ScrollContextProvider>,
+            Changed<KChildren>,
+            With<Mounted>,
+        )>,
+    >,
+) -> bool {
+    if let Ok((context_provider, children)) = query.get_mut(entity) {
+        let context_entity = commands.spawn(context_provider.initial_value).id();
+        widget_context.set_context_entity::<ScrollContext>(Some(entity), context_entity);
+        children.process(&widget_context, Some(entity));
+        return true;
+    }
+
+    false
 }

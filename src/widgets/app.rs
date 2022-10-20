@@ -1,81 +1,66 @@
-use kayak_core::OnLayout;
+use bevy::{
+    prelude::{Bundle, Commands, Component, Entity, In, Or, Query, Res, With},
+    window::Windows,
+};
+use morphorm::Units;
 
-use crate::core::{
-    render_command::RenderCommand,
-    rsx,
-    styles::{Style, StyleProp},
-    widget, Children, OnEvent, WidgetProps,
+use crate::{
+    children::KChildren,
+    context::{Mounted, WidgetName},
+    prelude::WidgetContext,
+    styles::{KStyle, RenderCommand, StyleProp},
+    widget::Widget,
 };
 
-use crate::widgets::Clip;
+#[derive(Component, Default)]
+pub struct KayakApp;
 
-/// Props used by the [`App`] widget
-#[derive(WidgetProps, Default, Debug, PartialEq, Clone)]
-pub struct AppProps {
-    #[prop_field(Styles)]
-    pub styles: Option<Style>,
-    #[prop_field(Children)]
-    pub children: Option<Children>,
-    #[prop_field(OnEvent)]
-    pub on_event: Option<OnEvent>,
-    #[prop_field(OnLayout)]
-    pub on_layout: Option<OnLayout>,
-    #[prop_field(Focusable)]
-    pub focusable: Option<bool>,
+impl Widget for KayakApp {}
+
+#[derive(Bundle)]
+pub struct KayakAppBundle {
+    pub app: KayakApp,
+    pub styles: KStyle,
+    pub children: KChildren,
+    pub widget_name: WidgetName,
 }
 
-#[widget]
-/// The most common root widget
-///
-/// # Props
-///
-/// __Type:__ [`AppProps`]
-///
-/// | Common Prop | Accepted |
-/// | :---------: | :------: |
-/// | `children`  | ✅        |
-/// | `styles`    | ✅        |
-/// | `on_event`  | ✅        |
-/// | `on_layout` | ✅        |
-/// | `focusable` | ✅        |
-///
-/// # Using the `bevy_renderer` feature
-///
-/// When the `bevy_renderer` feature is enabled, this widget will automatically bind to the window size
-/// of the Bevy app. This allows it to update on window resize in order to match the width and height of the window.
-pub fn App(props: AppProps) {
-    #[cfg(feature = "bevy_renderer")]
-    {
-        use crate::bevy::WindowSize;
-        use crate::core::styles::Units;
-        use crate::core::{Binding, Bound};
-        let window_size = if let Ok(world) = context.get_global::<bevy::prelude::World>() {
-            if let Some(window_size) = world.get_resource::<Binding<WindowSize>>() {
-                window_size.clone()
-            } else {
-                return;
-            }
-        } else {
-            return;
-        };
+impl Default for KayakAppBundle {
+    fn default() -> Self {
+        Self {
+            app: Default::default(),
+            styles: Default::default(),
+            children: Default::default(),
+            widget_name: KayakApp::default().get_name(),
+        }
+    }
+}
 
-        context.bind(&window_size);
-        let window_size = window_size.get();
-        props.styles = Some(
-            Style::default()
-                .with_style(Style {
-                    render_command: StyleProp::Value(RenderCommand::Layout),
-                    width: StyleProp::Value(Units::Pixels(window_size.0)),
-                    height: StyleProp::Value(Units::Pixels(window_size.1)),
-                    ..Default::default()
-                })
-                .with_style(&props.styles),
-        );
+/// TODO: USE CAMERA INSTEAD OF WINDOW!!
+pub fn app_update(
+    In((widget_context, entity)): In<(WidgetContext, Entity)>,
+    _: Commands,
+    windows: Res<Windows>,
+    mut query: Query<(&mut KStyle, &KChildren), Or<(With<KayakApp>, With<Mounted>)>>,
+) -> bool {
+    let mut has_changed = false;
+    let primary_window = windows.get_primary().unwrap();
+    if let Ok((mut app_style, children)) = query.get_mut(entity) {
+        if app_style.width != StyleProp::Value(Units::Pixels(primary_window.width())) {
+            app_style.width = StyleProp::Value(Units::Pixels(primary_window.width()));
+            has_changed = true;
+        }
+        if app_style.height != StyleProp::Value(Units::Pixels(primary_window.height())) {
+            app_style.height = StyleProp::Value(Units::Pixels(primary_window.height()));
+            has_changed = true;
+        }
+
+        app_style.render_command = StyleProp::Value(RenderCommand::Layout);
+
+        if has_changed {
+            children.process(&widget_context, Some(entity));
+        }
     }
 
-    rsx! {
-        <Clip>
-            {children}
-        </Clip>
-    }
+    has_changed
 }

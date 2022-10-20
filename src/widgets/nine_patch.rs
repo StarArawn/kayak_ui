@@ -1,72 +1,61 @@
-use kayak_core::OnLayout;
-
-use crate::core::{
-    render_command::RenderCommand,
-    rsx,
-    styles::{Edge, Style, StyleProp},
-    widget, Children, OnEvent, WidgetProps,
+use bevy::prelude::{
+    Bundle, Changed, Commands, Component, Entity, Handle, Image, In, Or, Query, With,
 };
 
-/// Props used by the [`NinePatch`] widget
-#[derive(WidgetProps, Default, Debug, PartialEq, Clone)]
-pub struct NinePatchProps {
+use crate::{
+    children::KChildren,
+    context::{Mounted, WidgetName},
+    prelude::WidgetContext,
+    styles::{Edge, KStyle, RenderCommand, StyleProp},
+    widget::Widget,
+};
+
+#[derive(Component, Default, Debug)]
+pub struct NinePatch {
     /// The handle to image
-    pub handle: u16,
+    pub handle: Handle<Image>,
     /// The size of each edge (in pixels)
     pub border: Edge<f32>,
-    #[prop_field(Styles)]
-    pub styles: Option<Style>,
-    #[prop_field(Children)]
-    pub children: Option<Children>,
-    #[prop_field(OnEvent)]
-    pub on_event: Option<OnEvent>,
-    #[prop_field(OnLayout)]
-    pub on_layout: Option<OnLayout>,
-    #[prop_field(Focusable)]
-    pub focusable: Option<bool>,
 }
 
-#[widget]
-/// A widget that renders a nine-patch image background
-///
-/// A nine-patch is a special type of image that's broken into nine parts:
-///
-/// * Edges - Top, Bottom, Left, Right
-/// * Corners - Top-Left, Top-Right, Bottom-Left, Bottom-Right
-/// * Center
-///
-/// Using these parts of an image, we can construct a scalable background and border
-/// all from a single image. This is done by:
-///
-/// * Stretching the edges (vertically for left/right and horizontally for top/bottom)
-/// * Preserving the corners
-/// * Scaling the center to fill the remaining space
-///
-///
-/// # Props
-///
-/// __Type:__ [`NinePatchProps`]
-///
-/// | Common Prop | Accepted |
-/// | :---------: | :------: |
-/// | `children`  | ✅        |
-/// | `styles`    | ✅        |
-/// | `on_event`  | ✅        |
-/// | `on_layout` | ✅        |
-/// | `focusable` | ✅        |
-///
-pub fn NinePatch(props: NinePatchProps) {
-    props.styles = Some(Style {
-        render_command: StyleProp::Value(RenderCommand::NinePatch {
-            handle: props.handle,
-            border: props.border,
-        }),
-        ..props.styles.clone().unwrap_or_default()
-    });
+impl Widget for NinePatch {}
 
-    rsx! {
-        <>
-            {children}
-        </>
+#[derive(Bundle)]
+pub struct NinePatchBundle {
+    pub nine_patch: NinePatch,
+    pub styles: KStyle,
+    pub children: KChildren,
+    pub widget_name: WidgetName,
+}
+
+impl Default for NinePatchBundle {
+    fn default() -> Self {
+        Self {
+            nine_patch: Default::default(),
+            styles: Default::default(),
+            children: KChildren::default(),
+            widget_name: NinePatch::default().get_name(),
+        }
     }
+}
+
+pub fn update_nine_patch(
+    In((widget_context, entity)): In<(WidgetContext, Entity)>,
+    _: Commands,
+    mut query: Query<
+        (&mut KStyle, &NinePatch, &KChildren),
+        Or<((Changed<NinePatch>, Changed<KStyle>), With<Mounted>)>,
+    >,
+) -> bool {
+    if let Ok((mut style, nine_patch, children)) = query.get_mut(entity) {
+        style.render_command = StyleProp::Value(RenderCommand::NinePatch {
+            border: nine_patch.border,
+            handle: nine_patch.handle.clone_weak(),
+        });
+
+        children.process(&widget_context, Some(entity));
+
+        return true;
+    }
+    false
 }

@@ -5,7 +5,9 @@ use bevy::{
         SystemState,
     },
     math::{Mat4, Quat, Vec2, Vec3, Vec4},
-    prelude::{Bundle, Component, Entity, FromWorld, Handle, Query, Res, ResMut, World},
+    prelude::{
+        Bundle, Component, Entity, FromWorld, Handle, Query, Rect, Res, ResMut, Resource, World,
+    },
     render::{
         color::Color,
         render_phase::{Draw, DrawFunctions, RenderPhase, TrackedRenderPass},
@@ -23,7 +25,6 @@ use bevy::{
         texture::{BevyDefault, GpuImage},
         view::{ViewUniformOffset, ViewUniforms},
     },
-    sprite::Rect,
     utils::FloatOrd,
 };
 use bytemuck::{Pod, Zeroable};
@@ -34,6 +35,7 @@ use kayak_font::{
 
 use super::FONT_SHADER_HANDLE;
 
+#[derive(Resource)]
 pub struct FontPipeline {
     view_layout: BindGroupLayout,
     pub(crate) font_image_layout: BindGroupLayout,
@@ -215,6 +217,7 @@ struct QuadType {
     pub t: i32,
 }
 
+#[derive(Resource)]
 pub struct QuadMeta {
     vertices: BufferVec<QuadVertex>,
     view_bind_group: Option<BindGroup>,

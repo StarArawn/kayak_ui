@@ -1,95 +1,22 @@
-//! This example demonstrates how one might create a tab system
-//!
-//! Additionally, it showcases focus navigation. Press `Tab` and `Shift + Tab` to move
-//! between focusable widgets. This example also sets it up so that `Enter` or `Space`
-//! can be used in place of a normal click.
-
 use bevy::{
-    prelude::{App as BevyApp, AssetServer, Commands, Res, ResMut},
-    window::WindowDescriptor,
+    prelude::{App as BevyApp, AssetServer, Commands, ImageSettings, Res, ResMut, Vec2},
     DefaultPlugins,
 };
-
-use kayak_ui::{
-    bevy::{BevyContext, BevyKayakUIPlugin, FontMapping, UICameraBundle},
-    core::{
-        constructor, render, rsx,
-        styles::{Style, StyleProp, Units},
-        widget, Color,
-    },
-    widgets::{App, Text, Window},
-};
-
-use crate::theming::{ColorState, TabTheme, TabThemeProvider};
-use tab_box::TabBox;
-use tab_box::TabData;
+use kayak_ui::prelude::{widgets::*, *};
 
 mod tab;
-mod tab_bar;
-mod tab_box;
-mod tab_content;
-mod theming;
-
-#[widget]
-fn TabDemo() {
-    let text_style = Style {
-        width: StyleProp::Value(Units::Percentage(75.0)),
-        top: StyleProp::Value(Units::Stretch(0.5)),
-        left: StyleProp::Value(Units::Stretch(1.0)),
-        bottom: StyleProp::Value(Units::Stretch(1.0)),
-        right: StyleProp::Value(Units::Stretch(1.0)),
-        ..Default::default()
-    };
-
-    // TODO: This is not the most ideal way to generate tabs. For one, the `content` has no access to its actual context
-    // (i.e. where it actually exists in the hierarchy). Additionally, it would be better if tabs were created as
-    // children of `TabBox`. These are issues that will be addressed in the future, so for now, this will work.
-    let tabs = vec![
-        TabData {
-            name: "Tab 1".to_string(),
-            content: {
-                let text_style = text_style.clone();
-                constructor! {
-                    <>
-                        <Text content={"Welcome to Tab 1!".to_string()} size={48.0} styles={Some(text_style)} />
-                    </>
-                }
-            },
-        },
-        TabData {
-            name: "Tab 2".to_string(),
-            content: {
-                let text_style = text_style.clone();
-                constructor! {
-                    <>
-                        <Text content={"Welcome to Tab 2!".to_string()} size={48.0} styles={Some(text_style)} />
-                    </>
-                }
-            },
-        },
-        TabData {
-            name: "Tab 3".to_string(),
-            content: {
-                let text_style = text_style.clone();
-                constructor! {
-                    <>
-                        <Text content={"Welcome to Tab 3!".to_string()} size={48.0} styles={Some(text_style)} />
-                    </>
-                }
-            },
-        },
-    ];
-
-    rsx! {
-        <TabBox tabs={tabs} />
-    }
-}
+mod tab_button;
+mod tab_context;
+use tab::{tab_update, Tab, TabBundle};
+use tab_button::{tab_button_update, TabButton, TabButtonBundle};
+use tab_context::{tab_context_update, TabContextProvider, TabContextProviderBundle};
 
 fn startup(
     mut commands: Commands,
     mut font_mapping: ResMut<FontMapping>,
     asset_server: Res<AssetServer>,
 ) {
+<<<<<<< HEAD
     commands.spawn_bundle(UICameraBundle::new());
 
     font_mapping.set_default(asset_server.load("roboto.kayak_font"));
@@ -130,10 +57,58 @@ fn startup(
     });
 
     commands.insert_resource(context);
+=======
+    font_mapping.set_default(asset_server.load("roboto.kayak_font"));
+
+    commands.spawn(UICameraBundle::new());
+
+    let mut widget_context = Context::new();
+    widget_context.add_widget_system(Tab::default().get_name(), tab_update);
+    widget_context.add_widget_system(TabContextProvider::default().get_name(), tab_context_update);
+    widget_context.add_widget_system(TabButton::default().get_name(), tab_button_update);
+    let parent_id = None;
+
+    rsx! {
+        <KayakAppBundle>
+            <WindowBundle
+                window={KWindow {
+                    title: "Tabs".into(),
+                    draggable: true,
+                    position: Vec2::new(10.0, 10.0),
+                    size: Vec2::new(300.0, 250.0),
+                    ..KWindow::default()
+                }}
+            >
+                <TabContextProviderBundle tab_provider={TabContextProvider { initial_index: 0 }}>
+                    <ElementBundle
+                        styles={KStyle {
+                            layout_type: StyleProp::Value(LayoutType::Row),
+                            height: StyleProp::Value(Units::Auto),
+                            width: StyleProp::Value(Units::Stretch(1.0)),
+                            ..Default::default()
+                        }}
+                    >
+                        <TabButtonBundle tab_button={TabButton { index: 0, title: "Tab 1".into() }} />
+                        <TabButtonBundle tab_button={TabButton { index: 1, title: "Tab 2".into() }} />
+                    </ElementBundle>
+                    <TabBundle tab={Tab { index: 0 }}>
+                        <TextWidgetBundle text={TextProps { content: "Tab 1".into(), ..Default::default() }} />
+                    </TabBundle>
+                    <TabBundle tab={Tab { index: 1 }}>
+                        <TextWidgetBundle text={TextProps { content: "Tab 2".into(), ..Default::default() }} />
+                    </TabBundle>
+                </TabContextProviderBundle>
+            </WindowBundle>
+        </KayakAppBundle>
+    }
+
+    commands.insert_resource(widget_context);
+>>>>>>> exp/main
 }
 
 fn main() {
     BevyApp::new()
+<<<<<<< HEAD
         .insert_resource(WindowDescriptor {
             width: 1270.0,
             height: 720.0,
@@ -144,4 +119,12 @@ fn main() {
         .add_plugin(BevyKayakUIPlugin)
         .add_startup_system(startup)
         .run();
+=======
+        .insert_resource(ImageSettings::default_nearest())
+        .add_plugins(DefaultPlugins)
+        .add_plugin(ContextPlugin)
+        .add_plugin(KayakWidgets)
+        .add_startup_system(startup)
+        .run()
+>>>>>>> exp/main
 }

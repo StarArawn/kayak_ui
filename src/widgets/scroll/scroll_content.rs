@@ -1,69 +1,106 @@
-use crate::core::{rsx, styles::Style, widget, Bound, Children, MutableBound, WidgetProps};
-use kayak_core::render_command::RenderCommand;
-use kayak_core::styles::{LayoutType, Units};
-use kayak_core::{GeometryChanged, OnLayout};
+use bevy::prelude::{Bundle, Changed, Component, Entity, In, Or, ParamSet, Query, With};
 
-use super::ScrollContext;
+use crate::{
+    children::KChildren,
+    context::{Mounted, WidgetName},
+    layout::GeometryChanged,
+    layout::LayoutEvent,
+    on_layout::OnLayout,
+    prelude::WidgetContext,
+    styles::{KStyle, LayoutType, RenderCommand, Units},
+    widget::Widget,
+};
 
-/// Props used by the [`ScrollContent`] widget
-#[derive(WidgetProps, Default, Debug, PartialEq, Clone)]
-pub(super) struct ScrollContentProps {
-    #[prop_field(Styles)]
-    pub styles: Option<Style>,
-    #[prop_field(Children)]
-    pub children: Option<Children>,
-    #[prop_field(OnLayout)]
-    pub on_layout: Option<OnLayout>,
+use super::scroll_context::ScrollContext;
+
+#[derive(Component, Default)]
+pub struct ScrollContentProps;
+
+impl Widget for ScrollContentProps {}
+
+#[derive(Bundle)]
+pub struct ScrollContentBundle {
+    pub scroll_content_props: ScrollContentProps,
+    pub styles: KStyle,
+    pub children: KChildren,
+    pub on_layout: OnLayout,
+    pub widget_name: WidgetName,
 }
 
-#[widget]
-/// A widget that contains the content of a [`ScrollBox`](crate::ScrollBox) widget
-///
-/// The main purpose of this widget is to calculate the size of its children on render. This
-/// is needed by the [`ScrollContext`] in order to function properly.
-pub(super) fn ScrollContent(props: ScrollContentProps) {
-    // === Scroll === //
-    let scroll_ctx = context.create_consumer::<ScrollContext>().unwrap();
-    let ScrollContext {
-        scrollbox_width,
-        scrollbox_height,
-        pad_x,
-        pad_y,
-        ..
-    } = scroll_ctx.get();
-
-    // === Layout === //
-    props.on_layout = Some(OnLayout::new(move |_, evt| {
-        if evt
-            .flags
-            .intersects(GeometryChanged::WIDTH_CHANGED | GeometryChanged::HEIGHT_CHANGED)
-        {
-            let mut scroll: ScrollContext = scroll_ctx.get();
-            scroll.content_width = evt.layout.width;
-            scroll.content_height = evt.layout.height;
-            scroll_ctx.set(scroll);
+impl Default for ScrollContentBundle {
+    fn default() -> Self {
+        Self {
+            scroll_content_props: Default::default(),
+            styles: Default::default(),
+            children: Default::default(),
+            on_layout: Default::default(),
+            widget_name: ScrollContentProps::default().get_name(),
         }
-    }));
-
-    // === Styles === //
-    props.styles = Some(
-        Style::default()
-            .with_style(Style {
-                render_command: RenderCommand::Layout.into(),
-                layout_type: LayoutType::Column.into(),
-                min_width: Units::Pixels(scrollbox_width - pad_x).into(),
-                min_height: Units::Stretch(scrollbox_height - pad_y).into(),
-                width: Units::Auto.into(),
-                height: Units::Auto.into(),
-                ..Default::default()
-            })
-            .with_style(&props.styles),
-    );
-
-    // === Render === //
-    rsx! {
-        <>
-            {children}
-        </>
     }
+}
+
+pub fn update_scroll_content(
+    In((widget_context, entity)): In<(WidgetContext, Entity)>,
+    mut query: ParamSet<(
+        Query<
+            Entity,
+            Or<(
+                Changed<ScrollContentProps>,
+                Changed<KChildren>,
+                With<Mounted>,
+            )>,
+        >,
+        Query<(&mut KStyle, &KChildren, &mut OnLayout), With<ScrollContentProps>>,
+    )>,
+    mut context_query: ParamSet<(Query<Entity, Changed<ScrollContext>>, Query<&ScrollContext>)>,
+) -> bool {
+    if !context_query.p0().is_empty() || !query.p0().is_empty() {
+        if let Ok((mut styles, children, mut on_layout)) = query.p1().get_mut(entity) {
+            if let Some(context_entity) = widget_context.get_context_entity::<ScrollContext>(entity)
+            {
+                if let Ok(scroll_context) = context_query.p1().get(context_entity) {
+                    // === OnLayout === //
+                    *on_layout = OnLayout::new(
+                        move |In((event, _entity)): In<(LayoutEvent, Entity)>,
+                              mut query: Query<&mut ScrollContext>| {
+                            if event.flags.intersects(
+                                GeometryChanged::WIDTH_CHANGED | GeometryChanged::HEIGHT_CHANGED,
+                            ) {
+                                if let Ok(mut scroll) = query.get_mut(context_entity) {
+                                    scroll.content_width = event.layout.width;
+                                    scroll.content_height = event.layout.height;
+                                }
+                            }
+
+                            event
+                        },
+                    );
+
+                    // === Styles === //
+                    *styles = KStyle::default()
+                        .with_style(KStyle {
+                            render_command: RenderCommand::Layout.into(),
+                            layout_type: LayoutType::Column.into(),
+                            min_width: Units::Pixels(
+                                scroll_context.scrollbox_width - scroll_context.pad_x,
+                            )
+                            .into(),
+                            min_height: Units::Stretch(
+                                scroll_context.scrollbox_height - scroll_context.pad_y,
+                            )
+                            .into(),
+                            width: Units::Auto.into(),
+                            height: Units::Auto.into(),
+                            ..Default::default()
+                        })
+                        .with_style(styles.clone());
+
+                    children.process(&widget_context, Some(entity));
+
+                    return true;
+                }
+            }
+        }
+    }
+    false
 }

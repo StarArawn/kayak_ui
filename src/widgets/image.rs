@@ -1,54 +1,43 @@
-use kayak_core::OnLayout;
+use bevy::prelude::{Bundle, Changed, Component, Entity, Handle, In, Or, Query, With};
 
-use crate::core::{
-    render_command::RenderCommand,
-    rsx,
-    styles::{Style, StyleProp},
-    widget, Children, OnEvent, WidgetProps,
+use crate::{
+    context::{Mounted, WidgetName},
+    prelude::WidgetContext,
+    styles::{KStyle, RenderCommand, StyleProp},
+    widget::Widget,
 };
 
-/// Props used by the [`Image`] widget
-#[derive(WidgetProps, Default, Debug, PartialEq, Clone)]
-pub struct ImageProps {
-    pub handle: u16,
-    #[prop_field(Styles)]
-    pub styles: Option<Style>,
-    #[prop_field(Children)]
-    pub children: Option<Children>,
-    #[prop_field(OnEvent)]
-    pub on_event: Option<OnEvent>,
-    #[prop_field(OnLayout)]
-    pub on_layout: Option<OnLayout>,
-    #[prop_field(Focusable)]
-    pub focusable: Option<bool>,
+#[derive(Component, Default)]
+pub struct Image(pub Handle<bevy::prelude::Image>);
+
+impl Widget for Image {}
+
+#[derive(Bundle)]
+pub struct ImageBundle {
+    pub image: Image,
+    pub style: KStyle,
+    pub widget_name: WidgetName,
 }
 
-#[widget]
-/// A widget that renders an image background
-///
-/// # Props
-///
-/// __Type:__ [`ImageProps`]
-///
-/// | Common Prop | Accepted |
-/// | :---------: | :------: |
-/// | `children`  | ✅        |
-/// | `styles`    | ✅        |
-/// | `on_event`  | ✅        |
-/// | `on_layout` | ✅        |
-/// | `focusable` | ✅        |
-///
-pub fn Image(props: ImageProps) {
-    props.styles = Some(Style {
-        render_command: StyleProp::Value(RenderCommand::Image {
-            handle: props.handle,
-        }),
-        ..props.styles.clone().unwrap_or_default()
-    });
-
-    rsx! {
-        <>
-            {children}
-        </>
+impl Default for ImageBundle {
+    fn default() -> Self {
+        Self {
+            image: Default::default(),
+            style: Default::default(),
+            widget_name: Image::default().get_name(),
+        }
     }
+}
+
+pub fn update_image(
+    In((_widget_context, entity)): In<(WidgetContext, Entity)>,
+    mut query: Query<(&mut KStyle, &Image), Or<((Changed<Image>, Changed<KStyle>), With<Mounted>)>>,
+) -> bool {
+    if let Ok((mut style, image)) = query.get_mut(entity) {
+        style.render_command = StyleProp::Value(RenderCommand::Image {
+            handle: image.0.clone_weak(),
+        });
+        return true;
+    }
+    false
 }

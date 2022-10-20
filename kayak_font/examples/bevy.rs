@@ -24,13 +24,12 @@ const INSTRUCTIONS: &str =
 struct Instructions;
 
 fn startup(mut commands: Commands, asset_server: Res<AssetServer>) {
-    commands.spawn_bundle(Camera2dBundle::default());
+    commands.spawn(Camera2dBundle::default());
 
     let font_handle: Handle<KayakFont> = asset_server.load("roboto.kayak_font");
 
     commands
-        .spawn()
-        .insert(Text {
+        .spawn(Text {
             horz_alignment: Alignment::Start,
             color: Color::WHITE,
             content: "Hello World! This text should wrap because it's kinda-super-long. How cool is that?!\nHere's a new line.\n\tHere's a tab.".into(),
@@ -41,7 +40,7 @@ fn startup(mut commands: Commands, asset_server: Res<AssetServer>) {
         })
         .insert(font_handle.clone());
 
-    commands.spawn().insert_bundle(SpriteBundle {
+    commands.spawn(SpriteBundle {
         sprite: Sprite {
             color: Color::DARK_GRAY,
             custom_size: Some(INITIAL_SIZE),
@@ -55,9 +54,8 @@ fn startup(mut commands: Commands, asset_server: Res<AssetServer>) {
         ..Default::default()
     });
 
-    commands
-        .spawn()
-        .insert(Text {
+    commands.spawn((
+        Text {
             horz_alignment: Alignment::Middle,
             color: Color::WHITE,
             content: INSTRUCTIONS.into(),
@@ -65,9 +63,10 @@ fn startup(mut commands: Commands, asset_server: Res<AssetServer>) {
             line_height: 32.0 * 1.2, // Firefox method of calculating default line heights see: https://developer.mozilla.org/en-US/docs/Web/CSS/line-height
             position: Vec2::new(-360.0, 250.0),
             size: Vec2::new(720.0, 200.0),
-        })
-        .insert(Instructions)
-        .insert(font_handle.clone());
+        },
+        Instructions,
+        font_handle.clone(),
+    ));
 }
 
 fn control_text(

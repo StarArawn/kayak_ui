@@ -477,7 +477,6 @@ fn calculate_ui(world: &mut World) {
         }
     });
 
-
     // dbg!("Finished calculating nodes!");
 
     // dbg!("Dispatching layout events!");

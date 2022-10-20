@@ -111,21 +111,6 @@ fn startup(
     mut font_mapping: ResMut<FontMapping>,
     asset_server: Res<AssetServer>,
 ) {
-<<<<<<< HEAD
-    commands.spawn_bundle(UICameraBundle::new());
-
-    font_mapping.set_default(asset_server.load("roboto.kayak_font"));
-
-    let context = BevyContext::new(|context| {
-        render! {
-            <App>
-                <TextBoxExample />
-            </App>
-        }
-    });
-
-    commands.insert_resource(context);
-=======
     font_mapping.set_default(asset_server.load("roboto.kayak_font"));
 
     commands.spawn(UICameraBundle::new());
@@ -152,27 +137,13 @@ fn startup(
         </KayakAppBundle>
     }
     commands.insert_resource(widget_context);
->>>>>>> exp/main
 }
 
 fn main() {
     BevyApp::new()
-<<<<<<< HEAD
-        .insert_resource(WindowDescriptor {
-            width: 1270.0,
-            height: 720.0,
-            title: String::from("UI Example"),
-            ..Default::default()
-        })
-        .add_plugins(DefaultPlugins)
-        .add_plugin(BevyKayakUIPlugin)
-        .add_startup_system(startup)
-        .run();
-=======
         .add_plugins(DefaultPlugins)
         .add_plugin(ContextPlugin)
         .add_plugin(KayakWidgets)
         .add_startup_system(startup)
         .run()
->>>>>>> exp/main
 }

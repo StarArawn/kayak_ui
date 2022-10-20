@@ -34,35 +34,6 @@ fn startup(
     mut font_mapping: ResMut<FontMapping>,
     asset_server: Res<AssetServer>,
 ) {
-<<<<<<< HEAD
-    commands.spawn_bundle(UICameraBundle::new());
-
-    font_mapping.set_default(asset_server.load("roboto.kayak_font"));
-
-    let context = BevyContext::new(|context| {
-        render! {
-            <App>
-                <TodoApp />
-            </App>
-        }
-    });
-
-    commands.insert_resource(context);
-}
-
-fn main() {
-    BevyApp::new()
-        .insert_resource(WindowDescriptor {
-            width: 1270.0,
-            height: 720.0,
-            title: String::from("UI Example"),
-            ..Default::default()
-        })
-        .add_plugins(DefaultPlugins)
-        .add_plugin(BevyKayakUIPlugin)
-        .add_startup_system(startup)
-        .run();
-=======
     font_mapping.set_default(asset_server.load("roboto.kayak_font"));
 
     commands.spawn(UICameraBundle::new());
@@ -102,5 +73,4 @@ fn main() {
         .insert_non_send_resource(TodoList::new())
         .add_startup_system(startup)
         .run()
->>>>>>> exp/main
 }

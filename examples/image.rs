@@ -38,24 +38,10 @@ fn startup(
 
 fn main() {
     BevyApp::new()
-<<<<<<< HEAD
-        .insert_resource(WindowDescriptor {
-            width: 1270.0,
-            height: 720.0,
-            title: String::from("UI Example"),
-            ..Default::default()
-        })
-        .insert_resource(ImageSettings::default_nearest())
-        .add_plugins(DefaultPlugins)
-        .add_plugin(BevyKayakUIPlugin)
-        .add_startup_system(startup)
-        .run();
-=======
         .insert_resource(ImageSettings::default_nearest())
         .add_plugins(DefaultPlugins)
         .add_plugin(ContextPlugin)
         .add_plugin(KayakWidgets)
         .add_startup_system(startup)
         .run()
->>>>>>> exp/main
 }

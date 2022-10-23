@@ -1,21 +1,19 @@
-use bevy::{
-    prelude::{Bundle, Commands, Component, Entity, In, Or, Query, Res, With},
-    window::Windows,
-};
+use bevy::prelude::*;
 use morphorm::Units;
 
 use crate::{
     children::KChildren,
-    context::{Mounted, WidgetName},
+    context::WidgetName,
     prelude::WidgetContext,
     styles::{KStyle, RenderCommand, StyleProp},
-    widget::Widget,
+    widget::{EmptyState, Widget, WidgetParam, WidgetProps},
 };
 
-#[derive(Component, Default)]
+#[derive(Component, Default, Clone, PartialEq)]
 pub struct KayakApp;
 
 impl Widget for KayakApp {}
+impl WidgetProps for KayakApp {}
 
 #[derive(Bundle)]
 pub struct KayakAppBundle {
@@ -36,31 +34,44 @@ impl Default for KayakAppBundle {
     }
 }
 
-/// TODO: USE CAMERA INSTEAD OF WINDOW!!
 pub fn app_update(
+    In((widget_context, entity, previous_props_entity)): In<(WidgetContext, Entity, Entity)>,
+    windows: Res<Windows>,
+    widget_param: WidgetParam<KayakApp, EmptyState>,
+) -> bool {
+    let primary_window = windows.get_primary().unwrap();
+
+    let mut window_change = false;
+    if let Ok(app_style) = widget_param.style_query.get(entity) {
+        if app_style.width != StyleProp::Value(Units::Pixels(primary_window.width())) {
+            window_change = true;
+        }
+        if app_style.height != StyleProp::Value(Units::Pixels(primary_window.height())) {
+            window_change = true;
+        }
+    }
+
+    widget_param.has_changed(&widget_context, entity, previous_props_entity) || window_change
+}
+
+/// TODO: USE CAMERA INSTEAD OF WINDOW!!
+pub fn app_render(
     In((widget_context, entity)): In<(WidgetContext, Entity)>,
     _: Commands,
     windows: Res<Windows>,
-    mut query: Query<(&mut KStyle, &KChildren), Or<(With<KayakApp>, With<Mounted>)>>,
+    mut query: Query<(&mut KStyle, &KChildren)>,
 ) -> bool {
-    let mut has_changed = false;
     let primary_window = windows.get_primary().unwrap();
     if let Ok((mut app_style, children)) = query.get_mut(entity) {
         if app_style.width != StyleProp::Value(Units::Pixels(primary_window.width())) {
             app_style.width = StyleProp::Value(Units::Pixels(primary_window.width()));
-            has_changed = true;
         }
         if app_style.height != StyleProp::Value(Units::Pixels(primary_window.height())) {
             app_style.height = StyleProp::Value(Units::Pixels(primary_window.height()));
-            has_changed = true;
         }
-
         app_style.render_command = StyleProp::Value(RenderCommand::Layout);
-
-        if has_changed {
-            children.process(&widget_context, Some(entity));
-        }
+        children.process(&widget_context, Some(entity));
     }
 
-    has_changed
+    true
 }

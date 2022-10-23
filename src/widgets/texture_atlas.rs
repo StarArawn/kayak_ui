@@ -4,7 +4,7 @@ use crate::{
     context::{Mounted, WidgetName},
     prelude::WidgetContext,
     styles::{KStyle, RenderCommand, StyleProp},
-    widget::Widget,
+    widget::{Widget, WidgetProps},
 };
 
 /// A widget that renders a texture atlas
@@ -22,7 +22,7 @@ use crate::{
 /// | `on_layout` | ✅        |
 /// | `focusable` | ✅        |
 ///
-#[derive(Component, Default, Debug)]
+#[derive(Component, PartialEq, Clone, Default, Debug)]
 pub struct TextureAtlas {
     /// The handle to image
     pub handle: Handle<Image>,
@@ -33,6 +33,7 @@ pub struct TextureAtlas {
 }
 
 impl Widget for TextureAtlas {}
+impl WidgetProps for TextureAtlas {}
 
 #[derive(Bundle)]
 pub struct TextureAtlasBundle {

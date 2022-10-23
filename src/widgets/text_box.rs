@@ -1,17 +1,16 @@
-use bevy::prelude::{
-    Bundle, Changed, Color, Commands, Component, Entity, In, Or, ParamSet, Query, With,
-};
+use bevy::prelude::{Bundle, Color, Commands, Component, Entity, In, Query};
 use kayak_ui_macros::rsx;
 
 use crate::{
-    context::{Mounted, WidgetName},
+    context::WidgetName,
     event::{Event, EventType},
     event_dispatcher::EventDispatcherContext,
     on_event::OnEvent,
     on_layout::OnLayout,
     prelude::{KChildren, OnChange, WidgetContext},
     styles::{Corner, KStyle, RenderCommand, StyleProp, Units},
-    widget::Widget,
+    widget::{Widget, WidgetProps},
+    widget_state::WidgetState,
     widgets::{
         text::{TextProps, TextWidgetBundle},
         BackgroundBundle, ClipBundle,
@@ -20,7 +19,7 @@ use crate::{
 };
 
 /// Props used by the [`TextBox`] widget
-#[derive(Component, Default, Debug, PartialEq, Clone)]
+#[derive(Component, PartialEq, Default, Debug, Clone)]
 pub struct TextBoxProps {
     /// If true, prevents the widget from being focused (and consequently edited)
     pub disabled: bool,
@@ -33,7 +32,7 @@ pub struct TextBoxProps {
     pub value: String,
 }
 
-#[derive(Component, Default)]
+#[derive(Component, Default, Clone, PartialEq)]
 pub struct TextBoxState {
     pub focused: bool,
 }
@@ -41,6 +40,7 @@ pub struct TextBoxState {
 pub struct TextBoxValue(pub String);
 
 impl Widget for TextBoxProps {}
+impl WidgetProps for TextBoxProps {}
 
 /// A widget that displays a text input field
 ///
@@ -83,125 +83,115 @@ impl Default for TextBoxBundle {
 pub fn update_text_box(
     In((widget_context, entity)): In<(WidgetContext, Entity)>,
     mut commands: Commands,
-    mut query: ParamSet<(
-        Query<Entity, Or<(Changed<TextBoxProps>, Changed<KStyle>, With<Mounted>)>>,
-        Query<(&mut KStyle, &TextBoxProps, &mut OnEvent, &OnChange)>,
-    )>,
-    mut context_query: ParamSet<(Query<Entity, Changed<TextBoxState>>, Query<&TextBoxState>)>,
+    mut query: Query<(&mut KStyle, &TextBoxProps, &mut OnEvent, &OnChange)>,
 ) -> bool {
-    if !query.p0().is_empty() || !context_query.p0().is_empty() {
-        if let Ok((mut styles, text_box, mut on_event, on_change)) = query.p1().get_mut(entity) {
-            let state_entity = widget_context.get_context_entity::<TextBoxState>(entity);
-            if state_entity.is_none() {
-                let state_entity = commands.spawn(TextBoxState::default()).id();
-                widget_context.set_context_entity::<TextBoxState>(Some(entity), state_entity);
-                return false;
-            }
+    if let Ok((mut styles, text_box, mut on_event, on_change)) = query.get_mut(entity) {
+        let state_entity = widget_context.use_state::<TextBoxState>(
+            &mut commands,
+            entity,
+            TextBoxState::default(),
+        );
 
-            let state_entity = state_entity.unwrap();
-
-            *styles = KStyle::default()
-                // Required styles
-                .with_style(KStyle {
-                    render_command: RenderCommand::Layout.into(),
-                    ..Default::default()
-                })
-                // Apply any prop-given styles
-                .with_style(&*styles)
-                // If not set by props, apply these styles
-                .with_style(KStyle {
-                    top: Units::Pixels(0.0).into(),
-                    bottom: Units::Pixels(0.0).into(),
-                    height: Units::Pixels(26.0).into(),
-                    // cursor: CursorIcon::Text.into(),
-                    ..Default::default()
-                });
-
-            let background_styles = KStyle {
-                background_color: StyleProp::Value(Color::rgba(0.176, 0.196, 0.215, 1.0)),
-                border_radius: Corner::all(5.0).into(),
-                height: Units::Pixels(26.0).into(),
-                padding_left: Units::Pixels(5.0).into(),
-                padding_right: Units::Pixels(5.0).into(),
+        *styles = KStyle::default()
+            // Required styles
+            .with_style(KStyle {
+                render_command: RenderCommand::Layout.into(),
                 ..Default::default()
-            };
+            })
+            // Apply any prop-given styles
+            .with_style(&*styles)
+            // If not set by props, apply these styles
+            .with_style(KStyle {
+                top: Units::Pixels(0.0).into(),
+                bottom: Units::Pixels(0.0).into(),
+                height: Units::Pixels(26.0).into(),
+                // cursor: CursorIcon::Text.into(),
+                ..Default::default()
+            });
 
-            let current_value = text_box.value.clone();
-            let cloned_on_change = on_change.clone();
+        let background_styles = KStyle {
+            render_command: StyleProp::Value(RenderCommand::Quad),
+            background_color: StyleProp::Value(Color::rgba(0.176, 0.196, 0.215, 1.0)),
+            border_radius: Corner::all(5.0).into(),
+            height: Units::Pixels(26.0).into(),
+            padding_left: Units::Pixels(5.0).into(),
+            padding_right: Units::Pixels(5.0).into(),
+            ..Default::default()
+        };
 
-            *on_event = OnEvent::new(
-                move |In((event_dispatcher_context, mut event, _entity)): In<(
-                    EventDispatcherContext,
-                    Event,
-                    Entity,
-                )>,
-                      mut state_query: Query<&mut TextBoxState>| {
-                    match event.event_type {
-                        EventType::CharInput { c } => {
-                            let mut current_value = current_value.clone();
-                            let cloned_on_change = cloned_on_change.clone();
-                            if let Ok(state) = state_query.get(state_entity) {
-                                if !state.focused {
-                                    return (event_dispatcher_context, event);
-                                }
-                            } else {
+        let current_value = text_box.value.clone();
+        let cloned_on_change = on_change.clone();
+
+        *on_event = OnEvent::new(
+            move |In((event_dispatcher_context, _, mut event, _entity)): In<(
+                EventDispatcherContext,
+                WidgetState,
+                Event,
+                Entity,
+            )>,
+                  mut state_query: Query<&mut TextBoxState>| {
+                match event.event_type {
+                    EventType::CharInput { c } => {
+                        let mut current_value = current_value.clone();
+                        let cloned_on_change = cloned_on_change.clone();
+                        if let Ok(state) = state_query.get(state_entity) {
+                            if !state.focused {
                                 return (event_dispatcher_context, event);
                             }
-                            if is_backspace(c) {
-                                if !current_value.is_empty() {
-                                    current_value.truncate(current_value.len() - 1);
-                                }
-                            } else if !c.is_control() {
-                                current_value.push(c);
-                            }
-                            cloned_on_change.set_value(current_value);
-                            event.add_system(cloned_on_change);
+                        } else {
+                            return (event_dispatcher_context, event);
                         }
-                        EventType::Focus => {
-                            if let Ok(mut state) = state_query.get_mut(state_entity) {
-                                state.focused = true;
+                        if is_backspace(c) {
+                            if !current_value.is_empty() {
+                                current_value.truncate(current_value.len() - 1);
                             }
+                        } else if !c.is_control() {
+                            current_value.push(c);
                         }
-                        EventType::Blur => {
-                            if let Ok(mut state) = state_query.get_mut(state_entity) {
-                                state.focused = false;
-                            }
-                        }
-                        _ => {}
+                        cloned_on_change.set_value(current_value);
+                        event.add_system(cloned_on_change);
                     }
-                    (event_dispatcher_context, event)
-                },
-            );
+                    EventType::Focus => {
+                        if let Ok(mut state) = state_query.get_mut(state_entity) {
+                            state.focused = true;
+                        }
+                    }
+                    EventType::Blur => {
+                        if let Ok(mut state) = state_query.get_mut(state_entity) {
+                            state.focused = false;
+                        }
+                    }
+                    _ => {}
+                }
+                (event_dispatcher_context, event)
+            },
+        );
 
-            let parent_id = Some(entity);
-            rsx! {
-                <BackgroundBundle styles={background_styles}>
-                    <ClipBundle styles={KStyle {
-                        height: Units::Pixels(26.0).into(),
-                        padding_left: StyleProp::Value(Units::Stretch(0.0)),
-                        padding_right: StyleProp::Value(Units::Stretch(0.0)),
-                        padding_bottom: StyleProp::Value(Units::Stretch(1.0)),
-                        padding_top: StyleProp::Value(Units::Stretch(1.0)),
-                        ..Default::default()
-                    }}>
-                        <TextWidgetBundle
-                            text={TextProps {
-                                content: text_box.value.clone(),
-                                size: 14.0,
-                                line_height: Some(18.0),
-                                ..Default::default()
-                            }}
-                            // styles={text_styles}
-                        />
-                    </ClipBundle>
-                </BackgroundBundle>
-            }
-
-            return true;
+        let parent_id = Some(entity);
+        rsx! {
+            <BackgroundBundle styles={background_styles}>
+                <ClipBundle styles={KStyle {
+                    height: Units::Pixels(26.0).into(),
+                    padding_left: StyleProp::Value(Units::Stretch(0.0)),
+                    padding_right: StyleProp::Value(Units::Stretch(0.0)),
+                    padding_bottom: StyleProp::Value(Units::Stretch(1.0)),
+                    padding_top: StyleProp::Value(Units::Stretch(1.0)),
+                    ..Default::default()
+                }}>
+                    <TextWidgetBundle
+                        text={TextProps {
+                            content: text_box.value.clone(),
+                            size: 14.0,
+                            line_height: Some(18.0),
+                            ..Default::default()
+                        }}
+                    />
+                </ClipBundle>
+            </BackgroundBundle>
         }
     }
 
-    false
+    true
 }
 
 /// Checks if the given character contains the "Backspace" sequence

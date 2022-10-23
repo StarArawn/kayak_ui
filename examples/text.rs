@@ -7,7 +7,7 @@ use bevy::{
 };
 use kayak_ui::prelude::{widgets::*, KStyle, *};
 
-#[derive(Component, Default)]
+#[derive(Component, Default, Clone, PartialEq)]
 pub struct MyWidgetProps {
     pub foo: u32,
 }
@@ -33,6 +33,7 @@ fn my_widget_1_update(
 }
 
 impl Widget for MyWidgetProps {}
+impl WidgetProps for MyWidgetProps {}
 
 #[derive(Bundle)]
 pub struct MyWidgetBundle {
@@ -65,7 +66,12 @@ fn startup(
 
     let mut widget_context = Context::new();
     let parent_id = None;
-    widget_context.add_widget_system(MyWidgetProps::default().get_name(), my_widget_1_update);
+    widget_context.add_widget_data::<MyWidgetProps, EmptyState>();
+    widget_context.add_widget_system(
+        MyWidgetProps::default().get_name(),
+        widget_update::<MyWidgetProps, EmptyState>,
+        my_widget_1_update,
+    );
     rsx! {
         <KayakAppBundle><MyWidgetBundle props={MyWidgetProps { foo: 0 }} /></KayakAppBundle>
     }

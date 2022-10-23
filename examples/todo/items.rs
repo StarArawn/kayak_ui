@@ -3,10 +3,11 @@ use kayak_ui::prelude::{widgets::*, *};
 
 use crate::TodoList;
 
-#[derive(Component, Default)]
+#[derive(Component, Default, Clone, PartialEq)]
 pub struct TodoItemsProps;
 
 impl Widget for TodoItemsProps {}
+impl WidgetProps for TodoItemsProps {}
 
 #[derive(Bundle)]
 pub struct TodoItemsBundle {
@@ -21,7 +22,7 @@ impl Default for TodoItemsBundle {
             widget: TodoItemsProps::default(),
             styles: KStyle {
                 render_command: StyleProp::Value(RenderCommand::Layout),
-                // height: StyleProp::Value(Units::Stretch(1.0)),
+                height: StyleProp::Value(Units::Auto),
                 width: StyleProp::Value(Units::Stretch(1.0)),
                 ..KStyle::default()
             },
@@ -30,7 +31,7 @@ impl Default for TodoItemsBundle {
     }
 }
 
-pub fn update_todo_items(
+pub fn render_todo_items(
     In((widget_context, entity)): In<(WidgetContext, Entity)>,
     mut commands: Commands,
     todo_list: Res<TodoList>,
@@ -39,11 +40,17 @@ pub fn update_todo_items(
     if query.is_empty() || todo_list.is_changed() {
         let parent_id = Some(entity);
         rsx! {
-            <ElementBundle>
+            <ElementBundle
+                styles={KStyle {
+                    height: Units::Auto.into(),
+                    ..Default::default()
+                }}
+            >
                 {todo_list.items.iter().enumerate().for_each(|(index, content)| {
                     let handle_click = OnEvent::new(
-                        move |In((event_dispatcher_context, event, _)): In<(
+                        move |In((event_dispatcher_context, _, event, _)): In<(
                             EventDispatcherContext,
+                            WidgetState,
                             Event,
                             Entity,
                         )>,

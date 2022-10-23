@@ -397,7 +397,7 @@ impl KStyle {
             padding_top: StyleProp::Default,
             pointer_events: StyleProp::Default,
             position_type: StyleProp::Default,
-            render_command: StyleProp::Value(RenderCommand::Empty),
+            render_command: StyleProp::Value(RenderCommand::Layout),
             right: StyleProp::Default,
             row_between: StyleProp::Default,
             top: StyleProp::Default,

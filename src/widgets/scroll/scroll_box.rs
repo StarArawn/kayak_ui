@@ -1,10 +1,8 @@
-use bevy::prelude::{
-    Bundle, Changed, Color, Commands, Component, Entity, In, Or, ParamSet, Query, With,
-};
+use bevy::prelude::{Bundle, Color, Commands, Component, Entity, In, ParamSet, Query};
 
 use crate::{
     children::KChildren,
-    context::{Mounted, WidgetName},
+    context::WidgetName,
     cursor::ScrollUnit,
     event::{Event, EventType},
     event_dispatcher::EventDispatcherContext,
@@ -13,7 +11,8 @@ use crate::{
     on_layout::OnLayout,
     prelude::{constructor, rsx, WidgetContext},
     styles::{KStyle, LayoutType, PositionType, RenderCommand, Units},
-    widget::Widget,
+    widget::{Widget, WidgetProps},
+    widget_state::WidgetState,
     widgets::{
         scroll::{
             scroll_bar::{ScrollBarBundle, ScrollBarProps},
@@ -25,7 +24,7 @@ use crate::{
 
 use super::scroll_context::ScrollContext;
 
-#[derive(Component, Default)]
+#[derive(Component, Default, Clone, PartialEq)]
 pub struct ScrollBoxProps {
     /// If true, always shows scrollbars even when there's nothing to scroll
     ///
@@ -55,6 +54,7 @@ pub struct ScrollBoxProps {
 }
 
 impl Widget for ScrollBoxProps {}
+impl WidgetProps for ScrollBoxProps {}
 
 #[derive(Bundle)]
 pub struct ScrollBoxBundle {
@@ -80,183 +80,156 @@ impl Default for ScrollBoxBundle {
 pub fn update_scroll_box(
     In((widget_context, entity)): In<(WidgetContext, Entity)>,
     mut commands: Commands,
-    mut query: ParamSet<(
-        Query<Entity, Or<(Changed<ScrollBoxProps>, Changed<KChildren>, With<Mounted>)>>,
-        Query<(&ScrollBoxProps, &mut KStyle, &KChildren, &mut OnLayout)>,
-    )>,
-    mut context_query: ParamSet<(
-        Query<Entity, Changed<ScrollContext>>,
-        Query<&ScrollContext>,
-        Query<&mut ScrollContext>,
-    )>,
+    mut query: Query<(&ScrollBoxProps, &mut KStyle, &KChildren, &mut OnLayout)>,
+    mut context_query: ParamSet<(Query<&ScrollContext>, Query<&mut ScrollContext>)>,
 ) -> bool {
-    if !context_query.p0().is_empty() || !query.p0().is_empty() {
-        if let Ok((scroll_box, mut styles, scroll_box_children, mut on_layout)) =
-            query.p1().get_mut(entity)
-        {
-            if let Some(context_entity) = widget_context.get_context_entity::<ScrollContext>(entity)
-            {
-                if let Ok(scroll_context) = context_query.p1().get(context_entity).cloned() {
-                    // === Configuration === //
-                    let always_show_scrollbar = scroll_box.always_show_scrollbar;
-                    let disable_horizontal = scroll_box.disable_horizontal;
-                    let disable_vertical = scroll_box.disable_vertical;
-                    let hide_horizontal = scroll_box.hide_horizontal;
-                    let hide_vertical = scroll_box.hide_vertical;
-                    let scrollbar_thickness = scroll_box.scrollbar_thickness.unwrap_or(10.0);
-                    let scroll_line = scroll_box.scroll_line.unwrap_or(16.0);
-                    let thumb_color = scroll_box.thumb_color;
-                    let thumb_styles = scroll_box.thumb_styles.clone();
-                    let track_color = scroll_box.track_color;
-                    let track_styles = scroll_box.track_styles.clone();
+    if let Ok((scroll_box, mut styles, scroll_box_children, mut on_layout)) = query.get_mut(entity)
+    {
+        if let Some(context_entity) = widget_context.get_context_entity::<ScrollContext>(entity) {
+            if let Ok(scroll_context) = context_query.p1().get(context_entity).cloned() {
+                // === Configuration === //
+                let always_show_scrollbar = scroll_box.always_show_scrollbar;
+                let disable_horizontal = scroll_box.disable_horizontal;
+                let disable_vertical = scroll_box.disable_vertical;
+                let hide_horizontal = scroll_box.hide_horizontal;
+                let hide_vertical = scroll_box.hide_vertical;
+                let scrollbar_thickness = scroll_box.scrollbar_thickness.unwrap_or(10.0);
+                let scroll_line = scroll_box.scroll_line.unwrap_or(16.0);
+                let thumb_color = scroll_box.thumb_color;
+                let thumb_styles = scroll_box.thumb_styles.clone();
+                let track_color = scroll_box.track_color;
+                let track_styles = scroll_box.track_styles.clone();
 
-                    let scroll_x = scroll_context.scroll_x();
-                    let scroll_y = scroll_context.scroll_y();
-                    let scrollable_width = scroll_context.scrollable_width();
-                    let scrollable_height = scroll_context.scrollable_height();
+                let scroll_x = scroll_context.scroll_x();
+                let scroll_y = scroll_context.scroll_y();
+                let scrollable_width = scroll_context.scrollable_width();
+                let scrollable_height = scroll_context.scrollable_height();
 
-                    let hori_thickness = scrollbar_thickness;
-                    let vert_thickness = scrollbar_thickness;
+                let hori_thickness = scrollbar_thickness;
+                let vert_thickness = scrollbar_thickness;
 
-                    let hide_horizontal = hide_horizontal
-                        || !always_show_scrollbar && scrollable_width < f32::EPSILON;
-                    let hide_vertical =
-                        hide_vertical || !always_show_scrollbar && scrollable_height < f32::EPSILON;
+                let hide_horizontal =
+                    hide_horizontal || !always_show_scrollbar && scrollable_width < f32::EPSILON;
+                let hide_vertical =
+                    hide_vertical || !always_show_scrollbar && scrollable_height < f32::EPSILON;
 
-                    let pad_x = if hide_vertical { 0.0 } else { vert_thickness };
-                    let pad_y = if hide_horizontal { 0.0 } else { hori_thickness };
+                let pad_x = if hide_vertical { 0.0 } else { vert_thickness };
+                let pad_y = if hide_horizontal { 0.0 } else { hori_thickness };
 
-                    if pad_x != scroll_context.pad_x || pad_y != scroll_context.pad_y {
-                        if let Ok(mut scroll_context_mut) =
-                            context_query.p2().get_mut(context_entity)
-                        {
-                            scroll_context_mut.pad_x = pad_x;
-                            scroll_context_mut.pad_y = pad_y;
-                        }
+                if pad_x != scroll_context.pad_x || pad_y != scroll_context.pad_y {
+                    if let Ok(mut scroll_context_mut) = context_query.p1().get_mut(context_entity) {
+                        scroll_context_mut.pad_x = pad_x;
+                        scroll_context_mut.pad_y = pad_y;
                     }
+                }
 
-                    *on_layout = OnLayout::new(
-                        move |In((event, _entity)): In<(LayoutEvent, Entity)>,
-                              mut query: Query<&mut ScrollContext>| {
-                            if event.flags.intersects(
-                                GeometryChanged::WIDTH_CHANGED | GeometryChanged::HEIGHT_CHANGED,
-                            ) {
-                                if let Ok(mut scroll) = query.get_mut(context_entity) {
-                                    scroll.scrollbox_width = event.layout.width;
-                                    scroll.scrollbox_height = event.layout.height;
-                                }
+                *on_layout = OnLayout::new(
+                    move |In((event, _entity)): In<(LayoutEvent, Entity)>,
+                          mut query: Query<&mut ScrollContext>| {
+                        if event.flags.intersects(
+                            GeometryChanged::WIDTH_CHANGED | GeometryChanged::HEIGHT_CHANGED,
+                        ) {
+                            if let Ok(mut scroll) = query.get_mut(context_entity) {
+                                scroll.scrollbox_width = event.layout.width;
+                                scroll.scrollbox_height = event.layout.height;
                             }
+                        }
 
-                            event
-                        },
-                    );
+                        event
+                    },
+                );
 
-                    // === Styles === //
-                    *styles = KStyle::default()
-                        .with_style(KStyle {
-                            render_command: RenderCommand::Layout.into(),
-                            ..Default::default()
-                        })
-                        .with_style(styles.clone())
-                        .with_style(KStyle {
-                            width: Units::Stretch(1.0).into(),
-                            height: Units::Stretch(1.0).into(),
-                            ..Default::default()
-                        });
-
-                    let hbox_styles = KStyle::default().with_style(KStyle {
+                // === Styles === //
+                *styles = KStyle::default()
+                    .with_style(KStyle {
                         render_command: RenderCommand::Layout.into(),
-                        layout_type: LayoutType::Row.into(),
-                        width: Units::Stretch(1.0).into(),
                         ..Default::default()
-                    });
-                    let vbox_styles = KStyle::default().with_style(KStyle {
-                        render_command: RenderCommand::Layout.into(),
-                        layout_type: LayoutType::Column.into(),
+                    })
+                    .with_style(styles.clone())
+                    .with_style(KStyle {
                         width: Units::Stretch(1.0).into(),
+                        height: Units::Stretch(1.0).into(),
                         ..Default::default()
                     });
 
-                    let content_styles = KStyle::default().with_style(KStyle {
-                        position_type: PositionType::SelfDirected.into(),
-                        top: Units::Pixels(scroll_y).into(),
-                        left: Units::Pixels(scroll_x).into(),
-                        ..Default::default()
-                    });
+                let hbox_styles = KStyle::default().with_style(KStyle {
+                    render_command: RenderCommand::Layout.into(),
+                    layout_type: LayoutType::Row.into(),
+                    width: Units::Stretch(1.0).into(),
+                    ..Default::default()
+                });
+                let vbox_styles = KStyle::default().with_style(KStyle {
+                    render_command: RenderCommand::Layout.into(),
+                    layout_type: LayoutType::Column.into(),
+                    width: Units::Stretch(1.0).into(),
+                    ..Default::default()
+                });
 
-                    let event_handler = OnEvent::new(
-                        move |In((event_dispatcher_context, mut event, _entity)): In<(
-                            EventDispatcherContext,
-                            Event,
-                            Entity,
-                        )>,
-                              mut query: Query<&mut ScrollContext>| {
-                            if let Ok(mut scroll_context) = query.get_mut(context_entity) {
-                                match event.event_type {
-                                    EventType::Scroll(evt) => {
-                                        match evt.delta {
-                                            ScrollUnit::Line { x, y } => {
-                                                if !disable_horizontal {
-                                                    scroll_context
-                                                        .set_scroll_x(scroll_x - x * scroll_line);
-                                                }
-                                                if !disable_vertical {
-                                                    scroll_context
-                                                        .set_scroll_y(scroll_y + y * scroll_line);
-                                                }
+                let content_styles = KStyle::default().with_style(KStyle {
+                    position_type: PositionType::SelfDirected.into(),
+                    top: Units::Pixels(scroll_y).into(),
+                    left: Units::Pixels(scroll_x).into(),
+                    ..Default::default()
+                });
+
+                let event_handler = OnEvent::new(
+                    move |In((event_dispatcher_context, _, mut event, _entity)): In<(
+                        EventDispatcherContext,
+                        WidgetState,
+                        Event,
+                        Entity,
+                    )>,
+                          mut query: Query<&mut ScrollContext>| {
+                        if let Ok(mut scroll_context) = query.get_mut(context_entity) {
+                            match event.event_type {
+                                EventType::Scroll(evt) => {
+                                    match evt.delta {
+                                        ScrollUnit::Line { x, y } => {
+                                            if !disable_horizontal {
+                                                scroll_context
+                                                    .set_scroll_x(scroll_x - x * scroll_line);
                                             }
-                                            ScrollUnit::Pixel { x, y } => {
-                                                if !disable_horizontal {
-                                                    scroll_context.set_scroll_x(scroll_x - x);
-                                                }
-                                                if !disable_vertical {
-                                                    scroll_context.set_scroll_y(scroll_y + y);
-                                                }
+                                            if !disable_vertical {
+                                                scroll_context
+                                                    .set_scroll_y(scroll_y + y * scroll_line);
                                             }
                                         }
-                                        event.stop_propagation();
+                                        ScrollUnit::Pixel { x, y } => {
+                                            if !disable_horizontal {
+                                                scroll_context.set_scroll_x(scroll_x - x);
+                                            }
+                                            if !disable_vertical {
+                                                scroll_context.set_scroll_y(scroll_y + y);
+                                            }
+                                        }
                                     }
-                                    _ => {}
+                                    event.stop_propagation();
                                 }
+                                _ => {}
                             }
-                            (event_dispatcher_context, event)
-                        },
-                    );
+                        }
+                        (event_dispatcher_context, event)
+                    },
+                );
 
-                    let parent_id = Some(entity);
-                    rsx! {
-                        <ElementBundle on_event={event_handler} styles={hbox_styles}>
-                            <ElementBundle styles={vbox_styles}>
-                                <ClipBundle>
-                                    <ScrollContentBundle
-                                        children={scroll_box_children.clone()}
-                                        styles={content_styles}
-                                    />
-                                </ClipBundle>
-                                {if !hide_horizontal {
-                                    constructor! {
-                                        <ScrollBarBundle
-                                            scrollbar_props={ScrollBarProps {
-                                                disabled: disable_horizontal,
-                                                horizontal: true,
-                                                thickness: hori_thickness,
-                                                thumb_color: thumb_color,
-                                                thumb_styles: thumb_styles.clone(),
-                                                track_color: track_color,
-                                                track_styles: track_styles.clone(),
-                                                ..Default::default()
-                                            }}
-                                        />
-                                    }
-                                }}
-                            </ElementBundle>
-                            {if !hide_vertical {
+                let parent_id = Some(entity);
+                rsx! {
+                    <ElementBundle on_event={event_handler} styles={hbox_styles}>
+                        <ElementBundle styles={vbox_styles}>
+                            <ClipBundle>
+                                <ScrollContentBundle
+                                    children={scroll_box_children.clone()}
+                                    styles={content_styles}
+                                />
+                            </ClipBundle>
+                            {if !hide_horizontal {
                                 constructor! {
                                     <ScrollBarBundle
                                         scrollbar_props={ScrollBarProps {
-                                            disabled: disable_vertical,
+                                            disabled: disable_horizontal,
+                                            horizontal: true,
                                             thickness: hori_thickness,
-                                            thumb_color: thumb_color.clone(),
+                                            thumb_color: thumb_color,
                                             thumb_styles: thumb_styles.clone(),
                                             track_color: track_color,
                                             track_styles: track_styles.clone(),
@@ -266,12 +239,25 @@ pub fn update_scroll_box(
                                 }
                             }}
                         </ElementBundle>
-                    }
-
-                    return true;
+                        {if !hide_vertical {
+                            constructor! {
+                                <ScrollBarBundle
+                                    scrollbar_props={ScrollBarProps {
+                                        disabled: disable_vertical,
+                                        thickness: hori_thickness,
+                                        thumb_color: thumb_color.clone(),
+                                        thumb_styles: thumb_styles.clone(),
+                                        track_color: track_color,
+                                        track_styles: track_styles.clone(),
+                                        ..Default::default()
+                                    }}
+                                />
+                            }
+                        }}
+                    </ElementBundle>
                 }
             }
         }
     }
-    false
+    true
 }

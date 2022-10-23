@@ -9,6 +9,8 @@ use morphorm::Hierarchy;
 
 use crate::{
     calculate_nodes::calculate_nodes,
+    children::KChildren,
+    clone_component::{clone_state, clone_system, EntityCloneSystems, PreviousWidget},
     context_entities::ContextEntities,
     event_dispatcher::EventDispatcher,
     focus_tree::FocusTree,
@@ -17,7 +19,10 @@ use crate::{
     node::{DirtyNode, WrappedIndex},
     prelude::WidgetContext,
     render_primitive::RenderPrimitive,
+    styles::KStyle,
     tree::{Change, Tree},
+    widget::WidgetProps,
+    widget_state::WidgetState,
     Focusable, WindowSize,
 };
 
@@ -27,15 +32,26 @@ pub struct Mounted;
 
 const UPDATE_DEPTH: u32 = 0;
 
+type WidgetSystems = HashMap<
+    String,
+    (
+        Box<dyn System<In = (WidgetContext, Entity, Entity), Out = bool>>,
+        Box<dyn System<In = (WidgetContext, Entity), Out = bool>>,
+    ),
+>;
+
 #[derive(Resource)]
 pub struct Context {
     pub tree: Arc<RwLock<Tree>>,
     pub(crate) layout_cache: Arc<RwLock<LayoutCache>>,
     pub(crate) focus_tree: Arc<RwLock<FocusTree>>,
-    systems: HashMap<String, Box<dyn System<In = (WidgetContext, Entity), Out = bool>>>,
+    systems: WidgetSystems,
     pub(crate) current_z: f32,
     pub(crate) context_entities: ContextEntities,
     pub(crate) current_cursor: CursorIcon,
+    pub(crate) clone_systems: Arc<RwLock<EntityCloneSystems>>,
+    pub(crate) cloned_widget_entities: Arc<RwLock<HashMap<Entity, Entity>>>,
+    pub(crate) widget_state: WidgetState,
 }
 
 impl Context {
@@ -48,6 +64,9 @@ impl Context {
             current_z: 0.0,
             context_entities: ContextEntities::new(),
             current_cursor: CursorIcon::Default,
+            clone_systems: Default::default(),
+            cloned_widget_entities: Default::default(),
+            widget_state: Default::default(),
         }
     }
 
@@ -59,13 +78,29 @@ impl Context {
         }
     }
 
-    pub fn add_widget_system<Params>(
+    pub fn add_widget_system<Params, Params2>(
         &mut self,
         type_name: impl Into<String>,
-        system: impl IntoSystem<(WidgetContext, Entity), bool, Params>,
+        update: impl IntoSystem<(WidgetContext, Entity, Entity), bool, Params>,
+        render: impl IntoSystem<(WidgetContext, Entity), bool, Params2>,
     ) {
-        let system = IntoSystem::into_system(system);
-        self.systems.insert(type_name.into(), Box::new(system));
+        let update_system = Box::new(IntoSystem::into_system(update));
+        let render_system = Box::new(IntoSystem::into_system(render));
+        self.systems
+            .insert(type_name.into(), (update_system, render_system));
+    }
+
+    pub fn add_widget_data<
+        Props: WidgetProps + Component + Clone + PartialEq,
+        State: Component + Clone + PartialEq,
+    >(
+        &mut self,
+    ) {
+        if let Ok(mut clone_systems) = self.clone_systems.try_write() {
+            clone_systems
+                .0
+                .push((clone_system::<Props>, clone_state::<State>));
+        }
     }
 
     pub fn add_widget(&mut self, parent: Option<Entity>, entity: Entity) {
@@ -105,6 +140,7 @@ impl Context {
     pub fn build_render_primitives(
         &self,
         nodes: &Query<&crate::node::Node>,
+        widget_names: &Query<&WidgetName>,
     ) -> Vec<RenderPrimitive> {
         let node_tree = self.tree.try_read();
         if node_tree.is_err() {
@@ -123,6 +159,7 @@ impl Context {
             &*node_tree,
             &self.layout_cache,
             nodes,
+            widget_names,
             node_tree.root_node.unwrap(),
             0.0,
             RenderPrimitive::Empty,
@@ -134,6 +171,7 @@ fn recurse_node_tree_to_build_primitives(
     node_tree: &Tree,
     layout_cache: &Arc<RwLock<LayoutCache>>,
     nodes: &Query<&crate::node::Node>,
+    widget_names: &Query<&WidgetName>,
     current_node: WrappedIndex,
     mut main_z_index: f32,
     mut prev_clip: RenderPrimitive,
@@ -151,6 +189,15 @@ fn recurse_node_tree_to_build_primitives(
                 };
                 layout.z_index = new_z_index;
                 render_primitive.set_layout(layout);
+
+                if matches!(render_primitive, RenderPrimitive::Empty) {
+                    log::trace!(
+                        "No render primitive for node: {}-{}",
+                        widget_names.get(current_node.0).unwrap().0,
+                        current_node.0.id(),
+                    );
+                }
+
                 render_primitives.push(render_primitive.clone());
 
                 let new_prev_clip = if matches!(render_primitive, RenderPrimitive::Clip { .. }) {
@@ -167,6 +214,7 @@ fn recurse_node_tree_to_build_primitives(
                             node_tree,
                             layout_cache,
                             nodes,
+                            widget_names,
                             *child,
                             main_z_index,
                             new_prev_clip.clone(),
@@ -185,13 +233,40 @@ fn recurse_node_tree_to_build_primitives(
                             render_primitives.push(prev_clip.clone());
                         }
                     }
+                } else {
+                    log::trace!(
+                        "No children for node: {}-{}",
+                        widget_names.get(current_node.0).unwrap().0,
+                        current_node.0.id()
+                    );
                 }
             } else {
-                println!("No layout for: {:?}", current_node.0.id());
+                log::warn!(
+                    "No layout for node: {}-{}",
+                    widget_names.get(current_node.0).unwrap().0,
+                    current_node.0.id()
+                );
             }
         }
     } else {
-        println!("No node for: {:?}", current_node.0.id());
+        log::error!(
+            "No render node: {}-{} > {}-{}",
+            node_tree
+                .get_parent(current_node)
+                .and_then(|v| Some(v.0.id() as i32))
+                .unwrap_or(-1),
+            widget_names
+                .get(
+                    node_tree
+                        .get_parent(current_node)
+                        .and_then(|v| Some(v.0))
+                        .unwrap_or(Entity::from_raw(0))
+                )
+                .and_then(|v| Ok(v.0.clone()))
+                .unwrap_or("None".into()),
+            widget_names.get(current_node.0).unwrap().0,
+            current_node.0.id()
+        );
     }
 
     render_primitives
@@ -229,6 +304,9 @@ fn update_widgets_sys(world: &mut World) {
         tree_iterator,
         &context.context_entities,
         &context.focus_tree,
+        &context.clone_systems,
+        &context.cloned_widget_entities,
+        &context.widget_state,
         &mut new_ticks,
     );
 
@@ -245,9 +323,11 @@ fn update_widgets_sys(world: &mut World) {
 
     for (key, system) in context.systems.iter_mut() {
         if let Some(new_tick) = new_ticks.get(key) {
-            system.set_last_change_tick(*new_tick);
+            system.0.set_last_change_tick(*new_tick);
+            system.1.set_last_change_tick(*new_tick);
         } else {
-            system.set_last_change_tick(tick);
+            system.0.set_last_change_tick(tick);
+            system.1.set_last_change_tick(tick);
         }
         // system.apply_buffers(world);
     }
@@ -263,10 +343,13 @@ fn update_widgets(
     world: &mut World,
     tree: &Arc<RwLock<Tree>>,
     layout_cache: &Arc<RwLock<LayoutCache>>,
-    systems: &mut HashMap<String, Box<dyn System<In = (WidgetContext, Entity), Out = bool>>>,
+    systems: &mut WidgetSystems,
     widgets: Vec<WrappedIndex>,
     context_entities: &ContextEntities,
     focus_tree: &Arc<RwLock<FocusTree>>,
+    clone_systems: &Arc<RwLock<EntityCloneSystems>>,
+    cloned_widget_entities: &Arc<RwLock<HashMap<Entity, Entity>>>,
+    widget_state: &WidgetState,
     new_ticks: &mut HashMap<String, u32>,
 ) {
     for entity in widgets.iter() {
@@ -276,6 +359,7 @@ fn update_widgets(
                     tree.clone(),
                     context_entities.clone(),
                     layout_cache.clone(),
+                    widget_state.clone(),
                 );
                 widget_context.copy_from_point(&tree, *entity);
                 let children_before = widget_context.get_children(entity.0);
@@ -287,6 +371,9 @@ fn update_widgets(
                     widget_type.0.clone(),
                     widget_context,
                     children_before,
+                    clone_systems,
+                    cloned_widget_entities,
+                    widget_state,
                     new_ticks,
                 );
 
@@ -321,6 +408,9 @@ fn update_widgets(
                     children,
                     context_entities,
                     focus_tree,
+                    clone_systems,
+                    cloned_widget_entities,
+                    widget_state,
                     new_ticks,
                 );
                 // }
@@ -340,26 +430,85 @@ fn update_widgets(
 }
 
 fn update_widget(
-    systems: &mut HashMap<String, Box<dyn System<In = (WidgetContext, Entity), Out = bool>>>,
+    systems: &mut WidgetSystems,
     tree: &Arc<RwLock<Tree>>,
     world: &mut World,
     entity: WrappedIndex,
     widget_type: String,
     widget_context: WidgetContext,
     previous_children: Vec<Entity>,
+    clone_systems: &Arc<RwLock<EntityCloneSystems>>,
+    cloned_widget_entities: &Arc<RwLock<HashMap<Entity, Entity>>>,
+    widget_state: &WidgetState,
     new_ticks: &mut HashMap<String, u32>,
 ) -> (Tree, bool) {
+    // Check if we should update this widget
+
+    let should_rerender = {
+        let old_props_entity =
+            if let Ok(mut cloned_widget_entities) = cloned_widget_entities.try_write() {
+                if let Some(entity) = cloned_widget_entities.get(&entity.0) {
+                    *entity
+                } else {
+                    let target = world.spawn_empty().insert(PreviousWidget).id();
+                    cloned_widget_entities.insert(entity.0, target);
+                    target
+                }
+            } else {
+                panic!("Couldn't get write lock!")
+            };
+
+        let widget_update_system = &mut systems.get_mut(&widget_type).unwrap().0;
+        let old_tick = widget_update_system.get_last_change_tick();
+        let should_rerender =
+            widget_update_system.run((widget_context.clone(), entity.0, old_props_entity), world);
+        let new_tick = widget_update_system.get_last_change_tick();
+        new_ticks.insert(widget_type.clone(), new_tick);
+        widget_update_system.set_last_change_tick(old_tick);
+
+        if should_rerender {
+            if let Ok(cloned_widget_entities) = cloned_widget_entities.try_read() {
+                let target_entity = cloned_widget_entities.get(&entity.0).unwrap();
+                if let Ok(clone_systems) = clone_systems.try_read() {
+                    for s in clone_systems.0.iter() {
+                        s.0(world, *target_entity, entity.0);
+                        s.1(world, *target_entity, entity.0, &widget_state);
+                        if let Some(styles) = world.entity(entity.0).get::<KStyle>().cloned() {
+                            world.entity_mut(*target_entity).insert(styles);
+                        }
+                        if let Some(children) = world.entity(entity.0).get::<KChildren>().cloned() {
+                            world.entity_mut(*target_entity).insert(children);
+                        }
+                    }
+                }
+            }
+        }
+
+        should_rerender
+    };
+
+    if !should_rerender {
+        return (widget_context.take(), false);
+    }
+
+    // if let Ok(tree) = tree.try_read() {
+    //     if tree.root_node.unwrap() != entity {
+
+    // }
+
     let should_update_children;
+    log::trace!("Re-rendering: {:?} {:?}", &widget_type, entity.0.id());
     {
         // Remove children from previous render.
         widget_context.remove_children(previous_children);
-        let widget_system = systems.get_mut(&widget_type).unwrap();
-        let old_tick = widget_system.get_last_change_tick();
-        should_update_children = widget_system.run((widget_context.clone(), entity.0), world);
-        let new_tick = widget_system.get_last_change_tick();
+        let widget_render_system = &mut systems.get_mut(&widget_type).unwrap().1;
+        let old_tick = widget_render_system.get_last_change_tick();
+        should_update_children =
+            widget_render_system.run((widget_context.clone(), entity.0), world);
+        let new_tick = widget_render_system.get_last_change_tick();
         new_ticks.insert(widget_type.clone(), new_tick);
-        widget_system.set_last_change_tick(old_tick);
-        widget_system.apply_buffers(world);
+        widget_render_system.set_last_change_tick(old_tick);
+        widget_render_system.apply_buffers(world);
     }
     let widget_context = widget_context.take();
     let mut command_queue = CommandQueue::default();
@@ -367,22 +516,34 @@ fn update_widget(
 
     commands.entity(entity.0).remove::<Mounted>();
 
-    // Mark node as needing a recalculation of rendering/layout.
-    if should_update_children {
-        commands.entity(entity.0).insert(DirtyNode);
-    }
-
     let diff = if let Ok(tree) = tree.read() {
         tree.diff_children(&widget_context, entity, UPDATE_DEPTH)
     } else {
         panic!("Failed to acquire read lock.");
     };
+
+    log::trace!("Diff: {:?}", &diff);
+
+    // Always mark widget dirty if it's re-rendered.
+    // Mark node as needing a recalculation of rendering/layout.
+    commands.entity(entity.0).insert(DirtyNode);
+
+    for child in widget_context.child_iter(entity) {
+        commands.entity(child.0).insert(DirtyNode);
+    }
+
+    if let Ok(cloned_widget_entities) = cloned_widget_entities.try_read() {
+        let target_entity = cloned_widget_entities.get(&entity.0).unwrap();
+        if let Some(styles) = world.entity(entity.0).get::<KStyle>().cloned() {
+            commands.entity(*target_entity).insert(styles);
+        }
+        if let Some(children) = world.entity(entity.0).get::<KChildren>().cloned() {
+            commands.entity(*target_entity).insert(children);
+        }
+    }
+
     if should_update_children {
         for (_, changed_entity, _, changes) in diff.changes.iter() {
-            if changes.iter().any(|change| *change != Change::Deleted) {
-                commands.entity(changed_entity.0).insert(DirtyNode);
-            }
-
             if changes.iter().any(|change| *change == Change::Deleted) {
                 // commands.entity(changed_entity.0).despawn();
                 commands.entity(changed_entity.0).remove::<DirtyNode>();
@@ -394,13 +555,27 @@ fn update_widget(
     }
     command_queue.apply(world);
 
+    if should_update_children {
+        for (_, child_entity, _, changes) in diff.changes.iter() {
+            // Clone to entity.
+            if changes.iter().any(|change| *change == Change::Deleted) {
+                if let Ok(cloned_widget_entities) = cloned_widget_entities.try_read() {
+                    if let Some(entity) = cloned_widget_entities.get(&child_entity.0) {
+                        world.despawn(*entity);
+                    }
+                }
+            }
+        }
+    }
+
     (widget_context, should_update_children)
 }
 
 fn init_systems(world: &mut World) {
     let mut context = world.remove_resource::<Context>().unwrap();
     for system in context.systems.values_mut() {
-        system.initialize(world);
+        system.0.initialize(world);
+        system.1.initialize(world);
     }
 
     world.insert_resource(context);

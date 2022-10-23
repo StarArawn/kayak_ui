@@ -4,6 +4,7 @@ use std::sync::{Arc, RwLock};
 
 use crate::event::Event;
 use crate::event_dispatcher::EventDispatcherContext;
+use crate::widget_state::WidgetState;
 
 /// A container for a function that handles events
 ///
@@ -16,7 +17,7 @@ pub struct OnEvent {
     system: Arc<
         RwLock<
             dyn System<
-                In = (EventDispatcherContext, Event, Entity),
+                In = (EventDispatcherContext, WidgetState, Event, Entity),
                 Out = (EventDispatcherContext, Event),
             >,
         >,
@@ -25,9 +26,11 @@ pub struct OnEvent {
 
 impl Default for OnEvent {
     fn default() -> Self {
-        Self::new(|In((event_dispatcher_context, event, _entity))| {
-            (event_dispatcher_context, event)
-        })
+        Self::new(
+            |In((event_dispatcher_context, _widget_state, event, _entity))| {
+                (event_dispatcher_context, event)
+            },
+        )
     }
 }
 
@@ -39,7 +42,7 @@ impl OnEvent {
     /// 2. The event
     pub fn new<Params>(
         system: impl IntoSystem<
-            (EventDispatcherContext, Event, Entity),
+            (EventDispatcherContext, WidgetState, Event, Entity),
             (EventDispatcherContext, Event),
             Params,
         >,
@@ -56,6 +59,7 @@ impl OnEvent {
     pub fn try_call(
         &mut self,
         mut event_dispatcher_context: EventDispatcherContext,
+        widget_state: WidgetState,
         entity: Entity,
         mut event: Event,
         world: &mut World,
@@ -65,8 +69,10 @@ impl OnEvent {
                 system.initialize(world);
                 self.has_initialized = true;
             }
-            (event_dispatcher_context, event) =
-                system.run((event_dispatcher_context, event, entity), world);
+            (event_dispatcher_context, event) = system.run(
+                (event_dispatcher_context, widget_state, event, entity),
+                world,
+            );
             system.apply_buffers(world);
         }
         (event_dispatcher_context, event)

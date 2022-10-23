@@ -17,6 +17,7 @@ kayak_font = { path = "./kayak_font" }
 morphorm = { git = "https://github.com/geom3trik/morphorm", rev = "1243152d4cebea46fd3e5098df26402c73acae91" }
 kayak_ui_macros = { path = "./kayak_ui_macros" }
 indexmap = "1.9"
+log = "0.4"
 
 [dev-dependencies]
 fastrand = "1.8"

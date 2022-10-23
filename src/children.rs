@@ -3,7 +3,7 @@ use bevy::prelude::*;
 use crate::prelude::WidgetContext;
 
 /// Defers widgets being added to the widget tree.
-#[derive(Component, Debug, Default, Clone)]
+#[derive(Component, Debug, Default, Clone, PartialEq)]
 pub struct KChildren {
     inner: Vec<Entity>,
 }

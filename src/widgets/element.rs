@@ -1,18 +1,19 @@
-use bevy::prelude::{Bundle, Changed, Commands, Component, Entity, In, Or, Query, With};
+use bevy::prelude::{Bundle, Commands, Component, Entity, In, Query};
 
 use crate::{
     children::KChildren,
-    context::{Mounted, WidgetName},
+    context::WidgetName,
     on_event::OnEvent,
     prelude::WidgetContext,
     styles::{KStyle, RenderCommand, StyleProp},
-    widget::Widget,
+    widget::{Widget, WidgetProps},
 };
 
-#[derive(Component, Default)]
+#[derive(Component, PartialEq, Clone, Default)]
 pub struct Element;
 
 impl Widget for Element {}
+impl WidgetProps for Element {}
 
 #[derive(Bundle)]
 pub struct ElementBundle {
@@ -38,10 +39,7 @@ impl Default for ElementBundle {
 pub fn update_element(
     In((mut widget_context, entity)): In<(WidgetContext, Entity)>,
     _: Commands,
-    mut query: Query<
-        (&mut KStyle, &KChildren),
-        Or<((Changed<KStyle>, With<Element>), With<Mounted>)>,
-    >,
+    mut query: Query<(&mut KStyle, &KChildren)>,
 ) -> bool {
     if let Ok((mut style, children)) = query.get_mut(entity) {
         *style = KStyle::default()
@@ -51,7 +49,6 @@ pub fn update_element(
                 ..Default::default()
             });
         children.process(&mut widget_context, Some(entity));
-        return true;
     }
-    false
+    true
 }

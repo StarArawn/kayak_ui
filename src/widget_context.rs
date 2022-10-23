@@ -1,10 +1,14 @@
 use std::sync::{Arc, RwLock};
 
-use bevy::{prelude::Entity, utils::HashMap};
+use bevy::{
+    prelude::{Commands, Component, Entity},
+    utils::HashMap,
+};
 use morphorm::Hierarchy;
 
 use crate::{
     context_entities::ContextEntities, layout::LayoutCache, node::WrappedIndex, prelude::Tree,
+    widget_state::WidgetState,
 };
 
 #[derive(Clone)]
@@ -14,6 +18,7 @@ pub struct WidgetContext {
     context_entities: ContextEntities,
     layout_cache: Arc<RwLock<LayoutCache>>,
     index: Arc<RwLock<HashMap<Entity, usize>>>,
+    widget_state: WidgetState,
 }
 
 impl WidgetContext {
@@ -21,6 +26,7 @@ impl WidgetContext {
         old_tree: Arc<RwLock<Tree>>,
         context_entities: ContextEntities,
         layout_cache: Arc<RwLock<LayoutCache>>,
+        widget_state: WidgetState,
     ) -> Self {
         Self {
             old_tree,
@@ -28,6 +34,7 @@ impl WidgetContext {
             context_entities,
             layout_cache,
             index: Arc::new(RwLock::new(HashMap::default())),
+            widget_state,
         }
     }
 
@@ -129,6 +136,22 @@ impl WidgetContext {
         }
 
         0
+    }
+
+    /// Creates or grabs the existing state entity
+    pub fn use_state<State: Component + PartialEq + Clone + Default>(
+        &self,
+        commands: &mut Commands,
+        widget_entity: Entity,
+        initial_state: State,
+    ) -> Entity {
+        self.widget_state
+            .add(commands, widget_entity, initial_state)
+    }
+
+    /// Grabs the existing state returns none if it does not exist.
+    pub fn get_state(&self, widget_entity: Entity) -> Option<Entity> {
+        self.widget_state.get(widget_entity)
     }
 
     pub fn get_child_at(&self, entity: Option<Entity>) -> Option<Entity> {

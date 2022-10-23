@@ -221,8 +221,13 @@ impl EventDispatcher {
                             cursor_capture: self.cursor_capture,
                         };
 
-                        (event_dispatcher_context, node_event) =
-                            on_event.try_call(event_dispatcher_context, index.0, node_event, world);
+                        (event_dispatcher_context, node_event) = on_event.try_call(
+                            event_dispatcher_context,
+                            context.widget_state.clone(),
+                            index.0,
+                            node_event,
+                            world,
+                        );
                         world.entity_mut(index.0).insert(on_event);
                         event_dispatcher_context.merge(self);
 
@@ -232,6 +237,7 @@ impl EventDispatcher {
                             context.tree.clone(),
                             context.context_entities.clone(),
                             context.layout_cache.clone(),
+                            context.widget_state.clone(),
                         );
                         node_event.run_on_change(world, widget_context);
                     }

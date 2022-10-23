@@ -1,18 +1,19 @@
-use bevy::prelude::{Bundle, Changed, Commands, Component, Entity, In, Or, Query, With};
+use bevy::prelude::{Bundle, Commands, Component, Entity, In, Query};
 
 use crate::{
     children::KChildren,
-    context::{Mounted, WidgetName},
+    context::WidgetName,
     on_event::OnEvent,
     prelude::WidgetContext,
     styles::{KStyle, RenderCommand, StyleProp},
-    widget::Widget,
+    widget::{Widget, WidgetProps},
 };
 
-#[derive(Component, Default)]
+#[derive(Component, PartialEq, Clone, Default)]
 pub struct Background;
 
 impl Widget for Background {}
+impl WidgetProps for Background {}
 
 #[derive(Bundle)]
 pub struct BackgroundBundle {
@@ -38,18 +39,11 @@ impl Default for BackgroundBundle {
 pub fn update_background(
     In((widget_context, entity)): In<(WidgetContext, Entity)>,
     _: Commands,
-    mut query: Query<
-        (&mut KStyle, &KChildren),
-        Or<(
-            (Changed<KStyle>, Changed<KChildren>, With<Background>),
-            With<Mounted>,
-        )>,
-    >,
+    mut query: Query<(&mut KStyle, &KChildren)>,
 ) -> bool {
     if let Ok((mut style, children)) = query.get_mut(entity) {
         style.render_command = StyleProp::Value(RenderCommand::Quad);
         children.process(&widget_context, Some(entity));
-        return true;
     }
-    false
+    true
 }

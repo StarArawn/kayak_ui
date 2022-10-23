@@ -1,11 +1,11 @@
-use bevy::prelude::{Bundle, Changed, Commands, Component, Entity, In, Or, Query, Vec2, With};
+use bevy::prelude::{Bundle, Commands, Component, Entity, In, Query, Vec2};
 
 use crate::{
     children::KChildren,
-    context::{Mounted, WidgetName},
+    context::WidgetName,
     prelude::WidgetContext,
     styles::KStyle,
-    widget::Widget,
+    widget::{Widget, WidgetProps},
 };
 
 /// Context data provided by a [`ScrollBox`](crate::ScrollBox) widget
@@ -134,12 +134,13 @@ impl ScrollContext {
     }
 }
 
-#[derive(Component, Default)]
+#[derive(Component, Default, PartialEq, Clone)]
 pub struct ScrollContextProvider {
     initial_value: ScrollContext,
 }
 
 impl Widget for ScrollContextProvider {}
+impl WidgetProps for ScrollContextProvider {}
 
 #[derive(Bundle)]
 pub struct ScrollContextProviderBundle {
@@ -163,21 +164,13 @@ impl Default for ScrollContextProviderBundle {
 pub fn update_scroll_context(
     In((widget_context, entity)): In<(WidgetContext, Entity)>,
     mut commands: Commands,
-    mut query: Query<
-        (&ScrollContextProvider, &KChildren),
-        Or<(
-            Changed<ScrollContextProvider>,
-            Changed<KChildren>,
-            With<Mounted>,
-        )>,
-    >,
+    mut query: Query<(&ScrollContextProvider, &KChildren)>,
 ) -> bool {
     if let Ok((context_provider, children)) = query.get_mut(entity) {
         let context_entity = commands.spawn(context_provider.initial_value).id();
         widget_context.set_context_entity::<ScrollContext>(Some(entity), context_entity);
         children.process(&widget_context, Some(entity));
-        return true;
     }
 
-    false
+    true
 }

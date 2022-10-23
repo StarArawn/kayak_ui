@@ -1,16 +1,22 @@
 use bevy::{
     prelude::{
-        App as BevyApp, AssetServer, Bundle, Changed, Commands, Component, Entity, In, Query, Res,
-        ResMut, Vec2,
+        App as BevyApp, AssetServer, Bundle, Commands, Component, Entity, In, Query, Res, ResMut,
+        Vec2,
     },
     DefaultPlugins,
 };
 use kayak_ui::prelude::{widgets::*, *};
 
-#[derive(Component, Default)]
-struct CurrentCount(pub u32);
+#[derive(Component, Default, PartialEq, Clone)]
+struct CurrentCount;
 
 impl Widget for CurrentCount {}
+impl WidgetProps for CurrentCount {}
+
+#[derive(Component, Default, PartialEq, Clone)]
+struct CurrentCountState {
+    foo: u32,
+}
 
 #[derive(Bundle)]
 struct CurrentCountBundle {
@@ -29,18 +35,20 @@ impl Default for CurrentCountBundle {
     }
 }
 
-fn current_count_update(
+fn current_count_render(
     In((widget_context, entity)): In<(WidgetContext, Entity)>,
     mut commands: Commands,
-    query: Query<&CurrentCount, Changed<CurrentCount>>,
+    query: Query<&CurrentCountState>,
 ) -> bool {
-    if let Ok(current_count) = query.get(entity) {
+    let state_entity =
+        widget_context.use_state(&mut commands, entity, CurrentCountState::default());
+    if let Ok(current_count) = query.get(state_entity) {
         let parent_id = Some(entity);
         rsx! {
             <TextWidgetBundle
                 text={
                     TextProps {
-                        content: format!("Current Count: {}", current_count.0).into(),
+                        content: format!("Current Count: {}", current_count.foo).into(),
                         size: 16.0,
                         line_height: Some(40.0),
                         ..Default::default()
@@ -66,7 +74,12 @@ fn startup(
 
     let mut widget_context = Context::new();
     let parent_id = None;
-    widget_context.add_widget_system(CurrentCount::default().get_name(), current_count_update);
+    widget_context.add_widget_data::<CurrentCount, CurrentCountState>();
+    widget_context.add_widget_system(
+        CurrentCount::default().get_name(),
+        widget_update::<CurrentCount, CurrentCountState>,
+        current_count_render,
+    );
     rsx! {
         <KayakAppBundle>
             <WindowBundle
@@ -81,14 +94,14 @@ fn startup(
                 <CurrentCountBundle id={"current_count_entity"} />
                 <KButtonBundle
                     on_event={OnEvent::new(
-                        move |In((event_dispatcher_context, event, _entity)): In<(EventDispatcherContext, Event, Entity)>,
-                            mut query: Query<&mut CurrentCount>| {
+                        move |In((event_dispatcher_context, widget_state, event, _entity)): In<(EventDispatcherContext, WidgetState, Event, Entity)>,
+                            mut query: Query<&mut CurrentCountState>| {
                             match event.event_type {
                                 EventType::Click(..) => {
-                                    if let Ok(mut current_count) =
-                                        query.get_mut(current_count_entity)
-                                    {
-                                        current_count.0 += 1;
+                                    if let Some(state_entity) = widget_state.get(current_count_entity) {
+                                        if let Ok(mut current_count) = query.get_mut(state_entity) {
+                                            current_count.foo += 1;
+                                        }
                                     }
                                 }
                                 _ => {}

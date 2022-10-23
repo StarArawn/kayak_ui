@@ -136,38 +136,24 @@ pub fn calculate_nodes(
             commands.entity(entity).insert(node);
             if !needs_layout {
                 commands.entity(entity).remove::<DirtyNode>();
+                log::trace!("{:?} needs layout!", entity.id());
             }
         }
 
-        // if has_new_nodes {
-        // build_nodes_tree(&mut context, &tree, &node_query);
-        // }
-
-        // dbg!("STARTING MORPHORM CALC!");
-        // dbg!("node_tree");
-        // context.node_tree.dump();
-        // if let Ok(tree) = context.tree.try_read() {
-        // dbg!("tree");
-        // dbg!(&tree);
-        // tree.dump();
-        // }
         {
             let context = context.as_mut();
             if let Ok(tree) = context.tree.try_read() {
+                // tree.dump();
                 let node_tree = &*tree;
                 if let Ok(mut cache) = context.layout_cache.try_write() {
                     let mut data_cache = DataCache {
                         cache: &mut cache,
                         query: &nodes_no_entity_query,
                     };
-
-                    // dbg!(&node_tree);
-
                     morphorm::layout(&mut data_cache, node_tree, &nodes_no_entity_query);
                 }
             }
         }
-        // dbg!("FINISHED MORPHORM CALC!");
     }
 }
 
@@ -199,6 +185,10 @@ fn create_primitive(
                     if let Some(parent_id) = node_tree.get_parent(id) {
                         if let Some(parent_layout) = context.get_layout(&parent_id) {
                             properties.max_size = (parent_layout.width, parent_layout.height);
+
+                            if properties.max_size.0 == 0.0 || properties.max_size.1 == 0.0 {
+                                needs_layout = true;
+                            }
 
                             // --- Calculate Text Layout --- //
                             *text_layout = font.measure(&content, *properties);

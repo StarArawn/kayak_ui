@@ -1,17 +1,17 @@
 use bevy::{
-    prelude::{Bundle, Changed, Color, Commands, Component, Entity, In, Or, Query, With},
+    prelude::{Bundle, Color, Commands, Component, Entity, In, Query},
     window::CursorIcon,
 };
 
 use crate::{
-    context::{Mounted, WidgetName},
+    context::WidgetName,
     on_event::OnEvent,
     prelude::{KChildren, Units, WidgetContext},
     styles::{Corner, KCursorIcon, KStyle, RenderCommand, StyleProp},
-    widget::Widget,
+    widget::{Widget, WidgetProps},
 };
 
-#[derive(Component, Default)]
+#[derive(Component, PartialEq, Clone, Default)]
 pub struct KButton;
 
 #[derive(Bundle)]
@@ -36,11 +36,12 @@ impl Default for KButtonBundle {
 }
 
 impl Widget for KButton {}
+impl WidgetProps for KButton {}
 
 pub fn button_update(
     In((widget_context, entity)): In<(WidgetContext, Entity)>,
     _: Commands,
-    mut query: Query<(&mut KStyle, &KChildren), Or<(Changed<KButton>, With<Mounted>)>>,
+    mut query: Query<(&mut KStyle, &KChildren)>,
 ) -> bool {
     if let Ok((mut style, children)) = query.get_mut(entity) {
         *style = KStyle::default()
@@ -63,9 +64,7 @@ pub fn button_update(
             });
 
         children.process(&widget_context, Some(entity));
-
-        return true;
     }
 
-    false
+    true
 }

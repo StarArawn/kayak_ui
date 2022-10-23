@@ -199,8 +199,8 @@ impl Widget {
         let props = quote! {
             let entity = widget_context.get_child_at(parent_id);
             let #entity_id = if let Some(entity) = entity {
-                use bevy::prelude::DespawnRecursiveExt;
-                commands.entity(entity).despawn_recursive();
+                // use bevy::prelude::DespawnRecursiveExt;
+                // commands.entity(entity).despawn_recursive();
                 commands.get_or_spawn(entity).id()
             } else {
                 commands.spawn_empty().id()

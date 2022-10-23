@@ -29,6 +29,18 @@ impl TodoList {
     }
 }
 
+// Our own version of widget_update that handles resource change events.
+pub fn widget_update_with_resource<
+    Props: WidgetProps + PartialEq + Component + Clone,
+    State: PartialEq + Component + Clone,
+>(
+    In((widget_context, entity, previous_entity)): In<(WidgetContext, Entity, Entity)>,
+    todo_list: Res<TodoList>,
+    widget_param: WidgetParam<Props, State>,
+) -> bool {
+    widget_param.has_changed(&widget_context, entity, previous_entity) || todo_list.is_changed()
+}
+
 fn startup(
     mut commands: Commands,
     mut font_mapping: ResMut<FontMapping>,
@@ -39,8 +51,19 @@ fn startup(
     commands.spawn(UICameraBundle::new());
 
     let mut widget_context = Context::new();
-    widget_context.add_widget_system(TodoItemsProps::default().get_name(), update_todo_items);
-    widget_context.add_widget_system(TodoInputProps::default().get_name(), update_todo_input);
+    widget_context.add_widget_data::<TodoItemsProps, EmptyState>();
+    widget_context.add_widget_data::<TodoInputProps, EmptyState>();
+
+    widget_context.add_widget_system(
+        TodoItemsProps::default().get_name(),
+        widget_update_with_resource::<TodoItemsProps, EmptyState>,
+        render_todo_items,
+    );
+    widget_context.add_widget_system(
+        TodoInputProps::default().get_name(),
+        widget_update_with_resource::<TodoInputProps, EmptyState>,
+        render_todo_input,
+    );
     let parent_id = None;
     rsx! {
         <KayakAppBundle>

@@ -1,25 +1,29 @@
-use bevy::prelude::{
-    Bundle, Changed, Color, Commands, Component, Entity, In, Or, Query, Vec2, With,
+use bevy::{
+    prelude::{Bundle, Color, Commands, Component, Entity, In, Query, Vec2},
+    window::CursorIcon,
 };
+use kayak_ui_macros::rsx;
 
 use crate::{
     children::KChildren,
-    context::{Mounted, WidgetName},
+    context::WidgetName,
     event::{Event, EventType},
     event_dispatcher::EventDispatcherContext,
     on_event::OnEvent,
     prelude::WidgetContext,
-    styles::{Corner, Edge, KStyle, PositionType, RenderCommand, StyleProp, Units},
-    widget::Widget,
+    styles::{Corner, Edge, KCursorIcon, KStyle, PositionType, RenderCommand, StyleProp, Units},
+    widget::{Widget, WidgetProps},
+    widget_state::WidgetState,
 };
 
 use super::{
     background::BackgroundBundle,
     clip::ClipBundle,
     text::{TextProps, TextWidgetBundle},
+    ElementBundle,
 };
 
-#[derive(Component, Debug, Default)]
+#[derive(Component, PartialEq, Clone, Debug, Default)]
 pub struct KWindow {
     /// If true, allows the window to be draggable by its title bar
     pub draggable: bool,
@@ -32,11 +36,10 @@ pub struct KWindow {
 
     pub is_dragging: bool,
     pub offset: Vec2,
-    pub title_bar_entity: Option<Entity>,
-    // pub children: Vec<Entity>,
 }
 
 impl Widget for KWindow {}
+impl WidgetProps for KWindow {}
 
 #[derive(Bundle)]
 pub struct WindowBundle {
@@ -60,59 +63,34 @@ impl Default for WindowBundle {
 pub fn window_update(
     In((widget_context, window_entity)): In<(WidgetContext, Entity)>,
     mut commands: Commands,
-    mut query: Query<
-        (&mut KStyle, &KChildren, &mut KWindow),
-        Or<(
-            Changed<KWindow>,
-            Changed<KStyle>,
-            Changed<KChildren>,
-            With<Mounted>,
-        )>,
-    >,
+    mut query: Query<(&KStyle, &KChildren, &KWindow)>,
 ) -> bool {
-    let mut has_changed = false;
-    if let Ok((mut window_style, children, mut window)) = query.get_mut(window_entity) {
-        *window_style = KStyle {
-            background_color: StyleProp::Value(Color::rgba(0.125, 0.125, 0.125, 1.0)),
-            border_color: StyleProp::Value(Color::rgba(0.0781, 0.0898, 0.101, 1.0)),
-            border: StyleProp::Value(Edge::all(4.0)),
-            border_radius: StyleProp::Value(Corner::all(5.0)),
-            render_command: StyleProp::Value(RenderCommand::Quad),
-            position_type: StyleProp::Value(PositionType::SelfDirected),
-            left: StyleProp::Value(Units::Pixels(window.position.x)),
-            top: StyleProp::Value(Units::Pixels(window.position.y)),
-            width: StyleProp::Value(Units::Pixels(window.size.x)),
-            height: StyleProp::Value(Units::Pixels(window.size.y)),
-            min_width: StyleProp::Value(Units::Pixels(window.size.x)),
-            min_height: StyleProp::Value(Units::Pixels(window.size.y)),
-            ..window_style.clone()
-        };
+    if let Ok((window_style, window_children, window)) = query.get_mut(window_entity) {
+        let title = window.title.clone();
 
-        if window.title_bar_entity.is_none() {
-            let title = window.title.clone();
-
-            let mut title_children = KChildren::new();
-            // Spawn title children
-            let title_entity = commands
-                .spawn(TextWidgetBundle {
-                    text: TextProps {
-                        content: title.clone(),
-                        size: 16.0,
-                        line_height: Some(25.0),
-                        ..Default::default()
-                    },
-                    styles: KStyle {
-                        height: StyleProp::Value(Units::Pixels(25.0)),
-                        ..KStyle::default()
-                    },
-                    ..Default::default()
-                })
-                .id();
-            title_children.add(title_entity);
-
-            let title_background_entity = commands
-                .spawn(BackgroundBundle {
-                    styles: KStyle {
+        let parent_id = Some(window_entity);
+        rsx! {
+            <ElementBundle
+                styles={KStyle {
+                    background_color: StyleProp::Value(Color::rgba(0.125, 0.125, 0.125, 1.0)),
+                    border_color: StyleProp::Value(Color::rgba(0.0781, 0.0898, 0.101, 1.0)),
+                    border: StyleProp::Value(Edge::all(4.0)),
+                    border_radius: StyleProp::Value(Corner::all(5.0)),
+                    render_command: StyleProp::Value(RenderCommand::Quad),
+                    position_type: StyleProp::Value(PositionType::SelfDirected),
+                    left: StyleProp::Value(Units::Pixels(window.position.x)),
+                    top: StyleProp::Value(Units::Pixels(window.position.y)),
+                    width: StyleProp::Value(Units::Pixels(window.size.x)),
+                    height: StyleProp::Value(Units::Pixels(window.size.y)),
+                    min_width: StyleProp::Value(Units::Pixels(window.size.x)),
+                    min_height: StyleProp::Value(Units::Pixels(window.size.y)),
+                    ..window_style.clone()
+                }}
+            >
+                <BackgroundBundle
+                    id={"title_bar_entity"}
+                    styles={KStyle {
+                        cursor: StyleProp::Value(KCursorIcon(CursorIcon::Hand)),
                         render_command: StyleProp::Value(RenderCommand::Quad),
                         background_color: StyleProp::Value(Color::rgba(0.0781, 0.0898, 0.101, 1.0)),
                         border_radius: StyleProp::Value(Corner::all(5.0)),
@@ -124,69 +102,73 @@ pub fn window_update(
                         bottom: StyleProp::Value(Units::Pixels(0.0)),
                         padding_left: StyleProp::Value(Units::Pixels(5.0)),
                         ..KStyle::default()
-                    },
-                    children: title_children,
-                    ..BackgroundBundle::default()
-                })
-                .id();
-            window.title_bar_entity = Some(title_background_entity);
-
-            if window.draggable {
-                commands
-                    .entity(window.title_bar_entity.unwrap())
-                    .insert(OnEvent::new(
-                        move |In((mut event_dispatcher_context, event, entity)): In<(
-                            EventDispatcherContext,
-                            Event,
-                            Entity,
-                        )>,
-                              mut query: Query<&mut KWindow>| {
-                            if let Ok(mut window) = query.get_mut(window_entity) {
-                                match event.event_type {
-                                    EventType::MouseDown(data) => {
-                                        event_dispatcher_context.capture_cursor(entity);
-                                        window.is_dragging = true;
-                                        window.offset = Vec2::new(
-                                            window.position.x - data.position.0,
-                                            window.position.y - data.position.1,
-                                        );
-                                        window.title_bar_entity = None;
-                                    }
-                                    EventType::MouseUp(..) => {
-                                        event_dispatcher_context.release_cursor(entity);
-                                        window.is_dragging = false;
-                                        window.title_bar_entity = None;
-                                    }
-                                    EventType::Hover(data) => {
-                                        if window.is_dragging {
-                                            window.position = Vec2::new(
-                                                window.offset.x + data.position.0,
-                                                window.offset.y + data.position.1,
-                                            );
-                                            window.title_bar_entity = None;
+                    }}
+                >
+                    <TextWidgetBundle
+                        text={TextProps {
+                            content: title.clone(),
+                            size: 14.0,
+                            line_height: Some(25.0),
+                            ..Default::default()
+                        }}
+                        styles={KStyle {
+                            height: StyleProp::Value(Units::Pixels(25.0)),
+                            ..KStyle::default()
+                        }}
+                    />
+                </BackgroundBundle>
+                {
+                    if window.draggable {
+                        commands
+                            .entity(title_bar_entity)
+                            .insert(OnEvent::new(
+                                move |In((mut event_dispatcher_context, _, event, entity)): In<(
+                                    EventDispatcherContext,
+                                    WidgetState,
+                                    Event,
+                                    Entity,
+                                )>,
+                                    mut query: Query<&mut KWindow>| {
+                                    if let Ok(mut window) = query.get_mut(window_entity) {
+                                        match event.event_type {
+                                            EventType::MouseDown(data) => {
+                                                event_dispatcher_context.capture_cursor(entity);
+                                                window.is_dragging = true;
+                                                window.offset = Vec2::new(
+                                                    window.position.x - data.position.0,
+                                                    window.position.y - data.position.1,
+                                                );
+                                            }
+                                            EventType::MouseUp(..) => {
+                                                event_dispatcher_context.release_cursor(entity);
+                                                window.is_dragging = false;
+                                            }
+                                            EventType::Hover(data) => {
+                                                if window.is_dragging {
+                                                    window.position = Vec2::new(
+                                                        window.offset.x + data.position.0,
+                                                        window.offset.y + data.position.1,
+                                                    );
+                                                }
+                                            }
+                                            _ => {}
                                         }
                                     }
-                                    _ => {}
-                                }
-                            }
-                            (event_dispatcher_context, event)
-                        },
-                    ));
-            }
-            widget_context.add_widget(Some(window_entity), window.title_bar_entity.unwrap());
-
-            let mut clip_bundle = ClipBundle {
-                children: children.clone(),
-                ..ClipBundle::default()
-            };
-            clip_bundle.styles.padding = StyleProp::Value(Edge::all(Units::Pixels(10.0)));
-
-            let clip_entity = commands.spawn(clip_bundle).id();
-            widget_context.add_widget(Some(window_entity), clip_entity);
-            // let children = widget_context.get_children(window_entity);
-            has_changed = true;
+                                    (event_dispatcher_context, event)
+                                },
+                            ));
+                    }
+                }
+                <ClipBundle
+                    styles={KStyle {
+                        padding: StyleProp::Value(Edge::all(Units::Pixels(10.0))),
+                        ..Default::default()
+                    }}
+                    children={window_children.clone()}
+                />
+            </ElementBundle>
         }
     }
 
-    has_changed
+    true
 }

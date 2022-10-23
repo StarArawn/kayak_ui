@@ -1,6 +1,10 @@
-use crate::{context::Context, node::Node, render_primitive::RenderPrimitive, styles::Corner};
+use crate::{
+    context::{Context, WidgetName},
+    node::Node,
+    render_primitive::RenderPrimitive,
+    styles::Corner,
+};
 use bevy::{
-    // math::Vec2,
     prelude::{Assets, Color, Commands, Image, Plugin, Query, Rect, Res, Vec2},
     render::{Extract, RenderApp, RenderStage},
     window::Windows,
@@ -31,11 +35,12 @@ pub fn extract(
     fonts: Extract<Res<Assets<KayakFont>>>,
     font_mapping: Extract<Res<FontMapping>>,
     node_query: Extract<Query<&Node>>,
+    widget_names: Extract<Query<&WidgetName>>,
     images: Extract<Res<Assets<Image>>>,
     windows: Extract<Res<Windows>>,
 ) {
     // dbg!("STARTED");
-    let render_primitives = context.build_render_primitives(&node_query);
+    let render_primitives = context.build_render_primitives(&node_query, &widget_names);
     // dbg!("FINISHED");
 
     let dpi = if let Some(window) = windows.get_primary() {

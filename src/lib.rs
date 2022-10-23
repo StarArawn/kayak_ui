@@ -3,6 +3,7 @@
 mod calculate_nodes;
 mod camera;
 mod children;
+mod clone_component;
 mod context;
 mod context_entities;
 mod cursor;
@@ -24,6 +25,7 @@ mod styles;
 mod tree;
 mod widget;
 mod widget_context;
+mod widget_state;
 mod widgets;
 mod window_size;
 
@@ -43,6 +45,7 @@ pub mod prelude {
     pub mod widgets {
         pub use crate::widgets::*;
     }
+    pub use crate::clone_component::PreviousWidget;
     pub use crate::event::*;
     pub use crate::event_dispatcher::EventDispatcherContext;
     pub use crate::focus_tree::Focusable;
@@ -56,6 +59,7 @@ pub mod prelude {
     pub use crate::styles::*;
     pub use crate::widget::*;
     pub use crate::widget_context::*;
+    pub use crate::widget_state::*;
     pub use kayak_font::Alignment;
     pub use kayak_ui_macros::{constructor, rsx};
 }

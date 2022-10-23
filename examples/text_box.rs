@@ -1,22 +1,23 @@
 use bevy::{
     prelude::{
-        Added, App as BevyApp, AssetServer, Bundle, Changed, Commands, Component, Entity, In, Or,
-        ParamSet, Query, Res, ResMut, Vec2, With,
+        App as BevyApp, AssetServer, Bundle, Commands, Component, Entity, In, Query, Res, ResMut,
+        Vec2,
     },
     DefaultPlugins,
 };
 use kayak_ui::prelude::{widgets::*, *};
 
-#[derive(Component, Default)]
+#[derive(Component, Default, Clone, PartialEq)]
 struct TextBoxExample;
 
-#[derive(Component, Default)]
+#[derive(Component, Default, Clone, PartialEq)]
 struct TextBoxExampleState {
     pub value1: String,
     pub value2: String,
 }
 
 impl Widget for TextBoxExample {}
+impl WidgetProps for TextBoxExample {}
 
 #[derive(Bundle)]
 struct TextBoxExampleBundle {
@@ -38,32 +39,18 @@ impl Default for TextBoxExampleBundle {
 fn update_text_box_example(
     In((widget_context, entity)): In<(WidgetContext, Entity)>,
     mut commands: Commands,
-    props_query: Query<
-        &TextBoxExample,
-        Or<(Changed<TextBoxExample>, Changed<KStyle>, With<Mounted>)>,
-    >,
-    mut state_query: ParamSet<(
-        Query<Entity, Or<(Added<TextBoxExampleState>, Changed<TextBoxExampleState>)>>,
-        Query<&TextBoxExampleState>,
-    )>,
+    state_query: Query<&TextBoxExampleState>,
 ) -> bool {
-    if !props_query.is_empty() || !state_query.p0().is_empty() {
-        let state_entity = widget_context.get_context_entity::<TextBoxExampleState>(entity);
-        if state_entity.is_none() {
-            let state_entity = commands
-                .spawn(TextBoxExampleState {
-                    value1: "Hello World".into(),
-                    value2: "Hello World2".into(),
-                })
-                .id();
-            widget_context.set_context_entity::<TextBoxExampleState>(Some(entity), state_entity);
-            return false;
-        }
-        let state_entity = state_entity.unwrap();
+    let state_entity = widget_context.use_state::<TextBoxExampleState>(
+        &mut commands,
+        entity,
+        TextBoxExampleState {
+            value1: "Hello World".into(),
+            value2: "Hello World2".into(),
+        },
+    );
 
-        let p1 = state_query.p1();
-        let textbox_state = p1.get(state_entity).unwrap();
-
+    if let Ok(textbox_state) = state_query.get(state_entity) {
         let on_change = OnChange::new(
             move |In((_widget_context, _, value)): In<(WidgetContext, Entity, String)>,
                   mut state_query: Query<&mut TextBoxExampleState>| {
@@ -99,11 +86,8 @@ fn update_text_box_example(
                 />
             </ElementBundle>
         }
-
-        return true;
     }
-
-    false
+    true
 }
 
 fn startup(
@@ -116,8 +100,11 @@ fn startup(
     commands.spawn(UICameraBundle::new());
 
     let mut widget_context = Context::new();
+
+    widget_context.add_widget_data::<TextBoxExample, TextBoxExampleState>();
     widget_context.add_widget_system(
         TextBoxExample::default().get_name(),
+        widget_update::<TextBoxExample, TextBoxExampleState>,
         update_text_box_example,
     );
     let parent_id = None;

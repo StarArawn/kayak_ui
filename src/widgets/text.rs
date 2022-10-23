@@ -2,13 +2,13 @@ use bevy::prelude::*;
 use kayak_font::Alignment;
 
 use crate::{
-    context::{Mounted, WidgetName},
+    context::WidgetName,
     prelude::WidgetContext,
-    styles::{KStyle, RenderCommand, StyleProp},
-    widget::Widget,
+    styles::{KCursorIcon, KStyle, RenderCommand, StyleProp},
+    widget::{Widget, WidgetProps},
 };
 
-#[derive(Component)]
+#[derive(Component, Debug, PartialEq, Clone)]
 pub struct TextProps {
     /// The string to display
     pub content: String,
@@ -44,6 +44,7 @@ impl Default for TextProps {
 }
 
 impl Widget for TextProps {}
+impl WidgetProps for TextProps {}
 
 #[derive(Bundle)]
 pub struct TextWidgetBundle {
@@ -62,9 +63,9 @@ impl Default for TextWidgetBundle {
     }
 }
 
-pub fn text_update(
+pub fn text_render(
     In((_, entity)): In<(WidgetContext, Entity)>,
-    mut query: Query<(&mut KStyle, &TextProps), Or<(Changed<TextProps>, With<Mounted>)>>,
+    mut query: Query<(&mut KStyle, &TextProps)>,
 ) -> bool {
     if let Ok((mut style, text)) = query.get_mut(entity) {
         style.render_command = StyleProp::Value(RenderCommand::Text {
@@ -75,9 +76,9 @@ pub fn text_update(
         if let Some(ref font) = text.font {
             style.font = StyleProp::Value(font.clone());
         }
-        // if text.show_cursor {
-        // style.cursor = StyleProp::Value(CursorIcon::Text);
-        // }
+        if text.show_cursor {
+            style.cursor = StyleProp::Value(KCursorIcon(CursorIcon::Text));
+        }
         if text.size >= 0.0 {
             style.font_size = StyleProp::Value(text.size);
         }
@@ -85,10 +86,8 @@ pub fn text_update(
             style.line_height = StyleProp::Value(line_height);
         }
 
-        // style.cursor = CursorIcon::Hand.into();
-
-        return true;
+        // style.cursor = StyleProp::Value(KCursorIcon(CursorIcon::Hand));
     }
 
-    false
+    true
 }

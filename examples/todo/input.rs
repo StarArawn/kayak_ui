@@ -3,12 +3,13 @@ use kayak_ui::prelude::{widgets::*, *};
 
 use crate::TodoList;
 
-#[derive(Component, Default)]
+#[derive(Component, Default, Clone, PartialEq)]
 pub struct TodoInputProps {
     has_focus: bool,
 }
 
 impl Widget for TodoInputProps {}
+impl WidgetProps for TodoInputProps {}
 
 #[derive(Bundle)]
 pub struct TodoInputBundle {
@@ -36,7 +37,7 @@ impl Default for TodoInputBundle {
     }
 }
 
-pub fn update_todo_input(
+pub fn render_todo_input(
     In((widget_context, entity)): In<(WidgetContext, Entity)>,
     mut commands: Commands,
     mut todo_list: ResMut<TodoList>,
@@ -62,8 +63,9 @@ pub fn update_todo_input(
             }
 
             let handle_click = OnEvent::new(
-                move |In((event_dispatcher_context, event, _)): In<(
+                move |In((event_dispatcher_context, _, event, _)): In<(
                     EventDispatcherContext,
+                    WidgetState,
                     Event,
                     Entity,
                 )>,
@@ -81,8 +83,9 @@ pub fn update_todo_input(
             );
 
             let handle_focus = OnEvent::new(
-                move |In((event_dispatcher_context, event, _)): In<(
+                move |In((event_dispatcher_context, _, event, _)): In<(
                     EventDispatcherContext,
+                    WidgetState,
                     Event,
                     Entity,
                 )>,

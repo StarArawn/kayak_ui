@@ -1,16 +1,14 @@
-use bevy::prelude::{
-    Bundle, Changed, Commands, Component, Entity, Handle, Image, In, Or, Query, With,
-};
+use bevy::prelude::{Bundle, Commands, Component, Entity, Handle, Image, In, Query};
 
 use crate::{
     children::KChildren,
-    context::{Mounted, WidgetName},
+    context::WidgetName,
     prelude::WidgetContext,
     styles::{Edge, KStyle, RenderCommand, StyleProp},
-    widget::Widget,
+    widget::{Widget, WidgetProps},
 };
 
-#[derive(Component, Default, Debug)]
+#[derive(Component, PartialEq, Clone, Default, Debug)]
 pub struct NinePatch {
     /// The handle to image
     pub handle: Handle<Image>,
@@ -19,6 +17,7 @@ pub struct NinePatch {
 }
 
 impl Widget for NinePatch {}
+impl WidgetProps for NinePatch {}
 
 #[derive(Bundle)]
 pub struct NinePatchBundle {
@@ -42,10 +41,7 @@ impl Default for NinePatchBundle {
 pub fn update_nine_patch(
     In((widget_context, entity)): In<(WidgetContext, Entity)>,
     _: Commands,
-    mut query: Query<
-        (&mut KStyle, &NinePatch, &KChildren),
-        Or<((Changed<NinePatch>, Changed<KStyle>), With<Mounted>)>,
-    >,
+    mut query: Query<(&mut KStyle, &NinePatch, &KChildren)>,
 ) -> bool {
     if let Ok((mut style, nine_patch, children)) = query.get_mut(entity) {
         style.render_command = StyleProp::Value(RenderCommand::NinePatch {

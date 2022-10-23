@@ -1,15 +1,15 @@
 use bevy::{
     diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin},
     prelude::{
-        App as BevyApp, AssetServer, Bundle, Changed, Color, Commands, Component, Entity, In,
-        Query, Res, ResMut, Vec2,
+        App as BevyApp, AssetServer, Bundle, Color, Commands, Component, Entity, In, Query, Res,
+        ResMut, Vec2,
     },
     DefaultPlugins,
 };
 use kayak_ui::prelude::{widgets::*, KStyle, *};
 use morphorm::{PositionType, Units};
 
-#[derive(Component, Default)]
+#[derive(Component, Default, Clone, PartialEq)]
 pub struct MyQuad {
     pos: Vec2,
     pub size: Vec2,
@@ -18,28 +18,56 @@ pub struct MyQuad {
 
 fn my_quad_update(
     In((_widget_context, entity)): In<(WidgetContext, Entity)>,
-    mut query: Query<(&MyQuad, &mut KStyle), Changed<MyQuad>>,
+    mut query: Query<(&MyQuad, &mut KStyle, &mut OnEvent)>,
 ) -> bool {
-    if let Ok((quad, mut style)) = query.get_mut(entity) {
-        style.render_command = StyleProp::Value(RenderCommand::Quad);
-        style.position_type = StyleProp::Value(PositionType::SelfDirected);
-        style.left = StyleProp::Value(Units::Pixels(quad.pos.x));
-        style.top = StyleProp::Value(Units::Pixels(quad.pos.y));
-        style.width = StyleProp::Value(Units::Pixels(quad.size.x));
-        style.height = StyleProp::Value(Units::Pixels(quad.size.y));
-        style.background_color = StyleProp::Value(quad.color);
-        return true;
+    if let Ok((quad, mut style, mut on_event)) = query.get_mut(entity) {
+        if style.render_command.resolve() != RenderCommand::Quad {
+            style.render_command = StyleProp::Value(RenderCommand::Quad);
+            style.position_type = StyleProp::Value(PositionType::SelfDirected);
+            style.left = StyleProp::Value(Units::Pixels(quad.pos.x));
+            style.top = StyleProp::Value(Units::Pixels(quad.pos.y));
+            style.width = StyleProp::Value(Units::Pixels(quad.size.x));
+            style.height = StyleProp::Value(Units::Pixels(quad.size.y));
+            style.background_color = StyleProp::Value(quad.color);
+        }
+
+        *on_event = OnEvent::new(
+            move |In((event_dispatcher_context, _, event, entity)): In<(
+                EventDispatcherContext,
+                WidgetState,
+                Event,
+                Entity,
+            )>,
+                  mut query: Query<(&mut KStyle, &MyQuad)>| {
+                match event.event_type {
+                    EventType::MouseIn(..) => {
+                        if let Ok((mut styles, _)) = query.get_mut(entity) {
+                            styles.background_color = StyleProp::Value(Color::WHITE);
+                        }
+                    }
+                    EventType::MouseOut(..) => {
+                        if let Ok((mut styles, my_quad)) = query.get_mut(entity) {
+                            styles.background_color = StyleProp::Value(my_quad.color);
+                        }
+                    }
+                    _ => {}
+                }
+                (event_dispatcher_context, event)
+            },
+        );
     }
 
-    false
+    true
 }
 
 impl Widget for MyQuad {}
+impl WidgetProps for MyQuad {}
 
 #[derive(Bundle)]
 pub struct MyQuadBundle {
     my_quad: MyQuad,
     styles: KStyle,
+    on_event: OnEvent,
     widget_name: WidgetName,
 }
 
@@ -48,6 +76,7 @@ impl Default for MyQuadBundle {
         Self {
             my_quad: Default::default(),
             styles: KStyle::default(),
+            on_event: OnEvent::default(),
             widget_name: MyQuad::default().get_name(),
         }
     }
@@ -63,7 +92,11 @@ fn startup(
     commands.spawn(UICameraBundle::new());
 
     let mut widget_context = Context::new();
-    widget_context.add_widget_system(MyQuad::default().get_name(), my_quad_update);
+    widget_context.add_widget_system(
+        MyQuad::default().get_name(),
+        widget_update::<MyQuad, EmptyState>,
+        my_quad_update,
+    );
     let parent_id = None;
 
     rsx! {

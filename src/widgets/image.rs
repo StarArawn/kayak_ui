@@ -4,13 +4,14 @@ use crate::{
     context::{Mounted, WidgetName},
     prelude::WidgetContext,
     styles::{KStyle, RenderCommand, StyleProp},
-    widget::Widget,
+    widget::{Widget, WidgetProps},
 };
 
-#[derive(Component, Default)]
+#[derive(Component, PartialEq, Clone, Default)]
 pub struct Image(pub Handle<bevy::prelude::Image>);
 
 impl Widget for Image {}
+impl WidgetProps for Image {}
 
 #[derive(Bundle)]
 pub struct ImageBundle {

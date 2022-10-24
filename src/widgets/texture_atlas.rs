@@ -52,7 +52,7 @@ impl Default for TextureAtlasBundle {
     }
 }
 
-pub fn update_texture_atlas(
+pub fn texture_atlas_render(
     In((_widget_context, entity)): In<(WidgetContext, Entity)>,
     mut query: Query<
         (&mut KStyle, &TextureAtlas),

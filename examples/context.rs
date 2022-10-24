@@ -380,7 +380,7 @@ fn startup(
                 window={KWindow {
                     title: "Context Example".into(),
                     draggable: true,
-                    position: Vec2::ZERO,
+                    initial_position: Vec2::ZERO,
                     size: Vec2::new(350.0, 400.0),
                     ..Default::default()
                 }}

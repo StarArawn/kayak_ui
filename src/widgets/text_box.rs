@@ -80,7 +80,7 @@ impl Default for TextBoxBundle {
     }
 }
 
-pub fn update_text_box(
+pub fn text_box_render(
     In((widget_context, entity)): In<(WidgetContext, Entity)>,
     mut commands: Commands,
     mut query: Query<(&mut KStyle, &TextBoxProps, &mut OnEvent, &OnChange)>,

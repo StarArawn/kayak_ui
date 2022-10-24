@@ -38,7 +38,7 @@ impl Default for NinePatchBundle {
     }
 }
 
-pub fn update_nine_patch(
+pub fn nine_patch_render(
     In((widget_context, entity)): In<(WidgetContext, Entity)>,
     _: Commands,
     mut query: Query<(&mut KStyle, &NinePatch, &KChildren)>,

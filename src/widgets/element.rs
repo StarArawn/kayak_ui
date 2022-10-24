@@ -36,7 +36,7 @@ impl Default for ElementBundle {
     }
 }
 
-pub fn update_element(
+pub fn element_render(
     In((mut widget_context, entity)): In<(WidgetContext, Entity)>,
     _: Commands,
     mut query: Query<(&mut KStyle, &KChildren)>,

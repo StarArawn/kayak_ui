@@ -34,25 +34,27 @@ pub use texture_atlas::{TextureAtlas, TextureAtlasBundle};
 pub use window::{KWindow, WindowBundle};
 
 use app::{app_render, app_update};
-use background::update_background;
-use button::button_update;
-use clip::update_clip;
-use element::update_element;
-use image::update_image;
-use nine_patch::update_nine_patch;
+use background::background_render;
+use button::button_render;
+use clip::clip_render;
+use element::element_render;
+use image::image_render;
+use nine_patch::nine_patch_render;
 use scroll::{
-    scroll_bar::update_scroll_bar, scroll_box::update_scroll_box,
-    scroll_content::update_scroll_content, scroll_context::update_scroll_context,
+    scroll_bar::scroll_bar_render, scroll_box::scroll_box_render,
+    scroll_content::scroll_content_render, scroll_context::scroll_context_render,
 };
 use text::text_render;
-use text_box::update_text_box;
-use texture_atlas::update_texture_atlas;
-use window::window_update;
+use text_box::text_box_render;
+use texture_atlas::texture_atlas_render;
+use window::window_render;
 
 use crate::{
     context::Context,
     widget::{widget_update, widget_update_with_context, EmptyState, Widget},
 };
+
+use self::window::KWindowState;
 
 pub struct KayakWidgets;
 
@@ -66,7 +68,7 @@ fn add_widget_systems(mut context: ResMut<Context>) {
     context.add_widget_data::<KayakApp, EmptyState>();
     context.add_widget_data::<KButton, EmptyState>();
     context.add_widget_data::<TextProps, EmptyState>();
-    context.add_widget_data::<KWindow, EmptyState>();
+    context.add_widget_data::<KWindow, KWindowState>();
     context.add_widget_data::<Background, EmptyState>();
     context.add_widget_data::<Clip, EmptyState>();
     context.add_widget_data::<Image, EmptyState>();
@@ -83,7 +85,7 @@ fn add_widget_systems(mut context: ResMut<Context>) {
     context.add_widget_system(
         KButton::default().get_name(),
         widget_update::<KButton, EmptyState>,
-        button_update,
+        button_render,
     );
     context.add_widget_system(
         TextProps::default().get_name(),
@@ -92,62 +94,62 @@ fn add_widget_systems(mut context: ResMut<Context>) {
     );
     context.add_widget_system(
         KWindow::default().get_name(),
-        widget_update::<KWindow, EmptyState>,
-        window_update,
+        widget_update::<KWindow, KWindowState>,
+        window_render,
     );
     context.add_widget_system(
         Background::default().get_name(),
         widget_update::<Background, EmptyState>,
-        update_background,
+        background_render,
     );
     context.add_widget_system(
         Clip::default().get_name(),
         widget_update::<Clip, EmptyState>,
-        update_clip,
+        clip_render,
     );
     context.add_widget_system(
         Image::default().get_name(),
         widget_update::<Image, EmptyState>,
-        update_image,
+        image_render,
     );
     context.add_widget_system(
         TextureAtlas::default().get_name(),
         widget_update::<TextureAtlas, EmptyState>,
-        update_texture_atlas,
+        texture_atlas_render,
     );
     context.add_widget_system(
         NinePatch::default().get_name(),
         widget_update::<NinePatch, EmptyState>,
-        update_nine_patch,
+        nine_patch_render,
     );
     context.add_widget_system(
         Element::default().get_name(),
         widget_update::<Element, EmptyState>,
-        update_element,
+        element_render,
     );
     context.add_widget_system(
         ScrollBarProps::default().get_name(),
         widget_update_with_context::<ScrollBarProps, EmptyState, ScrollContext>,
-        update_scroll_bar,
+        scroll_bar_render,
     );
     context.add_widget_system(
         ScrollContentProps::default().get_name(),
         widget_update_with_context::<ScrollContentProps, EmptyState, ScrollContext>,
-        update_scroll_content,
+        scroll_content_render,
     );
     context.add_widget_system(
         ScrollBoxProps::default().get_name(),
         widget_update_with_context::<ScrollBoxProps, EmptyState, ScrollContext>,
-        update_scroll_box,
+        scroll_box_render,
     );
     context.add_widget_system(
         ScrollContextProvider::default().get_name(),
         widget_update::<ScrollContextProvider, EmptyState>,
-        update_scroll_context,
+        scroll_context_render,
     );
     context.add_widget_system(
         TextBoxProps::default().get_name(),
         widget_update::<TextBoxProps, TextBoxState>,
-        update_text_box,
+        text_box_render,
     );
 }

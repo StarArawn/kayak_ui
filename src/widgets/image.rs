@@ -30,7 +30,7 @@ impl Default for ImageBundle {
     }
 }
 
-pub fn update_image(
+pub fn image_render(
     In((_widget_context, entity)): In<(WidgetContext, Entity)>,
     mut query: Query<(&mut KStyle, &Image), Or<((Changed<Image>, Changed<KStyle>), With<Mounted>)>>,
 ) -> bool {

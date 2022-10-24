@@ -86,7 +86,7 @@ fn startup(
                 window={KWindow {
                     title: "State Example Window".into(),
                     draggable: true,
-                    position: Vec2::new(10.0, 10.0),
+                    initial_position: Vec2::new(10.0, 10.0),
                     size: Vec2::new(300.0, 250.0),
                     ..KWindow::default()
                 }}

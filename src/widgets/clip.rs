@@ -38,7 +38,7 @@ impl Default for ClipBundle {
     }
 }
 
-pub fn update_clip(
+pub fn clip_render(
     In((widget_context, entity)): In<(WidgetContext, Entity)>,
     _: Commands,
     mut query: Query<(&KStyle, &KChildren)>,

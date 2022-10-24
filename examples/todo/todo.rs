@@ -71,7 +71,10 @@ fn startup(
                 window={KWindow {
                     title: "Todo App".into(),
                     draggable: true,
-                    position: Vec2::new((1280.0 / 2.0) - (350.0 / 2.0), (720.0 / 2.0) - (600.0 / 2.0)),
+                    initial_position: Vec2::new(
+                        (1280.0 / 2.0) - (350.0 / 2.0),
+                        (720.0 / 2.0) - (600.0 / 2.0)
+                    ),
                     size: Vec2::new(400.0, 600.0),
                     ..Default::default()
                 }}

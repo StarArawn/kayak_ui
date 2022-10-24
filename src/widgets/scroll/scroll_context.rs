@@ -161,7 +161,7 @@ impl Default for ScrollContextProviderBundle {
     }
 }
 
-pub fn update_scroll_context(
+pub fn scroll_context_render(
     In((widget_context, entity)): In<(WidgetContext, Entity)>,
     mut commands: Commands,
     mut query: Query<(&ScrollContextProvider, &KChildren)>,

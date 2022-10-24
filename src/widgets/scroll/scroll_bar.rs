@@ -54,7 +54,7 @@ impl Default for ScrollBarBundle {
     }
 }
 
-pub fn update_scroll_bar(
+pub fn scroll_bar_render(
     In((widget_context, entity)): In<(WidgetContext, Entity)>,
     mut commands: Commands,
     mut query: Query<(&ScrollBarProps, &mut KStyle)>,

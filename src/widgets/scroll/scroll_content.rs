@@ -40,7 +40,7 @@ impl Default for ScrollContentBundle {
     }
 }
 
-pub fn update_scroll_content(
+pub fn scroll_content_render(
     In((widget_context, entity)): In<(WidgetContext, Entity)>,
     mut query: Query<(&mut KStyle, &KChildren, &mut OnLayout), With<ScrollContentProps>>,
     context_query: Query<&ScrollContext>,

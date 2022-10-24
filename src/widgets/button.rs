@@ -38,7 +38,7 @@ impl Default for KButtonBundle {
 impl Widget for KButton {}
 impl WidgetProps for KButton {}
 
-pub fn button_update(
+pub fn button_render(
     In((widget_context, entity)): In<(WidgetContext, Entity)>,
     _: Commands,
     mut query: Query<(&mut KStyle, &KChildren)>,

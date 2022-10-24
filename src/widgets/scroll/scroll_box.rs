@@ -77,7 +77,7 @@ impl Default for ScrollBoxBundle {
     }
 }
 
-pub fn update_scroll_box(
+pub fn scroll_box_render(
     In((widget_context, entity)): In<(WidgetContext, Entity)>,
     mut commands: Commands,
     mut query: Query<(&ScrollBoxProps, &mut KStyle, &KChildren, &mut OnLayout)>,

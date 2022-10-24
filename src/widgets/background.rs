@@ -36,7 +36,7 @@ impl Default for BackgroundBundle {
     }
 }
 
-pub fn update_background(
+pub fn background_render(
     In((widget_context, entity)): In<(WidgetContext, Entity)>,
     _: Commands,
     mut query: Query<(&mut KStyle, &KChildren)>,

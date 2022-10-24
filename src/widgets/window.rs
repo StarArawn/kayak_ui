@@ -12,7 +12,7 @@ use crate::{
     on_event::OnEvent,
     prelude::WidgetContext,
     styles::{Corner, Edge, KCursorIcon, KStyle, PositionType, RenderCommand, StyleProp, Units},
-    widget::{Widget, WidgetProps},
+    widget::Widget,
     widget_state::WidgetState,
 };
 
@@ -43,7 +43,6 @@ pub struct KWindowState {
 }
 
 impl Widget for KWindow {}
-impl WidgetProps for KWindow {}
 
 #[derive(Bundle)]
 pub struct WindowBundle {

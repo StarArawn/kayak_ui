@@ -9,7 +9,6 @@ pub struct TodoInputProps {
 }
 
 impl Widget for TodoInputProps {}
-impl WidgetProps for TodoInputProps {}
 
 #[derive(Bundle)]
 pub struct TodoInputBundle {

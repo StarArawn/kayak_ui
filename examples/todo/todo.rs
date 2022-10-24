@@ -31,7 +31,7 @@ impl TodoList {
 
 // Our own version of widget_update that handles resource change events.
 pub fn widget_update_with_resource<
-    Props: WidgetProps + PartialEq + Component + Clone,
+    Props: PartialEq + Component + Clone,
     State: PartialEq + Component + Clone,
 >(
     In((widget_context, entity, previous_entity)): In<(WidgetContext, Entity, Entity)>,

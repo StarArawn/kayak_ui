@@ -11,7 +11,6 @@ use kayak_ui::prelude::{widgets::*, *};
 struct CurrentCount;
 
 impl Widget for CurrentCount {}
-impl WidgetProps for CurrentCount {}
 
 #[derive(Component, Default, PartialEq, Clone)]
 struct CurrentCountState {

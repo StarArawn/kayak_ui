@@ -11,7 +11,7 @@ use crate::{
     on_layout::OnLayout,
     prelude::{constructor, rsx, WidgetContext},
     styles::{KStyle, LayoutType, PositionType, RenderCommand, Units},
-    widget::{Widget, WidgetProps},
+    widget::Widget,
     widget_state::WidgetState,
     widgets::{
         scroll::{
@@ -54,7 +54,6 @@ pub struct ScrollBoxProps {
 }
 
 impl Widget for ScrollBoxProps {}
-impl WidgetProps for ScrollBoxProps {}
 
 #[derive(Bundle)]
 pub struct ScrollBoxBundle {

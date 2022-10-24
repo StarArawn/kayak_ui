@@ -8,7 +8,7 @@ use crate::{
     on_layout::OnLayout,
     prelude::WidgetContext,
     styles::{KStyle, LayoutType, RenderCommand, Units},
-    widget::{Widget, WidgetProps},
+    widget::Widget,
 };
 
 use super::scroll_context::ScrollContext;
@@ -17,7 +17,6 @@ use super::scroll_context::ScrollContext;
 pub struct ScrollContentProps;
 
 impl Widget for ScrollContentProps {}
-impl WidgetProps for ScrollContentProps {}
 
 #[derive(Bundle)]
 pub struct ScrollContentBundle {

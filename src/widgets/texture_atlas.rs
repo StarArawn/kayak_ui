@@ -4,7 +4,7 @@ use crate::{
     context::{Mounted, WidgetName},
     prelude::WidgetContext,
     styles::{KStyle, RenderCommand, StyleProp},
-    widget::{Widget, WidgetProps},
+    widget::Widget,
 };
 
 /// A widget that renders a texture atlas
@@ -33,7 +33,6 @@ pub struct TextureAtlas {
 }
 
 impl Widget for TextureAtlas {}
-impl WidgetProps for TextureAtlas {}
 
 #[derive(Bundle)]
 pub struct TextureAtlasBundle {

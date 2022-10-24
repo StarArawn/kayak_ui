@@ -9,7 +9,7 @@ use crate::{
     on_layout::OnLayout,
     prelude::{KChildren, OnChange, WidgetContext},
     styles::{Corner, KStyle, RenderCommand, StyleProp, Units},
-    widget::{Widget, WidgetProps},
+    widget::Widget,
     widget_state::WidgetState,
     widgets::{
         text::{TextProps, TextWidgetBundle},
@@ -40,7 +40,6 @@ pub struct TextBoxState {
 pub struct TextBoxValue(pub String);
 
 impl Widget for TextBoxProps {}
-impl WidgetProps for TextBoxProps {}
 
 /// A widget that displays a text input field
 ///

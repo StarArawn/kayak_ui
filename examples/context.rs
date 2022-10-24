@@ -57,7 +57,6 @@ struct ThemeButton {
     pub theme: Theme,
 }
 impl Widget for ThemeButton {}
-impl WidgetProps for ThemeButton {}
 
 #[derive(Bundle)]
 pub struct ThemeButtonBundle {
@@ -142,7 +141,6 @@ fn update_theme_button(
 #[derive(Component, Debug, Default, Clone, PartialEq)]
 struct ThemeSelector;
 impl Widget for ThemeSelector {}
-impl WidgetProps for ThemeSelector {}
 
 #[derive(Bundle)]
 pub struct ThemeSelectorBundle {
@@ -202,7 +200,6 @@ pub struct ThemeDemo {
     context_entity: Option<Entity>,
 }
 impl Widget for ThemeDemo {}
-impl WidgetProps for ThemeDemo {}
 
 #[derive(Bundle)]
 pub struct ThemeDemoBundle {

@@ -5,14 +5,13 @@ use crate::{
     context::WidgetName,
     prelude::WidgetContext,
     styles::{KStyle, RenderCommand, StyleProp, Units},
-    widget::{Widget, WidgetProps},
+    widget::Widget,
 };
 
 #[derive(Component, PartialEq, Clone, Default)]
 pub struct Clip;
 
 impl Widget for Clip {}
-impl WidgetProps for Clip {}
 
 #[derive(Bundle)]
 pub struct ClipBundle {

@@ -42,7 +42,6 @@ fn my_widget_1_update(
 }
 
 impl Widget for MyWidgetProps {}
-impl WidgetProps for MyWidgetProps {}
 
 #[derive(Bundle)]
 pub struct MyWidgetBundle {

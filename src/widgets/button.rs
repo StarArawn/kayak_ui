@@ -8,7 +8,7 @@ use crate::{
     on_event::OnEvent,
     prelude::{KChildren, Units, WidgetContext},
     styles::{Corner, KCursorIcon, KStyle, RenderCommand, StyleProp},
-    widget::{Widget, WidgetProps},
+    widget::Widget,
 };
 
 #[derive(Component, PartialEq, Clone, Default)]
@@ -36,7 +36,6 @@ impl Default for KButtonBundle {
 }
 
 impl Widget for KButton {}
-impl WidgetProps for KButton {}
 
 pub fn button_render(
     In((widget_context, entity)): In<(WidgetContext, Entity)>,

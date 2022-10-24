@@ -6,14 +6,13 @@ use crate::{
     on_event::OnEvent,
     prelude::WidgetContext,
     styles::{KStyle, RenderCommand, StyleProp},
-    widget::{Widget, WidgetProps},
+    widget::Widget,
 };
 
 #[derive(Component, PartialEq, Clone, Default)]
 pub struct Background;
 
 impl Widget for Background {}
-impl WidgetProps for Background {}
 
 #[derive(Bundle)]
 pub struct BackgroundBundle {

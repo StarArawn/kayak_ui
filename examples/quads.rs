@@ -7,7 +7,6 @@ use bevy::{
     DefaultPlugins,
 };
 use kayak_ui::prelude::{widgets::*, KStyle, *};
-use morphorm::{PositionType, Units};
 
 #[derive(Component, Default, Clone, PartialEq)]
 pub struct MyQuad {
@@ -61,7 +60,6 @@ fn my_quad_update(
 }
 
 impl Widget for MyQuad {}
-impl WidgetProps for MyQuad {}
 
 #[derive(Bundle)]
 pub struct MyQuadBundle {

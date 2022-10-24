@@ -19,13 +19,7 @@ pub trait Widget: Send + Sync {
 #[derive(Component, Default, PartialEq, Clone)]
 pub struct EmptyState;
 
-/// Used to diff widget props.
-pub trait WidgetProps {}
-
-pub fn widget_update<
-    Props: WidgetProps + PartialEq + Component + Clone,
-    State: PartialEq + Component + Clone,
->(
+pub fn widget_update<Props: PartialEq + Component + Clone, State: PartialEq + Component + Clone>(
     In((widget_context, entity, previous_entity)): In<(WidgetContext, Entity, Entity)>,
     widget_param: WidgetParam<Props, State>,
 ) -> bool {
@@ -33,7 +27,7 @@ pub fn widget_update<
 }
 
 pub fn widget_update_with_context<
-    Props: WidgetProps + PartialEq + Component + Clone,
+    Props: PartialEq + Component + Clone,
     State: PartialEq + Component + Clone,
     Context: PartialEq + Component + Clone + Default,
 >(
@@ -52,12 +46,7 @@ pub fn widget_update_with_context<
 }
 
 #[derive(SystemParam)]
-pub struct WidgetParam<
-    'w,
-    's,
-    Props: WidgetProps + PartialEq + Component,
-    State: PartialEq + Component,
-> {
+pub struct WidgetParam<'w, 's, Props: PartialEq + Component, State: PartialEq + Component> {
     pub props_query: Query<'w, 's, &'static Props>,
     pub old_props_query: Query<'w, 's, &'static Props>,
     pub mounted_query: Query<'w, 's, Entity, With<Mounted>>,
@@ -67,7 +56,7 @@ pub struct WidgetParam<
     pub widget_names: Query<'w, 's, &'static WidgetName>,
 }
 
-impl<'w, 's, Props: WidgetProps + PartialEq + Component, State: PartialEq + Component>
+impl<'w, 's, Props: PartialEq + Component, State: PartialEq + Component>
     WidgetParam<'w, 's, Props, State>
 {
     pub fn has_changed(

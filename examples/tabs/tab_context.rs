@@ -12,7 +12,6 @@ pub struct TabContextProvider {
 }
 
 impl Widget for TabContextProvider {}
-impl WidgetProps for TabContextProvider {}
 
 #[derive(Bundle)]
 pub struct TabContextProviderBundle {

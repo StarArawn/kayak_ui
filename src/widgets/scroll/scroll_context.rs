@@ -1,11 +1,8 @@
 use bevy::prelude::{Bundle, Commands, Component, Entity, In, Query, Vec2};
 
 use crate::{
-    children::KChildren,
-    context::WidgetName,
-    prelude::WidgetContext,
-    styles::KStyle,
-    widget::{Widget, WidgetProps},
+    children::KChildren, context::WidgetName, prelude::WidgetContext, styles::KStyle,
+    widget::Widget,
 };
 
 /// Context data provided by a [`ScrollBox`](crate::ScrollBox) widget
@@ -140,7 +137,6 @@ pub struct ScrollContextProvider {
 }
 
 impl Widget for ScrollContextProvider {}
-impl WidgetProps for ScrollContextProvider {}
 
 #[derive(Bundle)]
 pub struct ScrollContextProviderBundle {

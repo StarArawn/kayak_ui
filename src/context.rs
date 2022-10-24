@@ -21,7 +21,6 @@ use crate::{
     render_primitive::RenderPrimitive,
     styles::KStyle,
     tree::{Change, Tree},
-    widget::WidgetProps,
     widget_state::WidgetState,
     Focusable, WindowSize,
 };
@@ -91,7 +90,7 @@ impl Context {
     }
 
     pub fn add_widget_data<
-        Props: WidgetProps + Component + Clone + PartialEq,
+        Props: Component + Clone + PartialEq,
         State: Component + Clone + PartialEq,
     >(
         &mut self,

@@ -17,7 +17,6 @@ struct TextBoxExampleState {
 }
 
 impl Widget for TextBoxExample {}
-impl WidgetProps for TextBoxExample {}
 
 #[derive(Bundle)]
 struct TextBoxExampleBundle {

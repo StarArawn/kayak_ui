@@ -1,9 +1,8 @@
 use bevy::prelude::{Bundle, Color, Commands, Component, Entity, In, Query};
 use kayak_ui::prelude::{
-    widgets::BackgroundBundle, Edge, KChildren, KStyle, StyleProp, Units, Widget, WidgetContext,
-    WidgetName, WidgetProps,
+    rsx, widgets::BackgroundBundle, Edge, KChildren, KStyle, StyleProp, Units, Widget,
+    WidgetContext, WidgetName,
 };
-use kayak_ui_macros::rsx;
 
 use crate::tab_context::TabContext;
 
@@ -13,7 +12,6 @@ pub struct Tab {
 }
 
 impl Widget for Tab {}
-impl WidgetProps for Tab {}
 
 #[derive(Bundle)]
 pub struct TabBundle {

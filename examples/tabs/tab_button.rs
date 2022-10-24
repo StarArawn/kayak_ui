@@ -3,7 +3,7 @@ use kayak_ui::prelude::{
     rsx,
     widgets::{KButtonBundle, TextProps, TextWidgetBundle},
     Event, EventDispatcherContext, EventType, KChildren, KStyle, OnEvent, StyleProp, Units, Widget,
-    WidgetContext, WidgetName, WidgetProps, WidgetState,
+    WidgetContext, WidgetName, WidgetState,
 };
 
 use crate::tab_context::TabContext;
@@ -15,7 +15,6 @@ pub struct TabButton {
 }
 
 impl Widget for TabButton {}
-impl WidgetProps for TabButton {}
 
 #[derive(Bundle)]
 pub struct TabButtonBundle {

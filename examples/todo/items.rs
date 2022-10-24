@@ -7,7 +7,6 @@ use crate::TodoList;
 pub struct TodoItemsProps;
 
 impl Widget for TodoItemsProps {}
-impl WidgetProps for TodoItemsProps {}
 
 #[derive(Bundle)]
 pub struct TodoItemsBundle {

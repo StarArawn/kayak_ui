@@ -5,7 +5,7 @@ use crate::{
     context::WidgetName,
     prelude::WidgetContext,
     styles::{KCursorIcon, KStyle, RenderCommand, StyleProp},
-    widget::{Widget, WidgetProps},
+    widget::Widget,
 };
 
 #[derive(Component, Debug, PartialEq, Clone)]
@@ -44,7 +44,6 @@ impl Default for TextProps {
 }
 
 impl Widget for TextProps {}
-impl WidgetProps for TextProps {}
 
 #[derive(Bundle)]
 pub struct TextWidgetBundle {

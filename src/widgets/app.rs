@@ -6,14 +6,13 @@ use crate::{
     context::WidgetName,
     prelude::WidgetContext,
     styles::{KStyle, RenderCommand, StyleProp},
-    widget::{EmptyState, Widget, WidgetParam, WidgetProps},
+    widget::{EmptyState, Widget, WidgetParam},
 };
 
 #[derive(Component, Default, Clone, PartialEq)]
 pub struct KayakApp;
 
 impl Widget for KayakApp {}
-impl WidgetProps for KayakApp {}
 
 #[derive(Bundle)]
 pub struct KayakAppBundle {

@@ -5,7 +5,7 @@ use crate::{
     context::WidgetName,
     prelude::WidgetContext,
     styles::{Edge, KStyle, RenderCommand, StyleProp},
-    widget::{Widget, WidgetProps},
+    widget::Widget,
 };
 
 #[derive(Component, PartialEq, Clone, Default, Debug)]
@@ -17,7 +17,6 @@ pub struct NinePatch {
 }
 
 impl Widget for NinePatch {}
-impl WidgetProps for NinePatch {}
 
 #[derive(Bundle)]
 pub struct NinePatchBundle {

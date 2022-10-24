@@ -8,7 +8,7 @@ use crate::{
     on_event::OnEvent,
     prelude::{KChildren, WidgetContext},
     styles::{Corner, Edge, KStyle, PositionType, RenderCommand, Units},
-    widget::{Widget, WidgetProps},
+    widget::Widget,
     widget_state::WidgetState,
     widgets::{BackgroundBundle, ClipBundle},
 };
@@ -35,7 +35,6 @@ pub struct ScrollBarProps {
 }
 
 impl Widget for ScrollBarProps {}
-impl WidgetProps for ScrollBarProps {}
 
 #[derive(Bundle)]
 pub struct ScrollBarBundle {

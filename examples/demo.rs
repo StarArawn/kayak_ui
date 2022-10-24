@@ -19,7 +19,6 @@ fn my_widget_1_render(
 }
 
 impl Widget for MyWidget {}
-impl WidgetProps for MyWidget {}
 
 fn startup(mut commands: Commands) {
     let mut context = Context::new();

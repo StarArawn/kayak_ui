@@ -42,7 +42,7 @@ pub mod prelude {
     pub use crate::clone_component::PreviousWidget;
     pub use crate::context::*;
     pub use crate::event::*;
-    pub use crate::event_dispatcher::EventDispatcherContext;
+    pub use crate::event_dispatcher::{EventDispatcher, EventDispatcherContext};
     pub use crate::focus_tree::Focusable;
     pub use crate::input_event::*;
     pub use crate::keyboard_event::*;

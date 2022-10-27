@@ -44,7 +44,7 @@ impl Default for EventState {
 }
 
 #[derive(Resource, Debug, Clone)]
-pub(crate) struct EventDispatcher {
+pub struct EventDispatcher {
     is_mouse_pressed: bool,
     next_mouse_pressed: bool,
     current_mouse_position: (f32, f32),
@@ -55,12 +55,12 @@ pub(crate) struct EventDispatcher {
     contains_cursor: Option<bool>,
     wants_cursor: Option<bool>,
     has_cursor: Option<WrappedIndex>,
-    pub cursor_capture: Option<WrappedIndex>,
-    pub hovered: Option<WrappedIndex>,
+    pub(crate) cursor_capture: Option<WrappedIndex>,
+    pub(crate) hovered: Option<WrappedIndex>,
 }
 
 impl EventDispatcher {
-    pub fn new() -> Self {
+    pub(crate) fn new() -> Self {
         Self {
             // last_clicked: Binding::new(WrappedIndex(Entity::from_raw(0))),
             is_mouse_pressed: Default::default(),
@@ -175,7 +175,7 @@ impl EventDispatcher {
     // }
 
     /// Process and dispatch a set of [InputEvents](crate::InputEvent)
-    pub fn process_events(
+    pub(crate) fn process_events(
         &mut self,
         input_events: Vec<InputEvent>,
         context: &mut KayakRootContext,

@@ -40,7 +40,7 @@ pub use background::{Background, BackgroundBundle};
 pub use button::{KButton, KButtonBundle};
 pub use clip::{Clip, ClipBundle};
 pub use element::{Element, ElementBundle};
-pub use image::{Image, ImageBundle};
+pub use image::{Image, KImageBundle};
 pub use nine_patch::{NinePatch, NinePatchBundle};
 pub use scroll::{
     scroll_bar::{ScrollBarBundle, ScrollBarProps},
@@ -52,7 +52,7 @@ pub use scroll::{
 };
 pub use text::{TextProps, TextWidgetBundle};
 pub use text_box::{TextBoxBundle, TextBoxProps, TextBoxState};
-pub use texture_atlas::{TextureAtlas, TextureAtlasBundle};
+pub use texture_atlas::{TextureAtlasBundle, TextureAtlasProps};
 pub use window::{KWindow, WindowBundle};
 
 use app::{app_render, app_update};
@@ -94,7 +94,7 @@ fn add_widget_systems(mut context: ResMut<KayakRootContext>) {
     context.add_widget_data::<Background, EmptyState>();
     context.add_widget_data::<Clip, EmptyState>();
     context.add_widget_data::<Image, EmptyState>();
-    context.add_widget_data::<TextureAtlas, EmptyState>();
+    context.add_widget_data::<TextureAtlasProps, EmptyState>();
     context.add_widget_data::<NinePatch, EmptyState>();
     context.add_widget_data::<Element, EmptyState>();
     context.add_widget_data::<ScrollBarProps, EmptyState>();
@@ -135,8 +135,8 @@ fn add_widget_systems(mut context: ResMut<KayakRootContext>) {
         image_render,
     );
     context.add_widget_system(
-        TextureAtlas::default().get_name(),
-        widget_update::<TextureAtlas, EmptyState>,
+        TextureAtlasProps::default().get_name(),
+        widget_update::<TextureAtlasProps, EmptyState>,
         texture_atlas_render,
     );
     context.add_widget_system(

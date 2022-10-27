@@ -1,10 +1,4 @@
-use bevy::{
-    prelude::{
-        App as BevyApp, AssetServer, Bundle, Commands, Component, Entity, In, Query, Res, ResMut,
-        Vec2,
-    },
-    DefaultPlugins,
-};
+use bevy::prelude::*;
 use kayak_ui::prelude::{widgets::*, *};
 
 #[derive(Component, Default, PartialEq, Clone)]
@@ -125,7 +119,8 @@ fn startup(
 }
 
 fn main() {
-    BevyApp::new()
+    App::new()
+        .insert_resource(ClearColor(Color::rgb(0.0, 0.0, 0.0)))
         .add_plugins(DefaultPlugins)
         .add_plugin(KayakContextPlugin)
         .add_plugin(KayakWidgets)

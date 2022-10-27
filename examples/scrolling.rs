@@ -1,7 +1,4 @@
-use bevy::{
-    prelude::{App, AssetServer, Commands, ImageSettings, Res, ResMut},
-    DefaultPlugins,
-};
+use bevy::prelude::*;
 use kayak_ui::prelude::{widgets::*, KStyle, *};
 
 fn startup(
@@ -66,8 +63,7 @@ Lorem ipsum dolor sit amet, consectetur adipiscing elit. Cras sed tellus neque. 
 
 fn main() {
     App::new()
-        .insert_resource(ImageSettings::default_nearest())
-        .add_plugins(DefaultPlugins)
+        .add_plugins(DefaultPlugins.set(ImagePlugin::default_nearest()))
         .add_plugin(KayakContextPlugin)
         .add_plugin(KayakWidgets)
         .add_startup_system(startup)

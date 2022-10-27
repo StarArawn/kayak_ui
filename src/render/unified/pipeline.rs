@@ -1,5 +1,7 @@
-use bevy::prelude::{Rect, Resource};
-use bevy::render::render_resource::{DynamicUniformBuffer, ShaderType};
+use bevy::prelude::{Msaa, Rect, Resource};
+use bevy::render::render_resource::{
+    DynamicUniformBuffer, ShaderType, SpecializedRenderPipeline, SpecializedRenderPipelines,
+};
 use bevy::utils::FloatOrd;
 use bevy::{
     ecs::system::{
@@ -16,13 +18,12 @@ use bevy::{
             BindGroup, BindGroupDescriptor, BindGroupEntry, BindGroupLayout,
             BindGroupLayoutDescriptor, BindGroupLayoutEntry, BindingResource, BindingType,
             BlendComponent, BlendFactor, BlendOperation, BlendState, BufferBindingType, BufferSize,
-            BufferUsages, BufferVec, CachedRenderPipelineId, ColorTargetState, ColorWrites,
-            Extent3d, FragmentState, FrontFace, MultisampleState, PipelineCache, PolygonMode,
-            PrimitiveState, PrimitiveTopology, RenderPipelineDescriptor, SamplerBindingType,
-            SamplerDescriptor, Shader, ShaderStages, TextureDescriptor, TextureDimension,
-            TextureFormat, TextureSampleType, TextureUsages, TextureViewDescriptor,
-            TextureViewDimension, VertexAttribute, VertexBufferLayout, VertexFormat, VertexState,
-            VertexStepMode,
+            BufferUsages, BufferVec, ColorTargetState, ColorWrites, Extent3d, FragmentState,
+            FrontFace, MultisampleState, PipelineCache, PolygonMode, PrimitiveState,
+            PrimitiveTopology, RenderPipelineDescriptor, SamplerBindingType, SamplerDescriptor,
+            Shader, ShaderStages, TextureDescriptor, TextureDimension, TextureFormat,
+            TextureSampleType, TextureUsages, TextureViewDescriptor, TextureViewDimension,
+            VertexAttribute, VertexBufferLayout, VertexFormat, VertexState, VertexStepMode,
         },
         renderer::{RenderDevice, RenderQueue},
         texture::{BevyDefault, GpuImage, Image},
@@ -47,7 +48,6 @@ pub struct UnifiedPipeline {
     types_layout: BindGroupLayout,
     pub(crate) font_image_layout: BindGroupLayout,
     image_layout: BindGroupLayout,
-    pipeline: CachedRenderPipelineId,
     empty_font_texture: (GpuImage, BindGroup),
     default_image: (GpuImage, BindGroup),
 }
@@ -67,11 +67,33 @@ impl FontRenderingPipeline for UnifiedPipeline {
     }
 }
 
+bitflags::bitflags! {
+    #[repr(transparent)]
+    pub struct UnifiedPipelineKey: u32 {
+        const NONE                        = 0;
+        const MSAA_RESERVED_BITS          = Self::MSAA_MASK_BITS << Self::MSAA_SHIFT_BITS;
+    }
+}
+
+impl UnifiedPipelineKey {
+    const MSAA_MASK_BITS: u32 = 0b111;
+    const MSAA_SHIFT_BITS: u32 = 32 - Self::MSAA_MASK_BITS.count_ones();
+
+    pub fn from_msaa_samples(msaa_samples: u32) -> Self {
+        let msaa_bits =
+            (msaa_samples.trailing_zeros() & Self::MSAA_MASK_BITS) << Self::MSAA_SHIFT_BITS;
+        Self::from_bits(msaa_bits).unwrap()
+    }
+
+    pub fn msaa_samples(&self) -> u32 {
+        1 << ((self.bits >> Self::MSAA_SHIFT_BITS) & Self::MSAA_MASK_BITS)
+    }
+}
+
 impl FromWorld for UnifiedPipeline {
     fn from_world(world: &mut World) -> Self {
         let world = world.cell();
         let render_device = world.get_resource::<RenderDevice>().unwrap();
-        let mut pipeline_cache = world.get_resource_mut::<PipelineCache>().unwrap();
 
         let view_layout = render_device.create_bind_group_layout(&BindGroupLayoutDescriptor {
             entries: &[BindGroupLayoutEntry {
@@ -151,86 +173,7 @@ impl FromWorld for UnifiedPipeline {
             label: Some("image_layout"),
         });
 
-        let vertex_buffer_layout = VertexBufferLayout {
-            array_stride: 60,
-            step_mode: VertexStepMode::Vertex,
-            attributes: vec![
-                VertexAttribute {
-                    format: VertexFormat::Float32x3,
-                    offset: 0,
-                    shader_location: 0,
-                },
-                VertexAttribute {
-                    format: VertexFormat::Float32x4,
-                    offset: 12,
-                    shader_location: 1,
-                },
-                VertexAttribute {
-                    format: VertexFormat::Float32x4,
-                    offset: 28,
-                    shader_location: 2,
-                },
-                VertexAttribute {
-                    format: VertexFormat::Float32x4,
-                    offset: 44,
-                    shader_location: 3,
-                },
-            ],
-        };
-
         let empty_font_texture = FontTextureCache::get_empty(&render_device, &font_image_layout);
-
-        let pipeline_desc = RenderPipelineDescriptor {
-            vertex: VertexState {
-                shader: UNIFIED_SHADER_HANDLE.typed::<Shader>(),
-                entry_point: "vertex".into(),
-                shader_defs: vec![],
-                buffers: vec![vertex_buffer_layout],
-            },
-            fragment: Some(FragmentState {
-                shader: UNIFIED_SHADER_HANDLE.typed::<Shader>(),
-                shader_defs: vec![],
-                entry_point: "fragment".into(),
-                targets: vec![Some(ColorTargetState {
-                    format: TextureFormat::bevy_default(),
-                    blend: Some(BlendState {
-                        color: BlendComponent {
-                            src_factor: BlendFactor::SrcAlpha,
-                            dst_factor: BlendFactor::OneMinusSrcAlpha,
-                            operation: BlendOperation::Add,
-                        },
-                        alpha: BlendComponent {
-                            src_factor: BlendFactor::One,
-                            dst_factor: BlendFactor::One,
-                            operation: BlendOperation::Add,
-                        },
-                    }),
-                    write_mask: ColorWrites::ALL,
-                })],
-            }),
-            layout: Some(vec![
-                view_layout.clone(),
-                font_image_layout.clone(),
-                types_layout.clone(),
-                image_layout.clone(),
-            ]),
-            primitive: PrimitiveState {
-                front_face: FrontFace::Ccw,
-                cull_mode: None,
-                polygon_mode: PolygonMode::Fill,
-                conservative: false,
-                topology: PrimitiveTopology::TriangleList,
-                strip_index_format: None,
-                unclipped_depth: false,
-            },
-            depth_stencil: None,
-            multisample: MultisampleState {
-                count: 1,
-                mask: !0,
-                alpha_to_coverage_enabled: false,
-            },
-            label: Some("unified_pipeline".into()),
-        };
 
         let texture_descriptor = TextureDescriptor {
             label: Some("font_texture_array"),
@@ -286,13 +229,97 @@ impl FromWorld for UnifiedPipeline {
         });
 
         UnifiedPipeline {
-            pipeline: pipeline_cache.queue_render_pipeline(pipeline_desc),
             view_layout,
             font_image_layout,
             empty_font_texture,
             types_layout,
             image_layout,
             default_image: (image, binding),
+        }
+    }
+}
+
+impl SpecializedRenderPipeline for UnifiedPipeline {
+    type Key = UnifiedPipelineKey;
+
+    fn specialize(&self, _key: Self::Key) -> RenderPipelineDescriptor {
+        let vertex_buffer_layout = VertexBufferLayout {
+            array_stride: 60,
+            step_mode: VertexStepMode::Vertex,
+            attributes: vec![
+                VertexAttribute {
+                    format: VertexFormat::Float32x3,
+                    offset: 0,
+                    shader_location: 0,
+                },
+                VertexAttribute {
+                    format: VertexFormat::Float32x4,
+                    offset: 12,
+                    shader_location: 1,
+                },
+                VertexAttribute {
+                    format: VertexFormat::Float32x4,
+                    offset: 28,
+                    shader_location: 2,
+                },
+                VertexAttribute {
+                    format: VertexFormat::Float32x4,
+                    offset: 44,
+                    shader_location: 3,
+                },
+            ],
+        };
+
+        RenderPipelineDescriptor {
+            vertex: VertexState {
+                shader: UNIFIED_SHADER_HANDLE.typed::<Shader>(),
+                entry_point: "vertex".into(),
+                shader_defs: vec![],
+                buffers: vec![vertex_buffer_layout],
+            },
+            fragment: Some(FragmentState {
+                shader: UNIFIED_SHADER_HANDLE.typed::<Shader>(),
+                shader_defs: vec![],
+                entry_point: "fragment".into(),
+                targets: vec![Some(ColorTargetState {
+                    format: TextureFormat::bevy_default(),
+                    blend: Some(BlendState {
+                        color: BlendComponent {
+                            src_factor: BlendFactor::SrcAlpha,
+                            dst_factor: BlendFactor::OneMinusSrcAlpha,
+                            operation: BlendOperation::Add,
+                        },
+                        alpha: BlendComponent {
+                            src_factor: BlendFactor::One,
+                            dst_factor: BlendFactor::One,
+                            operation: BlendOperation::Add,
+                        },
+                    }),
+                    write_mask: ColorWrites::ALL,
+                })],
+            }),
+            layout: Some(vec![
+                self.view_layout.clone(),
+                self.font_image_layout.clone(),
+                self.types_layout.clone(),
+                self.image_layout.clone(),
+            ]),
+            primitive: PrimitiveState {
+                front_face: FrontFace::Ccw,
+                cull_mode: None,
+                polygon_mode: PolygonMode::Fill,
+                conservative: false,
+                topology: PrimitiveTopology::TriangleList,
+                strip_index_format: None,
+                unclipped_depth: false,
+            },
+            depth_stencil: None,
+            multisample: MultisampleState {
+                count: 1,
+                mask: !0,
+                alpha_to_coverage_enabled: false,
+            },
+            label: Some("unified_pipeline".into()),
         }
     }
 }
@@ -495,11 +522,14 @@ pub fn queue_quads(
     mut sprite_meta: ResMut<QuadMeta>,
     view_uniforms: Res<ViewUniforms>,
     quad_pipeline: Res<UnifiedPipeline>,
+    mut pipelines: ResMut<SpecializedRenderPipelines<UnifiedPipeline>>,
+    mut pipeline_cache: ResMut<PipelineCache>,
     mut extracted_sprites: Query<(Entity, &ExtractedQuad)>,
     mut views: Query<&mut RenderPhase<TransparentUI>>,
     mut image_bind_groups: ResMut<ImageBindGroups>,
     unified_pipeline: Res<UnifiedPipeline>,
     gpu_images: Res<RenderAssets<Image>>,
+    msaa: Res<Msaa>,
 ) {
     if let Some(type_binding) = sprite_meta.types_buffer.binding() {
         sprite_meta.types_bind_group =
@@ -522,6 +552,9 @@ pub fn queue_quads(
             label: Some("quad_view_bind_group"),
             layout: &quad_pipeline.view_layout,
         }));
+
+        let key = UnifiedPipelineKey::from_msaa_samples(msaa.samples);
+        let spec_pipeline = pipelines.specialize(&mut pipeline_cache, &quad_pipeline, key);
 
         let draw_quad = draw_functions.read().get_id::<DrawUI>().unwrap();
         for mut transparent_phase in views.iter_mut() {
@@ -553,7 +586,7 @@ pub fn queue_quads(
                 }
                 transparent_phase.add(TransparentUI {
                     draw_function: draw_quad,
-                    pipeline: quad_pipeline.pipeline,
+                    pipeline: spec_pipeline,
                     entity,
                     sort_key: FloatOrd(quad.z_index),
                 });

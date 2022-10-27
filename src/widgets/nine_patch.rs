@@ -78,8 +78,7 @@ pub fn nine_patch_render(
         });
 
         children.process(&widget_context, Some(entity));
-
-        return true;
     }
-    false
+
+    true
 }

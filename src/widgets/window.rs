@@ -11,7 +11,7 @@ use crate::{
     event_dispatcher::EventDispatcherContext,
     on_event::OnEvent,
     prelude::KayakWidgetContext,
-    styles::{Corner, Edge, KCursorIcon, KStyle, PositionType, RenderCommand, StyleProp, Units},
+    styles::{Corner, Edge, KCursorIcon, KPositionType, KStyle, RenderCommand, StyleProp, Units},
     widget::Widget,
     widget_state::WidgetState,
 };
@@ -95,7 +95,7 @@ pub fn window_render(
                         border: StyleProp::Value(Edge::all(4.0)),
                         border_radius: StyleProp::Value(Corner::all(5.0)),
                         render_command: StyleProp::Value(RenderCommand::Quad),
-                        position_type: StyleProp::Value(PositionType::SelfDirected),
+                        position_type: StyleProp::Value(KPositionType::SelfDirected),
                         left: StyleProp::Value(Units::Pixels(state.position.x)),
                         top: StyleProp::Value(Units::Pixels(state.position.y)),
                         width: StyleProp::Value(Units::Pixels(window.size.x)),

@@ -5,7 +5,7 @@ use std::ops::Add;
 use bevy::prelude::Color;
 use bevy::prelude::Component;
 use bevy::window::CursorIcon;
-pub use morphorm::{LayoutType, PositionType, Units};
+pub use morphorm::{LayoutType, PositionType as KPositionType, Units};
 
 use crate::cursor::PointerEvents;
 
@@ -348,7 +348,7 @@ define_styles! {
         /// the event to "pass through" to widgets below.
         pub pointer_events: StyleProp<PointerEvents>,
         /// The position type of the widget relative to its parent
-        pub position_type: StyleProp<PositionType>,
+        pub position_type: StyleProp<KPositionType>,
         /// The render method for this widget
         ///
         /// This controls what actually gets rendered and how it's rendered.

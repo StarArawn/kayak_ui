@@ -2,10 +2,10 @@ use bevy::{
     math::Vec2,
     prelude::{
         App as BevyApp, AssetServer, Camera2dBundle, Commands, Component, Handle, Input, KeyCode,
-        Query, Res, ResMut, Sprite, SpriteBundle, Transform, With, Without,
+        PluginGroup, Query, Res, ResMut, Sprite, SpriteBundle, Transform, With, Without,
     },
     render::color::Color,
-    window::WindowDescriptor,
+    window::{WindowDescriptor, WindowPlugin},
     DefaultPlugins,
 };
 
@@ -119,13 +119,15 @@ fn control_text(
 
 fn main() {
     BevyApp::new()
-        .insert_resource(WindowDescriptor {
-            width: 1270.0,
-            height: 720.0,
-            title: String::from("UI Example"),
+        .add_plugins(DefaultPlugins.set(WindowPlugin {
+            window: WindowDescriptor {
+                width: 1270.0,
+                height: 720.0,
+                title: String::from("UI Example"),
+                ..Default::default()
+            },
             ..Default::default()
-        })
-        .add_plugins(DefaultPlugins)
+        }))
         .add_plugin(KayakFontPlugin)
         .add_plugin(FontRenderPlugin)
         .add_startup_system(startup)

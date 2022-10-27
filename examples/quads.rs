@@ -1,10 +1,6 @@
 use bevy::{
     diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin},
-    prelude::{
-        App as BevyApp, AssetServer, Bundle, Color, Commands, Component, Entity, In, Query, Res,
-        ResMut, Vec2,
-    },
-    DefaultPlugins,
+    prelude::*,
 };
 use kayak_ui::prelude::{widgets::*, KStyle, *};
 
@@ -22,7 +18,7 @@ fn my_quad_update(
     if let Ok((quad, mut style, mut on_event)) = query.get_mut(entity) {
         if style.render_command.resolve() != RenderCommand::Quad {
             style.render_command = StyleProp::Value(RenderCommand::Quad);
-            style.position_type = StyleProp::Value(PositionType::SelfDirected);
+            style.position_type = StyleProp::Value(KPositionType::SelfDirected);
             style.left = StyleProp::Value(Units::Pixels(quad.pos.x));
             style.top = StyleProp::Value(Units::Pixels(quad.pos.y));
             style.width = StyleProp::Value(Units::Pixels(quad.size.x));
@@ -126,7 +122,7 @@ fn startup(
 }
 
 fn main() {
-    BevyApp::new()
+    App::new()
         .add_plugins(DefaultPlugins)
         .add_plugin(LogDiagnosticsPlugin::default())
         .add_plugin(FrameTimeDiagnosticsPlugin::default())

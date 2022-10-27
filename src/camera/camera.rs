@@ -1,6 +1,6 @@
 use bevy::{
     ecs::query::QueryItem,
-    prelude::{Bundle, Component, GlobalTransform, Transform, With},
+    prelude::{Bundle, Camera2d, Component, GlobalTransform, Transform, With},
     render::{
         camera::{Camera, CameraProjection, CameraRenderGraph, WindowOrigin},
         extract_component::ExtractComponent,
@@ -28,6 +28,7 @@ impl ExtractComponent for CameraUiKayak {
 #[derive(Bundle)]
 pub struct UICameraBundle {
     pub camera: Camera,
+    pub camera_2d: Camera2d,
     pub camera_render_graph: CameraRenderGraph,
     pub orthographic_projection: UIOrthographicProjection,
     pub visible_entities: VisibleEntities,
@@ -65,11 +66,12 @@ impl UICameraBundle {
                 priority: isize::MAX - 1,
                 ..Default::default()
             },
-            camera_render_graph: CameraRenderGraph::new(crate::render::draw_ui_graph::NAME),
+            camera_render_graph: CameraRenderGraph::new(bevy::core_pipeline::core_2d::graph::NAME),
             orthographic_projection,
             frustum,
             visible_entities: VisibleEntities::default(),
             transform,
+            camera_2d: Camera2d::default(),
             global_transform: Default::default(),
             marker: CameraUiKayak,
         }

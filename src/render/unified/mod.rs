@@ -2,7 +2,9 @@ use bevy::{
     prelude::{Assets, Commands, HandleUntyped, Plugin, Res, Resource},
     reflect::TypeUuid,
     render::{
-        render_phase::DrawFunctions, render_resource::Shader, Extract, RenderApp, RenderStage,
+        render_phase::DrawFunctions,
+        render_resource::{Shader, SpecializedRenderPipelines},
+        Extract, RenderApp, RenderStage,
     },
     window::Windows,
 };
@@ -37,6 +39,7 @@ impl Plugin for UnifiedRenderPlugin {
         render_app
             .init_resource::<ImageBindGroups>()
             .init_resource::<UnifiedPipeline>()
+            .init_resource::<SpecializedRenderPipelines<UnifiedPipeline>>()
             .init_resource::<QuadMeta>()
             .add_system_to_stage(RenderStage::Extract, extract_baseline)
             .add_system_to_stage(RenderStage::Prepare, pipeline::prepare_quads)

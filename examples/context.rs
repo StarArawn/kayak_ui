@@ -7,13 +7,7 @@
 //! for better specificity and makes local contexts much easier to manage. In the case of theming,
 //! this allows us to have multiple active themes, even if they are nested within each other!
 
-use bevy::{
-    prelude::{
-        App as BevyApp, AssetServer, Bundle, Color, Commands, Component, Entity, ImageSettings, In,
-        Query, Res, ResMut, Vec2,
-    },
-    DefaultPlugins,
-};
+use bevy::prelude::*;
 use kayak_ui::prelude::{widgets::*, KStyle, *};
 
 /// The color theme struct we will be using across our demo widgets
@@ -395,8 +389,7 @@ fn startup(
 }
 
 fn main() {
-    BevyApp::new()
-        .insert_resource(ImageSettings::default_nearest())
+    App::new()
         .add_plugins(DefaultPlugins)
         .add_plugin(KayakContextPlugin)
         .add_plugin(KayakWidgets)

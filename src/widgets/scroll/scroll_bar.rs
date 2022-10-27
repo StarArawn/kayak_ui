@@ -7,7 +7,7 @@ use crate::{
     event_dispatcher::EventDispatcherContext,
     on_event::OnEvent,
     prelude::{KChildren, KayakWidgetContext},
-    styles::{Corner, Edge, KStyle, PositionType, RenderCommand, Units},
+    styles::{Corner, Edge, KPositionType, KStyle, RenderCommand, Units},
     widget::Widget,
     widget_state::WidgetState,
     widgets::{BackgroundBundle, ClipBundle},
@@ -156,7 +156,7 @@ pub fn scroll_bar_render(
 
                 let mut thumb_style = KStyle::default()
                     .with_style(KStyle {
-                        position_type: PositionType::SelfDirected.into(),
+                        position_type: KPositionType::SelfDirected.into(),
                         ..Default::default()
                     })
                     .with_style(&thumb_styles)

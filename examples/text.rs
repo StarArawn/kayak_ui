@@ -1,10 +1,4 @@
-use bevy::{
-    prelude::{
-        App as BevyApp, AssetServer, Bundle, Commands, Component, Entity, In, Input, KeyCode,
-        Query, Res, ResMut, Resource,
-    },
-    DefaultPlugins,
-};
+use bevy::prelude::*;
 use kayak_ui::prelude::{widgets::*, KStyle, *};
 
 #[derive(Component, Default, Clone, PartialEq)]
@@ -12,24 +6,35 @@ pub struct MyWidgetProps {
     pub foo: u32,
 }
 
-fn my_widget_1_update(
+fn my_widget_1_render(
     In((_widget_context, entity)): In<(KayakWidgetContext, Entity)>,
     my_resource: Res<MyResource>,
     mut query: Query<(&mut MyWidgetProps, &mut KStyle)>,
 ) -> bool {
-    if my_resource.is_changed() || my_resource.is_added() {
-        if let Ok((mut my_widget, mut style)) = query.get_mut(entity) {
-            my_widget.foo = my_resource.0;
-            dbg!(my_widget.foo);
-            style.render_command = StyleProp::Value(RenderCommand::Text {
-                content: format!("My number is: {}", my_widget.foo).to_string(),
-                alignment: Alignment::Start,
-            });
-            return true;
-        }
+    if let Ok((mut my_widget, mut style)) = query.get_mut(entity) {
+        my_widget.foo = my_resource.0;
+        dbg!(my_widget.foo);
+        // Note: We will see two updates because of the mutable change to styles.
+        // Which means when foo changes MyWidget will render twice!
+        style.render_command = StyleProp::Value(RenderCommand::Text {
+            content: format!("My number is: {}", my_widget.foo).to_string(),
+            alignment: Alignment::Start,
+        });
     }
 
-    false
+    true
+}
+
+// Our own version of widget_update that handles resource change events.
+pub fn widget_update_with_resource<
+    Props: PartialEq + Component + Clone,
+    State: PartialEq + Component + Clone,
+>(
+    In((widget_context, entity, previous_entity)): In<(KayakWidgetContext, Entity, Entity)>,
+    my_resource: Res<MyResource>,
+    widget_param: WidgetParam<Props, State>,
+) -> bool {
+    widget_param.has_changed(&widget_context, entity, previous_entity) || my_resource.is_changed()
 }
 
 impl Widget for MyWidgetProps {}
@@ -68,8 +73,8 @@ fn startup(
     widget_context.add_widget_data::<MyWidgetProps, EmptyState>();
     widget_context.add_widget_system(
         MyWidgetProps::default().get_name(),
-        widget_update::<MyWidgetProps, EmptyState>,
-        my_widget_1_update,
+        widget_update_with_resource::<MyWidgetProps, EmptyState>,
+        my_widget_1_render,
     );
     rsx! {
         <KayakAppBundle><MyWidgetBundle props={MyWidgetProps { foo: 0 }} /></KayakAppBundle>
@@ -84,7 +89,7 @@ fn update_resource(keyboard_input: Res<Input<KeyCode>>, mut my_resource: ResMut<
 }
 
 fn main() {
-    BevyApp::new()
+    App::new()
         .add_plugins(DefaultPlugins)
         .add_plugin(KayakContextPlugin)
         .add_plugin(KayakWidgets)

@@ -89,7 +89,6 @@ fn startup(
 
 fn main() {
     App::new()
-        .insert_resource(ImageSettings::default_nearest())
         .add_plugins(DefaultPlugins)
         .add_plugin(KayakContextPlugin)
         .add_plugin(KayakWidgets)

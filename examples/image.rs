@@ -1,7 +1,4 @@
-use bevy::{
-    prelude::{App as BevyApp, AssetServer, Commands, ImageSettings, Res, ResMut},
-    DefaultPlugins,
-};
+use bevy::prelude::*;
 use kayak_ui::prelude::{widgets::*, KStyle, *};
 
 fn startup(
@@ -19,10 +16,10 @@ fn startup(
     let parent_id = None;
     rsx! {
         <KayakAppBundle>
-            <ImageBundle
+            <KImageBundle
                 image={Image(image.clone())}
                 style={KStyle {
-                    position_type: StyleProp::Value(PositionType::SelfDirected),
+                    position_type: StyleProp::Value(KPositionType::SelfDirected),
                     left: StyleProp::Value(Units::Pixels(10.0)),
                     top: StyleProp::Value(Units::Pixels(10.0)),
                     border_radius: StyleProp::Value(Corner::all(500.0)),
@@ -37,9 +34,8 @@ fn startup(
 }
 
 fn main() {
-    BevyApp::new()
-        .insert_resource(ImageSettings::default_nearest())
-        .add_plugins(DefaultPlugins)
+    App::new()
+        .add_plugins(DefaultPlugins.set(ImagePlugin::default_nearest()))
         .add_plugin(KayakContextPlugin)
         .add_plugin(KayakWidgets)
         .add_startup_system(startup)

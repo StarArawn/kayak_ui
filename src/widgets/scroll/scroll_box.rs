@@ -10,7 +10,7 @@ use crate::{
     on_event::OnEvent,
     on_layout::OnLayout,
     prelude::{constructor, rsx, KayakWidgetContext},
-    styles::{KStyle, LayoutType, PositionType, RenderCommand, Units},
+    styles::{KPositionType, KStyle, LayoutType, RenderCommand, Units},
     widget::Widget,
     widget_state::WidgetState,
     widgets::{
@@ -165,7 +165,7 @@ pub fn scroll_box_render(
                 });
 
                 let content_styles = KStyle::default().with_style(KStyle {
-                    position_type: PositionType::SelfDirected.into(),
+                    position_type: KPositionType::SelfDirected.into(),
                     top: Units::Pixels(scroll_y).into(),
                     left: Units::Pixels(scroll_x).into(),
                     ..Default::default()

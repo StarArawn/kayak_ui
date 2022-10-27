@@ -1,10 +1,4 @@
-use bevy::{
-    prelude::{
-        App as BevyApp, AssetServer, Bundle, Commands, Component, Entity, In, Query, Res, ResMut,
-        Vec2,
-    },
-    DefaultPlugins,
-};
+use bevy::prelude::*;
 use kayak_ui::prelude::{widgets::*, *};
 
 #[derive(Component, Default, Clone, PartialEq)]
@@ -126,7 +120,7 @@ fn startup(
 }
 
 fn main() {
-    BevyApp::new()
+    App::new()
         .add_plugins(DefaultPlugins)
         .add_plugin(KayakContextPlugin)
         .add_plugin(KayakWidgets)

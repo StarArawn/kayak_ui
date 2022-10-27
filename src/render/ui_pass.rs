@@ -1,6 +1,6 @@
 use bevy::ecs::prelude::*;
 use bevy::render::render_phase::{DrawFunctionId, PhaseItem};
-use bevy::render::render_resource::{CachedRenderPipelineId, RenderPassColorAttachment};
+use bevy::render::render_resource::CachedRenderPipelineId;
 use bevy::render::{
     render_graph::{Node, NodeRunError, RenderGraphContext, SlotInfo, SlotType},
     render_phase::{DrawFunctions, RenderPhase, TrackedRenderPass},
@@ -72,14 +72,10 @@ impl Node for MainPassUINode {
         {
             let pass_descriptor = RenderPassDescriptor {
                 label: Some("main_transparent_pass_UI"),
-                color_attachments: &[Some(RenderPassColorAttachment {
-                    view: &target.view,
-                    resolve_target: None,
-                    ops: Operations {
-                        load: LoadOp::Load, //Clear(clear_color.0.into()),
-                        store: true,
-                    },
-                })],
+                color_attachments: &[Some(target.get_unsampled_color_attachment(Operations {
+                    load: LoadOp::Load,
+                    store: true,
+                }))],
                 depth_stencil_attachment: None,
             };
 

@@ -1,7 +1,7 @@
-use bevy::prelude::{Bundle, Changed, Component, Entity, Handle, In, Or, Query, With};
+use bevy::prelude::{Bundle, Component, Entity, Handle, In, Query};
 
 use crate::{
-    context::{Mounted, WidgetName},
+    context::WidgetName,
     prelude::KayakWidgetContext,
     styles::{KStyle, RenderCommand, StyleProp},
     widget::Widget,
@@ -15,13 +15,13 @@ pub struct Image(pub Handle<bevy::prelude::Image>);
 impl Widget for Image {}
 
 #[derive(Bundle)]
-pub struct ImageBundle {
+pub struct KImageBundle {
     pub image: Image,
     pub style: KStyle,
     pub widget_name: WidgetName,
 }
 
-impl Default for ImageBundle {
+impl Default for KImageBundle {
     fn default() -> Self {
         Self {
             image: Default::default(),
@@ -33,13 +33,12 @@ impl Default for ImageBundle {
 
 pub fn image_render(
     In((_widget_context, entity)): In<(KayakWidgetContext, Entity)>,
-    mut query: Query<(&mut KStyle, &Image), Or<((Changed<Image>, Changed<KStyle>), With<Mounted>)>>,
+    mut query: Query<(&mut KStyle, &Image)>,
 ) -> bool {
     if let Ok((mut style, image)) = query.get_mut(entity) {
         style.render_command = StyleProp::Value(RenderCommand::Image {
             handle: image.0.clone_weak(),
         });
-        return true;
     }
-    false
+    true
 }

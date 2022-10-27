@@ -1,7 +1,7 @@
 use bevy::{
-    prelude::{Commands, Entity, Plugin, Query, With},
+    prelude::{App, Commands, Entity, Plugin, Query, With},
     render::{
-        render_graph::{RenderGraph, SlotInfo, SlotType},
+        render_graph::{RenderGraph, RunGraphOnViewNode, SlotInfo, SlotType},
         render_phase::{DrawFunctions, RenderPhase},
         Extract, RenderApp, RenderStage,
     },
@@ -46,31 +46,123 @@ impl Plugin for BevyKayakUIRenderPlugin {
             .add_system_to_stage(RenderStage::Extract, extract_core_pipeline_camera_phases);
         // .add_system_to_stage(RenderStage::PhaseSort, sort_phase_system::<TransparentUI>);
 
-        let pass_node_ui = MainPassUINode::new(&mut render_app.world);
-        let mut graph = render_app.world.get_resource_mut::<RenderGraph>().unwrap();
+        // let pass_node_ui = MainPassUINode::new(&mut render_app.world);
+        // let mut graph = render_app.world.get_resource_mut::<RenderGraph>().unwrap();
 
-        let mut draw_ui_graph = RenderGraph::default();
-        draw_ui_graph.add_node(draw_ui_graph::node::MAIN_PASS, pass_node_ui);
-        let input_node_id = draw_ui_graph.set_input(vec![SlotInfo::new(
-            draw_ui_graph::input::VIEW_ENTITY,
-            SlotType::Entity,
-        )]);
-        draw_ui_graph
-            .add_slot_edge(
-                input_node_id,
-                draw_ui_graph::input::VIEW_ENTITY,
+        // let mut draw_ui_graph = RenderGraph::default();
+        // draw_ui_graph.add_node(draw_ui_graph::node::MAIN_PASS, pass_node_ui);
+        // let input_node_id = draw_ui_graph.set_input(vec![SlotInfo::new(
+        //     draw_ui_graph::input::VIEW_ENTITY,
+        //     SlotType::Entity,
+        // )]);
+        // draw_ui_graph
+        //     .add_slot_edge(
+        //         input_node_id,
+        //         draw_ui_graph::input::VIEW_ENTITY,
+        //         draw_ui_graph::node::MAIN_PASS,
+        //         MainPassUINode::IN_VIEW,
+        //     )
+        //     .unwrap();
+        // graph.add_sub_graph(draw_ui_graph::NAME, draw_ui_graph);
+
+        // // graph.add_node_edge(MAIN_PASS, draw_ui_graph::NAME).unwrap();
+
+        // Render graph
+        let ui_graph_2d = get_ui_graph(render_app);
+        let ui_graph_3d = get_ui_graph(render_app);
+        let mut graph = render_app.world.resource_mut::<RenderGraph>();
+
+        if let Some(graph_2d) = graph.get_sub_graph_mut(bevy::core_pipeline::core_2d::graph::NAME) {
+            graph_2d.add_sub_graph(draw_ui_graph::NAME, ui_graph_2d);
+            graph_2d.add_node(
                 draw_ui_graph::node::MAIN_PASS,
-                MainPassUINode::IN_VIEW,
-            )
-            .unwrap();
-        graph.add_sub_graph(draw_ui_graph::NAME, draw_ui_graph);
+                RunGraphOnViewNode::new(draw_ui_graph::NAME),
+            );
+            graph_2d
+                .add_node_edge(
+                    bevy::core_pipeline::core_2d::graph::node::MAIN_PASS,
+                    draw_ui_graph::node::MAIN_PASS,
+                )
+                .unwrap();
+            graph_2d
+                .add_slot_edge(
+                    graph_2d.input_node().unwrap().id,
+                    bevy::core_pipeline::core_2d::graph::input::VIEW_ENTITY,
+                    draw_ui_graph::node::MAIN_PASS,
+                    RunGraphOnViewNode::IN_VIEW,
+                )
+                .unwrap();
+            graph_2d
+                .add_node_edge(
+                    bevy::core_pipeline::core_2d::graph::node::TONEMAPPING,
+                    draw_ui_graph::node::MAIN_PASS,
+                )
+                .unwrap();
+            graph_2d
+                .add_node_edge(
+                    draw_ui_graph::node::MAIN_PASS,
+                    bevy::core_pipeline::core_2d::graph::node::UPSCALING,
+                )
+                .unwrap();
+        }
 
-        // graph.add_node_edge(MAIN_PASS, draw_ui_graph::NAME).unwrap();
+        if let Some(graph_3d) = graph.get_sub_graph_mut(bevy::core_pipeline::core_3d::graph::NAME) {
+            graph_3d.add_sub_graph(draw_ui_graph::NAME, ui_graph_3d);
+            graph_3d.add_node(
+                draw_ui_graph::node::MAIN_PASS,
+                RunGraphOnViewNode::new(draw_ui_graph::NAME),
+            );
+            graph_3d
+                .add_node_edge(
+                    bevy::core_pipeline::core_3d::graph::node::MAIN_PASS,
+                    draw_ui_graph::node::MAIN_PASS,
+                )
+                .unwrap();
+            graph_3d
+                .add_node_edge(
+                    bevy::core_pipeline::core_3d::graph::node::TONEMAPPING,
+                    draw_ui_graph::node::MAIN_PASS,
+                )
+                .unwrap();
+            graph_3d
+                .add_node_edge(
+                    draw_ui_graph::node::MAIN_PASS,
+                    bevy::core_pipeline::core_3d::graph::node::UPSCALING,
+                )
+                .unwrap();
+            graph_3d
+                .add_slot_edge(
+                    graph_3d.input_node().unwrap().id,
+                    bevy::core_pipeline::core_3d::graph::input::VIEW_ENTITY,
+                    draw_ui_graph::node::MAIN_PASS,
+                    RunGraphOnViewNode::IN_VIEW,
+                )
+                .unwrap();
+        }
 
         app.add_plugin(font::TextRendererPlugin)
             .add_plugin(UnifiedRenderPlugin)
             .add_plugin(BevyKayakUIExtractPlugin);
     }
+}
+
+fn get_ui_graph(render_app: &mut App) -> RenderGraph {
+    let ui_pass_node = MainPassUINode::new(&mut render_app.world);
+    let mut ui_graph = RenderGraph::default();
+    ui_graph.add_node(draw_ui_graph::node::MAIN_PASS, ui_pass_node);
+    let input_node_id = ui_graph.set_input(vec![SlotInfo::new(
+        draw_ui_graph::input::VIEW_ENTITY,
+        SlotType::Entity,
+    )]);
+    ui_graph
+        .add_slot_edge(
+            input_node_id,
+            draw_ui_graph::input::VIEW_ENTITY,
+            draw_ui_graph::node::MAIN_PASS,
+            MainPassUINode::IN_VIEW,
+        )
+        .unwrap();
+    ui_graph
 }
 
 pub fn extract_core_pipeline_camera_phases(

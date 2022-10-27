@@ -4,7 +4,7 @@ use bevy::{
 };
 
 use crate::{
-    context::Context,
+    context::KayakRootContext,
     cursor::{CursorEvent, PointerEvents, ScrollEvent, ScrollUnit},
     event::{Event, EventType},
     focus_tree::FocusTree,
@@ -13,7 +13,7 @@ use crate::{
     layout::Rect,
     node::WrappedIndex,
     on_event::OnEvent,
-    prelude::WidgetContext,
+    prelude::KayakWidgetContext,
     styles::{KStyle, RenderCommand},
     Focusable,
 };
@@ -178,7 +178,7 @@ impl EventDispatcher {
     pub fn process_events(
         &mut self,
         input_events: Vec<InputEvent>,
-        context: &mut Context,
+        context: &mut KayakRootContext,
         world: &mut World,
     ) {
         let events = { self.build_event_stream(&input_events, context, world) };
@@ -187,7 +187,12 @@ impl EventDispatcher {
 
     /// Dispatch an [Event](crate::Event)
     #[allow(dead_code)]
-    pub fn dispatch_event(&mut self, event: Event, context: &mut Context, world: &mut World) {
+    pub fn dispatch_event(
+        &mut self,
+        event: Event,
+        context: &mut KayakRootContext,
+        world: &mut World,
+    ) {
         self.dispatch_events(vec![event], context, world);
     }
 
@@ -195,7 +200,7 @@ impl EventDispatcher {
     pub fn dispatch_events(
         &mut self,
         events: Vec<Event>,
-        context: &mut Context,
+        context: &mut KayakRootContext,
         world: &mut World,
     ) {
         // === Dispatch Events === //
@@ -233,7 +238,7 @@ impl EventDispatcher {
 
                         // Sometimes events will require systems to be called.
                         // IE OnChange
-                        let widget_context = WidgetContext::new(
+                        let widget_context = KayakWidgetContext::new(
                             context.tree.clone(),
                             context.context_entities.clone(),
                             context.layout_cache.clone(),
@@ -300,7 +305,7 @@ impl EventDispatcher {
     fn build_event_stream(
         &mut self,
         input_events: &[InputEvent],
-        context: &mut Context,
+        context: &mut KayakRootContext,
         world: &mut World,
     ) -> Vec<Event> {
         let mut event_stream = Vec::<Event>::new();
@@ -500,7 +505,7 @@ impl EventDispatcher {
         tree_node: TreeNode,
         states: &mut HashMap<EventType, EventState>,
         world: &mut World,
-        context: &Context,
+        context: &KayakRootContext,
         ignore_layout: bool,
     ) -> Vec<Event> {
         let mut event_stream = Vec::<Event>::new();
@@ -739,7 +744,7 @@ impl EventDispatcher {
     }
 
     /// Executes default actions for events
-    fn execute_default(&mut self, event: Event, context: &mut Context, world: &mut World) {
+    fn execute_default(&mut self, event: Event, context: &mut KayakRootContext, world: &mut World) {
         match event.event_type {
             EventType::KeyDown(evt) => match evt.key() {
                 KeyCode::Tab => {

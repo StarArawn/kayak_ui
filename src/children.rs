@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::prelude::WidgetContext;
+use crate::prelude::KayakWidgetContext;
 
 /// Defers widgets being added to the widget tree.
 #[derive(Component, Debug, Default, Clone, PartialEq)]
@@ -37,7 +37,7 @@ impl KChildren {
     }
 
     /// Processes all widgets and adds them to the tree.
-    pub fn process(&self, widget_context: &WidgetContext, parent_id: Option<Entity>) {
+    pub fn process(&self, widget_context: &KayakWidgetContext, parent_id: Option<Entity>) {
         for child in self.inner.iter() {
             widget_context.add_widget(parent_id, *child);
         }

@@ -1,7 +1,7 @@
 use bevy::prelude::{Bundle, Color, Commands, Component, Entity, In, Query};
 use kayak_ui::prelude::{
-    rsx, widgets::BackgroundBundle, Edge, KChildren, KStyle, StyleProp, Units, Widget,
-    WidgetContext, WidgetName,
+    rsx, widgets::BackgroundBundle, Edge, KChildren, KStyle, KayakWidgetContext, StyleProp, Units,
+    Widget, WidgetName,
 };
 
 use crate::tab_context::TabContext;
@@ -37,7 +37,7 @@ impl Default for TabBundle {
 }
 
 pub fn tab_render(
-    In((widget_context, entity)): In<(WidgetContext, Entity)>,
+    In((widget_context, entity)): In<(KayakWidgetContext, Entity)>,
     mut commands: Commands,
     query: Query<(&KChildren, &Tab)>,
     tab_context_query: Query<&TabContext>,

@@ -9,7 +9,7 @@ use crate::{
     layout::{GeometryChanged, LayoutEvent},
     on_event::OnEvent,
     on_layout::OnLayout,
-    prelude::{constructor, rsx, WidgetContext},
+    prelude::{constructor, rsx, KayakWidgetContext},
     styles::{KStyle, LayoutType, PositionType, RenderCommand, Units},
     widget::Widget,
     widget_state::WidgetState,
@@ -77,7 +77,7 @@ impl Default for ScrollBoxBundle {
 }
 
 pub fn scroll_box_render(
-    In((widget_context, entity)): In<(WidgetContext, Entity)>,
+    In((widget_context, entity)): In<(KayakWidgetContext, Entity)>,
     mut commands: Commands,
     mut query: Query<(&ScrollBoxProps, &mut KStyle, &KChildren, &mut OnLayout)>,
     mut context_query: ParamSet<(Query<&ScrollContext>, Query<&mut ScrollContext>)>,

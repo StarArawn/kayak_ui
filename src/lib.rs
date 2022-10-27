@@ -26,7 +26,7 @@ mod tree;
 mod widget;
 mod widget_context;
 mod widget_state;
-mod widgets;
+pub mod widgets;
 mod window_size;
 
 pub use window_size::WindowSize;
@@ -39,13 +39,8 @@ pub const DEFAULT_FONT: &str = "Kayak-Default";
 pub mod prelude {
     pub use crate::camera::UICameraBundle;
     pub use crate::children::KChildren;
-    pub use crate::context::*;
-    pub use crate::render::font::FontMapping;
-    pub use crate::tree::*;
-    pub mod widgets {
-        pub use crate::widgets::*;
-    }
     pub use crate::clone_component::PreviousWidget;
+    pub use crate::context::*;
     pub use crate::event::*;
     pub use crate::event_dispatcher::EventDispatcherContext;
     pub use crate::focus_tree::Focusable;
@@ -56,10 +51,13 @@ pub mod prelude {
     pub use crate::on_change::OnChange;
     pub use crate::on_event::OnEvent;
     pub use crate::on_layout::OnLayout;
+    pub use crate::render::font::FontMapping;
     pub use crate::styles::*;
+    pub use crate::tree::*;
     pub use crate::widget::*;
     pub use crate::widget_context::*;
     pub use crate::widget_state::*;
+    pub use crate::widgets;
     pub use kayak_font::Alignment;
     pub use kayak_ui_macros::{constructor, rsx};
 }

@@ -34,7 +34,7 @@ pub fn widget_update_with_resource<
     Props: PartialEq + Component + Clone,
     State: PartialEq + Component + Clone,
 >(
-    In((widget_context, entity, previous_entity)): In<(WidgetContext, Entity, Entity)>,
+    In((widget_context, entity, previous_entity)): In<(KayakWidgetContext, Entity, Entity)>,
     todo_list: Res<TodoList>,
     widget_param: WidgetParam<Props, State>,
 ) -> bool {
@@ -50,7 +50,7 @@ fn startup(
 
     commands.spawn(UICameraBundle::new());
 
-    let mut widget_context = Context::new();
+    let mut widget_context = KayakRootContext::new();
     widget_context.add_widget_data::<TodoItemsProps, EmptyState>();
     widget_context.add_widget_data::<TodoInputProps, EmptyState>();
 
@@ -94,7 +94,7 @@ fn startup(
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
-        .add_plugin(ContextPlugin)
+        .add_plugin(KayakContextPlugin)
         .add_plugin(KayakWidgets)
         .insert_non_send_resource(TodoList::new())
         .add_startup_system(startup)

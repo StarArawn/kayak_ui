@@ -31,7 +31,7 @@ impl Default for TodoItemsBundle {
 }
 
 pub fn render_todo_items(
-    In((widget_context, entity)): In<(WidgetContext, Entity)>,
+    In((widget_context, entity)): In<(KayakWidgetContext, Entity)>,
     mut commands: Commands,
     todo_list: Res<TodoList>,
     query: Query<&TodoItemsProps, Or<(Changed<Style>, Changed<TodoItemsProps>, With<Mounted>)>>,

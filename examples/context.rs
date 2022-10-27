@@ -76,7 +76,7 @@ impl Default for ThemeButtonBundle {
 }
 
 fn update_theme_button(
-    In((widget_context, theme_button_entity)): In<(WidgetContext, Entity)>,
+    In((widget_context, theme_button_entity)): In<(KayakWidgetContext, Entity)>,
     mut commands: Commands,
     query: Query<&ThemeButton>,
     mut context_query: Query<&mut Theme>,
@@ -164,7 +164,7 @@ impl Default for ThemeSelectorBundle {
 }
 
 fn update_theme_selector(
-    In((widget_context, entity)): In<(WidgetContext, Entity)>,
+    In((widget_context, entity)): In<(KayakWidgetContext, Entity)>,
     mut commands: Commands,
     query: Query<&ThemeSelector>,
 ) -> bool {
@@ -219,7 +219,7 @@ impl Default for ThemeDemoBundle {
 }
 
 fn update_theme_demo(
-    In((widget_context, entity)): In<(WidgetContext, Entity)>,
+    In((widget_context, entity)): In<(KayakWidgetContext, Entity)>,
     mut commands: Commands,
     mut query_set: Query<&mut ThemeDemo>,
     theme_context: Query<&Theme>,
@@ -347,7 +347,7 @@ fn startup(
 
     commands.spawn(UICameraBundle::new());
 
-    let mut widget_context = Context::new();
+    let mut widget_context = KayakRootContext::new();
     widget_context.add_widget_data::<ThemeDemo, EmptyState>();
     widget_context.add_widget_data::<ThemeButton, EmptyState>();
     widget_context.add_widget_data::<ThemeSelector, EmptyState>();
@@ -398,7 +398,7 @@ fn main() {
     BevyApp::new()
         .insert_resource(ImageSettings::default_nearest())
         .add_plugins(DefaultPlugins)
-        .add_plugin(ContextPlugin)
+        .add_plugin(KayakContextPlugin)
         .add_plugin(KayakWidgets)
         .add_startup_system(startup)
         .run()

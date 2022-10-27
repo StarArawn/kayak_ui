@@ -15,7 +15,7 @@ fn startup(
 
     let image = asset_server.load("kenny/panel_brown.png");
 
-    let mut widget_context = Context::new();
+    let mut widget_context = KayakRootContext::new();
     let parent_id = None;
 
     let nine_patch_styles = KStyle {
@@ -68,7 +68,7 @@ fn main() {
     App::new()
         .insert_resource(ImageSettings::default_nearest())
         .add_plugins(DefaultPlugins)
-        .add_plugin(ContextPlugin)
+        .add_plugin(KayakContextPlugin)
         .add_plugin(KayakWidgets)
         .add_startup_system(startup)
         .run()

@@ -6,7 +6,7 @@ use crate::{
     event::{Event, EventType},
     event_dispatcher::EventDispatcherContext,
     on_event::OnEvent,
-    prelude::{KChildren, WidgetContext},
+    prelude::{KChildren, KayakWidgetContext},
     styles::{Corner, Edge, KStyle, PositionType, RenderCommand, Units},
     widget::Widget,
     widget_state::WidgetState,
@@ -54,7 +54,7 @@ impl Default for ScrollBarBundle {
 }
 
 pub fn scroll_bar_render(
-    In((widget_context, entity)): In<(WidgetContext, Entity)>,
+    In((widget_context, entity)): In<(KayakWidgetContext, Entity)>,
     mut commands: Commands,
     mut query: Query<(&ScrollBarProps, &mut KStyle)>,
     context_query: Query<&ScrollContext>,

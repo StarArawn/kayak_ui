@@ -34,7 +34,7 @@ impl Default for WidgetBundle {
 }
 
 pub fn update_widget(
-    In((widget_context, entity)): In<(WidgetContext, Entity)>,
+    In((widget_context, entity)): In<(KayakWidgetContext, Entity)>,
     _: Commands,
     mut query: Query<
         (&Style, &KChildren),

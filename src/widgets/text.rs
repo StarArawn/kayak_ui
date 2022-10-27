@@ -3,7 +3,7 @@ use kayak_font::Alignment;
 
 use crate::{
     context::WidgetName,
-    prelude::WidgetContext,
+    prelude::KayakWidgetContext,
     styles::{KCursorIcon, KStyle, RenderCommand, StyleProp},
     widget::Widget,
 };
@@ -45,6 +45,8 @@ impl Default for TextProps {
 
 impl Widget for TextProps {}
 
+/// A widget that renders text
+///
 #[derive(Bundle)]
 pub struct TextWidgetBundle {
     pub text: TextProps,
@@ -63,7 +65,7 @@ impl Default for TextWidgetBundle {
 }
 
 pub fn text_render(
-    In((_, entity)): In<(WidgetContext, Entity)>,
+    In((_, entity)): In<(KayakWidgetContext, Entity)>,
     mut query: Query<(&mut KStyle, &TextProps)>,
 ) -> bool {
     if let Ok((mut style, text)) = query.get_mut(entity) {

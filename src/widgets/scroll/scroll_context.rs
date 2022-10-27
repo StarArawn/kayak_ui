@@ -1,7 +1,7 @@
 use bevy::prelude::{Bundle, Commands, Component, Entity, In, Query, Vec2};
 
 use crate::{
-    children::KChildren, context::WidgetName, prelude::WidgetContext, styles::KStyle,
+    children::KChildren, context::WidgetName, prelude::KayakWidgetContext, styles::KStyle,
     widget::Widget,
 };
 
@@ -158,7 +158,7 @@ impl Default for ScrollContextProviderBundle {
 }
 
 pub fn scroll_context_render(
-    In((widget_context, entity)): In<(WidgetContext, Entity)>,
+    In((widget_context, entity)): In<(KayakWidgetContext, Entity)>,
     mut commands: Commands,
     mut query: Query<(&ScrollContextProvider, &KChildren)>,
 ) -> bool {

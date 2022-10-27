@@ -3,7 +3,7 @@ use bevy::prelude::{Component, Entity, In, IntoSystem, System, World};
 use std::fmt::{Debug, Formatter};
 use std::sync::{Arc, RwLock};
 
-use crate::prelude::WidgetContext;
+use crate::prelude::KayakWidgetContext;
 
 pub trait ChangeValue: Component<Storage = TableStorage> + Default {}
 
@@ -16,7 +16,7 @@ pub trait ChangeValue: Component<Storage = TableStorage> + Default {}
 pub struct OnChange {
     value: Arc<RwLock<String>>,
     has_initialized: Arc<RwLock<bool>>,
-    system: Arc<RwLock<dyn System<In = (WidgetContext, Entity, String), Out = ()>>>,
+    system: Arc<RwLock<dyn System<In = (KayakWidgetContext, Entity, String), Out = ()>>>,
 }
 
 impl Default for OnChange {
@@ -31,7 +31,7 @@ impl OnChange {
     /// The handler should be a closure that takes the following arguments:
     /// 1. The LayoutEvent
     pub fn new<Params>(
-        system: impl IntoSystem<(WidgetContext, Entity, String), (), Params>,
+        system: impl IntoSystem<(KayakWidgetContext, Entity, String), (), Params>,
     ) -> Self {
         Self {
             value: Default::default(),
@@ -49,7 +49,7 @@ impl OnChange {
     /// Call the layout event handler
     ///
     /// Returns true if the handler was successfully invoked.
-    pub fn try_call(&self, entity: Entity, world: &mut World, widget_context: WidgetContext) {
+    pub fn try_call(&self, entity: Entity, world: &mut World, widget_context: KayakWidgetContext) {
         if let Ok(value) = self.value.try_read() {
             if let Ok(mut init) = self.has_initialized.try_write() {
                 if let Ok(mut system) = self.system.try_write() {

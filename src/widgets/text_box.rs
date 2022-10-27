@@ -7,7 +7,7 @@ use crate::{
     event_dispatcher::EventDispatcherContext,
     on_event::OnEvent,
     on_layout::OnLayout,
-    prelude::{KChildren, OnChange, WidgetContext},
+    prelude::{KChildren, KayakWidgetContext, OnChange},
     styles::{Corner, KStyle, RenderCommand, StyleProp, Units},
     widget::Widget,
     widget_state::WidgetState,
@@ -42,17 +42,8 @@ pub struct TextBoxValue(pub String);
 impl Widget for TextBoxProps {}
 
 /// A widget that displays a text input field
-///
-/// # Props
-///
-/// __Type:__ [`TextBoxProps`]
-///
-/// | Common Prop | Accepted |
-/// | :---------: | :------: |
-/// | `children`  | ❌       |
-/// | `styles`    | ✅        |
-/// | `on_event`  | ✅        |
-/// | `on_layout` | ✅        |
+/// A text box allows users to input text.
+/// This text box is fairly simple and only supports basic input.
 ///
 #[derive(Bundle)]
 pub struct TextBoxBundle {
@@ -80,7 +71,7 @@ impl Default for TextBoxBundle {
 }
 
 pub fn text_box_render(
-    In((widget_context, entity)): In<(WidgetContext, Entity)>,
+    In((widget_context, entity)): In<(KayakWidgetContext, Entity)>,
     mut commands: Commands,
     mut query: Query<(&mut KStyle, &TextBoxProps, &mut OnEvent, &OnChange)>,
 ) -> bool {

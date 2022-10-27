@@ -4,7 +4,7 @@ use crate::{
     children::KChildren,
     context::WidgetName,
     on_event::OnEvent,
-    prelude::WidgetContext,
+    prelude::KayakWidgetContext,
     styles::{KStyle, RenderCommand, StyleProp},
     widget::Widget,
 };
@@ -14,6 +14,9 @@ pub struct Element;
 
 impl Widget for Element {}
 
+/// A generic widget
+/// You can consider this to kind behave like a div in html
+/// Accepts: KStyle, OnEvent, and KChildren.
 #[derive(Bundle)]
 pub struct ElementBundle {
     pub element: Element,
@@ -36,7 +39,7 @@ impl Default for ElementBundle {
 }
 
 pub fn element_render(
-    In((mut widget_context, entity)): In<(WidgetContext, Entity)>,
+    In((mut widget_context, entity)): In<(KayakWidgetContext, Entity)>,
     _: Commands,
     mut query: Query<(&mut KStyle, &KChildren)>,
 ) -> bool {

@@ -15,6 +15,16 @@ pub(crate) mod widget_builder;
 
 /// A proc macro that turns RSX syntax into structure constructors and calls the
 /// context to create the widgets.
+/// Note: This macro expects the following:
+///
+/// `parent_id`: Variable in scope. Typed as: `Option<Entity>`. This should always
+/// be None for the root node or `Some(parent_entity)` for any other widget
+///
+/// `widget_context`: Variable in scope. Can either be a `WidgetRootContext` or a `WidgetContext`.
+/// This is used to automatically add widgets to the tree when parsing the XML syntax into code.
+///
+/// `commands`: Variable in scope. Must be a variable to a mutable bevy `Commands`. This is used to
+/// spawn entities and insert bundles onto entities automatically after parsing the XML syntax to code.
 #[proc_macro]
 #[proc_macro_error]
 pub fn rsx(input: TokenStream) -> TokenStream {

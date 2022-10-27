@@ -17,7 +17,7 @@ use crate::{
     layout::{LayoutCache, Rect},
     layout_dispatcher::LayoutEventDispatcher,
     node::{DirtyNode, WrappedIndex},
-    prelude::WidgetContext,
+    prelude::KayakWidgetContext,
     render_primitive::RenderPrimitive,
     styles::KStyle,
     tree::{Change, Tree},
@@ -34,13 +34,43 @@ const UPDATE_DEPTH: u32 = 0;
 type WidgetSystems = HashMap<
     String,
     (
-        Box<dyn System<In = (WidgetContext, Entity, Entity), Out = bool>>,
-        Box<dyn System<In = (WidgetContext, Entity), Out = bool>>,
+        Box<dyn System<In = (KayakWidgetContext, Entity, Entity), Out = bool>>,
+        Box<dyn System<In = (KayakWidgetContext, Entity), Out = bool>>,
     ),
 >;
 
+///
+/// Kayak Context
+///
+/// This bevy resource keeps track of all of the necessary UI state. This includes the widgets, tree, input, layout, and other important data.
+/// The Context provides some connivent helper functions for creating and using widgets, state, and context.
+///
+/// Usage:
+/// ```rust
+/// use bevy::prelude::*;
+/// use kayak_ui::prelude::{widgets::*, *};
+///
+/// // Bevy setup function
+/// fn setup(mut commands: Commands) {
+///     let mut widget_context = Context::new();
+///     let app_entity = commands.spawn(KayakAppBundle {
+///         ..Default::default()
+///     }).id();
+///     // Stores the kayak app widget in the widget context's tree.
+///     widget_context.add_widget(None, app_entity);
+///     commands.insert_resource(widget_context);
+/// }
+///
+/// fn main() {
+///     App::new()
+///     .add_plugins(DefaultPlugins)
+///     .add_plugin(ContextPlugin)
+///     .add_plugin(KayakWidgets)
+///     .add_startup_system(setup);
+/// }
+/// ```
 #[derive(Resource)]
-pub struct Context {
+pub struct KayakRootContext {
     pub tree: Arc<RwLock<Tree>>,
     pub(crate) layout_cache: Arc<RwLock<LayoutCache>>,
     pub(crate) focus_tree: Arc<RwLock<FocusTree>>,
@@ -51,9 +81,11 @@ pub struct Context {
     pub(crate) clone_systems: Arc<RwLock<EntityCloneSystems>>,
     pub(crate) cloned_widget_entities: Arc<RwLock<HashMap<Entity, Entity>>>,
     pub(crate) widget_state: WidgetState,
+    index: Arc<RwLock<HashMap<Entity, usize>>>,
 }
 
-impl Context {
+impl KayakRootContext {
+    /// Creates a new widget context.
     pub fn new() -> Self {
         Self {
             tree: Arc::new(RwLock::new(Tree::default())),
@@ -66,9 +98,11 @@ impl Context {
             clone_systems: Default::default(),
             cloned_widget_entities: Default::default(),
             widget_state: Default::default(),
+            index: Default::default(),
         }
     }
 
+    /// Get's the layout for th given widget index.
     pub(crate) fn get_layout(&self, id: &WrappedIndex) -> Option<Rect> {
         if let Ok(cache) = self.layout_cache.try_read() {
             cache.rect.get(id).cloned()
@@ -77,11 +111,15 @@ impl Context {
         }
     }
 
+    /// Adds a new set of systems for a widget type.
+    /// Update systems are ran every frame and return true or false depending on if the widget has "changed".
+    /// Render systems are ran only if the widget has changed and are meant to re-render children and handle
+    /// tree changes.
     pub fn add_widget_system<Params, Params2>(
         &mut self,
         type_name: impl Into<String>,
-        update: impl IntoSystem<(WidgetContext, Entity, Entity), bool, Params>,
-        render: impl IntoSystem<(WidgetContext, Entity), bool, Params2>,
+        update: impl IntoSystem<(KayakWidgetContext, Entity, Entity), bool, Params>,
+        render: impl IntoSystem<(KayakWidgetContext, Entity), bool, Params2>,
     ) {
         let update_system = Box::new(IntoSystem::into_system(update));
         let render_system = Box::new(IntoSystem::into_system(render));
@@ -89,6 +127,12 @@ impl Context {
             .insert(type_name.into(), (update_system, render_system));
     }
 
+    /// Let's the widget context know what data types are used for a given widget.
+    /// This is useful as it allows Kayak to keep track of previous values for diffing.
+    /// When the default update widget system is called it checks the props and state of
+    /// the current widget with it's values from the previous frame.
+    /// This allows Kayak to diff data. Alternatively a custom widget update system can
+    /// be used and listen for events, resources, or any other bevy ECS data.
     pub fn add_widget_data<
         Props: Component + Clone + PartialEq,
         State: Component + Clone + PartialEq,
@@ -102,6 +146,10 @@ impl Context {
         }
     }
 
+    /// Adds a widget to the tree.
+    /// Widgets are created using entities and components.
+    /// Once created their id's need to be added to the widget tree
+    /// so that the correct ordering is preserved for updates and rendering.
     pub fn add_widget(&mut self, parent: Option<Entity>, entity: Entity) {
         if let Ok(mut tree) = self.tree.write() {
             tree.add(
@@ -115,6 +163,8 @@ impl Context {
     }
 
     /// Creates a new context using the context entity for the given type_id + parent id.
+    /// Context can be considered state that changes across multiple components.
+    /// Alternatively you can use bevy's resources.
     pub fn set_context_entity<T: Default + 'static>(
         &self,
         parent_id: Option<Entity>,
@@ -126,16 +176,56 @@ impl Context {
         }
     }
 
-    pub fn get_child_at(&self, entity: Option<Entity>) -> Option<Entity> {
+    /// Returns a child entity or none if it does not exist.
+    /// Because a re-render can potentially spawn new entities it's advised to use this
+    /// to avoid creating a new entity.
+    ///
+    /// Usage:
+    /// fn setup() {
+    ///     let mut widget_context = WidgetContext::new();
+    ///     // Root tree node, no parent node.
+    ///     let root_entity = if let Some(root_entity) =  widget_context.get_child_at(None) {\
+    ///         root_entity
+    ///     } else {
+    ///         // Spawn if it does not exist in the tree!
+    ///         commands.spawn_empty().id()
+    ///     };
+    ///     commands.entity(root_entity).insert(KayakAppBundle::default());
+    ///     widget_context.add_widget(None, root_entity);
+    /// }
+    ///
+    ///
+    pub fn get_child_at(&self, parent_entity: Option<Entity>) -> Option<Entity> {
         if let Ok(tree) = self.tree.try_read() {
-            if let Some(entity) = entity {
+            if let Some(entity) = parent_entity {
                 let children = tree.child_iter(WrappedIndex(entity)).collect::<Vec<_>>();
-                return children.get(0).cloned().map(|index| index.0);
+                return children
+                    .get(self.get_and_add_index(entity))
+                    .cloned()
+                    .map(|index| index.0);
             }
         }
         None
     }
 
+    fn get_and_add_index(&self, parent: Entity) -> usize {
+        if let Ok(mut hash_map) = self.index.try_write() {
+            if hash_map.contains_key(&parent) {
+                let index = hash_map.get_mut(&parent).unwrap();
+                let current_index = index.clone();
+                *index += 1;
+                return current_index;
+            } else {
+                hash_map.insert(parent, 1);
+                return 0;
+            }
+        }
+
+        0
+    }
+
+    /// Generates a flat list of widget render commands sorted by tree order.
+    /// There is no need to call this unless you are implementing your own custom renderer.
     pub fn build_render_primitives(
         &self,
         nodes: &Query<&crate::node::Node>,
@@ -272,7 +362,7 @@ fn recurse_node_tree_to_build_primitives(
 }
 
 fn update_widgets_sys(world: &mut World) {
-    let mut context = world.remove_resource::<Context>().unwrap();
+    let mut context = world.remove_resource::<KayakRootContext>().unwrap();
     let tree_iterator = if let Ok(tree) = context.tree.read() {
         tree.down_iter().collect::<Vec<_>>()
     } else {
@@ -354,7 +444,7 @@ fn update_widgets(
     for entity in widgets.iter() {
         if let Some(entity_ref) = world.get_entity(entity.0) {
             if let Some(widget_type) = entity_ref.get::<WidgetName>() {
-                let widget_context = WidgetContext::new(
+                let widget_context = KayakWidgetContext::new(
                     tree.clone(),
                     context_entities.clone(),
                     layout_cache.clone(),
@@ -434,7 +524,7 @@ fn update_widget(
     world: &mut World,
     entity: WrappedIndex,
     widget_type: String,
-    widget_context: WidgetContext,
+    widget_context: KayakWidgetContext,
     previous_children: Vec<Entity>,
     clone_systems: &Arc<RwLock<EntityCloneSystems>>,
     cloned_widget_entities: &Arc<RwLock<HashMap<Entity, Entity>>>,
@@ -571,7 +661,7 @@ fn update_widget(
 }
 
 fn init_systems(world: &mut World) {
-    let mut context = world.remove_resource::<Context>().unwrap();
+    let mut context = world.remove_resource::<KayakRootContext>().unwrap();
     for system in context.systems.values_mut() {
         system.0.initialize(world);
         system.1.initialize(world);
@@ -580,12 +670,14 @@ fn init_systems(world: &mut World) {
     world.insert_resource(context);
 }
 
-pub struct ContextPlugin;
+/// The default Kayak Context plugin
+/// Creates systems and resources for kayak.
+pub struct KayakContextPlugin;
 
 #[derive(Resource)]
 pub struct CustomEventReader<T: bevy::ecs::event::Event>(pub ManualEventReader<T>);
 
-impl Plugin for ContextPlugin {
+impl Plugin for KayakContextPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(WindowSize::default())
             .insert_resource(EventDispatcher::new())
@@ -623,12 +715,12 @@ fn calculate_ui(world: &mut World) {
     for _ in 0..5 {
         system.run((), world);
         system.apply_buffers(world);
-        world.resource_scope::<Context, _>(|world, mut context| {
+        world.resource_scope::<KayakRootContext, _>(|world, mut context| {
             LayoutEventDispatcher::dispatch(&mut context, world);
         });
     }
 
-    world.resource_scope::<Context, _>(|world, mut context| {
+    world.resource_scope::<KayakRootContext, _>(|world, mut context| {
         world.resource_scope::<EventDispatcher, _>(|world, event_dispatcher| {
             if event_dispatcher.hovered.is_none() {
                 context.current_cursor = CursorIcon::Default;
@@ -657,6 +749,8 @@ fn calculate_ui(world: &mut World) {
     // dbg!("Finished dispatching layout events!");
 }
 
+/// A simple component that stores the type name of a widget
+/// This is used by Kayak in order to find out which systems to run.
 #[derive(Component, Debug)]
 pub struct WidgetName(pub String);
 

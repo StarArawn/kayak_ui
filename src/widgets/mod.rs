@@ -1,3 +1,25 @@
+//! A small collection of default widgets
+//! These widgets can be useful as default widgets for debugging purposes.
+//! Kayak recommends that you use these widgets as a guide for building your own widgets.
+//! Some of the widgets are useful regardless. A list:
+//!
+//! - KayakApp
+//! - Background
+//! - Clip
+//! - Element
+//! - Image
+//! - NinePatch
+//! - TextBox
+//! - Text
+//! - Texture Atlas
+//! - Scroll
+//!
+//! Widgets like:
+//! - Window
+//! - Button
+//!
+//! Should be a guide for creating your own set of widgets.
+
 use bevy::prelude::*;
 
 mod app;
@@ -50,7 +72,7 @@ use texture_atlas::texture_atlas_render;
 use window::window_render;
 
 use crate::{
-    context::Context,
+    context::KayakRootContext,
     widget::{widget_update, widget_update_with_context, EmptyState, Widget},
 };
 
@@ -64,7 +86,7 @@ impl Plugin for KayakWidgets {
     }
 }
 
-fn add_widget_systems(mut context: ResMut<Context>) {
+fn add_widget_systems(mut context: ResMut<KayakRootContext>) {
     context.add_widget_data::<KayakApp, EmptyState>();
     context.add_widget_data::<KButton, EmptyState>();
     context.add_widget_data::<TextProps, EmptyState>();

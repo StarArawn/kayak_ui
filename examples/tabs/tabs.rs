@@ -19,7 +19,7 @@ fn startup(
 
     commands.spawn(UICameraBundle::new());
 
-    let mut widget_context = Context::new();
+    let mut widget_context = KayakRootContext::new();
     widget_context.add_widget_data::<Tab, EmptyState>();
     widget_context.add_widget_data::<TabContextProvider, EmptyState>();
     widget_context.add_widget_data::<TabButton, EmptyState>();
@@ -91,7 +91,7 @@ fn main() {
     App::new()
         .insert_resource(ImageSettings::default_nearest())
         .add_plugins(DefaultPlugins)
-        .add_plugin(ContextPlugin)
+        .add_plugin(KayakContextPlugin)
         .add_plugin(KayakWidgets)
         .add_startup_system(startup)
         .run()

@@ -6,6 +6,10 @@ use bevy::{
     render::camera::{CameraProjection, ScalingMode, WindowOrigin},
 };
 
+/// Kayak UI's default orthographic projection matrix
+/// This matrix uses top left as 0, 0
+/// and bottom right as width, height.
+/// This projection layout is typical for most UI systems.
 #[derive(Debug, Clone, Component, Reflect)]
 #[reflect(Component)]
 pub struct UIOrthographicProjection {

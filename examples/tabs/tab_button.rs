@@ -2,8 +2,8 @@ use bevy::prelude::{Bundle, Color, Commands, Component, Entity, In, Query};
 use kayak_ui::prelude::{
     rsx,
     widgets::{KButtonBundle, TextProps, TextWidgetBundle},
-    Event, EventDispatcherContext, EventType, KChildren, KStyle, OnEvent, StyleProp, Units, Widget,
-    WidgetContext, WidgetName, WidgetState,
+    Event, EventDispatcherContext, EventType, KChildren, KStyle, KayakWidgetContext, OnEvent,
+    StyleProp, Units, Widget, WidgetName, WidgetState,
 };
 
 use crate::tab_context::TabContext;
@@ -34,7 +34,7 @@ impl Default for TabButtonBundle {
 }
 
 pub fn tab_button_render(
-    In((widget_context, entity)): In<(WidgetContext, Entity)>,
+    In((widget_context, entity)): In<(KayakWidgetContext, Entity)>,
     mut commands: Commands,
     query: Query<&TabButton>,
     tab_context_query: Query<&mut TabContext>,

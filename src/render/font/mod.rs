@@ -7,7 +7,7 @@ mod font_mapping;
 pub use extract::extract_texts;
 pub use font_mapping::*;
 
-use crate::context::Context;
+use crate::context::KayakRootContext;
 
 #[derive(Default)]
 pub struct TextRendererPlugin;
@@ -22,7 +22,7 @@ impl Plugin for TextRendererPlugin {
 fn process_loaded_fonts(
     mut font_mapping: ResMut<FontMapping>,
     _fonts: Res<Assets<KayakFont>>,
-    context_resource: Res<Context>,
+    context_resource: Res<KayakRootContext>,
 ) {
     // if let Some(context = context_resource.as_ref() {
     if context_resource.is_added() {

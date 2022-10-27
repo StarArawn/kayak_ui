@@ -33,6 +33,9 @@ pub mod draw_ui_graph {
     }
 }
 
+/// The default Kayak UI rendering plugin.
+/// Use this to render the UI.
+/// Or you can write your own renderer.
 pub struct BevyKayakUIRenderPlugin;
 
 impl Plugin for BevyKayakUIRenderPlugin {

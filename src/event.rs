@@ -3,7 +3,7 @@ use bevy::prelude::{Entity, World};
 use crate::{
     cursor::{CursorEvent, ScrollEvent},
     keyboard_event::KeyboardEvent,
-    prelude::{OnChange, WidgetContext},
+    prelude::{KayakWidgetContext, OnChange},
 };
 
 /// An event type sent to widgets
@@ -76,7 +76,7 @@ impl Event {
         self.on_change_systems.push(system);
     }
 
-    pub(crate) fn run_on_change(&mut self, world: &mut World, widget_context: WidgetContext) {
+    pub(crate) fn run_on_change(&mut self, world: &mut World, widget_context: KayakWidgetContext) {
         for system in self.on_change_systems.drain(..) {
             system.try_call(self.current_target, world, widget_context.clone());
         }

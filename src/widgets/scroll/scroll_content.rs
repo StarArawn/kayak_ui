@@ -6,7 +6,7 @@ use crate::{
     layout::GeometryChanged,
     layout::LayoutEvent,
     on_layout::OnLayout,
-    prelude::WidgetContext,
+    prelude::KayakWidgetContext,
     styles::{KStyle, LayoutType, RenderCommand, Units},
     widget::Widget,
 };
@@ -40,7 +40,7 @@ impl Default for ScrollContentBundle {
 }
 
 pub fn scroll_content_render(
-    In((widget_context, entity)): In<(WidgetContext, Entity)>,
+    In((widget_context, entity)): In<(KayakWidgetContext, Entity)>,
     mut query: Query<(&mut KStyle, &KChildren, &mut OnLayout), With<ScrollContentProps>>,
     context_query: Query<&ScrollContext>,
 ) -> bool {

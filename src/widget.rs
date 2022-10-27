@@ -6,7 +6,7 @@ use bevy::{
 use crate::{
     children::KChildren,
     context::{Mounted, WidgetName},
-    prelude::WidgetContext,
+    prelude::KayakWidgetContext,
     styles::KStyle,
 };
 
@@ -20,7 +20,7 @@ pub trait Widget: Send + Sync {
 pub struct EmptyState;
 
 pub fn widget_update<Props: PartialEq + Component + Clone, State: PartialEq + Component + Clone>(
-    In((widget_context, entity, previous_entity)): In<(WidgetContext, Entity, Entity)>,
+    In((widget_context, entity, previous_entity)): In<(KayakWidgetContext, Entity, Entity)>,
     widget_param: WidgetParam<Props, State>,
 ) -> bool {
     widget_param.has_changed(&widget_context, entity, previous_entity)
@@ -31,7 +31,7 @@ pub fn widget_update_with_context<
     State: PartialEq + Component + Clone,
     Context: PartialEq + Component + Clone + Default,
 >(
-    In((widget_context, entity, previous_entity)): In<(WidgetContext, Entity, Entity)>,
+    In((widget_context, entity, previous_entity)): In<(KayakWidgetContext, Entity, Entity)>,
     widget_param: WidgetParam<Props, State>,
     context_query: Query<Entity, Changed<Context>>,
 ) -> bool {
@@ -61,7 +61,7 @@ impl<'w, 's, Props: PartialEq + Component, State: PartialEq + Component>
 {
     pub fn has_changed(
         &self,
-        widget_context: &WidgetContext,
+        widget_context: &KayakWidgetContext,
         current_entity: Entity,
         previous_entity: Entity,
     ) -> bool {

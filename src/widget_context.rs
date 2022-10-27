@@ -11,8 +11,14 @@ use crate::{
     widget_state::WidgetState,
 };
 
+/// KayakWidgetContext manages tree, state, and context updates within a single widget.
+/// Unlike the root context this manages a single widget and it's children.
+/// At the end of a render system call KayakWidgetContext will be consumed by the root context.
+/// It has some knowledge about the existing tree and it knows about a subset of the new tree.
+/// It is not possible to create a KayakWidgetContext from scratch. One will be provided
+/// to the render system via it's In parameters.
 #[derive(Clone)]
-pub struct WidgetContext {
+pub struct KayakWidgetContext {
     old_tree: Arc<RwLock<Tree>>,
     new_tree: Arc<RwLock<Tree>>,
     context_entities: ContextEntities,
@@ -21,7 +27,7 @@ pub struct WidgetContext {
     widget_state: WidgetState,
 }
 
-impl WidgetContext {
+impl KayakWidgetContext {
     pub(crate) fn new(
         old_tree: Arc<RwLock<Tree>>,
         context_entities: ContextEntities,
@@ -94,12 +100,16 @@ impl WidgetContext {
         }
     }
 
+    /// Removes all children from the new tree.
+    /// Changes to the current tree will happen when KayakWidgetContext
+    /// is consumed.
     pub fn clear_children(&self, entity: Entity) {
         if let Ok(mut tree) = self.new_tree.write() {
             tree.children.insert(WrappedIndex(entity), vec![]);
         }
     }
 
+    /// Retrieves a list of all children.
     pub fn get_children(&self, entity: Entity) -> Vec<Entity> {
         let mut children = vec![];
         if let Ok(tree) = self.new_tree.read() {
@@ -154,6 +164,9 @@ impl WidgetContext {
         self.widget_state.get(widget_entity)
     }
 
+    /// Returns a child entity or none if it does not exist.
+    /// Because a re-render can potentially spawn new entities it's advised to use this
+    /// to avoid creating a new entity.
     pub fn get_child_at(&self, entity: Option<Entity>) -> Option<Entity> {
         if let Some(entity) = entity {
             let children = self.get_children_old(entity);
@@ -162,6 +175,7 @@ impl WidgetContext {
         None
     }
 
+    /// Removes all matching children from the tree.
     pub fn remove_children(&self, children_to_remove: Vec<Entity>) {
         if let Ok(mut tree) = self.new_tree.write() {
             for child in children_to_remove.iter() {
@@ -170,6 +184,7 @@ impl WidgetContext {
         }
     }
 
+    /// Adds a new widget to the tree with a given parent.
     pub fn add_widget(&self, parent: Option<Entity>, entity: Entity) {
         if let Ok(mut tree) = self.new_tree.write() {
             tree.add(
@@ -193,13 +208,17 @@ impl WidgetContext {
         }
     }
 
+    /// Dumps the tree to the console in a human readable format.
+    /// This is relatively slow to do if the tree is large
+    /// so avoid doing unless necessary.
     pub fn dbg_tree(&self) {
         if let Ok(tree) = self.new_tree.read() {
             tree.dump()
         }
     }
 
-    pub fn take(self) -> Tree {
+    /// Consumes the tree
+    pub(crate) fn take(self) -> Tree {
         Arc::try_unwrap(self.new_tree)
             .unwrap()
             .into_inner()

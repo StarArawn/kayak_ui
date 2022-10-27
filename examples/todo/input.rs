@@ -37,7 +37,7 @@ impl Default for TodoInputBundle {
 }
 
 pub fn render_todo_input(
-    In((widget_context, entity)): In<(WidgetContext, Entity)>,
+    In((widget_context, entity)): In<(KayakWidgetContext, Entity)>,
     mut commands: Commands,
     mut todo_list: ResMut<TodoList>,
     keyboard_input: Res<Input<KeyCode>>,
@@ -47,7 +47,7 @@ pub fn render_todo_input(
     if todo_list.is_changed() || !change_query.is_empty() {
         if let Ok(props) = prop_query.get(entity) {
             let on_change = OnChange::new(
-                move |In((_widget_context, _, value)): In<(WidgetContext, Entity, String)>,
+                move |In((_widget_context, _, value)): In<(KayakWidgetContext, Entity, String)>,
                       mut todo_list: ResMut<TodoList>| {
                     todo_list.new_item = value;
                 },

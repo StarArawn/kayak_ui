@@ -13,7 +13,7 @@ pub struct MyWidgetProps {
 }
 
 fn my_widget_1_update(
-    In((_widget_context, entity)): In<(WidgetContext, Entity)>,
+    In((_widget_context, entity)): In<(KayakWidgetContext, Entity)>,
     my_resource: Res<MyResource>,
     mut query: Query<(&mut MyWidgetProps, &mut KStyle)>,
 ) -> bool {
@@ -63,7 +63,7 @@ fn startup(
 
     commands.spawn(UICameraBundle::new());
 
-    let mut widget_context = Context::new();
+    let mut widget_context = KayakRootContext::new();
     let parent_id = None;
     widget_context.add_widget_data::<MyWidgetProps, EmptyState>();
     widget_context.add_widget_system(
@@ -86,7 +86,7 @@ fn update_resource(keyboard_input: Res<Input<KeyCode>>, mut my_resource: ResMut<
 fn main() {
     BevyApp::new()
         .add_plugins(DefaultPlugins)
-        .add_plugin(ContextPlugin)
+        .add_plugin(KayakContextPlugin)
         .add_plugin(KayakWidgets)
         .insert_resource(MyResource(1))
         .add_startup_system(startup)

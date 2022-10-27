@@ -8,7 +8,7 @@ use bevy::{
 };
 
 use crate::{
-    context::{Context, CustomEventReader},
+    context::{CustomEventReader, KayakRootContext},
     event_dispatcher::EventDispatcher,
     input_event::InputEvent,
 };
@@ -106,7 +106,7 @@ pub(crate) fn process_events(world: &mut World) {
     );
 
     world.resource_scope::<EventDispatcher, _>(|world, mut event_dispatcher| {
-        world.resource_scope::<Context, _>(|world, mut context| {
+        world.resource_scope::<KayakRootContext, _>(|world, mut context| {
             event_dispatcher.process_events(input_events, &mut context, world);
         });
     });

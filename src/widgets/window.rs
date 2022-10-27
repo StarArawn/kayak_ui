@@ -10,7 +10,7 @@ use crate::{
     event::{Event, EventType},
     event_dispatcher::EventDispatcherContext,
     on_event::OnEvent,
-    prelude::WidgetContext,
+    prelude::KayakWidgetContext,
     styles::{Corner, Edge, KCursorIcon, KStyle, PositionType, RenderCommand, StyleProp, Units},
     widget::Widget,
     widget_state::WidgetState,
@@ -44,6 +44,9 @@ pub struct KWindowState {
 
 impl Widget for KWindow {}
 
+/// Default window widget
+/// A simple widget that renders a window.
+/// Does not support much customization.
 #[derive(Bundle)]
 pub struct WindowBundle {
     pub window: KWindow,
@@ -64,7 +67,7 @@ impl Default for WindowBundle {
 }
 
 pub fn window_render(
-    In((widget_context, window_entity)): In<(WidgetContext, Entity)>,
+    In((widget_context, window_entity)): In<(KayakWidgetContext, Entity)>,
     mut commands: Commands,
     mut query: Query<(&KStyle, &KChildren, &KWindow)>,
     state_query: Query<&KWindowState>,

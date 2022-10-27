@@ -15,7 +15,7 @@ fn startup(
 
     let image = asset_server.load("generic-rpg-vendor.png");
 
-    let mut widget_context = Context::new();
+    let mut widget_context = KayakRootContext::new();
     let parent_id = None;
     rsx! {
         <KayakAppBundle>
@@ -40,7 +40,7 @@ fn main() {
     BevyApp::new()
         .insert_resource(ImageSettings::default_nearest())
         .add_plugins(DefaultPlugins)
-        .add_plugin(ContextPlugin)
+        .add_plugin(KayakContextPlugin)
         .add_plugin(KayakWidgets)
         .add_startup_system(startup)
         .run()

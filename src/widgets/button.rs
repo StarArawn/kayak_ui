@@ -6,7 +6,7 @@ use bevy::{
 use crate::{
     context::WidgetName,
     on_event::OnEvent,
-    prelude::{KChildren, Units, WidgetContext},
+    prelude::{KChildren, KayakWidgetContext, Units},
     styles::{Corner, KCursorIcon, KStyle, RenderCommand, StyleProp},
     widget::Widget,
 };
@@ -14,6 +14,8 @@ use crate::{
 #[derive(Component, PartialEq, Clone, Default)]
 pub struct KButton;
 
+/// Default button widget
+/// Accepts an OnEvent component
 #[derive(Bundle)]
 pub struct KButtonBundle {
     pub button: KButton,
@@ -38,7 +40,7 @@ impl Default for KButtonBundle {
 impl Widget for KButton {}
 
 pub fn button_render(
-    In((widget_context, entity)): In<(WidgetContext, Entity)>,
+    In((widget_context, entity)): In<(KayakWidgetContext, Entity)>,
     _: Commands,
     mut query: Query<(&mut KStyle, &KChildren)>,
 ) -> bool {

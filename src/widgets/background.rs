@@ -4,7 +4,7 @@ use crate::{
     children::KChildren,
     context::WidgetName,
     on_event::OnEvent,
-    prelude::WidgetContext,
+    prelude::KayakWidgetContext,
     styles::{KStyle, RenderCommand, StyleProp},
     widget::Widget,
 };
@@ -14,6 +14,12 @@ pub struct Background;
 
 impl Widget for Background {}
 
+/// Background Widget
+///
+/// The name of this widget is slightly misleading.
+/// In actuality this widget renders a quad or multiple quads if a border is used.
+/// You can customize the colors, border, border-radius, by passing in custom styles.
+/// Children are rendered inside of the quad.
 #[derive(Bundle)]
 pub struct BackgroundBundle {
     pub background: Background,
@@ -36,7 +42,7 @@ impl Default for BackgroundBundle {
 }
 
 pub fn background_render(
-    In((widget_context, entity)): In<(WidgetContext, Entity)>,
+    In((widget_context, entity)): In<(KayakWidgetContext, Entity)>,
     _: Commands,
     mut query: Query<(&mut KStyle, &KChildren)>,
 ) -> bool {

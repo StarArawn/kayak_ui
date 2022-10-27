@@ -1,5 +1,5 @@
 use crate::{
-    context::{Context, WidgetName},
+    context::{KayakRootContext, WidgetName},
     node::Node,
     render_primitive::RenderPrimitive,
     styles::Corner,
@@ -31,7 +31,7 @@ impl Plugin for BevyKayakUIExtractPlugin {
 
 pub fn extract(
     mut commands: Commands,
-    context: Extract<Res<Context>>,
+    context: Extract<Res<KayakRootContext>>,
     fonts: Extract<Res<Assets<KayakFont>>>,
     font_mapping: Extract<Res<FontMapping>>,
     node_query: Extract<Query<&Node>>,

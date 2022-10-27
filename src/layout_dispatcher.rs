@@ -9,13 +9,13 @@ use crate::{
     layout::{LayoutCache, LayoutEvent},
     node::WrappedIndex,
     on_layout::OnLayout,
-    prelude::Context,
+    prelude::KayakRootContext,
 };
 
 pub(crate) struct LayoutEventDispatcher;
 
 impl LayoutEventDispatcher {
-    pub fn dispatch(context: &mut Context, world: &mut World) {
+    pub fn dispatch(context: &mut KayakRootContext, world: &mut World) {
         let on_event_entities = {
             let mut query = world.query_filtered::<Entity, With<OnLayout>>();
             query

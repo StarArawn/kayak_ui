@@ -3,7 +3,7 @@ use bevy::prelude::{Bundle, Commands, Component, Entity, In, Query};
 use crate::{
     children::KChildren,
     context::WidgetName,
-    prelude::WidgetContext,
+    prelude::KayakWidgetContext,
     styles::{KStyle, RenderCommand, StyleProp, Units},
     widget::Widget,
 };
@@ -13,6 +13,11 @@ pub struct Clip;
 
 impl Widget for Clip {}
 
+/// Clips are used to "clip" or cut away sections of the screen.
+/// For example text inside of another widget likely should not
+/// overflow out of the widget's bounds. This widget will cut or clip
+/// the text.
+/// Note: Clips roughly translate to wGPU scissor commands.
 #[derive(Bundle)]
 pub struct ClipBundle {
     pub clip: Clip,
@@ -38,7 +43,7 @@ impl Default for ClipBundle {
 }
 
 pub fn clip_render(
-    In((widget_context, entity)): In<(WidgetContext, Entity)>,
+    In((widget_context, entity)): In<(KayakWidgetContext, Entity)>,
     _: Commands,
     mut query: Query<(&KStyle, &KChildren)>,
 ) -> bool {

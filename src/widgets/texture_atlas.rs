@@ -2,7 +2,7 @@ use bevy::prelude::{Bundle, Changed, Component, Entity, Handle, Image, In, Or, Q
 
 use crate::{
     context::{Mounted, WidgetName},
-    prelude::WidgetContext,
+    prelude::KayakWidgetContext,
     styles::{KStyle, RenderCommand, StyleProp},
     widget::Widget,
 };
@@ -34,6 +34,7 @@ pub struct TextureAtlas {
 
 impl Widget for TextureAtlas {}
 
+/// A widget that renders a bevy texture atlas
 #[derive(Bundle)]
 pub struct TextureAtlasBundle {
     pub atlas: TextureAtlas,
@@ -52,7 +53,7 @@ impl Default for TextureAtlasBundle {
 }
 
 pub fn texture_atlas_render(
-    In((_widget_context, entity)): In<(WidgetContext, Entity)>,
+    In((_widget_context, entity)): In<(KayakWidgetContext, Entity)>,
     mut query: Query<
         (&mut KStyle, &TextureAtlas),
         Or<(Changed<TextureAtlas>, Changed<KStyle>, With<Mounted>)>,

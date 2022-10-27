@@ -11,6 +11,7 @@ use bevy::{
 
 use super::ortho::UIOrthographicProjection;
 
+/// Kayak UI's default UI camera.
 #[derive(Component, Clone, Default)]
 pub struct CameraUiKayak;
 
@@ -23,6 +24,7 @@ impl ExtractComponent for CameraUiKayak {
     }
 }
 
+/// Kayak UI's default UI camera bundle.
 #[derive(Bundle)]
 pub struct UICameraBundle {
     pub camera: Camera,

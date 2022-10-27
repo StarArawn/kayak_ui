@@ -35,7 +35,7 @@ impl Default for TabContextProviderBundle {
 }
 
 pub fn tab_context_render(
-    In((widget_context, entity)): In<(WidgetContext, Entity)>,
+    In((widget_context, entity)): In<(KayakWidgetContext, Entity)>,
     mut commands: Commands,
     query: Query<(&KChildren, &TabContextProvider)>,
 ) -> bool {

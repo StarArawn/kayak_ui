@@ -7,7 +7,7 @@ pub struct MyWidget {
 }
 
 fn my_widget_1_render(
-    In((_widget_context, entity)): In<(WidgetContext, Entity)>,
+    In((_widget_context, entity)): In<(KayakWidgetContext, Entity)>,
     mut _commands: Commands,
     query: Query<&MyWidget>,
 ) -> bool {
@@ -21,7 +21,7 @@ fn my_widget_1_render(
 impl Widget for MyWidget {}
 
 fn startup(mut commands: Commands) {
-    let mut context = Context::new();
+    let mut context = KayakRootContext::new();
     context.add_widget_system(
         MyWidget::default().get_name(),
         widget_update::<MyWidget, EmptyState>,
@@ -65,7 +65,7 @@ fn update_resource(
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
-        .add_plugin(ContextPlugin)
+        .add_plugin(KayakContextPlugin)
         .add_plugin(KayakWidgets)
         .add_startup_system(startup)
         .add_system(update_resource)

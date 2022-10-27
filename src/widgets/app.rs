@@ -4,7 +4,7 @@ use morphorm::Units;
 use crate::{
     children::KChildren,
     context::WidgetName,
-    prelude::WidgetContext,
+    prelude::KayakWidgetContext,
     styles::{KStyle, RenderCommand, StyleProp},
     widget::{EmptyState, Widget, WidgetParam},
 };
@@ -14,6 +14,9 @@ pub struct KayakApp;
 
 impl Widget for KayakApp {}
 
+/// Kayak's default root widget
+/// This widget provides a width/height that matches the screen size in bevy
+/// It will auto update if bevy's window changes as well.
 #[derive(Bundle)]
 pub struct KayakAppBundle {
     pub app: KayakApp,
@@ -34,7 +37,7 @@ impl Default for KayakAppBundle {
 }
 
 pub fn app_update(
-    In((widget_context, entity, previous_props_entity)): In<(WidgetContext, Entity, Entity)>,
+    In((widget_context, entity, previous_props_entity)): In<(KayakWidgetContext, Entity, Entity)>,
     windows: Res<Windows>,
     widget_param: WidgetParam<KayakApp, EmptyState>,
 ) -> bool {
@@ -55,7 +58,7 @@ pub fn app_update(
 
 /// TODO: USE CAMERA INSTEAD OF WINDOW!!
 pub fn app_render(
-    In((widget_context, entity)): In<(WidgetContext, Entity)>,
+    In((widget_context, entity)): In<(KayakWidgetContext, Entity)>,
     _: Commands,
     windows: Res<Windows>,
     mut query: Query<(&mut KStyle, &KChildren)>,

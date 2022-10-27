@@ -16,7 +16,7 @@ pub struct MyQuad {
 }
 
 fn my_quad_update(
-    In((_widget_context, entity)): In<(WidgetContext, Entity)>,
+    In((_widget_context, entity)): In<(KayakWidgetContext, Entity)>,
     mut query: Query<(&MyQuad, &mut KStyle, &mut OnEvent)>,
 ) -> bool {
     if let Ok((quad, mut style, mut on_event)) = query.get_mut(entity) {
@@ -89,7 +89,7 @@ fn startup(
 
     commands.spawn(UICameraBundle::new());
 
-    let mut widget_context = Context::new();
+    let mut widget_context = KayakRootContext::new();
     widget_context.add_widget_system(
         MyQuad::default().get_name(),
         widget_update::<MyQuad, EmptyState>,
@@ -130,7 +130,7 @@ fn main() {
         .add_plugins(DefaultPlugins)
         .add_plugin(LogDiagnosticsPlugin::default())
         .add_plugin(FrameTimeDiagnosticsPlugin::default())
-        .add_plugin(ContextPlugin)
+        .add_plugin(KayakContextPlugin)
         .add_plugin(KayakWidgets)
         .add_startup_system(startup)
         .run()

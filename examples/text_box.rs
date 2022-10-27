@@ -36,7 +36,7 @@ impl Default for TextBoxExampleBundle {
 }
 
 fn update_text_box_example(
-    In((widget_context, entity)): In<(WidgetContext, Entity)>,
+    In((widget_context, entity)): In<(KayakWidgetContext, Entity)>,
     mut commands: Commands,
     state_query: Query<&TextBoxExampleState>,
 ) -> bool {
@@ -51,7 +51,7 @@ fn update_text_box_example(
 
     if let Ok(textbox_state) = state_query.get(state_entity) {
         let on_change = OnChange::new(
-            move |In((_widget_context, _, value)): In<(WidgetContext, Entity, String)>,
+            move |In((_widget_context, _, value)): In<(KayakWidgetContext, Entity, String)>,
                   mut state_query: Query<&mut TextBoxExampleState>| {
                 if let Ok(mut state) = state_query.get_mut(state_entity) {
                     state.value1 = value;
@@ -60,7 +60,7 @@ fn update_text_box_example(
         );
 
         let on_change2 = OnChange::new(
-            move |In((_widget_context, _, value)): In<(WidgetContext, Entity, String)>,
+            move |In((_widget_context, _, value)): In<(KayakWidgetContext, Entity, String)>,
                   mut state_query: Query<&mut TextBoxExampleState>| {
                 if let Ok(mut state) = state_query.get_mut(state_entity) {
                     state.value2 = value;
@@ -98,7 +98,7 @@ fn startup(
 
     commands.spawn(UICameraBundle::new());
 
-    let mut widget_context = Context::new();
+    let mut widget_context = KayakRootContext::new();
 
     widget_context.add_widget_data::<TextBoxExample, TextBoxExampleState>();
     widget_context.add_widget_system(
@@ -128,7 +128,7 @@ fn startup(
 fn main() {
     BevyApp::new()
         .add_plugins(DefaultPlugins)
-        .add_plugin(ContextPlugin)
+        .add_plugin(KayakContextPlugin)
         .add_plugin(KayakWidgets)
         .add_startup_system(startup)
         .run()

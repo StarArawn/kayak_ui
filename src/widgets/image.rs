@@ -2,11 +2,13 @@ use bevy::prelude::{Bundle, Changed, Component, Entity, Handle, In, Or, Query, W
 
 use crate::{
     context::{Mounted, WidgetName},
-    prelude::WidgetContext,
+    prelude::KayakWidgetContext,
     styles::{KStyle, RenderCommand, StyleProp},
     widget::Widget,
 };
 
+/// Renders a bevy image asset within the GUI
+/// The rendered image respects the styles.
 #[derive(Component, PartialEq, Clone, Default)]
 pub struct Image(pub Handle<bevy::prelude::Image>);
 
@@ -30,7 +32,7 @@ impl Default for ImageBundle {
 }
 
 pub fn image_render(
-    In((_widget_context, entity)): In<(WidgetContext, Entity)>,
+    In((_widget_context, entity)): In<(KayakWidgetContext, Entity)>,
     mut query: Query<(&mut KStyle, &Image), Or<((Changed<Image>, Changed<KStyle>), With<Mounted>)>>,
 ) -> bool {
     if let Ok((mut style, image)) = query.get_mut(entity) {

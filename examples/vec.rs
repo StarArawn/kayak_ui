@@ -11,7 +11,7 @@ use kayak_ui::prelude::{widgets::*, KStyle, *};
 pub struct MyWidgetProps {}
 
 fn my_widget_1_update(
-    In((widget_context, entity)): In<(WidgetContext, Entity)>,
+    In((widget_context, entity)): In<(KayakWidgetContext, Entity)>,
     mut commands: Commands,
     query: Query<Entity, Or<(With<Mounted>, Changed<MyWidgetProps>)>>,
 ) -> bool {
@@ -69,7 +69,7 @@ fn startup(
 
     commands.spawn(UICameraBundle::new());
 
-    let mut widget_context = Context::new();
+    let mut widget_context = KayakRootContext::new();
     let parent_id = None;
     widget_context.add_widget_data::<MyWidgetProps, EmptyState>();
     widget_context.add_widget_system(
@@ -86,7 +86,7 @@ fn startup(
 fn main() {
     BevyApp::new()
         .add_plugins(DefaultPlugins)
-        .add_plugin(ContextPlugin)
+        .add_plugin(KayakContextPlugin)
         .add_plugin(KayakWidgets)
         .add_startup_system(startup)
         .run()

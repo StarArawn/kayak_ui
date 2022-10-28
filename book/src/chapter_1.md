@@ -3,7 +3,7 @@ Kayak UI is quite easy to setup! First make sure you add it to your cargo.toml f
 
 Because a crate has yet to be released this currently this looks like:
 ```toml
-kayak_ui = { git = "https://github.com/StarArawn/kayak_ui/", rev = "75a56767830f980bfc43f29fe93659f1eaef30dd"}
+kayak_ui = { git = "https://github.com/StarArawn/kayak_ui/", rev = "9b212e230a5325a3ac6897390ded0bc358eebc80"}
 ```
 
 Once you've added Kayak UI to your bevy project you can now start to use it! 

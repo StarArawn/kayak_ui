@@ -1,5 +1,4 @@
 use bevy::{
-    prelude::App as BevyApp,
     prelude::*,
     render::{
         camera::RenderTarget,
@@ -8,56 +7,28 @@ use bevy::{
         },
     },
 };
-use kayak_ui::bevy::{BevyContext, BevyKayakUIPlugin, FontMapping, UICameraBundle};
-use kayak_ui::core::{bind, render, rsx, widget, Binding, Bound, MutableBound};
-use kayak_ui::widgets::{App, Text, Window};
-
-fn main() {
-    BevyApp::new()
-        .add_plugins(DefaultPlugins)
-        .add_plugin(BevyKayakUIPlugin)
-        .add_startup_system(setup)
-        .add_system(cube_rotator_system)
-        .add_system(count_up)
-        .run();
-}
-
-#[derive(Clone, PartialEq)]
-struct GlobalCount(pub u32);
-
-#[widget]
-fn Counter() {
-    let global_count = context
-        .query_world::<Res<Binding<GlobalCount>>, _, _>(move |global_count| global_count.clone());
-
-    context.bind(&global_count);
-
-    let global_count = global_count.get().0;
-
-    rsx! {
-        <>
-            <Window position={(50.0, 50.0)} size={(300.0, 300.0)} title={"Counter Example".to_string()}>
-                <Text size={32.0} content={format!("Current Count: {}", global_count).to_string()}>{}</Text>
-            </Window>
-        </>
-    }
-}
+use kayak_ui::{
+    prelude::{widgets::*, *},
+    CameraUIKayak,
+};
 
 // Marks the main pass cube, to which the texture is applied.
 #[derive(Component)]
 struct MainPassCube;
 
-fn setup(
+fn startup(
     mut commands: Commands,
-    asset_server: Res<AssetServer>,
     mut font_mapping: ResMut<FontMapping>,
+    asset_server: Res<AssetServer>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
     mut images: ResMut<Assets<Image>>,
 ) {
+    font_mapping.set_default(asset_server.load("roboto.kayak_font"));
+
     let size = Extent3d {
-        width: 1280,
-        height: 720,
+        width: 1024,
+        height: 1024,
         ..default()
     };
 
@@ -82,31 +53,41 @@ fn setup(
 
     let image_handle = images.add(image);
 
-    commands.spawn_bundle(UICameraBundle {
+    commands.spawn(UICameraBundle {
         camera: Camera {
             priority: -1,
             target: RenderTarget::Image(image_handle.clone()),
             ..Camera::default()
         },
+        camera_ui: CameraUIKayak {
+            clear_color: bevy::core_pipeline::clear_color::ClearColorConfig::Default,
+        },
         ..UICameraBundle::new()
     });
 
-    font_mapping.set_default(asset_server.load("roboto.kayak_font"));
+    let mut widget_context = KayakRootContext::new();
+    let parent_id = None;
+    rsx! {
+        <KayakAppBundle
+            styles={KStyle {
+                padding: Edge::all(Units::Stretch(1.0)).into(),
+                ..Default::default()
+            }}
+        >
+            <TextWidgetBundle
+                text={TextProps {
+                    size: 150.0,
+                    content: "Hello World".into(),
+                    ..Default::default()
+                }}
+            />
+        </KayakAppBundle>
+    }
+    commands.insert_resource(widget_context);
 
-    commands.insert_resource(bind(GlobalCount(0)));
-
-    let context = BevyContext::new(|context| {
-        render! {
-            <App>
-                <Counter />
-            </App>
-        }
-    });
-    commands.insert_resource(context);
-
+    // Setup 3D scene
     // Light
-    // NOTE: Currently lights are shared between passes - see https://github.com/bevyengine/bevy/issues/3462
-    commands.spawn_bundle(PointLightBundle {
+    commands.spawn(PointLightBundle {
         transform: Transform::from_translation(Vec3::new(0.0, 0.0, 10.0)),
         ..default()
     });
@@ -124,7 +105,7 @@ fn setup(
 
     // Main pass cube, with material containing the rendered first pass texture.
     commands
-        .spawn_bundle(PbrBundle {
+        .spawn(PbrBundle {
             mesh: cube_handle,
             material: material_handle,
             transform: Transform {
@@ -137,7 +118,7 @@ fn setup(
         .insert(MainPassCube);
 
     // The main pass camera.
-    commands.spawn_bundle(Camera3dBundle {
+    commands.spawn(Camera3dBundle {
         transform: Transform::from_translation(Vec3::new(0.0, 0.0, 15.0))
             .looking_at(Vec3::default(), Vec3::Y),
         ..default()
@@ -152,6 +133,12 @@ fn cube_rotator_system(time: Res<Time>, mut query: Query<&mut Transform, With<Ma
     }
 }
 
-fn count_up(global_count: Res<Binding<GlobalCount>>) {
-    global_count.set(GlobalCount(global_count.get().0 + 1));
+fn main() {
+    App::new()
+        .add_plugins(DefaultPlugins)
+        .add_plugin(KayakContextPlugin)
+        .add_plugin(KayakWidgets)
+        .add_startup_system(startup)
+        .add_system(cube_rotator_system)
+        .run()
 }

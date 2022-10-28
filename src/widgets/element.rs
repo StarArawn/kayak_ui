@@ -1,53 +1,56 @@
-use kayak_core::OnLayout;
+use bevy::prelude::{Bundle, Commands, Component, Entity, In, Query};
 
-use crate::core::{
-    render_command::RenderCommand,
-    rsx,
-    styles::{Style, StyleProp},
-    widget, Children, OnEvent, WidgetProps,
+use crate::{
+    children::KChildren,
+    context::WidgetName,
+    on_event::OnEvent,
+    prelude::KayakWidgetContext,
+    styles::{KStyle, RenderCommand, StyleProp},
+    widget::Widget,
 };
 
-/// Props used by the [`Element`] widget
-#[derive(WidgetProps, Default, Debug, PartialEq, Clone)]
-pub struct ElementProps {
-    #[prop_field(Styles)]
-    pub styles: Option<Style>,
-    #[prop_field(Children)]
-    pub children: Option<Children>,
-    #[prop_field(OnEvent)]
-    pub on_event: Option<OnEvent>,
-    #[prop_field(OnLayout)]
-    pub on_layout: Option<OnLayout>,
-    #[prop_field(Focusable)]
-    pub focusable: Option<bool>,
+#[derive(Component, PartialEq, Clone, Default)]
+pub struct Element;
+
+impl Widget for Element {}
+
+/// A generic widget
+/// You can consider this to kind behave like a div in html
+/// Accepts: KStyle, OnEvent, and KChildren.
+#[derive(Bundle)]
+pub struct ElementBundle {
+    pub element: Element,
+    pub styles: KStyle,
+    pub on_event: OnEvent,
+    pub children: KChildren,
+    pub widget_name: WidgetName,
 }
 
-#[widget]
-/// The most basic widget, equivalent to `div` from HTML.
-///
-/// It essentially just sets the [`RenderCommand`] of this widget to [`RenderCommand::Layout`].
-///
-/// # Props
-///
-/// __Type:__ [`ElementProps`]
-///
-/// | Common Prop | Accepted |
-/// | :---------: | :------: |
-/// | `children`  | ✅        |
-/// | `styles`    | ✅        |
-/// | `on_event`  | ✅        |
-/// | `on_layout` | ✅        |
-/// | `focusable` | ✅        |
-///
-pub fn Element(props: ElementProps) {
-    props.styles = Some(Style {
-        render_command: StyleProp::Value(RenderCommand::Layout),
-        ..props.styles.clone().unwrap_or_default()
-    });
-
-    rsx! {
-        <>
-            {children}
-        </>
+impl Default for ElementBundle {
+    fn default() -> Self {
+        Self {
+            element: Default::default(),
+            styles: Default::default(),
+            children: Default::default(),
+            on_event: OnEvent::default(),
+            widget_name: Element::default().get_name(),
+        }
     }
+}
+
+pub fn element_render(
+    In((mut widget_context, entity)): In<(KayakWidgetContext, Entity)>,
+    _: Commands,
+    mut query: Query<(&mut KStyle, &KChildren)>,
+) -> bool {
+    if let Ok((mut style, children)) = query.get_mut(entity) {
+        *style = KStyle::default()
+            .with_style(style.clone())
+            .with_style(KStyle {
+                render_command: StyleProp::Value(RenderCommand::Layout),
+                ..Default::default()
+            });
+        children.process(&mut widget_context, Some(entity));
+    }
+    true
 }

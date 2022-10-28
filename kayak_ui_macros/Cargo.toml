@@ -1,0 +1,20 @@
+[package]
+name = "kayak_ui_macros"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+proc-macro = true
+
+[dependencies]
+find-crate = "0.6"
+syn = { version = "1.0", features = ["full", "extra-traits"] }
+quote = "1.0"
+proc-macro2 = "1.0"
+proc-macro-error = "1.0"
+proc-macro-crate = "1.1"
+
+[dev-dependencies]
+kayak_ui = { path = "../", version = "0.1.0" }
+pretty_assertions = "1.2.1"
+bevy = { git = "https://github.com/bevyengine/bevy", rev="4bcf49b2ea6fb5f42388b0e15d204020053ee5c7" }

@@ -1,147 +1,97 @@
-//! This example demonstrates how one might create a tab system
-//!
-//! Additionally, it showcases focus navigation. Press `Tab` and `Shift + Tab` to move
-//! between focusable widgets. This example also sets it up so that `Enter` or `Space`
-//! can be used in place of a normal click.
-
-use bevy::{
-    prelude::{App as BevyApp, AssetServer, Commands, Res, ResMut},
-    window::WindowDescriptor,
-    DefaultPlugins,
-};
-
-use kayak_ui::{
-    bevy::{BevyContext, BevyKayakUIPlugin, FontMapping, UICameraBundle},
-    core::{
-        constructor, render, rsx,
-        styles::{Style, StyleProp, Units},
-        widget, Color,
-    },
-    widgets::{App, Text, Window},
-};
-
-use crate::theming::{ColorState, TabTheme, TabThemeProvider};
-use tab_box::TabBox;
-use tab_box::TabData;
+use bevy::prelude::*;
+use kayak_ui::prelude::{widgets::*, *};
 
 mod tab;
-mod tab_bar;
-mod tab_box;
-mod tab_content;
-mod theming;
+mod tab_button;
+mod tab_context;
+use tab::{tab_render, Tab, TabBundle};
+use tab_button::{tab_button_render, TabButton, TabButtonBundle};
+use tab_context::{tab_context_render, TabContextProvider, TabContextProviderBundle};
 
-#[widget]
-fn TabDemo() {
-    let text_style = Style {
-        width: StyleProp::Value(Units::Percentage(75.0)),
-        top: StyleProp::Value(Units::Stretch(0.5)),
-        left: StyleProp::Value(Units::Stretch(1.0)),
-        bottom: StyleProp::Value(Units::Stretch(1.0)),
-        right: StyleProp::Value(Units::Stretch(1.0)),
-        ..Default::default()
-    };
-
-    // TODO: This is not the most ideal way to generate tabs. For one, the `content` has no access to its actual context
-    // (i.e. where it actually exists in the hierarchy). Additionally, it would be better if tabs were created as
-    // children of `TabBox`. These are issues that will be addressed in the future, so for now, this will work.
-    let tabs = vec![
-        TabData {
-            name: "Tab 1".to_string(),
-            content: {
-                let text_style = text_style.clone();
-                constructor! {
-                    <>
-                        <Text content={"Welcome to Tab 1!".to_string()} size={48.0} styles={Some(text_style)} />
-                    </>
-                }
-            },
-        },
-        TabData {
-            name: "Tab 2".to_string(),
-            content: {
-                let text_style = text_style.clone();
-                constructor! {
-                    <>
-                        <Text content={"Welcome to Tab 2!".to_string()} size={48.0} styles={Some(text_style)} />
-                    </>
-                }
-            },
-        },
-        TabData {
-            name: "Tab 3".to_string(),
-            content: {
-                let text_style = text_style.clone();
-                constructor! {
-                    <>
-                        <Text content={"Welcome to Tab 3!".to_string()} size={48.0} styles={Some(text_style)} />
-                    </>
-                }
-            },
-        },
-    ];
-
-    rsx! {
-        <TabBox tabs={tabs} />
-    }
-}
+use crate::tab_context::TabContext;
 
 fn startup(
     mut commands: Commands,
     mut font_mapping: ResMut<FontMapping>,
     asset_server: Res<AssetServer>,
 ) {
-    commands.spawn_bundle(UICameraBundle::new());
-
     font_mapping.set_default(asset_server.load("roboto.kayak_font"));
 
-    let theme = TabTheme {
-        primary: Default::default(),
-        bg: Color::new(0.176, 0.227, 0.255, 1.0),
-        fg: Color::new(0.286, 0.353, 0.392, 1.0),
-        focus: Color::new(0.388, 0.474, 0.678, 0.5),
-        text: ColorState {
-            normal: Color::new(0.949, 0.956, 0.968, 1.0),
-            hovered: Color::new(0.650, 0.574, 0.669, 1.0),
-            active: Color::new(0.949, 0.956, 0.968, 1.0),
-        },
-        active_tab: ColorState {
-            normal: Color::new(0.286, 0.353, 0.392, 1.0),
-            hovered: Color::new(0.246, 0.323, 0.352, 1.0),
-            active: Color::new(0.196, 0.283, 0.312, 1.0),
-        },
-        inactive_tab: ColorState {
-            normal: Color::new(0.176, 0.227, 0.255, 1.0),
-            hovered: Color::new(0.16, 0.21, 0.23, 1.0),
-            active: Color::new(0.196, 0.283, 0.312, 1.0),
-        },
-        tab_height: 22.0,
-    };
+    commands.spawn(UICameraBundle::new());
 
-    let context = BevyContext::new(|context| {
-        render! {
-            <App>
-                <Window position={(50.0, 50.0)} size={(600.0, 300.0)} title={"Tabs Example".to_string()}>
-                    <TabThemeProvider initial_theme={theme}>
-                        <TabDemo />
-                    </TabThemeProvider>
-                </Window>
-            </App>
-        }
-    });
+    let mut widget_context = KayakRootContext::new();
+    widget_context.add_widget_data::<Tab, EmptyState>();
+    widget_context.add_widget_data::<TabContextProvider, EmptyState>();
+    widget_context.add_widget_data::<TabButton, EmptyState>();
+    widget_context.add_widget_system(
+        Tab::default().get_name(),
+        widget_update_with_context::<Tab, EmptyState, TabContext>,
+        tab_render,
+    );
+    widget_context.add_widget_system(
+        TabContextProvider::default().get_name(),
+        widget_update_with_context::<TabContextProvider, EmptyState, TabContext>,
+        tab_context_render,
+    );
+    widget_context.add_widget_system(
+        TabButton::default().get_name(),
+        widget_update_with_context::<TabButton, EmptyState, TabContext>,
+        tab_button_render,
+    );
+    let parent_id = None;
 
-    commands.insert_resource(context);
+    rsx! {
+        <KayakAppBundle>
+            <WindowBundle
+                window={KWindow {
+                    title: "Tabs".into(),
+                    draggable: true,
+                    initial_position: Vec2::new(10.0, 10.0),
+                    size: Vec2::new(300.0, 250.0),
+                    ..KWindow::default()
+                }}
+            >
+                <TabContextProviderBundle tab_provider={TabContextProvider { initial_index: 0 }}>
+                    <ElementBundle
+                        styles={KStyle {
+                            layout_type: StyleProp::Value(LayoutType::Row),
+                            height: StyleProp::Value(Units::Pixels(25.0)),
+                            width: StyleProp::Value(Units::Stretch(1.0)),
+                            ..Default::default()
+                        }}
+                    >
+                        <TabButtonBundle
+                            tab_button={TabButton { index: 0, title: "Tab 1".into(), }}
+                        />
+                        <TabButtonBundle tab_button={TabButton { index: 1, title: "Tab 2".into() }} />
+                    </ElementBundle>
+                    <ElementBundle
+                        styles={KStyle {
+                            height: StyleProp::Value(Units::Stretch(1.0)),
+                            width: StyleProp::Value(Units::Stretch(1.0)),
+                            ..Default::default()
+                        }}
+                    >
+                        <TabBundle tab={Tab { index: 0 }}>
+                            <TextWidgetBundle text={TextProps { content: "Tab 1 Content".into(), size: 14.0, line_height: Some(14.0), ..Default::default() }} />
+                        </TabBundle>
+                        <TabBundle tab={Tab { index: 1 }}>
+                            <TextWidgetBundle text={TextProps { content: "Tab 2 Content".into(), size: 14.0, line_height: Some(14.0), ..Default::default() }} />
+                        </TabBundle>
+                    </ElementBundle>
+                </TabContextProviderBundle>
+            </WindowBundle>
+        </KayakAppBundle>
+    }
+
+    commands.insert_resource(widget_context);
 }
 
 fn main() {
-    BevyApp::new()
-        .insert_resource(WindowDescriptor {
-            width: 1270.0,
-            height: 720.0,
-            title: String::from("UI Example"),
-            ..Default::default()
-        })
+    App::new()
         .add_plugins(DefaultPlugins)
-        .add_plugin(BevyKayakUIPlugin)
+        .add_plugin(KayakContextPlugin)
+        .add_plugin(KayakWidgets)
         .add_startup_system(startup)
-        .run();
+        .run()
 }

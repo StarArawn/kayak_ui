@@ -1,11 +1,14 @@
-use crate::core::{
-    render_command::RenderCommand,
-    styles::{Style, StyleProp},
-    widget, CursorIcon, OnEvent, OnLayout, WidgetProps,
+use bevy::prelude::*;
+use kayak_font::Alignment;
+
+use crate::{
+    context::WidgetName,
+    prelude::KayakWidgetContext,
+    styles::{KCursorIcon, KStyle, RenderCommand, StyleProp},
+    widget::Widget,
 };
 
-/// Props used by the [`Text`] widget
-#[derive(WidgetProps, Debug, PartialEq, Clone)]
+#[derive(Component, Debug, PartialEq, Clone)]
 pub struct TextProps {
     /// The string to display
     pub content: String,
@@ -23,14 +26,8 @@ pub struct TextProps {
     ///
     /// Negative values have no effect
     pub size: f32,
-    #[prop_field(Styles)]
-    pub styles: Option<Style>,
-    #[prop_field(OnEvent)]
-    pub on_event: Option<OnEvent>,
-    #[prop_field(OnLayout)]
-    pub on_layout: Option<OnLayout>,
-    #[prop_field(Focusable)]
-    pub focusable: Option<bool>,
+    /// Text alignment.
+    pub alignment: Alignment,
 }
 
 impl Default for TextProps {
@@ -41,49 +38,57 @@ impl Default for TextProps {
             line_height: None,
             show_cursor: false,
             size: -1.0,
-            styles: None,
-            on_event: None,
-            on_layout: None,
-            focusable: None,
+            alignment: Alignment::Start,
         }
     }
 }
 
-#[widget]
-/// A widget that renders plain text
-///
-/// # Props
-///
-/// __Type:__ [`TextProps`]
-///
-/// | Common Prop | Accepted |
-/// | :---------: | :------: |
-/// | `children`  | ❌        |
-/// | `styles`    | ✅        |
-/// | `on_event`  | ✅        |
-/// | `on_layout` | ✅        |
-/// | `focusable` | ✅        |
-///
-pub fn Text(props: TextProps) {
-    let mut styles = Style {
-        render_command: StyleProp::Value(RenderCommand::Text {
-            content: props.content.clone(),
-        }),
-        ..Default::default()
-    };
+impl Widget for TextProps {}
 
-    if let Some(ref font) = props.font {
-        styles.font = StyleProp::Value(font.clone());
+/// A widget that renders text
+///
+#[derive(Bundle)]
+pub struct TextWidgetBundle {
+    pub text: TextProps,
+    pub styles: KStyle,
+    pub widget_name: WidgetName,
+}
+
+impl Default for TextWidgetBundle {
+    fn default() -> Self {
+        Self {
+            text: Default::default(),
+            styles: Default::default(),
+            widget_name: TextProps::default().get_name(),
+        }
     }
-    if props.show_cursor {
-        styles.cursor = StyleProp::Value(CursorIcon::Text);
-    }
-    if props.size >= 0.0 {
-        styles.font_size = StyleProp::Value(props.size);
-    }
-    if let Some(line_height) = props.line_height {
-        styles.line_height = StyleProp::Value(line_height);
+}
+
+pub fn text_render(
+    In((_, entity)): In<(KayakWidgetContext, Entity)>,
+    mut query: Query<(&mut KStyle, &TextProps)>,
+) -> bool {
+    if let Ok((mut style, text)) = query.get_mut(entity) {
+        style.render_command = StyleProp::Value(RenderCommand::Text {
+            content: text.content.clone(),
+            alignment: text.alignment,
+        });
+
+        if let Some(ref font) = text.font {
+            style.font = StyleProp::Value(font.clone());
+        }
+        if text.show_cursor {
+            style.cursor = StyleProp::Value(KCursorIcon(CursorIcon::Text));
+        }
+        if text.size >= 0.0 {
+            style.font_size = StyleProp::Value(text.size);
+        }
+        if let Some(line_height) = text.line_height {
+            style.line_height = StyleProp::Value(line_height);
+        }
+
+        // style.cursor = StyleProp::Value(KCursorIcon(CursorIcon::Hand));
     }
 
-    props.styles = Some(styles.with_style(&props.styles));
+    true
 }

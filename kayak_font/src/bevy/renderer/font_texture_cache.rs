@@ -1,7 +1,7 @@
 use crate::{KayakFont, Sdf};
 use bevy::{
     math::Vec2,
-    prelude::{Handle, Res},
+    prelude::{Handle, Res, Resource},
     render::{
         render_asset::RenderAssets,
         render_resource::{
@@ -22,6 +22,7 @@ pub trait FontRenderingPipeline {
 
 pub const MAX_CHARACTERS: u32 = 500;
 
+#[derive(Resource)]
 pub struct FontTextureCache {
     images: HashMap<Handle<KayakFont>, GpuImage>,
     pub(crate) bind_groups: HashMap<Handle<KayakFont>, BindGroup>,

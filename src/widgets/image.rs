@@ -1,54 +1,44 @@
-use kayak_core::OnLayout;
+use bevy::prelude::{Bundle, Component, Entity, Handle, In, Query};
 
-use crate::core::{
-    render_command::RenderCommand,
-    rsx,
-    styles::{Style, StyleProp},
-    widget, Children, OnEvent, WidgetProps,
+use crate::{
+    context::WidgetName,
+    prelude::KayakWidgetContext,
+    styles::{KStyle, RenderCommand, StyleProp},
+    widget::Widget,
 };
 
-/// Props used by the [`Image`] widget
-#[derive(WidgetProps, Default, Debug, PartialEq, Clone)]
-pub struct ImageProps {
-    pub handle: u16,
-    #[prop_field(Styles)]
-    pub styles: Option<Style>,
-    #[prop_field(Children)]
-    pub children: Option<Children>,
-    #[prop_field(OnEvent)]
-    pub on_event: Option<OnEvent>,
-    #[prop_field(OnLayout)]
-    pub on_layout: Option<OnLayout>,
-    #[prop_field(Focusable)]
-    pub focusable: Option<bool>,
+/// Renders a bevy image asset within the GUI
+/// The rendered image respects the styles.
+#[derive(Component, PartialEq, Clone, Default)]
+pub struct KImage(pub Handle<bevy::prelude::Image>);
+
+impl Widget for KImage {}
+
+#[derive(Bundle)]
+pub struct KImageBundle {
+    pub image: KImage,
+    pub style: KStyle,
+    pub widget_name: WidgetName,
 }
 
-#[widget]
-/// A widget that renders an image background
-///
-/// # Props
-///
-/// __Type:__ [`ImageProps`]
-///
-/// | Common Prop | Accepted |
-/// | :---------: | :------: |
-/// | `children`  | ✅        |
-/// | `styles`    | ✅        |
-/// | `on_event`  | ✅        |
-/// | `on_layout` | ✅        |
-/// | `focusable` | ✅        |
-///
-pub fn Image(props: ImageProps) {
-    props.styles = Some(Style {
-        render_command: StyleProp::Value(RenderCommand::Image {
-            handle: props.handle,
-        }),
-        ..props.styles.clone().unwrap_or_default()
-    });
-
-    rsx! {
-        <>
-            {children}
-        </>
+impl Default for KImageBundle {
+    fn default() -> Self {
+        Self {
+            image: Default::default(),
+            style: Default::default(),
+            widget_name: KImage::default().get_name(),
+        }
     }
+}
+
+pub fn image_render(
+    In((_widget_context, entity)): In<(KayakWidgetContext, Entity)>,
+    mut query: Query<(&mut KStyle, &KImage)>,
+) -> bool {
+    if let Ok((mut style, image)) = query.get_mut(entity) {
+        style.render_command = StyleProp::Value(RenderCommand::Image {
+            handle: image.0.clone_weak(),
+        });
+    }
+    true
 }

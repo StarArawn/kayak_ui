@@ -1,13 +1,15 @@
 use crate::bevy::renderer::FontTextureCache;
 use crate::KayakFont;
-use bevy::prelude::{AssetEvent, Assets, Commands, EventReader, Handle, Image, Local, Res, ResMut};
+use bevy::prelude::{
+    AssetEvent, Assets, Commands, EventReader, Handle, Image, Local, Res, ResMut, Resource,
+};
 use bevy::render::{
     render_resource::{TextureFormat, TextureUsages},
     Extract,
 };
 use bevy::utils::HashSet;
 
-#[derive(Default)]
+#[derive(Default, Resource)]
 pub struct ExtractedFonts {
     pub fonts: Vec<(Handle<KayakFont>, KayakFont)>,
 }

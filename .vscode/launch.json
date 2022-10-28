@@ -1,0 +1,490 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in library 'kayak_ui'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=kayak_ui"
+                ],
+                "filter": {
+                    "name": "kayak_ui",
+                    "kind": "lib"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug example 'tabs'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--example=tabs",
+                    "--package=kayak_ui"
+                ],
+                "filter": {
+                    "name": "tabs",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in example 'tabs'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--example=tabs",
+                    "--package=kayak_ui"
+                ],
+                "filter": {
+                    "name": "tabs",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug example 'clipping'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--example=clipping",
+                    "--package=kayak_ui"
+                ],
+                "filter": {
+                    "name": "clipping",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in example 'clipping'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--example=clipping",
+                    "--package=kayak_ui"
+                ],
+                "filter": {
+                    "name": "clipping",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug example 'context'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--example=context",
+                    "--package=kayak_ui"
+                ],
+                "filter": {
+                    "name": "context",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in example 'context'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--example=context",
+                    "--package=kayak_ui"
+                ],
+                "filter": {
+                    "name": "context",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug example 'image'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--example=image",
+                    "--package=kayak_ui"
+                ],
+                "filter": {
+                    "name": "image",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in example 'image'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--example=image",
+                    "--package=kayak_ui"
+                ],
+                "filter": {
+                    "name": "image",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug example 'nine_patch'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--example=nine_patch",
+                    "--package=kayak_ui"
+                ],
+                "filter": {
+                    "name": "nine_patch",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in example 'nine_patch'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--example=nine_patch",
+                    "--package=kayak_ui"
+                ],
+                "filter": {
+                    "name": "nine_patch",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug example 'quads'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--example=quads",
+                    "--package=kayak_ui"
+                ],
+                "filter": {
+                    "name": "quads",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in example 'quads'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--example=quads",
+                    "--package=kayak_ui"
+                ],
+                "filter": {
+                    "name": "quads",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug example 'scrolling'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--example=scrolling",
+                    "--package=kayak_ui"
+                ],
+                "filter": {
+                    "name": "scrolling",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in example 'scrolling'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--example=scrolling",
+                    "--package=kayak_ui"
+                ],
+                "filter": {
+                    "name": "scrolling",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug example 'simple'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--example=simple",
+                    "--package=kayak_ui"
+                ],
+                "filter": {
+                    "name": "simple",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in example 'simple'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--example=simple",
+                    "--package=kayak_ui"
+                ],
+                "filter": {
+                    "name": "simple",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug example 'simple_state'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--example=simple_state",
+                    "--package=kayak_ui"
+                ],
+                "filter": {
+                    "name": "simple_state",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in example 'simple_state'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--example=simple_state",
+                    "--package=kayak_ui"
+                ],
+                "filter": {
+                    "name": "simple_state",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug example 'text'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--example=text",
+                    "--package=kayak_ui"
+                ],
+                "filter": {
+                    "name": "text",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in example 'text'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--example=text",
+                    "--package=kayak_ui"
+                ],
+                "filter": {
+                    "name": "text",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug example 'texture_atlas'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--example=texture_atlas",
+                    "--package=kayak_ui"
+                ],
+                "filter": {
+                    "name": "texture_atlas",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in example 'texture_atlas'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--example=texture_atlas",
+                    "--package=kayak_ui"
+                ],
+                "filter": {
+                    "name": "texture_atlas",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in library 'kayak_font'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=kayak_font"
+                ],
+                "filter": {
+                    "name": "kayak_font",
+                    "kind": "lib"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug example 'bevy'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--example=bevy",
+                    "--package=kayak_font"
+                ],
+                "filter": {
+                    "name": "bevy",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in example 'bevy'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--example=bevy",
+                    "--package=kayak_font"
+                ],
+                "filter": {
+                    "name": "bevy",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        }
+    ]
+}

@@ -1,0 +1,6 @@
+[book]
+authors = ["StarToaster"]
+language = "en"
+multilingual = false
+src = "src"
+title = "Kayak UI"

@@ -1,72 +1,84 @@
-use kayak_core::OnLayout;
+use bevy::prelude::{Bundle, Commands, Component, Entity, Handle, Image, In, Query};
 
-use crate::core::{
-    render_command::RenderCommand,
-    rsx,
-    styles::{Edge, Style, StyleProp},
-    widget, Children, OnEvent, WidgetProps,
+use crate::{
+    children::KChildren,
+    context::WidgetName,
+    prelude::KayakWidgetContext,
+    styles::{Edge, KStyle, RenderCommand, StyleProp},
+    widget::Widget,
 };
 
-/// Props used by the [`NinePatch`] widget
-#[derive(WidgetProps, Default, Debug, PartialEq, Clone)]
-pub struct NinePatchProps {
+#[derive(Component, PartialEq, Clone, Default, Debug)]
+pub struct NinePatch {
     /// The handle to image
-    pub handle: u16,
+    pub handle: Handle<Image>,
     /// The size of each edge (in pixels)
     pub border: Edge<f32>,
-    #[prop_field(Styles)]
-    pub styles: Option<Style>,
-    #[prop_field(Children)]
-    pub children: Option<Children>,
-    #[prop_field(OnEvent)]
-    pub on_event: Option<OnEvent>,
-    #[prop_field(OnLayout)]
-    pub on_layout: Option<OnLayout>,
-    #[prop_field(Focusable)]
-    pub focusable: Option<bool>,
 }
 
-#[widget]
-/// A widget that renders a nine-patch image background
-///
-/// A nine-patch is a special type of image that's broken into nine parts:
-///
-/// * Edges - Top, Bottom, Left, Right
-/// * Corners - Top-Left, Top-Right, Bottom-Left, Bottom-Right
-/// * Center
-///
-/// Using these parts of an image, we can construct a scalable background and border
-/// all from a single image. This is done by:
-///
-/// * Stretching the edges (vertically for left/right and horizontally for top/bottom)
-/// * Preserving the corners
-/// * Scaling the center to fill the remaining space
-///
-///
-/// # Props
-///
-/// __Type:__ [`NinePatchProps`]
-///
-/// | Common Prop | Accepted |
-/// | :---------: | :------: |
-/// | `children`  | ✅        |
-/// | `styles`    | ✅        |
-/// | `on_event`  | ✅        |
-/// | `on_layout` | ✅        |
-/// | `focusable` | ✅        |
-///
-pub fn NinePatch(props: NinePatchProps) {
-    props.styles = Some(Style {
-        render_command: StyleProp::Value(RenderCommand::NinePatch {
-            handle: props.handle,
-            border: props.border,
-        }),
-        ..props.styles.clone().unwrap_or_default()
-    });
+impl Widget for NinePatch {}
 
-    rsx! {
-        <>
-            {children}
-        </>
+///
+/// Render's a nine-patch image as a UI widget.
+///
+/// Also know as 9-slicing. This 2D technique allows users to render UI images at multiple
+/// resolutions while maintaining a level of quality. The image in the middle is repeated.
+///
+/// Accepts Children and Styles.
+///
+/// Example: The border prop splits up the image into 9 quadrants like so:
+/// 1----2----3
+/// |         |
+/// 4    9    5
+/// |         |
+/// 6----7----8
+/// The sizes of sprites for a 15 pixel border are as follows:
+/// TopLeft = (15, 15)
+/// TopRight = (15, 15)
+/// LeftCenter = (15, image_height)
+/// RightCenter = (15, image_height)
+/// TopCenter = (image_width, 15)
+/// BottomCenter = (image_width, 15)
+/// BottomRight = (15, 15)
+/// BottomLeft = (15, 15)
+/// Middle = (
+/// 30 being left border + right border
+///   image_width - 30
+/// 30 being top border + bottom border
+///   image_height - 30
+/// )
+#[derive(Bundle)]
+pub struct NinePatchBundle {
+    pub nine_patch: NinePatch,
+    pub styles: KStyle,
+    pub children: KChildren,
+    pub widget_name: WidgetName,
+}
+
+impl Default for NinePatchBundle {
+    fn default() -> Self {
+        Self {
+            nine_patch: Default::default(),
+            styles: Default::default(),
+            children: KChildren::default(),
+            widget_name: NinePatch::default().get_name(),
+        }
     }
+}
+
+pub fn nine_patch_render(
+    In((widget_context, entity)): In<(KayakWidgetContext, Entity)>,
+    _: Commands,
+    mut query: Query<(&mut KStyle, &NinePatch, &KChildren)>,
+) -> bool {
+    if let Ok((mut style, nine_patch, children)) = query.get_mut(entity) {
+        style.render_command = StyleProp::Value(RenderCommand::NinePatch {
+            border: nine_patch.border,
+            handle: nine_patch.handle.clone_weak(),
+        });
+
+        children.process(&widget_context, Some(entity));
+    }
+
+    true
 }

@@ -1,19 +1,30 @@
-use crate::core::{
-    render_command::RenderCommand,
-    rsx,
-    styles::{PositionType, Style, Units},
-    widget, Bound, Children, EventType, MutableBound, OnEvent, ScrollUnit, WidgetProps,
+use bevy::prelude::{Bundle, Color, Commands, Component, Entity, In, ParamSet, Query};
+
+use crate::{
+    children::KChildren,
+    context::WidgetName,
+    cursor::ScrollUnit,
+    event::{Event, EventType},
+    event_dispatcher::EventDispatcherContext,
+    layout::{GeometryChanged, LayoutEvent},
+    on_event::OnEvent,
+    on_layout::OnLayout,
+    prelude::{constructor, rsx, KayakWidgetContext},
+    styles::{KPositionType, KStyle, LayoutType, RenderCommand, Units},
+    widget::Widget,
+    widget_state::WidgetState,
+    widgets::{
+        scroll::{
+            scroll_bar::{ScrollBarBundle, ScrollBarProps},
+            scroll_content::ScrollContentBundle,
+        },
+        ClipBundle, ElementBundle,
+    },
 };
 
-use kayak_core::styles::LayoutType;
-use kayak_core::{Color, GeometryChanged, OnLayout};
+use super::scroll_context::ScrollContext;
 
-use crate::widgets::{Clip, Element, If};
-
-use super::{ScrollBar, ScrollContent, ScrollContext, ScrollMode};
-
-/// Props used by the [`ScrollBox`] widget
-#[derive(WidgetProps, Default, Debug, PartialEq, Clone)]
+#[derive(Component, Default, Clone, PartialEq)]
 pub struct ScrollBoxProps {
     /// If true, always shows scrollbars even when there's nothing to scroll
     ///
@@ -24,8 +35,6 @@ pub struct ScrollBoxProps {
     pub disable_horizontal: bool,
     /// If true, disables vertical scrolling
     pub disable_vertical: bool,
-    /// The scroll mode to use
-    pub mode: ScrollMode,
     /// If true, hides the horizontal scrollbar
     pub hide_horizontal: bool,
     /// If true, hides the vertical scrollbar
@@ -37,189 +46,217 @@ pub struct ScrollBoxProps {
     /// The color of the scrollbar thumb
     pub thumb_color: Option<Color>,
     /// The styles of the scrollbar thumb
-    pub thumb_styles: Option<Style>,
+    pub thumb_styles: Option<KStyle>,
     /// The color of the scrollbar track
     pub track_color: Option<Color>,
     /// The styles of the scrollbar track
-    pub track_styles: Option<Style>,
-    #[prop_field(Styles)]
-    pub styles: Option<Style>,
-    #[prop_field(Children)]
-    pub children: Option<Children>,
-    #[prop_field(OnLayout)]
-    on_layout: Option<OnLayout>,
+    pub track_styles: Option<KStyle>,
 }
 
-#[widget]
-/// A widget that creates a scrollable area for overflowing content
-///
-/// # Props
-///
-/// __Type:__ [`ScrollBoxProps`]
-///
-/// | Common Prop | Accepted |
-/// | :---------: | :------: |
-/// | `children`  | ✅        |
-/// | `styles`    | ✅        |
-/// | `on_event`  | ❌        |
-/// | `focusable` | ❌        |
-///
-pub fn ScrollBox(props: ScrollBoxProps) {
-    // === Configuration === //
-    let always_show_scrollbar = props.always_show_scrollbar;
-    let disable_horizontal = props.disable_horizontal;
-    let disable_vertical = props.disable_vertical;
-    let hide_horizontal = props.hide_horizontal;
-    let hide_vertical = props.hide_vertical;
-    let mode = props.mode;
-    let scrollbar_thickness = props.scrollbar_thickness.unwrap_or(10.0);
-    let scroll_line = props.scroll_line.unwrap_or(16.0);
-    let thumb_color = props.thumb_color;
-    let thumb_styles = props.thumb_styles.clone();
-    let track_color = props.track_color;
-    let track_styles = props.track_styles.clone();
+impl Widget for ScrollBoxProps {}
 
-    // === Scroll === //
-    let scroll_ctx = context.create_provider(ScrollContext {
-        mode,
-        ..Default::default()
-    });
-    let scroll: ScrollContext = scroll_ctx.get();
-    let scroll_x = scroll.scroll_x();
-    let scroll_y = scroll.scroll_y();
-    let scrollable_width = scroll.scrollable_width();
-    let scrollable_height = scroll.scrollable_height();
+#[derive(Bundle)]
+pub struct ScrollBoxBundle {
+    pub scroll_box_props: ScrollBoxProps,
+    pub styles: KStyle,
+    pub children: KChildren,
+    pub on_layout: OnLayout,
+    pub widget_name: WidgetName,
+}
 
-    let hori_thickness = scrollbar_thickness;
-    let vert_thickness = scrollbar_thickness;
-
-    let hide_horizontal =
-        hide_horizontal || !always_show_scrollbar && scrollable_width < f32::EPSILON;
-    let hide_vertical = hide_vertical || !always_show_scrollbar && scrollable_height < f32::EPSILON;
-
-    {
-        let mut next = scroll_ctx.get();
-        next.pad_x = if hide_vertical { 0.0 } else { vert_thickness };
-        next.pad_y = if hide_horizontal { 0.0 } else { hori_thickness };
-
-        if next.pad_x != scroll.pad_x || next.pad_y != scroll.pad_y {
-            scroll_ctx.set(next);
+impl Default for ScrollBoxBundle {
+    fn default() -> Self {
+        Self {
+            scroll_box_props: Default::default(),
+            styles: Default::default(),
+            children: Default::default(),
+            on_layout: Default::default(),
+            widget_name: ScrollBoxProps::default().get_name(),
         }
     }
+}
 
-    // === Layout === //
-    let _scroll_ctx = scroll_ctx.clone();
-    props.on_layout = Some(OnLayout::new(move |_, evt| {
-        if evt
-            .flags
-            .intersects(GeometryChanged::WIDTH_CHANGED | GeometryChanged::HEIGHT_CHANGED)
-        {
-            let mut next = _scroll_ctx.get();
-            next.scrollbox_width = evt.layout.width;
-            next.scrollbox_height = evt.layout.height;
-            _scroll_ctx.set(next);
-        }
-    }));
+pub fn scroll_box_render(
+    In((widget_context, entity)): In<(KayakWidgetContext, Entity)>,
+    mut commands: Commands,
+    mut query: Query<(&ScrollBoxProps, &mut KStyle, &KChildren, &mut OnLayout)>,
+    mut context_query: ParamSet<(Query<&ScrollContext>, Query<&mut ScrollContext>)>,
+) -> bool {
+    if let Ok((scroll_box, mut styles, scroll_box_children, mut on_layout)) = query.get_mut(entity)
+    {
+        if let Some(context_entity) = widget_context.get_context_entity::<ScrollContext>(entity) {
+            if let Ok(scroll_context) = context_query.p1().get(context_entity).cloned() {
+                // === Configuration === //
+                let always_show_scrollbar = scroll_box.always_show_scrollbar;
+                let disable_horizontal = scroll_box.disable_horizontal;
+                let disable_vertical = scroll_box.disable_vertical;
+                let hide_horizontal = scroll_box.hide_horizontal;
+                let hide_vertical = scroll_box.hide_vertical;
+                let scrollbar_thickness = scroll_box.scrollbar_thickness.unwrap_or(10.0);
+                let scroll_line = scroll_box.scroll_line.unwrap_or(16.0);
+                let thumb_color = scroll_box.thumb_color;
+                let thumb_styles = scroll_box.thumb_styles.clone();
+                let track_color = scroll_box.track_color;
+                let track_styles = scroll_box.track_styles.clone();
 
-    // === Styles === //
-    props.styles = Some(
-        Style::default()
-            .with_style(Style {
-                render_command: RenderCommand::Layout.into(),
-                ..Default::default()
-            })
-            .with_style(&props.styles)
-            .with_style(Style {
-                width: Units::Stretch(1.0).into(),
-                height: Units::Stretch(1.0).into(),
-                ..Default::default()
-            }),
-    );
+                let scroll_x = scroll_context.scroll_x();
+                let scroll_y = scroll_context.scroll_y();
+                let scrollable_width = scroll_context.scrollable_width();
+                let scrollable_height = scroll_context.scrollable_height();
 
-    let hbox_styles = Style::default().with_style(Style {
-        render_command: RenderCommand::Layout.into(),
-        layout_type: LayoutType::Row.into(),
-        width: Units::Stretch(1.0).into(),
-        ..Default::default()
-    });
-    let vbox_styles = Style::default().with_style(Style {
-        render_command: RenderCommand::Layout.into(),
-        layout_type: LayoutType::Column.into(),
-        width: Units::Stretch(1.0).into(),
-        ..Default::default()
-    });
+                let hori_thickness = scrollbar_thickness;
+                let vert_thickness = scrollbar_thickness;
 
-    let content_styles = Style::default().with_style(Style {
-        position_type: PositionType::SelfDirected.into(),
-        top: Units::Pixels(scroll_y).into(),
-        left: Units::Pixels(scroll_x).into(),
-        ..Default::default()
-    });
+                let hide_horizontal =
+                    hide_horizontal || !always_show_scrollbar && scrollable_width < f32::EPSILON;
+                let hide_vertical =
+                    hide_vertical || !always_show_scrollbar && scrollable_height < f32::EPSILON;
 
-    // === Events === //
-    let event_handler = OnEvent::new(move |_, event| match event.event_type {
-        EventType::Scroll(evt) => {
-            match evt.delta {
-                ScrollUnit::Line { x, y } => {
-                    let mut old = scroll_ctx.get();
-                    if !disable_horizontal {
-                        old.set_scroll_x(scroll_x - x * scroll_line);
+                let pad_x = if hide_vertical { 0.0 } else { vert_thickness };
+                let pad_y = if hide_horizontal { 0.0 } else { hori_thickness };
+
+                if pad_x != scroll_context.pad_x || pad_y != scroll_context.pad_y {
+                    if let Ok(mut scroll_context_mut) = context_query.p1().get_mut(context_entity) {
+                        scroll_context_mut.pad_x = pad_x;
+                        scroll_context_mut.pad_y = pad_y;
                     }
-                    if !disable_vertical {
-                        old.set_scroll_y(scroll_y + y * scroll_line);
-                    }
-                    scroll_ctx.set(old);
                 }
-                ScrollUnit::Pixel { x, y } => {
-                    let mut old = scroll_ctx.get();
-                    if !disable_horizontal {
-                        old.set_scroll_x(scroll_x - x);
-                    }
-                    if !disable_vertical {
-                        old.set_scroll_y(scroll_y + y);
-                    }
-                    scroll_ctx.set(old);
+
+                *on_layout = OnLayout::new(
+                    move |In((event, _entity)): In<(LayoutEvent, Entity)>,
+                          mut query: Query<&mut ScrollContext>| {
+                        if event.flags.intersects(
+                            GeometryChanged::WIDTH_CHANGED | GeometryChanged::HEIGHT_CHANGED,
+                        ) {
+                            if let Ok(mut scroll) = query.get_mut(context_entity) {
+                                scroll.scrollbox_width = event.layout.width;
+                                scroll.scrollbox_height = event.layout.height;
+                            }
+                        }
+
+                        event
+                    },
+                );
+
+                // === Styles === //
+                *styles = KStyle::default()
+                    .with_style(KStyle {
+                        render_command: RenderCommand::Layout.into(),
+                        ..Default::default()
+                    })
+                    .with_style(styles.clone())
+                    .with_style(KStyle {
+                        width: Units::Stretch(1.0).into(),
+                        height: Units::Stretch(1.0).into(),
+                        ..Default::default()
+                    });
+
+                let hbox_styles = KStyle::default().with_style(KStyle {
+                    render_command: RenderCommand::Layout.into(),
+                    layout_type: LayoutType::Row.into(),
+                    width: Units::Stretch(1.0).into(),
+                    ..Default::default()
+                });
+                let vbox_styles = KStyle::default().with_style(KStyle {
+                    render_command: RenderCommand::Layout.into(),
+                    layout_type: LayoutType::Column.into(),
+                    width: Units::Stretch(1.0).into(),
+                    ..Default::default()
+                });
+
+                let content_styles = KStyle::default().with_style(KStyle {
+                    position_type: KPositionType::SelfDirected.into(),
+                    top: Units::Pixels(scroll_y).into(),
+                    left: Units::Pixels(scroll_x).into(),
+                    ..Default::default()
+                });
+
+                let event_handler = OnEvent::new(
+                    move |In((event_dispatcher_context, _, mut event, _entity)): In<(
+                        EventDispatcherContext,
+                        WidgetState,
+                        Event,
+                        Entity,
+                    )>,
+                          mut query: Query<&mut ScrollContext>| {
+                        if let Ok(mut scroll_context) = query.get_mut(context_entity) {
+                            match event.event_type {
+                                EventType::Scroll(evt) => {
+                                    match evt.delta {
+                                        ScrollUnit::Line { x, y } => {
+                                            if !disable_horizontal {
+                                                scroll_context
+                                                    .set_scroll_x(scroll_x - x * scroll_line);
+                                            }
+                                            if !disable_vertical {
+                                                scroll_context
+                                                    .set_scroll_y(scroll_y + y * scroll_line);
+                                            }
+                                        }
+                                        ScrollUnit::Pixel { x, y } => {
+                                            if !disable_horizontal {
+                                                scroll_context.set_scroll_x(scroll_x - x);
+                                            }
+                                            if !disable_vertical {
+                                                scroll_context.set_scroll_y(scroll_y + y);
+                                            }
+                                        }
+                                    }
+                                    event.stop_propagation();
+                                }
+                                _ => {}
+                            }
+                        }
+                        (event_dispatcher_context, event)
+                    },
+                );
+
+                let parent_id = Some(entity);
+                rsx! {
+                    <ElementBundle on_event={event_handler} styles={hbox_styles}>
+                        <ElementBundle styles={vbox_styles}>
+                            <ClipBundle>
+                                <ScrollContentBundle
+                                    children={scroll_box_children.clone()}
+                                    styles={content_styles}
+                                />
+                            </ClipBundle>
+                            {if !hide_horizontal {
+                                constructor! {
+                                    <ScrollBarBundle
+                                        scrollbar_props={ScrollBarProps {
+                                            disabled: disable_horizontal,
+                                            horizontal: true,
+                                            thickness: hori_thickness,
+                                            thumb_color: thumb_color,
+                                            thumb_styles: thumb_styles.clone(),
+                                            track_color: track_color,
+                                            track_styles: track_styles.clone(),
+                                            ..Default::default()
+                                        }}
+                                    />
+                                }
+                            }}
+                        </ElementBundle>
+                        {if !hide_vertical {
+                            constructor! {
+                                <ScrollBarBundle
+                                    scrollbar_props={ScrollBarProps {
+                                        disabled: disable_vertical,
+                                        thickness: hori_thickness,
+                                        thumb_color: thumb_color.clone(),
+                                        thumb_styles: thumb_styles.clone(),
+                                        track_color: track_color,
+                                        track_styles: track_styles.clone(),
+                                        ..Default::default()
+                                    }}
+                                />
+                            }
+                        }}
+                    </ElementBundle>
                 }
             }
-            event.stop_propagation();
         }
-        _ => {}
-    });
-
-    // === Render === //
-    let children = props.get_children();
-    rsx! {
-        <Element on_event={Some(event_handler)}>
-            <Element styles={Some(hbox_styles)}>
-                <Element styles={Some(vbox_styles)}>
-                    <Clip>
-                        <ScrollContent styles={Some(content_styles)}>
-                                {children}
-                        </ScrollContent>
-                    </Clip>
-                    <If condition={!hide_horizontal}>
-                        <ScrollBar
-                            disabled={disable_horizontal}
-                            horizontal={true}
-                            thickness={hori_thickness}
-                            thumb_color={thumb_color}
-                            thumb_styles={thumb_styles}
-                            track_color={track_color}
-                            track_styles={track_styles}
-                        />
-                    </If>
-                </Element>
-                <If condition={!hide_vertical}>
-                    <ScrollBar
-                        disabled={disable_vertical}
-                        thickness={hori_thickness}
-                        thumb_color={thumb_color}
-                        thumb_styles={thumb_styles}
-                        track_color={track_color}
-                        track_styles={track_styles}
-                    />
-                </If>
-            </Element>
-        </Element>
     }
+    true
 }

@@ -1,80 +1,86 @@
-use bevy::{
-    prelude::{App as BevyApp, AssetServer, Commands, Res, ResMut},
-    window::WindowDescriptor,
-    DefaultPlugins,
-};
-use kayak_core::Color;
-use kayak_render_macros::use_state;
-use kayak_ui::bevy::{BevyContext, BevyKayakUIPlugin, FontMapping, UICameraBundle};
-use kayak_ui::core::{
-    render, rsx,
-    styles::{Style, StyleProp, Units},
-    widget,
-};
-use kayak_ui::widgets::{App, OnChange, SpinBox, SpinBoxStyle, TextBox, Window};
+use bevy::prelude::*;
+use kayak_ui::prelude::{widgets::*, *};
 
-#[widget]
-fn TextBoxExample() {
-    let (value, set_value, _) = use_state!("I started with a value!".to_string());
-    let (empty_value, set_empty_value, _) = use_state!("".to_string());
-    let (red_value, set_red_value, _) = use_state!("This text is red".to_string());
-    let (spin_value, set_spin_value, _) = use_state!("3".to_string());
+#[derive(Component, Default, Clone, PartialEq)]
+struct TextBoxExample;
 
-    let input_styles = Style {
-        top: StyleProp::Value(Units::Pixels(10.0)),
-        ..Default::default()
-    };
+#[derive(Component, Default, Clone, PartialEq)]
+struct TextBoxExampleState {
+    pub value1: String,
+    pub value2: String,
+}
 
-    let red_text_styles = Style {
-        color: StyleProp::Value(Color::new(1., 0., 0., 1.)),
-        ..input_styles.clone()
-    };
+impl Widget for TextBoxExample {}
 
-    let on_change = OnChange::new(move |event| {
-        set_value(event.value);
-    });
+#[derive(Bundle)]
+struct TextBoxExampleBundle {
+    text_box_example: TextBoxExample,
+    styles: KStyle,
+    widget_name: WidgetName,
+}
 
-    let on_change_empty = OnChange::new(move |event| {
-        set_empty_value(event.value);
-    });
-
-    let on_change_red = OnChange::new(move |event| {
-        set_red_value(event.value);
-    });
-
-    let on_change_spin = OnChange::new(move |event| {
-        set_spin_value(event.value);
-    });
-
-    let vert = SpinBoxStyle::Vertical;
-
-    rsx! {
-        <Window position={(50.0, 50.0)} size={(500.0, 300.0)} title={"TextBox Example".to_string()}>
-            <TextBox styles={Some(input_styles)} value={value} on_change={Some(on_change)} />
-            <TextBox
-                styles={Some(input_styles)}
-                value={empty_value}
-                on_change={Some(on_change_empty)}
-                placeholder={Some("This is a placeholder".to_string())}
-            />
-            <TextBox styles={Some(red_text_styles)} value={red_value} on_change={Some(on_change_red)} />
-            <SpinBox
-                styles={Some(input_styles)}
-                value={spin_value}
-                on_change={Some(on_change_spin)}
-                min_val={0.0}
-                max_val={10.0}
-            />
-            <SpinBox
-                spin_button_style={vert}
-                styles={Some(input_styles)}
-                value={spin_value}
-                on_change={Some(on_change_spin)}
-                min_val={0.0}
-                max_val={10.0}
-            />
-        </Window>
+impl Default for TextBoxExampleBundle {
+    fn default() -> Self {
+        Self {
+            text_box_example: Default::default(),
+            styles: Default::default(),
+            widget_name: TextBoxExample::default().get_name(),
+        }
     }
+}
+
+fn update_text_box_example(
+    In((widget_context, entity)): In<(KayakWidgetContext, Entity)>,
+    mut commands: Commands,
+    state_query: Query<&TextBoxExampleState>,
+) -> bool {
+    let state_entity = widget_context.use_state::<TextBoxExampleState>(
+        &mut commands,
+        entity,
+        TextBoxExampleState {
+            value1: "Hello World".into(),
+            value2: "Hello World2".into(),
+        },
+    );
+
+    if let Ok(textbox_state) = state_query.get(state_entity) {
+        let on_change = OnChange::new(
+            move |In((_widget_context, _, value)): In<(KayakWidgetContext, Entity, String)>,
+                  mut state_query: Query<&mut TextBoxExampleState>| {
+                if let Ok(mut state) = state_query.get_mut(state_entity) {
+                    state.value1 = value;
+                }
+            },
+        );
+
+        let on_change2 = OnChange::new(
+            move |In((_widget_context, _, value)): In<(KayakWidgetContext, Entity, String)>,
+                  mut state_query: Query<&mut TextBoxExampleState>| {
+                if let Ok(mut state) = state_query.get_mut(state_entity) {
+                    state.value2 = value;
+                }
+            },
+        );
+
+        let parent_id = Some(entity);
+        rsx! {
+            <ElementBundle>
+                <TextBoxBundle
+                    styles={KStyle {
+                        bottom: StyleProp::Value(Units::Pixels(10.0)),
+                        ..Default::default()
+                    }}
+                    text_box={TextBoxProps { value: textbox_state.value1.clone(), ..Default::default()}}
+                    on_change={on_change}
+                />
+                <TextBoxBundle
+                    text_box={TextBoxProps { value: textbox_state.value2.clone(), ..Default::default()}}
+                    on_change={on_change2}
+                />
+            </ElementBundle>
+        }
+    }
+    true
 }
 
 fn startup(
@@ -82,31 +88,45 @@ fn startup(
     mut font_mapping: ResMut<FontMapping>,
     asset_server: Res<AssetServer>,
 ) {
-    commands.spawn_bundle(UICameraBundle::new());
-
     font_mapping.set_default(asset_server.load("roboto.kayak_font"));
 
-    let context = BevyContext::new(|context| {
-        render! {
-            <App>
-                <TextBoxExample />
-            </App>
-        }
-    });
+    // Camera 2D forces a clear pass in bevy.
+    // We do this because our scene is not rendering anything else.
+    commands.spawn(Camera2dBundle::default());
+    commands.spawn(UICameraBundle::new());
 
-    commands.insert_resource(context);
+    let mut widget_context = KayakRootContext::new();
+
+    widget_context.add_widget_data::<TextBoxExample, TextBoxExampleState>();
+    widget_context.add_widget_system(
+        TextBoxExample::default().get_name(),
+        widget_update::<TextBoxExample, TextBoxExampleState>,
+        update_text_box_example,
+    );
+    let parent_id = None;
+    rsx! {
+        <KayakAppBundle>
+            <WindowBundle
+                window={KWindow {
+                    title: "Hello text box".into(),
+                    draggable: true,
+                    initial_position: Vec2::new(10.0, 10.0),
+                    size: Vec2::new(300.0, 250.0),
+                    ..KWindow::default()
+                }}
+            >
+                <TextBoxExampleBundle />
+            </WindowBundle>
+        </KayakAppBundle>
+    }
+    commands.insert_resource(widget_context);
 }
 
 fn main() {
-    BevyApp::new()
-        .insert_resource(WindowDescriptor {
-            width: 1270.0,
-            height: 720.0,
-            title: String::from("UI Example"),
-            ..Default::default()
-        })
+    App::new()
         .add_plugins(DefaultPlugins)
-        .add_plugin(BevyKayakUIPlugin)
+        .add_plugin(KayakContextPlugin)
+        .add_plugin(KayakWidgets)
         .add_startup_system(startup)
-        .run();
+        .run()
 }

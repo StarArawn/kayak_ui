@@ -1,94 +1,71 @@
-use crate::core::{
-    render_command::RenderCommand,
-    rsx,
-    styles::{Corner, Style, StyleProp, Units},
-    widget, Children, Color, Fragment, OnEvent, OnLayout, WidgetProps,
+use bevy::{
+    prelude::{Bundle, Color, Commands, Component, Entity, In, Query},
+    window::CursorIcon,
 };
-use kayak_core::CursorIcon;
 
-/// Props used by the [`Button`] widget
-#[derive(Default, Debug, PartialEq, Clone)]
-pub struct ButtonProps {
-    /// If true, disables this widget not allowing it to be focusable
-    ///
-    // TODO: Update this documentation when the disabled issue is fixed
-    /// Currently, this does not actually disable the button from being clicked.
-    pub disabled: bool,
-    pub styles: Option<Style>,
-    pub children: Option<Children>,
-    pub on_event: Option<OnEvent>,
-    pub on_layout: Option<OnLayout>,
-    pub focusable: Option<bool>,
+use crate::{
+    context::WidgetName,
+    on_event::OnEvent,
+    prelude::{KChildren, KayakWidgetContext, Units},
+    styles::{Corner, KCursorIcon, KStyle, RenderCommand, StyleProp},
+    widget::Widget,
+};
+
+#[derive(Component, PartialEq, Clone, Default)]
+pub struct KButton;
+
+/// Default button widget
+/// Accepts an OnEvent component
+#[derive(Bundle)]
+pub struct KButtonBundle {
+    pub button: KButton,
+    pub styles: KStyle,
+    pub on_event: OnEvent,
+    pub children: KChildren,
+    pub widget_name: WidgetName,
 }
 
-impl WidgetProps for ButtonProps {
-    fn get_children(&self) -> Option<Children> {
-        self.children.clone()
-    }
-
-    fn set_children(&mut self, children: Option<Children>) {
-        self.children = children;
-    }
-
-    fn get_styles(&self) -> Option<Style> {
-        self.styles.clone()
-    }
-
-    fn get_on_event(&self) -> Option<OnEvent> {
-        self.on_event.clone()
-    }
-
-    fn get_on_layout(&self) -> Option<OnLayout> {
-        self.on_layout.clone()
-    }
-
-    fn get_focusable(&self) -> Option<bool> {
-        Some(!self.disabled)
+impl Default for KButtonBundle {
+    fn default() -> Self {
+        Self {
+            button: Default::default(),
+            styles: Default::default(),
+            on_event: Default::default(),
+            children: KChildren::default(),
+            widget_name: KButton::default().get_name(),
+        }
     }
 }
 
-#[widget]
-/// A widget that is styled like a button
-///
-/// # Props
-///
-/// __Type:__ [`ButtonProps`]
-///
-/// | Common Prop | Accepted |
-/// | :---------: | :------: |
-/// | `children`  | ✅        |
-/// | `styles`    | ✅        |
-/// | `on_event`  | ✅        |
-/// | `on_layout` | ✅        |
-/// | `focusable` | ✅        |
-///
-pub fn Button(props: ButtonProps) {
-    // TODO: This should probably do more than just provide basic styling.
-    //       Ideally, we could add a `Handler` prop for `on_click` and other common cursor
-    //       events. Giving it the additional purpose of being a compact way to define a button.
-    //       This also allows us to make `disable` trule disable the button.
-    //       Also, styles need to reflect disabled status.
-    props.styles = Some(
-        Style::default()
-            .with_style(Style {
+impl Widget for KButton {}
+
+pub fn button_render(
+    In((widget_context, entity)): In<(KayakWidgetContext, Entity)>,
+    _: Commands,
+    mut query: Query<(&mut KStyle, &KChildren)>,
+) -> bool {
+    if let Ok((mut style, children)) = query.get_mut(entity) {
+        *style = KStyle::default()
+            .with_style(KStyle {
                 render_command: StyleProp::Value(RenderCommand::Quad),
                 ..Default::default()
             })
-            .with_style(&props.styles)
-            .with_style(Style {
-                background_color: StyleProp::Value(Color::new(0.0781, 0.0898, 0.101, 1.0)),
+            .with_style(style.clone())
+            .with_style(KStyle {
+                render_command: StyleProp::Value(RenderCommand::Quad),
+                background_color: StyleProp::Value(Color::rgba(0.0781, 0.0898, 0.101, 1.0)),
                 border_radius: StyleProp::Value(Corner::all(5.0)),
                 height: StyleProp::Value(Units::Pixels(45.0)),
                 padding_left: StyleProp::Value(Units::Stretch(1.0)),
                 padding_right: StyleProp::Value(Units::Stretch(1.0)),
-                cursor: CursorIcon::Hand.into(),
+                padding_bottom: StyleProp::Value(Units::Stretch(1.0)),
+                padding_top: StyleProp::Value(Units::Stretch(1.0)),
+                cursor: StyleProp::Value(KCursorIcon(CursorIcon::Hand)),
                 ..Default::default()
-            }),
-    );
+            });
 
-    rsx! {
-        <Fragment>
-            {children}
-        </Fragment>
+        children.process(&widget_context, Some(entity));
     }
+
+    true
 }

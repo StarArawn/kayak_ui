@@ -1,49 +1,54 @@
-use crate::core::{
-    render_command::RenderCommand,
-    rsx,
-    styles::{Style, StyleProp},
-    widget, Children, Fragment, OnEvent, WidgetProps,
-};
-use kayak_core::OnLayout;
+use bevy::prelude::{Bundle, Commands, Component, Entity, In, Query};
 
-/// Props used by the [`Background`] widget
-#[derive(WidgetProps, Default, Debug, PartialEq, Clone)]
-pub struct BackgroundProps {
-    #[prop_field(Styles)]
-    pub styles: Option<Style>,
-    #[prop_field(Children)]
-    pub children: Option<Children>,
-    #[prop_field(OnEvent)]
-    pub on_event: Option<OnEvent>,
-    #[prop_field(OnLayout)]
-    pub on_layout: Option<OnLayout>,
-    #[prop_field(Focusable)]
-    pub focusable: Option<bool>,
+use crate::{
+    children::KChildren,
+    context::WidgetName,
+    on_event::OnEvent,
+    prelude::KayakWidgetContext,
+    styles::{KStyle, RenderCommand, StyleProp},
+    widget::Widget,
+};
+
+#[derive(Component, PartialEq, Clone, Default)]
+pub struct Background;
+
+impl Widget for Background {}
+
+/// Background Widget
+///
+/// The name of this widget is slightly misleading.
+/// In actuality this widget renders a quad or multiple quads if a border is used.
+/// You can customize the colors, border, border-radius, by passing in custom styles.
+/// Children are rendered inside of the quad.
+#[derive(Bundle)]
+pub struct BackgroundBundle {
+    pub background: Background,
+    pub styles: KStyle,
+    pub children: KChildren,
+    pub on_event: OnEvent,
+    pub widget_name: WidgetName,
 }
 
-#[widget]
-/// A widget that provides a simple, rectangular background
-///
-/// # Props
-///
-/// __Type:__ [`BackgroundProps`]
-///
-/// | Common Prop | Accepted |
-/// | :---------: | :------: |
-/// | `children`  | ✅        |
-/// | `styles`    | ✅        |
-/// | `on_event`  | ✅        |
-/// | `on_layout` | ✅        |
-/// | `focusable` | ✅        |
-///
-pub fn Background(props: BackgroundProps) {
-    if props.styles.is_none() {
-        props.styles = Some(Style::default())
+impl Default for BackgroundBundle {
+    fn default() -> Self {
+        Self {
+            background: Default::default(),
+            styles: Default::default(),
+            children: Default::default(),
+            on_event: Default::default(),
+            widget_name: Background::default().get_name(),
+        }
     }
-    props.styles.as_mut().unwrap().render_command = StyleProp::Value(RenderCommand::Quad);
-    rsx! {
-        <Fragment>
-            {children}
-        </Fragment>
+}
+
+pub fn background_render(
+    In((widget_context, entity)): In<(KayakWidgetContext, Entity)>,
+    _: Commands,
+    mut query: Query<(&mut KStyle, &KChildren)>,
+) -> bool {
+    if let Ok((mut style, children)) = query.get_mut(entity) {
+        style.render_command = StyleProp::Value(RenderCommand::Quad);
+        children.process(&widget_context, Some(entity));
     }
+    true
 }

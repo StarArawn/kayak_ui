@@ -179,7 +179,10 @@ pub fn window_render(
                     }
                     <ClipBundle
                         styles={KStyle {
-                            padding: StyleProp::Value(Edge::all(Units::Pixels(10.0))),
+                            top: Units::Pixels(10.0).into(),
+                            left: Units::Pixels(10.0).into(),
+                            right: Units::Pixels(10.0).into(),
+                            bottom: Units::Pixels(10.0).into(),
                             ..Default::default()
                         }}
                         children={window_children.clone()}

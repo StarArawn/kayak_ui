@@ -79,17 +79,20 @@ fn move_active_tile(mut tile: Query<(&mut Transform, &ActiveTile)>) {
 
 /// A system that moves the ghost tile to the cursor's position
 fn move_ghost_tile(
+    event_context: Res<EventDispatcher>,
     mut tile: Query<&mut Transform, With<GhostTile>>,
     mut cursor_moved: EventReader<CursorMoved>,
     camera_transform: Query<&GlobalTransform, With<WorldCamera>>,
     windows: Res<Windows>,
 ) {
     for _ in cursor_moved.iter() {
-        let world_pos = cursor_to_world(&windows, &camera_transform.single());
-        let tile_pos = world_to_tile(world_pos);
-        let mut ghost = tile.single_mut();
-        ghost.translation.x = tile_pos.x;
-        ghost.translation.y = tile_pos.y;
+        if !event_context.contains_cursor() {
+            let world_pos = cursor_to_world(&windows, &camera_transform.single());
+            let tile_pos = world_to_tile(world_pos);
+            let mut ghost = tile.single_mut();
+            ghost.translation.x = tile_pos.x;
+            ghost.translation.y = tile_pos.y;
+        }
     }
 }
 

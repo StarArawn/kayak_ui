@@ -3,6 +3,7 @@ use bevy::{
     utils::HashMap,
 };
 use kayak_font::KayakFont;
+use morphorm::Hierarchy;
 
 use crate::{
     layout::{DataCache, Rect},
@@ -21,7 +22,6 @@ pub fn calculate_nodes(
     query: Query<Entity, With<DirtyNode>>,
     all_styles_query: Query<&KStyle>,
     node_query: Query<(Entity, &Node)>,
-    nodes_no_entity_query: Query<&'static Node>,
 ) {
     let mut new_nodes = HashMap::<Entity, (Node, bool)>::default();
     // This is the maximum recursion depth for this method.
@@ -95,6 +95,7 @@ pub fn calculate_nodes(
                 &context,
                 &fonts,
                 &font_mapping,
+                &query,
                 // &node_query,
                 dirty_entity,
                 &mut styles,
@@ -139,18 +140,30 @@ pub fn calculate_nodes(
                 log::trace!("{:?} needs layout!", entity.id());
             }
         }
+    }
+}
 
-        {
-            let context = context.as_mut();
-            if let Ok(tree) = context.tree.try_read() {
-                // tree.dump();
-                let node_tree = &*tree;
-                if let Ok(mut cache) = context.layout_cache.try_write() {
-                    let mut data_cache = DataCache {
-                        cache: &mut cache,
-                        query: &nodes_no_entity_query,
-                    };
-                    morphorm::layout(&mut data_cache, node_tree, &nodes_no_entity_query);
+pub fn calculate_layout(
+    mut commands: Commands,
+    mut context: ResMut<KayakRootContext>,
+    nodes_no_entity_query: Query<&'static Node>,
+) {
+    let context = context.as_mut();
+    if let Ok(tree) = context.tree.try_read() {
+        // tree.dump();
+        let node_tree = &*tree;
+        if let Ok(mut cache) = context.layout_cache.try_write() {
+            let mut data_cache = DataCache {
+                cache: &mut cache,
+                query: &nodes_no_entity_query,
+            };
+            morphorm::layout(&mut data_cache, node_tree, &nodes_no_entity_query);
+
+            for (entity, change) in cache.geometry_changed.iter() {
+                if !change.is_empty() {
+                    for child in tree.child_iter(*entity) {
+                        commands.entity(child.0).insert(DirtyNode);
+                    }
                 }
             }
         }
@@ -163,11 +176,12 @@ fn create_primitive(
     fonts: &Assets<KayakFont>,
     font_mapping: &FontMapping,
     // query: &Query<(Entity, &Node)>,
+    dirty: &Query<Entity, With<DirtyNode>>,
     id: WrappedIndex,
     styles: &mut KStyle,
 ) -> (RenderPrimitive, bool) {
     let mut render_primitive = RenderPrimitive::from(&styles.clone());
-    let mut needs_layout = false;
+    let mut needs_layout = true;
 
     match &mut render_primitive {
         RenderPrimitive::Text {
@@ -183,38 +197,40 @@ fn create_primitive(
                 // self.bind(id, &asset);
                 if let Ok(node_tree) = context.tree.try_read() {
                     if let Some(parent_id) = node_tree.get_parent(id) {
-                        if let Some(parent_layout) = context.get_layout(&parent_id) {
-                            properties.max_size = (parent_layout.width, parent_layout.height);
+                        if !dirty.contains(parent_id.0) {
+                            if let Some(parent_layout) = context.get_layout(&parent_id) {
+                                properties.max_size = (parent_layout.width, parent_layout.height);
 
-                            if properties.max_size.0 == 0.0 || properties.max_size.1 == 0.0 {
-                                needs_layout = true;
-                            }
+                                if properties.max_size.0 == 0.0 || properties.max_size.1 == 0.0 {
+                                    needs_layout = true;
+                                } else {
+                                    needs_layout = false;
+                                }
 
-                            // --- Calculate Text Layout --- //
-                            *text_layout = font.measure(&content, *properties);
-                            let measurement = text_layout.size();
+                                if context.get_geometry_changed(&parent_id) {
+                                    needs_layout = true;
+                                }
 
-                            // --- Apply Layout --- //
-                            if matches!(styles.width, StyleProp::Default) {
-                                styles.width = StyleProp::Value(Units::Pixels(measurement.0));
+                                // --- Calculate Text Layout --- //
+                                *text_layout = font.measure(&content, *properties);
+                                let measurement = text_layout.size();
+
+                                // --- Apply Layout --- //
+                                if matches!(styles.width, StyleProp::Default) {
+                                    styles.width = StyleProp::Value(Units::Pixels(measurement.0));
+                                }
+                                if matches!(styles.height, StyleProp::Default) {
+                                    styles.height = StyleProp::Value(Units::Pixels(measurement.1));
+                                }
                             }
-                            if matches!(styles.height, StyleProp::Default) {
-                                styles.height = StyleProp::Value(Units::Pixels(measurement.1));
-                            }
-                        } else {
-                            needs_layout = true;
                         }
-                    } else {
-                        needs_layout = true;
                     }
-                } else {
-                    needs_layout = true;
                 }
-            } else {
-                needs_layout = true;
             }
         }
-        _ => {}
+        _ => {
+            needs_layout = false;
+        }
     }
 
     if needs_layout {

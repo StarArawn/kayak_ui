@@ -8,7 +8,7 @@ use bevy::{
 use morphorm::Hierarchy;
 
 use crate::{
-    calculate_nodes::calculate_nodes,
+    calculate_nodes::{calculate_layout, calculate_nodes},
     children::KChildren,
     clone_component::{clone_state, clone_system, EntityCloneSystems, PreviousWidget},
     context_entities::ContextEntities,
@@ -108,6 +108,18 @@ impl KayakRootContext {
             cache.rect.get(id).cloned()
         } else {
             None
+        }
+    }
+
+    pub(crate) fn get_geometry_changed(&self, id: &WrappedIndex) -> bool {
+        if let Ok(cache) = self.layout_cache.try_read() {
+            if let Some(geometry_changed) = cache.geometry_changed.get(id) {
+                !geometry_changed.is_empty()
+            } else {
+                false
+            }
+        } else {
+            false
         }
     }
 
@@ -709,12 +721,18 @@ impl Plugin for KayakContextPlugin {
 
 fn calculate_ui(world: &mut World) {
     // dbg!("Calculating nodes!");
-    let mut system = IntoSystem::into_system(calculate_nodes);
-    system.initialize(world);
+    let mut node_system = IntoSystem::into_system(calculate_nodes);
+    node_system.initialize(world);
+
+    let mut layout_system = IntoSystem::into_system(calculate_layout);
+    layout_system.initialize(world);
 
     for _ in 0..5 {
-        system.run((), world);
-        system.apply_buffers(world);
+        node_system.run((), world);
+        node_system.apply_buffers(world);
+
+        layout_system.run((), world);
+        layout_system.apply_buffers(world);
         world.resource_scope::<KayakRootContext, _>(|world, mut context| {
             LayoutEventDispatcher::dispatch(&mut context, world);
         });

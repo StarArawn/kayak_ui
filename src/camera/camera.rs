@@ -1,4 +1,5 @@
 use bevy::{
+    core_pipeline::clear_color::ClearColorConfig,
     ecs::query::QueryItem,
     prelude::{Bundle, Component, GlobalTransform, Transform, With},
     render::{
@@ -13,9 +14,11 @@ use super::ortho::UIOrthographicProjection;
 
 /// Kayak UI's default UI camera.
 #[derive(Component, Clone, Default)]
-pub struct CameraUiKayak;
+pub struct CameraUIKayak {
+    pub clear_color: ClearColorConfig,
+}
 
-impl ExtractComponent for CameraUiKayak {
+impl ExtractComponent for CameraUIKayak {
     type Query = &'static Self;
     type Filter = With<Camera>;
 
@@ -35,7 +38,7 @@ pub struct UICameraBundle {
     pub frustum: Frustum,
     pub transform: Transform,
     pub global_transform: GlobalTransform,
-    pub marker: CameraUiKayak,
+    pub camera_ui: CameraUIKayak,
 }
 
 impl UICameraBundle {
@@ -73,7 +76,9 @@ impl UICameraBundle {
             transform,
             // camera_2d: Camera2d::default(),
             global_transform: Default::default(),
-            marker: CameraUiKayak,
+            camera_ui: CameraUIKayak {
+                clear_color: ClearColorConfig::None,
+            },
         }
     }
 }

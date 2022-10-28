@@ -6,7 +6,7 @@ use bevy::{
 mod camera;
 mod ortho;
 
-pub use camera::{CameraUiKayak, UICameraBundle};
+pub use camera::{CameraUIKayak, UICameraBundle};
 pub(crate) use ortho::UIOrthographicProjection;
 
 pub struct KayakUICameraPlugin;
@@ -18,6 +18,6 @@ impl Plugin for KayakUICameraPlugin {
             bevy::render::camera::camera_system::<UIOrthographicProjection>,
         )
         .add_plugin(CameraProjectionPlugin::<UIOrthographicProjection>::default())
-        .add_plugin(ExtractComponentPlugin::<CameraUiKayak>::default());
+        .add_plugin(ExtractComponentPlugin::<CameraUIKayak>::default());
     }
 }

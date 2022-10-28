@@ -1,4 +1,6 @@
+use bevy::core_pipeline::clear_color::ClearColorConfig;
 use bevy::ecs::prelude::*;
+use bevy::prelude::ClearColor;
 use bevy::render::render_phase::{DrawFunctionId, PhaseItem};
 use bevy::render::render_resource::CachedRenderPipelineId;
 use bevy::render::{
@@ -9,6 +11,8 @@ use bevy::render::{
     view::{ExtractedView, ViewTarget},
 };
 use bevy::utils::FloatOrd;
+
+use crate::CameraUIKayak;
 
 pub struct TransparentUI {
     pub sort_key: FloatOrd,
@@ -32,8 +36,14 @@ impl PhaseItem for TransparentUI {
 }
 
 pub struct MainPassUINode {
-    query:
-        QueryState<(&'static RenderPhase<TransparentUI>, &'static ViewTarget), With<ExtractedView>>,
+    query: QueryState<
+        (
+            &'static RenderPhase<TransparentUI>,
+            &'static ViewTarget,
+            &'static CameraUIKayak,
+        ),
+        With<ExtractedView>,
+    >,
 }
 
 impl MainPassUINode {
@@ -41,7 +51,7 @@ impl MainPassUINode {
 
     pub fn new(world: &mut World) -> Self {
         Self {
-            query: QueryState::new(world),
+            query: world.query_filtered(),
         }
     }
 }
@@ -64,7 +74,8 @@ impl Node for MainPassUINode {
         let view_entity = graph.get_input_entity(Self::IN_VIEW)?;
         // adapted from bevy itself;
         // see: <https://github.com/bevyengine/bevy/commit/09a3d8abe062984479bf0e99fcc1508bb722baf6>
-        let (transparent_phase, target) = match self.query.get_manual(world, view_entity) {
+        let (transparent_phase, target, camera_ui) = match self.query.get_manual(world, view_entity)
+        {
             Ok(it) => it,
             _ => return Ok(()),
         };
@@ -73,7 +84,13 @@ impl Node for MainPassUINode {
             let pass_descriptor = RenderPassDescriptor {
                 label: Some("main_transparent_pass_UI"),
                 color_attachments: &[Some(target.get_unsampled_color_attachment(Operations {
-                    load: LoadOp::Load,
+                    load: match camera_ui.clear_color {
+                        ClearColorConfig::Default => {
+                            LoadOp::Clear(world.resource::<ClearColor>().0.into())
+                        }
+                        ClearColorConfig::Custom(color) => LoadOp::Clear(color.into()),
+                        ClearColorConfig::None => LoadOp::Load,
+                    },
                     store: true,
                 }))],
                 depth_stencil_attachment: None,

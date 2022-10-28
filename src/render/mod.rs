@@ -9,7 +9,7 @@ use bevy::{
 
 use crate::{
     render::{ui_pass::MainPassUINode, unified::UnifiedRenderPlugin},
-    CameraUiKayak,
+    CameraUIKayak,
 };
 
 use self::{extract::BevyKayakUIExtractPlugin, ui_pass::TransparentUI};
@@ -167,7 +167,7 @@ fn get_ui_graph(render_app: &mut App) -> RenderGraph {
 
 pub fn extract_core_pipeline_camera_phases(
     mut commands: Commands,
-    active_camera: Extract<Query<Entity, With<CameraUiKayak>>>,
+    active_camera: Extract<Query<Entity, With<CameraUIKayak>>>,
 ) {
     if let Ok(entity) = active_camera.get_single() {
         commands

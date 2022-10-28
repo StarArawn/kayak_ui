@@ -7,6 +7,7 @@ use crate::{
     prelude::KayakWidgetContext,
     styles::{KStyle, RenderCommand, StyleProp},
     widget::{EmptyState, Widget, WidgetParam},
+    CameraUIKayak,
 };
 
 #[derive(Component, Default, Clone, PartialEq)]
@@ -62,14 +63,29 @@ pub fn app_render(
     _: Commands,
     windows: Res<Windows>,
     mut query: Query<(&mut KStyle, &KChildren)>,
+    camera: Query<&Camera, With<CameraUIKayak>>,
 ) -> bool {
-    let primary_window = windows.get_primary().unwrap();
-    if let Ok((mut app_style, children)) = query.get_mut(entity) {
-        if app_style.width != StyleProp::Value(Units::Pixels(primary_window.width())) {
-            app_style.width = StyleProp::Value(Units::Pixels(primary_window.width()));
+    let (mut width, mut height) = (0.0, 0.0);
+
+    if let Ok(camera) = camera.get_single() {
+        if let Some(size) = camera.logical_viewport_size() {
+            width = size.x;
+            height = size.y;
         }
-        if app_style.height != StyleProp::Value(Units::Pixels(primary_window.height())) {
-            app_style.height = StyleProp::Value(Units::Pixels(primary_window.height()));
+    }
+
+    if width == 0.0 {
+        let primary_window = windows.get_primary().unwrap();
+        width = primary_window.width();
+        height = primary_window.height();
+    }
+
+    if let Ok((mut app_style, children)) = query.get_mut(entity) {
+        if app_style.width != StyleProp::Value(Units::Pixels(width)) {
+            app_style.width = StyleProp::Value(Units::Pixels(width));
+        }
+        if app_style.height != StyleProp::Value(Units::Pixels(height)) {
+            app_style.height = StyleProp::Value(Units::Pixels(height));
         }
         app_style.render_command = StyleProp::Value(RenderCommand::Layout);
         children.process(&widget_context, Some(entity));

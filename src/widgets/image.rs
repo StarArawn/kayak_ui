@@ -10,13 +10,13 @@ use crate::{
 /// Renders a bevy image asset within the GUI
 /// The rendered image respects the styles.
 #[derive(Component, PartialEq, Clone, Default)]
-pub struct Image(pub Handle<bevy::prelude::Image>);
+pub struct KImage(pub Handle<bevy::prelude::Image>);
 
-impl Widget for Image {}
+impl Widget for KImage {}
 
 #[derive(Bundle)]
 pub struct KImageBundle {
-    pub image: Image,
+    pub image: KImage,
     pub style: KStyle,
     pub widget_name: WidgetName,
 }
@@ -26,14 +26,14 @@ impl Default for KImageBundle {
         Self {
             image: Default::default(),
             style: Default::default(),
-            widget_name: Image::default().get_name(),
+            widget_name: KImage::default().get_name(),
         }
     }
 }
 
 pub fn image_render(
     In((_widget_context, entity)): In<(KayakWidgetContext, Entity)>,
-    mut query: Query<(&mut KStyle, &Image)>,
+    mut query: Query<(&mut KStyle, &KImage)>,
 ) -> bool {
     if let Ok((mut style, image)) = query.get_mut(entity) {
         style.render_command = StyleProp::Value(RenderCommand::Image {

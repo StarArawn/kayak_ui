@@ -6,7 +6,7 @@ Because a crate has yet to be released this currently this looks like:
 kayak_ui = { git = "https://github.com/StarArawn/kayak_ui/", rev = "9b212e230a5325a3ac6897390ded0bc358eebc80"}
 ```
 
-Once you've added Kayak UI to your bevy project you can now start to use it! 
+Once you've added Kayak UI to your bevy project you can now start to use it! In order for you to copy and run this in your own project don't forget to move the `roboto.kayak_font` and the `roboto.png` files to your asset folder. Optionally you can also generate your own font! See: [Chapter 5 - Fonts](./chapter_5.md)
 
 Hello World Example:
 ```rust

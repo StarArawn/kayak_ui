@@ -17,6 +17,7 @@ fn startup(
             <TextWidgetBundle
                 text={TextProps {
                     content: "Hello World".into(),
+                    size: 20.0,
                     ..Default::default()
                 }}
             />

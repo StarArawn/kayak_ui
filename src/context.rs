@@ -387,7 +387,9 @@ fn update_widgets_sys(world: &mut World) {
         let current = focus_tree.current();
         focus_tree.clear();
         if let Ok(tree) = context.tree.read() {
-            focus_tree.add(tree.root_node.unwrap(), &tree);
+            if let Some(root_node) = tree.root_node {
+                focus_tree.add(root_node, &tree);
+            }
         }
         current
     } else {

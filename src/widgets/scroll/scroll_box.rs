@@ -85,7 +85,7 @@ pub fn scroll_box_render(
     if let Ok((scroll_box, mut styles, scroll_box_children, mut on_layout)) = query.get_mut(entity)
     {
         if let Some(context_entity) = widget_context.get_context_entity::<ScrollContext>(entity) {
-            if let Ok(scroll_context) = context_query.p1().get(context_entity).cloned() {
+            if let Ok(scroll_context) = context_query.p0().get(context_entity).cloned() {
                 // === Configuration === //
                 let always_show_scrollbar = scroll_box.always_show_scrollbar;
                 let disable_horizontal = scroll_box.disable_horizontal;

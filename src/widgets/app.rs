@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use kayak_ui_macros::rsx;
 use morphorm::Units;
 
 use crate::{
@@ -9,6 +10,8 @@ use crate::{
     widget::{EmptyState, Widget, WidgetParam},
     CameraUIKayak,
 };
+
+use super::ClipBundle;
 
 #[derive(Component, Default, Clone, PartialEq)]
 pub struct KayakApp;
@@ -60,7 +63,7 @@ pub fn app_update(
 /// TODO: USE CAMERA INSTEAD OF WINDOW!!
 pub fn app_render(
     In((widget_context, entity)): In<(KayakWidgetContext, Entity)>,
-    _: Commands,
+    mut commands: Commands,
     windows: Res<Windows>,
     mut query: Query<(&mut KStyle, &KChildren)>,
     camera: Query<&Camera, With<CameraUIKayak>>,
@@ -88,7 +91,13 @@ pub fn app_render(
             app_style.height = StyleProp::Value(Units::Pixels(height));
         }
         app_style.render_command = StyleProp::Value(RenderCommand::Layout);
-        children.process(&widget_context, Some(entity));
+        // children.process(&widget_context, Some(entity));
+        let parent_id = Some(entity);
+        rsx! {
+            <ClipBundle
+                children={children.clone()}
+            />
+        }
     }
 
     true

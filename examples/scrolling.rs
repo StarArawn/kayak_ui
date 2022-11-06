@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use kayak_ui::prelude::{widgets::*, KStyle, *};
+use kayak_ui::prelude::{widgets::*, *};
 
 fn startup(
     mut commands: Commands,
@@ -8,20 +8,13 @@ fn startup(
 ) {
     font_mapping.set_default(asset_server.load("roboto.kayak_font"));
 
+    // Camera 2D forces a clear pass in bevy.
+    // We do this because our scene is not rendering anything else.
+    commands.spawn(Camera2dBundle::default());
     commands.spawn(UICameraBundle::new());
-
-    let image = asset_server.load("kenny/panel_brown.png");
 
     let mut widget_context = KayakRootContext::new();
     let parent_id = None;
-
-    let nine_patch_styles = KStyle {
-        width: StyleProp::Value(Units::Pixels(512.0)),
-        height: StyleProp::Value(Units::Pixels(512.0)),
-        offset: StyleProp::Value(Edge::all(Units::Stretch(1.0))),
-        padding: StyleProp::Value(Edge::all(Units::Pixels(25.0))),
-        ..KStyle::default()
-    };
 
     let lorem_ipsum = r#"
 Lorem ipsum dolor sit amet, consectetur adipiscing elit. Cras sed tellus neque. Proin tempus ligula a mi molestie aliquam. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Nullam venenatis consequat ultricies. Sed ac orci purus. Nullam velit nisl, dapibus vel mauris id, dignissim elementum sapien. Vestibulum faucibus sapien ut erat bibendum, id lobortis nisi luctus. Mauris feugiat at lectus at pretium. Pellentesque vitae finibus ante. Nulla non ex neque. Cras varius, lorem facilisis consequat blandit, lorem mauris mollis massa, eget consectetur magna sem vel enim. Nam aliquam risus pulvinar, volutpat leo eget, eleifend urna. Suspendisse in magna sed ligula vehicula volutpat non vitae augue. Phasellus aliquam viverra consequat. Nam rhoncus molestie purus, sed laoreet neque imperdiet eget. Sed egestas metus eget sodales congue.
@@ -37,12 +30,14 @@ Lorem ipsum dolor sit amet, consectetur adipiscing elit. Cras sed tellus neque. 
 
     rsx! {
         <KayakAppBundle>
-            <NinePatchBundle
-                nine_patch={NinePatch {
-                    handle: image.clone(),
-                    border: Edge::all(30.0),
+            <WindowBundle
+                window={KWindow {
+                    title: "Simple scrolling example".into(),
+                    draggable: true,
+                    initial_position: Vec2::new(10.0, 10.0),
+                    size: Vec2::new(512.0, 512.0),
+                    ..KWindow::default()
                 }}
-                styles={nine_patch_styles}
             >
                 <ScrollContextProviderBundle>
                     <ScrollBoxBundle>
@@ -55,7 +50,7 @@ Lorem ipsum dolor sit amet, consectetur adipiscing elit. Cras sed tellus neque. 
                         />
                     </ScrollBoxBundle>
                 </ScrollContextProviderBundle>
-            </NinePatchBundle>
+            </WindowBundle>
         </KayakAppBundle>
     }
     commands.insert_resource(widget_context);
@@ -63,6 +58,7 @@ Lorem ipsum dolor sit amet, consectetur adipiscing elit. Cras sed tellus neque. 
 
 fn main() {
     App::new()
+        .insert_resource(ClearColor(Color::rgb(0.0, 0.0, 0.0)))
         .add_plugins(DefaultPlugins.set(ImagePlugin::default_nearest()))
         .add_plugin(KayakContextPlugin)
         .add_plugin(KayakWidgets)

@@ -34,10 +34,11 @@ mod text;
 mod text_box;
 mod texture_atlas;
 mod window;
+mod window_context_provider;
 
 pub use app::{KayakApp, KayakAppBundle};
 pub use background::{Background, BackgroundBundle};
-pub use button::{KButton, KButtonBundle};
+pub use button::{ButtonState, KButton, KButtonBundle};
 pub use clip::{Clip, ClipBundle};
 pub use element::{Element, ElementBundle};
 pub use image::{KImage, KImageBundle};
@@ -53,7 +54,10 @@ pub use scroll::{
 pub use text::{TextProps, TextWidgetBundle};
 pub use text_box::{TextBoxBundle, TextBoxProps, TextBoxState};
 pub use texture_atlas::{TextureAtlasBundle, TextureAtlasProps};
-pub use window::{KWindow, WindowBundle};
+pub use window::{KWindow, KWindowState, WindowBundle};
+pub use window_context_provider::{
+    WindowContext, WindowContextProvider, WindowContextProviderBundle,
+};
 
 use app::{app_render, app_update};
 use background::background_render;
@@ -76,7 +80,7 @@ use crate::{
     widget::{widget_update, widget_update_with_context, EmptyState, Widget},
 };
 
-use self::window::KWindowState;
+use self::window_context_provider::window_context_render;
 
 pub struct KayakWidgets;
 
@@ -88,9 +92,10 @@ impl Plugin for KayakWidgets {
 
 fn add_widget_systems(mut context: ResMut<KayakRootContext>) {
     context.add_widget_data::<KayakApp, EmptyState>();
-    context.add_widget_data::<KButton, EmptyState>();
+    context.add_widget_data::<KButton, ButtonState>();
     context.add_widget_data::<TextProps, EmptyState>();
     context.add_widget_data::<KWindow, KWindowState>();
+    context.add_widget_data::<WindowContextProvider, EmptyState>();
     context.add_widget_data::<Background, EmptyState>();
     context.add_widget_data::<Clip, EmptyState>();
     context.add_widget_data::<KImage, EmptyState>();
@@ -106,7 +111,7 @@ fn add_widget_systems(mut context: ResMut<KayakRootContext>) {
     context.add_widget_system(KayakApp::default().get_name(), app_update, app_render);
     context.add_widget_system(
         KButton::default().get_name(),
-        widget_update::<KButton, EmptyState>,
+        widget_update::<KButton, ButtonState>,
         button_render,
     );
     context.add_widget_system(
@@ -115,8 +120,13 @@ fn add_widget_systems(mut context: ResMut<KayakRootContext>) {
         text_render,
     );
     context.add_widget_system(
+        WindowContextProvider::default().get_name(),
+        widget_update::<WindowContextProvider, EmptyState>,
+        window_context_render,
+    );
+    context.add_widget_system(
         KWindow::default().get_name(),
-        widget_update::<KWindow, KWindowState>,
+        widget_update_with_context::<KWindow, KWindowState, WindowContext>,
         window_render,
     );
     context.add_widget_system(

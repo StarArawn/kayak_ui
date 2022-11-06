@@ -65,7 +65,7 @@ pub fn render_todo_items(
                     <ElementBundle
                         styles={KStyle {
                             render_command: StyleProp::Value(RenderCommand::Quad),
-                            background_color: StyleProp::Value(Color::rgba(0.0781, 0.0898, 0.101, 1.0)),
+                            background_color: Color::rgba(0.160, 0.172, 0.235, 1.0).into(),
                             border_radius: StyleProp::Value(Corner::all(3.0)),
                             bottom: StyleProp::Value(Units::Pixels(5.0)),
                             height: StyleProp::Value(Units::Auto),
@@ -77,29 +77,27 @@ pub fn render_todo_items(
                         <TextWidgetBundle
                             text={TextProps {
                                 content: content.clone(),
-                                ..Default::default()
-                            }}
-                            styles={KStyle {
-                                right: StyleProp::Value(Units::Stretch(1.0)),
-                                top: StyleProp::Value(Units::Stretch(1.0)),
-                                bottom: StyleProp::Value(Units::Stretch(1.0)),
+                                user_styles: KStyle {
+                                    right: StyleProp::Value(Units::Stretch(1.0)),
+                                    top: StyleProp::Value(Units::Stretch(1.0)),
+                                    bottom: StyleProp::Value(Units::Stretch(1.0)),
+                                    ..Default::default()
+                                },
                                 ..Default::default()
                             }}
                         />
                         <KButtonBundle
-                            styles={KStyle {
-                                width: StyleProp::Value(Units::Pixels(32.0)),
-                                height: StyleProp::Value(Units::Pixels(32.0)),
-                                left: StyleProp::Value(Units::Pixels(15.0)),
-                                ..Default::default()
+                            button={KButton {
+                                text: "X".into(),
+                                user_styles: KStyle {
+                                    width: StyleProp::Value(Units::Pixels(32.0)),
+                                    height: StyleProp::Value(Units::Pixels(32.0)),
+                                    left: StyleProp::Value(Units::Pixels(15.0)),
+                                    ..Default::default()
+                                }
                             }}
                             on_event={handle_click}
-                        >
-                            <TextWidgetBundle text={TextProps {
-                                content: "X".into(),
-                                ..Default::default()
-                            }} />
-                        </KButtonBundle>
+                        />
                     </ElementBundle>
                 }
             })}

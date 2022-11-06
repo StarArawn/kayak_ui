@@ -14,12 +14,14 @@ use crate::{
     styles::{Corner, Edge, KCursorIcon, KPositionType, KStyle, RenderCommand, StyleProp, Units},
     widget::Widget,
     widget_state::WidgetState,
+    Focusable,
 };
 
 use super::{
     background::BackgroundBundle,
     clip::ClipBundle,
     text::{TextProps, TextWidgetBundle},
+    window_context_provider::WindowContext,
     ElementBundle,
 };
 
@@ -33,6 +35,10 @@ pub struct KWindow {
     pub size: Vec2,
     /// The text to display in the window's title bar
     pub title: String,
+    /// Styles for the main window quad.
+    pub window_styles: KStyle,
+    /// A set of styles to apply to the children element wrapper.
+    pub children_styles: KStyle,
 }
 
 #[derive(Component, PartialEq, Clone, Debug, Default)]
@@ -40,6 +46,7 @@ pub struct KWindowState {
     pub is_dragging: bool,
     pub offset: Vec2,
     pub position: Vec2,
+    pub focused: bool,
 }
 
 impl Widget for KWindow {}
@@ -69,10 +76,29 @@ impl Default for WindowBundle {
 pub fn window_render(
     In((widget_context, window_entity)): In<(KayakWidgetContext, Entity)>,
     mut commands: Commands,
-    mut query: Query<(&KStyle, &KChildren, &KWindow)>,
+    mut query: Query<(&mut KStyle, &KChildren, &KWindow)>,
     state_query: Query<&KWindowState>,
+    mut context_query: Query<&mut WindowContext>,
 ) -> bool {
-    if let Ok((window_style, window_children, window)) = query.get_mut(window_entity) {
+    if let Ok((mut window_style, window_children, window)) = query.get_mut(window_entity) {
+        let possible_context_entity =
+            widget_context.get_context_entity::<WindowContext>(window_entity);
+        let z_index = if let Some(window_context_entity) = possible_context_entity {
+            if let Ok(mut window_context) = context_query.get_mut(window_context_entity) {
+                Some(window_context.get_or_add(window_entity))
+            } else {
+                None
+            }
+        } else {
+            None
+        };
+
+        window_style.z_index = if z_index.is_some() {
+            StyleProp::Value(z_index.unwrap() as i32 * 1000)
+        } else {
+            StyleProp::Default
+        };
+
         let title = window.title.clone();
 
         let state_entity = widget_context.use_state(
@@ -82,18 +108,55 @@ pub fn window_render(
                 position: window.initial_position,
                 offset: Vec2::ZERO,
                 is_dragging: false,
+                focused: false,
             },
         );
 
         if let Ok(state) = state_query.get(state_entity) {
             let parent_id = Some(window_entity);
+
+            let focus_event = OnEvent::new(
+                move |In((event_dispatcher_context, _, mut event, _entity)): In<(
+                    EventDispatcherContext,
+                    WidgetState,
+                    Event,
+                    Entity,
+                )>,
+                      mut query: Query<&mut KWindowState>,
+                      mut context_query: Query<&mut WindowContext>| {
+                    if let Ok(mut window) = query.get_mut(state_entity) {
+                        event.stop_propagation();
+                        event.prevent_default();
+                        match event.event_type {
+                            EventType::Focus => {
+                                window.focused = true;
+                                if let Some(window_context_entity) = possible_context_entity {
+                                    if let Ok(mut context) =
+                                        context_query.get_mut(window_context_entity)
+                                    {
+                                        context.shift_to_top(window_entity);
+                                    }
+                                }
+                            }
+                            EventType::Blur => {
+                                window.focused = false;
+                                window.is_dragging = false;
+                            }
+                            _ => {}
+                        }
+                    }
+                    (event_dispatcher_context, event)
+                },
+            );
+
             rsx! {
                 <ElementBundle
-                    styles={KStyle {
-                        background_color: StyleProp::Value(Color::rgba(0.125, 0.125, 0.125, 1.0)),
-                        border_color: StyleProp::Value(Color::rgba(0.0781, 0.0898, 0.101, 1.0)),
-                        border: StyleProp::Value(Edge::all(4.0)),
-                        border_radius: StyleProp::Value(Corner::all(5.0)),
+                    id={"window_entity"}
+                    styles={window.window_styles.clone().with_style(KStyle {
+                        background_color: StyleProp::Value(Color::rgba(0.188, 0.203, 0.274, 1.0)),
+                        border_color: StyleProp::Value(if state.focused { Color::rgba(0.933, 0.745, 0.745, 1.0) } else { Color::rgba(0.239, 0.258, 0.337, 1.0) }),
+                        border: StyleProp::Value(Edge::all(2.0)),
+                        border_radius: StyleProp::Value(Corner::all(10.0)),
                         render_command: StyleProp::Value(RenderCommand::Quad),
                         position_type: StyleProp::Value(KPositionType::SelfDirected),
                         left: StyleProp::Value(Units::Pixels(state.position.x)),
@@ -102,16 +165,18 @@ pub fn window_render(
                         height: StyleProp::Value(Units::Pixels(window.size.y)),
                         min_width: StyleProp::Value(Units::Pixels(window.size.x)),
                         min_height: StyleProp::Value(Units::Pixels(window.size.y)),
-                        ..window_style.clone()
-                    }}
+                        ..Default::default()
+                    })}
+                    on_event={focus_event}
                 >
+                    {commands.entity(window_entity).insert(Focusable)}
                     <BackgroundBundle
                         id={"title_bar_entity"}
                         styles={KStyle {
                             cursor: StyleProp::Value(KCursorIcon(CursorIcon::Hand)),
                             render_command: StyleProp::Value(RenderCommand::Quad),
-                            background_color: StyleProp::Value(Color::rgba(0.0781, 0.0898, 0.101, 1.0)),
-                            border_radius: StyleProp::Value(Corner::all(5.0)),
+                            background_color: StyleProp::Value(Color::rgba(0.188, 0.203, 0.274, 1.0)),
+                            border_radius: Corner::all(10.0).into(),
                             height: StyleProp::Value(Units::Pixels(24.0)),
                             width: StyleProp::Value(Units::Stretch(1.0)),
                             left: StyleProp::Value(Units::Pixels(0.0)),
@@ -119,6 +184,8 @@ pub fn window_render(
                             top: StyleProp::Value(Units::Pixels(0.0)),
                             bottom: StyleProp::Value(Units::Pixels(0.0)),
                             padding_left: StyleProp::Value(Units::Pixels(5.0)),
+                            padding_top: Units::Stretch(1.0).into(),
+                            padding_bottom: Units::Stretch(1.0).into(),
                             ..KStyle::default()
                         }}
                     >
@@ -126,21 +193,24 @@ pub fn window_render(
                             text={TextProps {
                                 content: title.clone(),
                                 size: 14.0,
-                                line_height: Some(25.0),
+                                user_styles: KStyle {
+                                    top: Units::Stretch(1.0).into(),
+                                    bottom: Units::Stretch(1.0).into(),
+                                    ..Default::default()
+                                },
                                 ..Default::default()
-                            }}
-                            styles={KStyle {
-                                height: StyleProp::Value(Units::Pixels(25.0)),
-                                ..KStyle::default()
                             }}
                         />
                     </BackgroundBundle>
                     {
+                        // This code needs to go after the closing tag for the background bundle as that is when the
+                        // widget is "spawned". Adding this code after just the starting tag will cause this OnEvent
+                        // to be wiped out with a default version.
                         if window.draggable {
                             commands
                                 .entity(title_bar_entity)
                                 .insert(OnEvent::new(
-                                    move |In((mut event_dispatcher_context, _, event, entity)): In<(
+                                    move |In((mut event_dispatcher_context, _, mut event, entity)): In<(
                                         EventDispatcherContext,
                                         WidgetState,
                                         Event,
@@ -148,6 +218,8 @@ pub fn window_render(
                                     )>,
                                         mut query: Query<&mut KWindowState>| {
                                         if let Ok(mut window) = query.get_mut(state_entity) {
+                                            event.prevent_default();
+                                            event.stop_propagation();
                                             match event.event_type {
                                                 EventType::MouseDown(data) => {
                                                     event_dispatcher_context.capture_cursor(entity);
@@ -177,14 +249,22 @@ pub fn window_render(
                                 ));
                         }
                     }
-                    <ClipBundle
+                    <BackgroundBundle
                         styles={KStyle {
+                            background_color: StyleProp::Value(Color::rgba(0.239, 0.258, 0.337, 1.0)),
+                            width: Units::Stretch(1.0).into(),
+                            height: Units::Pixels(2.0).into(),
+                            ..Default::default()
+                        }}
+                    />
+                    <ClipBundle
+                        styles={window.children_styles.clone().with_style(KStyle {
                             top: Units::Pixels(10.0).into(),
                             left: Units::Pixels(10.0).into(),
                             right: Units::Pixels(10.0).into(),
                             bottom: Units::Pixels(10.0).into(),
                             ..Default::default()
-                        }}
+                        })}
                         children={window_children.clone()}
                     />
                 </ElementBundle>

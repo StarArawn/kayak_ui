@@ -8,10 +8,10 @@ use morphorm::Hierarchy;
 use crate::{
     layout::{DataCache, Rect},
     node::{DirtyNode, Node, NodeBuilder, WrappedIndex},
-    prelude::{KStyle, KayakRootContext},
+    prelude::{KStyle, KayakRootContext, Tree},
     render::font::FontMapping,
     render_primitive::RenderPrimitive,
-    styles::{StyleProp, Units},
+    styles::{RenderCommand, StyleProp, Units},
 };
 
 pub fn calculate_nodes(
@@ -37,7 +37,11 @@ pub fn calculate_nodes(
     // if query.is_empty() {
     //     return;
     // }
-    if let Ok(tree) = context.tree.clone().read() {
+    if let Ok(tree) = context.tree.clone().try_read() {
+        if tree.root_node.is_none() {
+            return;
+        }
+
         for dirty_entity in query.iter() {
             let dirty_entity = WrappedIndex(dirty_entity);
             let styles = all_styles_query
@@ -48,10 +52,10 @@ pub fn calculate_nodes(
             // 2. Unresolved widget prop styles
             // 3. Unresolved default styles
             let parent_styles = if let Some(parent_widget_id) = tree.parents.get(&dirty_entity) {
-                if let Ok((_, parent_node)) = node_query.get(parent_widget_id.0) {
-                    parent_node.resolved_styles.clone()
-                } else if let Some(parent_node) = new_nodes.get(&parent_widget_id.0) {
+                if let Some(parent_node) = new_nodes.get(&parent_widget_id.0) {
                     parent_node.0.resolved_styles.clone()
+                } else if let Ok((_, parent_node)) = node_query.get(parent_widget_id.0) {
+                    parent_node.resolved_styles.clone()
                 } else if let Ok(parent_styles) = all_styles_query.get(parent_widget_id.0) {
                     parent_styles.clone()
                 } else {
@@ -61,27 +65,21 @@ pub fn calculate_nodes(
                 default_styles.clone()
             };
 
-            let parent_z = if let Some(parent_widget_id) = tree.parents.get(&dirty_entity) {
-                if let Ok((_, parent_node)) = node_query.get(parent_widget_id.0) {
-                    parent_node.z
-                } else if let Some(parent_node) = new_nodes.get(&parent_widget_id.0) {
-                    parent_node.0.z
-                } else {
-                    -1.0
-                }
-            } else {
-                -1.0
-            };
-
-            let current_z = {
-                if parent_z > -1.0 {
-                    parent_z + 1.0
-                } else {
-                    let z = context.current_z;
-                    context.current_z += 1.0;
-                    z
-                }
-            };
+            // let parent_z = if let Some(parent_widget_id) = tree.parents.get(&dirty_entity) {
+            //     if let Some(parent_node) = new_nodes.get(&parent_widget_id.0) {
+            //         parent_node.0.z
+            //     } else if let Ok((_, parent_node)) = node_query.get(parent_widget_id.0) {
+            //         parent_node.z
+            //     } else {
+            //         if let Ok(parent_styles) = all_styles_query.get(parent_widget_id.0) {
+            //             parent_styles.z_index.resolve() as f32
+            //         } else {
+            //             -1.0
+            //         }
+            //     }
+            // } else {
+            //     -1.0
+            // };
 
             let raw_styles = styles.clone();
             let mut styles = raw_styles.clone();
@@ -89,6 +87,22 @@ pub fn calculate_nodes(
             styles.apply(&initial_styles);
             // Fill in all `inherited` values for any `inherit` property
             styles.inherit(&parent_styles);
+
+            // let mut current_z = {
+            //     if parent_z > -1.0 {
+            //         parent_z + 1.0
+            //     } else {
+            //         let z = context.current_z;
+            //         context.current_z += 1.0;
+            //         z
+            //     }
+            // };
+
+            let current_z = if matches!(styles.z_index, StyleProp::Value(..)) {
+                styles.z_index.resolve() as f32
+            } else {
+                -1.0
+            };
 
             let (primitive, needs_layout) = create_primitive(
                 &mut commands,
@@ -99,6 +113,11 @@ pub fn calculate_nodes(
                 // &node_query,
                 dirty_entity,
                 &mut styles,
+                node_query
+                    .get(dirty_entity.0)
+                    .and_then(|(_, node)| Ok(node.raw_styles.clone().unwrap_or_default()))
+                    .unwrap_or_default(),
+                &all_styles_query,
             );
 
             let children = tree.children.get(&dirty_entity).cloned().unwrap_or(vec![]);
@@ -127,6 +146,10 @@ pub fn calculate_nodes(
                     );
                 }
             }
+            node.old_z = node_query
+                .get(dirty_entity.0)
+                .and_then(|old_node| Ok(old_node.1.z))
+                .unwrap_or(0.0);
             node.z = current_z;
             new_nodes.insert(dirty_entity.0, (node, needs_layout));
         }
@@ -134,11 +157,13 @@ pub fn calculate_nodes(
         // let has_new_nodes = new_nodes.len() > 0;
 
         for (entity, (node, needs_layout)) in new_nodes.drain() {
-            commands.entity(entity).insert(node);
             if !needs_layout {
                 commands.entity(entity).remove::<DirtyNode>();
-                log::trace!("{:?} needs layout!", entity.id());
+            } else {
+                // log::info!("{:?} needs layout!", entity.id());
             }
+
+            commands.entity(entity).insert(node);
         }
     }
 }
@@ -162,7 +187,10 @@ pub fn calculate_layout(
             for (entity, change) in cache.geometry_changed.iter() {
                 if !change.is_empty() {
                     for child in tree.child_iter(*entity) {
-                        commands.entity(child.0).insert(DirtyNode);
+                        // log::info!("Layout changed for: {:?}", child.0.id());
+                        if let Some(mut entity_commands) = commands.get_entity(child.0) {
+                            entity_commands.insert(DirtyNode);
+                        }
                     }
                 }
             }
@@ -179,6 +207,8 @@ fn create_primitive(
     dirty: &Query<Entity, With<DirtyNode>>,
     id: WrappedIndex,
     styles: &mut KStyle,
+    prev_styles: KStyle,
+    all_styles_query: &Query<&KStyle>,
 ) -> (RenderPrimitive, bool) {
     let mut render_primitive = RenderPrimitive::from(&styles.clone());
     let mut needs_layout = true;
@@ -196,34 +226,64 @@ fn create_primitive(
             if let Some(font) = fonts.get(&font_handle) {
                 // self.bind(id, &asset);
                 if let Ok(node_tree) = context.tree.try_read() {
-                    if let Some(parent_id) = node_tree.get_parent(id) {
-                        if !dirty.contains(parent_id.0) {
-                            if let Some(parent_layout) = context.get_layout(&parent_id) {
-                                properties.max_size = (parent_layout.width, parent_layout.height);
+                    if let Some(parent_id) =
+                        find_not_empty_parent(&node_tree, all_styles_query, &id)
+                    {
+                        if let Some(parent_layout) = context.get_layout(&parent_id) {
+                            let border_x = if let Ok(style) = all_styles_query.get(parent_id.0) {
+                                let border = style.border.resolve();
+                                border.left + border.right
+                            } else {
+                                0.0
+                            };
+                            let border_y = if let Ok(style) = all_styles_query.get(parent_id.0) {
+                                let border = style.border.resolve();
+                                border.top + border.bottom
+                            } else {
+                                0.0
+                            };
+                            properties.max_size = (
+                                parent_layout.width - border_x,
+                                parent_layout.height - border_y,
+                            );
 
-                                if properties.max_size.0 == 0.0 || properties.max_size.1 == 0.0 {
-                                    needs_layout = true;
-                                } else {
-                                    needs_layout = false;
-                                }
+                            needs_layout = false;
 
-                                if context.get_geometry_changed(&parent_id) {
-                                    needs_layout = true;
-                                }
-
-                                // --- Calculate Text Layout --- //
-                                *text_layout = font.measure(&content, *properties);
-                                let measurement = text_layout.size();
-
-                                // --- Apply Layout --- //
-                                if matches!(styles.width, StyleProp::Default) {
-                                    styles.width = StyleProp::Value(Units::Pixels(measurement.0));
-                                }
-                                if matches!(styles.height, StyleProp::Default) {
-                                    styles.height = StyleProp::Value(Units::Pixels(measurement.1));
-                                }
+                            if properties.max_size.0 == 0.0 || properties.max_size.1 == 0.0 {
+                                needs_layout = true;
                             }
+
+                            if context.get_geometry_changed(&parent_id) {
+                                needs_layout = true;
+                            }
+
+                            if dirty.contains(parent_id.0) {
+                                needs_layout = true;
+                            }
+
+                            // --- Calculate Text Layout --- //
+                            *text_layout = font.measure(&content, *properties);
+                            let measurement = text_layout.size();
+
+                            log::trace!(
+                                "Text Node: {}, has a measurement of: {:?}, it's parent takes up: {:?}",
+                                &content,
+                                measurement,
+                                properties.max_size
+                            );
+
+                            // --- Apply Layout --- //
+                            if matches!(styles.width, StyleProp::Default) {
+                                styles.width = StyleProp::Value(Units::Pixels(measurement.0));
+                            }
+                            if matches!(styles.height, StyleProp::Default) {
+                                styles.height = StyleProp::Value(Units::Pixels(measurement.1));
+                            }
+                        } else {
+                            log::trace!("no layout for: {:?}", parent_id.0.id());
                         }
+                    } else {
+                        log::trace!("No parent found for: {:?}", id.0.id());
                     }
                 }
             }
@@ -237,7 +297,36 @@ fn create_primitive(
         commands.entity(id.0).insert(DirtyNode);
     }
 
+    // If we have data from the previous frame no need to do anything here!
+    if matches!(prev_styles.width, StyleProp::Value(..)) {
+        styles.width = prev_styles.width;
+        styles.height = prev_styles.height;
+        needs_layout = false;
+    }
+
     (render_primitive, needs_layout)
+}
+
+pub fn find_not_empty_parent(
+    tree: &Tree,
+    all_styles_query: &Query<&KStyle>,
+    node: &WrappedIndex,
+) -> Option<WrappedIndex> {
+    if let Some(parent) = tree.parent(*node) {
+        if let Ok(styles) = all_styles_query.get(parent.0) {
+            if matches!(styles.render_command.resolve(), RenderCommand::Empty)
+                || matches!(styles.render_command.resolve(), RenderCommand::Layout)
+            {
+                find_not_empty_parent(tree, all_styles_query, &parent)
+            } else {
+                Some(parent)
+            }
+        } else {
+            find_not_empty_parent(tree, all_styles_query, &parent)
+        }
+    } else {
+        None
+    }
 }
 
 // pub fn build_nodes_tree(context: &mut Context, tree: &Tree, node_query: &Query<(Entity, &Node)>) {

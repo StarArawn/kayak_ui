@@ -56,6 +56,18 @@ impl RenderPrimitive {
             _ => (),
         }
     }
+
+    pub fn to_string(&self) -> String {
+        match self {
+            RenderPrimitive::Clip { .. } => "Clip".into(),
+            RenderPrimitive::Quad { .. } => "Quad".into(),
+            RenderPrimitive::Text { .. } => "Text".into(),
+            RenderPrimitive::Image { .. } => "Image".into(),
+            RenderPrimitive::NinePatch { .. } => "NinePatch".into(),
+            RenderPrimitive::TextureAtlas { .. } => "TextureAtlas".into(),
+            RenderPrimitive::Empty { .. } => "Empty".into(),
+        }
+    }
 }
 
 impl From<&KStyle> for RenderPrimitive {

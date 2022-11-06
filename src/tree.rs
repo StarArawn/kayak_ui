@@ -78,10 +78,6 @@ impl Tree {
             children
         } else {
             // Is root node
-            self.root_node = None;
-            self.parents.clear();
-            self.children.clear();
-
             Vec::default()
         }
     }
@@ -358,7 +354,7 @@ impl Tree {
             .iter()
             .map(|(id, node, parent_node, change)| {
                 if change[0] == Change::Deleted {
-                    return (0, *node, *parent_node, change.clone());
+                    return (*id, *node, *parent_node, change.clone());
                 } else if change[0] == Change::Inserted {
                     let child_id = other_tree
                         .children
@@ -671,6 +667,10 @@ impl Tree {
                 self.dump_at_internal(*node_index, depth + 1);
             }
         }
+    }
+
+    pub fn down_iter_at(&self, node: WrappedIndex, include_self: bool) -> DownwardIterator {
+        DownwardIterator::new(self, Some(node), include_self)
     }
 }
 

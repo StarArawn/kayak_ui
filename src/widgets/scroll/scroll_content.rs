@@ -70,7 +70,7 @@ pub fn scroll_content_render(
                         render_command: RenderCommand::Layout.into(),
                         layout_type: LayoutType::Column.into(),
                         min_width: Units::Pixels(
-                            scroll_context.scrollbox_width - scroll_context.pad_x,
+                            scroll_context.scrollbox_width - scroll_context.pad_x - 10.0,
                         )
                         .into(),
                         min_height: Units::Stretch(

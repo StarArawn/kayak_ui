@@ -8,7 +8,7 @@ use crate::{
     on_event::OnEvent,
     on_layout::OnLayout,
     prelude::{KChildren, KayakWidgetContext, OnChange},
-    styles::{Corner, KStyle, RenderCommand, StyleProp, Units},
+    styles::{Edge, KStyle, RenderCommand, StyleProp, Units},
     widget::Widget,
     widget_state::WidgetState,
     widgets::{
@@ -74,6 +74,7 @@ pub fn text_box_render(
     In((widget_context, entity)): In<(KayakWidgetContext, Entity)>,
     mut commands: Commands,
     mut query: Query<(&mut KStyle, &TextBoxProps, &mut OnEvent, &OnChange)>,
+    state_query: Query<&TextBoxState>,
 ) -> bool {
     if let Ok((mut styles, text_box, mut on_event, on_change)) = query.get_mut(entity) {
         let state_entity = widget_context.use_state::<TextBoxState>(
@@ -82,102 +83,114 @@ pub fn text_box_render(
             TextBoxState::default(),
         );
 
-        *styles = KStyle::default()
-            // Required styles
-            .with_style(KStyle {
-                render_command: RenderCommand::Layout.into(),
-                ..Default::default()
-            })
-            // Apply any prop-given styles
-            .with_style(&*styles)
-            // If not set by props, apply these styles
-            .with_style(KStyle {
-                top: Units::Pixels(0.0).into(),
-                bottom: Units::Pixels(0.0).into(),
+        if let Ok(state) = state_query.get(state_entity) {
+            *styles = KStyle::default()
+                // Required styles
+                .with_style(KStyle {
+                    render_command: RenderCommand::Layout.into(),
+                    ..Default::default()
+                })
+                // Apply any prop-given styles
+                .with_style(&*styles)
+                // If not set by props, apply these styles
+                .with_style(KStyle {
+                    top: Units::Pixels(0.0).into(),
+                    bottom: Units::Pixels(0.0).into(),
+                    height: Units::Pixels(26.0).into(),
+                    // cursor: CursorIcon::Text.into(),
+                    ..Default::default()
+                });
+
+            let background_styles = KStyle {
+                render_command: StyleProp::Value(RenderCommand::Quad),
+                background_color: Color::rgba(0.160, 0.172, 0.235, 1.0).into(),
+                border_color: if state.focused {
+                    Color::rgba(0.933, 0.745, 0.745, 1.0).into()
+                } else {
+                    Color::rgba(0.360, 0.380, 0.474, 1.0).into()
+                },
+                border: Edge::new(0.0, 0.0, 0.0, 2.0).into(),
                 height: Units::Pixels(26.0).into(),
-                // cursor: CursorIcon::Text.into(),
+                padding_left: Units::Pixels(5.0).into(),
+                padding_right: Units::Pixels(5.0).into(),
                 ..Default::default()
-            });
+            };
 
-        let background_styles = KStyle {
-            render_command: StyleProp::Value(RenderCommand::Quad),
-            background_color: StyleProp::Value(Color::rgba(0.176, 0.196, 0.215, 1.0)),
-            border_radius: Corner::all(5.0).into(),
-            height: Units::Pixels(26.0).into(),
-            padding_left: Units::Pixels(5.0).into(),
-            padding_right: Units::Pixels(5.0).into(),
-            ..Default::default()
-        };
+            let current_value = text_box.value.clone();
+            let cloned_on_change = on_change.clone();
 
-        let current_value = text_box.value.clone();
-        let cloned_on_change = on_change.clone();
-
-        *on_event = OnEvent::new(
-            move |In((event_dispatcher_context, _, mut event, _entity)): In<(
-                EventDispatcherContext,
-                WidgetState,
-                Event,
-                Entity,
-            )>,
-                  mut state_query: Query<&mut TextBoxState>| {
-                match event.event_type {
-                    EventType::CharInput { c } => {
-                        let mut current_value = current_value.clone();
-                        let cloned_on_change = cloned_on_change.clone();
-                        if let Ok(state) = state_query.get(state_entity) {
-                            if !state.focused {
+            *on_event = OnEvent::new(
+                move |In((event_dispatcher_context, _, mut event, _entity)): In<(
+                    EventDispatcherContext,
+                    WidgetState,
+                    Event,
+                    Entity,
+                )>,
+                      mut state_query: Query<&mut TextBoxState>| {
+                    match event.event_type {
+                        EventType::CharInput { c } => {
+                            let mut current_value = current_value.clone();
+                            let cloned_on_change = cloned_on_change.clone();
+                            if let Ok(state) = state_query.get(state_entity) {
+                                if !state.focused {
+                                    return (event_dispatcher_context, event);
+                                }
+                            } else {
                                 return (event_dispatcher_context, event);
                             }
-                        } else {
-                            return (event_dispatcher_context, event);
-                        }
-                        if is_backspace(c) {
-                            if !current_value.is_empty() {
-                                current_value.truncate(current_value.len() - 1);
+                            if is_backspace(c) {
+                                if !current_value.is_empty() {
+                                    current_value.truncate(current_value.len() - 1);
+                                }
+                            } else if !c.is_control() {
+                                current_value.push(c);
                             }
-                        } else if !c.is_control() {
-                            current_value.push(c);
+                            cloned_on_change.set_value(current_value);
+                            event.add_system(cloned_on_change);
                         }
-                        cloned_on_change.set_value(current_value);
-                        event.add_system(cloned_on_change);
-                    }
-                    EventType::Focus => {
-                        if let Ok(mut state) = state_query.get_mut(state_entity) {
-                            state.focused = true;
+                        EventType::Focus => {
+                            if let Ok(mut state) = state_query.get_mut(state_entity) {
+                                state.focused = true;
+                            }
                         }
-                    }
-                    EventType::Blur => {
-                        if let Ok(mut state) = state_query.get_mut(state_entity) {
-                            state.focused = false;
+                        EventType::Blur => {
+                            if let Ok(mut state) = state_query.get_mut(state_entity) {
+                                state.focused = false;
+                            }
                         }
+                        _ => {}
                     }
-                    _ => {}
-                }
-                (event_dispatcher_context, event)
-            },
-        );
+                    (event_dispatcher_context, event)
+                },
+            );
 
-        let parent_id = Some(entity);
-        rsx! {
-            <BackgroundBundle styles={background_styles}>
-                <ClipBundle styles={KStyle {
-                    height: Units::Pixels(26.0).into(),
-                    padding_left: StyleProp::Value(Units::Stretch(0.0)),
-                    padding_right: StyleProp::Value(Units::Stretch(0.0)),
-                    padding_bottom: StyleProp::Value(Units::Stretch(1.0)),
-                    padding_top: StyleProp::Value(Units::Stretch(1.0)),
-                    ..Default::default()
-                }}>
-                    <TextWidgetBundle
-                        text={TextProps {
-                            content: text_box.value.clone(),
-                            size: 14.0,
-                            line_height: Some(18.0),
-                            ..Default::default()
-                        }}
-                    />
-                </ClipBundle>
-            </BackgroundBundle>
+            let parent_id = Some(entity);
+            rsx! {
+                <BackgroundBundle styles={background_styles}>
+                    <ClipBundle styles={KStyle {
+                        height: Units::Pixels(26.0).into(),
+                        padding_left: StyleProp::Value(Units::Stretch(0.0)),
+                        padding_right: StyleProp::Value(Units::Stretch(0.0)),
+                        padding_bottom: StyleProp::Value(Units::Stretch(1.0)),
+                        padding_top: StyleProp::Value(Units::Stretch(1.0)),
+                        ..Default::default()
+                    }}>
+                        <TextWidgetBundle
+                            text={TextProps {
+                                content: text_box.value.clone(),
+                                size: 14.0,
+                                line_height: Some(18.0),
+                                user_styles: KStyle {
+                                    top: Units::Stretch(1.0).into(),
+                                    bottom: Units::Stretch(1.0).into(),
+                                    ..Default::default()
+                                },
+                                ..Default::default()
+                            }}
+                        />
+                    </ClipBundle>
+                </BackgroundBundle>
+            }
         }
     }
 

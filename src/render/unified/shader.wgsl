@@ -63,7 +63,7 @@ fn sdRoundBox(p: vec2<f32>, b: vec2<f32>, r: f32) -> f32 {
 
 @fragment
 fn fragment(in: VertexOutput) -> @location(0) vec4<f32> {
-    if (quad_type.t == 0) {
+    if quad_type.t == 0 {
         var size = in.size;
         var pos = in.pos.xy * 2.0;
         // Lock border to max size. This is similar to how HTML/CSS handles border radius.
@@ -76,8 +76,8 @@ fn fragment(in: VertexOutput) -> @location(0) vec4<f32> {
         rect_dist = 1.0 - smoothstep(0.0, fwidth(rect_dist), rect_dist);
         return vec4<f32>(in.color.rgb, rect_dist * in.color.a);
     }
-    if (quad_type.t == 1) {
-        var px_range = 3.5;
+    if quad_type.t == 1 {
+        var px_range = 5.0;
         var tex_dimensions = textureDimensions(font_texture);
         var msdf_unit = vec2<f32>(px_range, px_range) / vec2<f32>(f32(tex_dimensions.x), f32(tex_dimensions.y));
         var x = textureSample(font_texture, font_sampler, vec2<f32>(in.uv.x, 1.0 - in.uv.y), i32(in.uv.z));
@@ -86,7 +86,7 @@ fn fragment(in: VertexOutput) -> @location(0) vec4<f32> {
         var a = clamp(sig_dist + 0.5, 0.0, 1.0);
         return vec4<f32>(in.color.rgb, a);
     }
-    if (quad_type.t == 2) {
+    if quad_type.t == 2 {
         var bs = min(in.border_radius, min(in.size.x, in.size.y));
         var mask = sdRoundBox(
             in.pos.xy * 2.0 - (in.size.xy),

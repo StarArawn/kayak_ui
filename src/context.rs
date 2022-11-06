@@ -81,7 +81,8 @@ pub struct KayakRootContext {
     pub(crate) clone_systems: Arc<RwLock<EntityCloneSystems>>,
     pub(crate) cloned_widget_entities: Arc<RwLock<HashMap<Entity, Entity>>>,
     pub(crate) widget_state: WidgetState,
-    index: Arc<RwLock<HashMap<Entity, usize>>>,
+    pub(crate) order_tree: Arc<RwLock<Tree>>,
+    pub(crate) index: Arc<RwLock<HashMap<Entity, usize>>>,
 }
 
 impl KayakRootContext {
@@ -99,6 +100,7 @@ impl KayakRootContext {
             cloned_widget_entities: Default::default(),
             widget_state: Default::default(),
             index: Default::default(),
+            order_tree: Default::default(),
         }
     }
 
@@ -188,36 +190,58 @@ impl KayakRootContext {
         }
     }
 
-    /// Returns a child entity or none if it does not exist.
+    /// Returns a new/existing widget entity.
     /// Because a re-render can potentially spawn new entities it's advised to use this
     /// to avoid creating a new entity.
     ///
     /// Usage:
+    /// ```rust
     /// fn setup() {
     ///     let mut widget_context = WidgetContext::new();
     ///     // Root tree node, no parent node.
-    ///     let root_entity = if let Some(root_entity) =  widget_context.get_child_at(None) {\
-    ///         root_entity
-    ///     } else {
-    ///         // Spawn if it does not exist in the tree!
-    ///         commands.spawn_empty().id()
-    ///     };
+    ///     let root_entity =  widget_context.spawn_widget(&mut commands, None);
     ///     commands.entity(root_entity).insert(KayakAppBundle::default());
     ///     widget_context.add_widget(None, root_entity);
     /// }
-    ///
-    ///
-    pub fn get_child_at(&self, parent_entity: Option<Entity>) -> Option<Entity> {
-        if let Ok(tree) = self.tree.try_read() {
-            if let Some(entity) = parent_entity {
-                let children = tree.child_iter(WrappedIndex(entity)).collect::<Vec<_>>();
-                return children
-                    .get(self.get_and_add_index(entity))
-                    .cloned()
-                    .map(|index| index.0);
+    ///```
+    pub fn spawn_widget(&self, commands: &mut Commands, parent_id: Option<Entity>) -> Entity {
+        let mut entity = None;
+        if let Some(parent_entity) = parent_id {
+            let children = self.get_children_ordered(parent_entity);
+            let child = children.get(self.get_and_add_index(parent_entity)).cloned();
+            if let Some(child) = child {
+                log::trace!("Reusing widget entity {:?}!", child.id());
+                entity = Some(commands.get_or_spawn(child).id());
             }
         }
-        None
+
+        // If we have no entity spawn it!
+        if entity.is_none() {
+            entity = Some(commands.spawn_empty().id());
+            log::trace!(
+                "Spawning new widget with entity {:?}!",
+                entity.unwrap().id()
+            );
+            // We need to add it to the ordered tree
+            if let Ok(mut tree) = self.order_tree.try_write() {
+                tree.add(
+                    WrappedIndex(entity.unwrap()),
+                    parent_id.and_then(|parent| Some(WrappedIndex(parent))),
+                )
+            }
+        }
+        entity.unwrap()
+    }
+
+    fn get_children_ordered(&self, entity: Entity) -> Vec<Entity> {
+        let mut children = vec![];
+        if let Ok(tree) = self.order_tree.read() {
+            let iterator = tree.child_iter(WrappedIndex(entity));
+
+            children = iterator.map(|index| index.0).collect::<Vec<_>>();
+        }
+
+        children
     }
 
     fn get_and_add_index(&self, parent: Entity) -> usize {
@@ -256,98 +280,139 @@ impl KayakRootContext {
 
         // self.node_tree.dump();
 
-        recurse_node_tree_to_build_primitives(
-            &*node_tree,
-            &self.layout_cache,
-            nodes,
-            widget_names,
-            node_tree.root_node.unwrap(),
-            0.0,
-            RenderPrimitive::Empty,
-        )
+        let render_primitives = if let Ok(mut layout_cache) = self.layout_cache.try_write() {
+            recurse_node_tree_to_build_primitives(
+                &*node_tree,
+                &mut layout_cache,
+                nodes,
+                widget_names,
+                node_tree.root_node.unwrap(),
+                0.0,
+                RenderPrimitive::Empty,
+            )
+        } else {
+            vec![]
+        };
+        // render_primitives.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap());
+
+        // render_primitives.iter().enumerate().for_each(|(index, p)| {
+        //     log::info!("Name: {:?}, Z: {:?}", p.to_string(), index);
+        // });
+
+        // dbg!(&render_primitives
+        //     .iter()
+        //     .map(|a| (a.1.to_string(), a.0))
+        //     .collect::<Vec<_>>());
+
+        render_primitives.into_iter().collect()
     }
 }
 
 fn recurse_node_tree_to_build_primitives(
     node_tree: &Tree,
-    layout_cache: &Arc<RwLock<LayoutCache>>,
+    layout_cache: &mut LayoutCache,
     nodes: &Query<&crate::node::Node>,
     widget_names: &Query<&WidgetName>,
     current_node: WrappedIndex,
-    mut main_z_index: f32,
+    main_z_index: f32,
     mut prev_clip: RenderPrimitive,
 ) -> Vec<RenderPrimitive> {
     let mut render_primitives = Vec::new();
     if let Ok(node) = nodes.get(current_node.0) {
-        if let Ok(cache) = layout_cache.try_read() {
-            if let Some(layout) = cache.rect.get(&current_node) {
-                let mut render_primitive = node.primitive.clone();
-                let mut layout = *layout;
-                let new_z_index = if matches!(render_primitive, RenderPrimitive::Clip { .. }) {
-                    main_z_index - 0.1
-                } else {
-                    main_z_index
-                };
-                layout.z_index = new_z_index;
-                render_primitive.set_layout(layout);
+        let mut render_primitive = node.primitive.clone();
+        let mut new_z_index = if matches!(render_primitive, RenderPrimitive::Clip { .. }) {
+            main_z_index
+        } else {
+            main_z_index
+        };
+        let _layout = if let Some(layout) = layout_cache.rect.get_mut(&current_node) {
+            // log::info!(
+            //     "z_index is {} and node.z is {} for: {}-{}",
+            //     new_z_index,
+            //     node.z,
+            //     widget_names.get(current_node.0).unwrap().0,
+            //     current_node.0.id(),
+            // );
 
-                if matches!(render_primitive, RenderPrimitive::Empty) {
-                    log::trace!(
-                        "No render primitive for node: {}-{}",
-                        widget_names.get(current_node.0).unwrap().0,
-                        current_node.0.id(),
-                    );
-                }
+            new_z_index += if node.z <= 0.0 { 0.0 } else { node.z };
 
-                render_primitives.push(render_primitive.clone());
+            layout.z_index = new_z_index;
+            render_primitive.set_layout(*layout);
+            *layout
+        } else {
+            log::warn!(
+                "No layout for node: {}-{}",
+                widget_names.get(current_node.0).unwrap().0,
+                current_node.0.id()
+            );
+            Rect::default()
+        };
 
-                let new_prev_clip = if matches!(render_primitive, RenderPrimitive::Clip { .. }) {
-                    render_primitive.clone()
-                } else {
-                    prev_clip
-                };
-
-                prev_clip = new_prev_clip.clone();
-                if node_tree.children.contains_key(&current_node) {
-                    for child in node_tree.children.get(&current_node).unwrap() {
-                        main_z_index += 1.0;
-                        render_primitives.extend(recurse_node_tree_to_build_primitives(
-                            node_tree,
-                            layout_cache,
-                            nodes,
-                            widget_names,
-                            *child,
-                            main_z_index,
-                            new_prev_clip.clone(),
-                        ));
-
-                        main_z_index = layout.z_index;
-                        // Between each child node we need to reset the clip.
-                        if matches!(prev_clip, RenderPrimitive::Clip { .. }) {
-                            // main_z_index = new_z_index;
-                            match &mut prev_clip {
-                                RenderPrimitive::Clip { layout } => {
-                                    layout.z_index = main_z_index + 0.1;
-                                }
-                                _ => {}
-                            };
-                            render_primitives.push(prev_clip.clone());
-                        }
-                    }
-                } else {
-                    log::trace!(
-                        "No children for node: {}-{}",
-                        widget_names.get(current_node.0).unwrap().0,
-                        current_node.0.id()
-                    );
-                }
-            } else {
-                log::warn!(
-                    "No layout for node: {}-{}",
+        match &render_primitive {
+            RenderPrimitive::Text { content, .. } => {
+                log::trace!(
+                    "Text node: {}-{} is equal to: {}",
                     widget_names.get(current_node.0).unwrap().0,
-                    current_node.0.id()
+                    current_node.0.id(),
+                    content,
                 );
             }
+            RenderPrimitive::Empty => {
+                log::trace!(
+                    "Empty node: {}-{}",
+                    widget_names.get(current_node.0).unwrap().0,
+                    current_node.0.id(),
+                );
+            }
+            _ => {}
+        }
+
+        render_primitives.push(render_primitive.clone());
+
+        let new_prev_clip = if matches!(render_primitive, RenderPrimitive::Clip { .. }) {
+            render_primitive.clone()
+        } else {
+            prev_clip
+        };
+
+        prev_clip = new_prev_clip.clone();
+        if node_tree.children.contains_key(&current_node) {
+            let z = 1.0f32;
+            let mut children_primitives = Vec::new();
+            for child in node_tree.children.get(&current_node).unwrap() {
+                // main_z_index += 1.0;
+                let mut children_p = recurse_node_tree_to_build_primitives(
+                    node_tree,
+                    layout_cache,
+                    nodes,
+                    widget_names,
+                    *child,
+                    main_z_index + if node.z < 0.0 { 0.0 } else { node.z } + z,
+                    new_prev_clip.clone(),
+                );
+
+                // Between each child node we need to reset the clip.
+                if matches!(prev_clip, RenderPrimitive::Clip { .. }) {
+                    children_p.push(prev_clip.clone());
+                }
+
+                if let Ok(node) = nodes.get(child.0) {
+                    let zz = if node.z < 0.0 { z } else { z + node.z };
+                    children_primitives.push((zz, children_p));
+                }
+            }
+
+            // Sort and add
+            children_primitives.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap());
+            for cp in children_primitives.drain(..) {
+                render_primitives.extend(cp.1);
+            }
+        } else {
+            log::trace!(
+                "No children for node: {}-{}",
+                widget_names.get(current_node.0).unwrap().0,
+                current_node.0.id()
+            );
         }
     } else {
         log::error!(
@@ -365,7 +430,10 @@ fn recurse_node_tree_to_build_primitives(
                 )
                 .and_then(|v| Ok(v.0.clone()))
                 .unwrap_or("None".into()),
-            widget_names.get(current_node.0).unwrap().0,
+            widget_names
+                .get(current_node.0)
+                .and_then(|v| Ok(v.0.clone()))
+                .unwrap_or("None".into()),
             current_node.0.id()
         );
     }
@@ -411,6 +479,8 @@ fn update_widgets_sys(world: &mut World) {
         &context.cloned_widget_entities,
         &context.widget_state,
         &mut new_ticks,
+        &context.order_tree,
+        &context.index,
     );
 
     if let Some(old_focus) = old_focus {
@@ -435,8 +505,18 @@ fn update_widgets_sys(world: &mut World) {
         // system.apply_buffers(world);
     }
 
-    // if let Ok(tree) = context.tree.try_read() {
-    // tree.dump();
+    // Clear out indices
+    if let Ok(mut indices) = context.index.try_write() {
+        // for (entity, value) in indices.iter_mut() {
+        //     if tree.root_node.unwrap().0.id() != entity.id() {
+        //         *value = 0;
+        //     }
+        // }
+        indices.clear();
+    }
+
+    // if let Ok(order_tree) = context.order_tree.try_read() {
+    //     order_tree.dump();
     // }
 
     world.insert_resource(context);
@@ -454,6 +534,8 @@ fn update_widgets(
     cloned_widget_entities: &Arc<RwLock<HashMap<Entity, Entity>>>,
     widget_state: &WidgetState,
     new_ticks: &mut HashMap<String, u32>,
+    order_tree: &Arc<RwLock<Tree>>,
+    index: &Arc<RwLock<HashMap<Entity, usize>>>,
 ) {
     for entity in widgets.iter() {
         if let Some(entity_ref) = world.get_entity(entity.0) {
@@ -463,9 +545,12 @@ fn update_widgets(
                     context_entities.clone(),
                     layout_cache.clone(),
                     widget_state.clone(),
+                    order_tree.clone(),
+                    index.clone(),
                 );
                 widget_context.copy_from_point(&tree, *entity);
                 let children_before = widget_context.get_children(entity.0);
+                let widget_name = widget_type.0.clone();
                 let (widget_context, should_update_children) = update_widget(
                     systems,
                     tree,
@@ -482,27 +567,82 @@ fn update_widgets(
 
                 if should_update_children {
                     if let Ok(mut tree) = tree.write() {
+                        // let mut had_removal = false;
                         let diff = tree.diff_children(&widget_context, *entity, UPDATE_DEPTH);
                         for (_index, child, _parent, changes) in diff.changes.iter() {
-                            for change in changes.iter() {
-                                if matches!(change, Change::Inserted) {
-                                    if let Ok(mut cache) = layout_cache.try_write() {
-                                        cache.add(*child);
+                            if changes
+                                .iter()
+                                .any(|change| matches!(change, Change::Inserted))
+                            {
+                                if let Ok(mut cache) = layout_cache.try_write() {
+                                    cache.add(*child);
+                                }
+                            }
+
+                            if changes
+                                .iter()
+                                .any(|change| matches!(change, Change::Deleted))
+                            {
+                                // Children of this node need to be despawned.
+                                let mut despawn_list = Vec::default();
+                                for child in tree.down_iter_at(*child, true) {
+                                    let children = if let Some(parent) = tree.get_parent(child) {
+                                        world.entity(parent.0).get::<KChildren>()
+                                    } else {
+                                        None
+                                    };
+
+                                    if let Some(children) = children {
+                                        if !children.iter().any(|c| *c == child.0) {
+                                            despawn_list.push(child.0);
+                                        }
+                                    } else {
+                                        despawn_list.push(child.0);
+                                    }
+                                    if let Ok(mut order_tree) = order_tree.try_write() {
+                                        // had_removal = true;
+                                        log::trace!(
+                                            "Removing entity! {:?} inside of: {}-{:?}",
+                                            child.0.id(),
+                                            widget_name,
+                                            entity.0.id()
+                                        );
+                                        order_tree.remove(child);
+                                    }
+                                }
+                                for entity in despawn_list.drain(..) {
+                                    if let Some(entity_mut) = world.get_entity_mut(entity) {
+                                        entity_mut.despawn();
                                     }
                                 }
                             }
                         }
-                        // dbg!("Dumping widget tree:");
-                        // widget_context.dump_at(*entity);
-                        // dbg!(entity.0, &diff);
+
+                        // if had_removal {
+                        //     tree.dump();
+                        //     dbg!(&diff);
+                        // }
 
                         tree.merge(&widget_context, *entity, diff, UPDATE_DEPTH);
-                        // dbg!(tree.dump_at(*entity));
+
+                        // if had_removal {
+                        //     tree.dump();
+                        // }
+
+                        for child in widget_context.child_iter(*entity) {
+                            if let Some(mut entity_commands) = world.get_entity_mut(child.0) {
+                                entity_commands.insert(DirtyNode);
+                            }
+                        }
                     }
                 }
 
                 // if should_update_children {
-                let children = widget_context.child_iter(*entity).collect::<Vec<_>>();
+                let children = if let Ok(tree) = tree.read() {
+                    tree.child_iter(*entity).collect::<Vec<_>>()
+                } else {
+                    vec![]
+                };
                 update_widgets(
                     world,
                     tree,
@@ -515,6 +655,8 @@ fn update_widgets(
                     cloned_widget_entities,
                     widget_state,
                     new_ticks,
+                    order_tree,
+                    index,
                 );
                 // }
             }
@@ -550,8 +692,16 @@ fn update_widget(
     let should_rerender = {
         let old_props_entity =
             if let Ok(mut cloned_widget_entities) = cloned_widget_entities.try_write() {
-                if let Some(entity) = cloned_widget_entities.get(&entity.0) {
-                    *entity
+                if let Some(entity) = cloned_widget_entities.get(&entity.0).cloned() {
+                    if let Some(possible_entity) = world.get_entity(entity) {
+                        let target = possible_entity.id();
+                        cloned_widget_entities.insert(entity, target);
+                        target
+                    } else {
+                        let target = world.spawn_empty().insert(PreviousWidget).id();
+                        cloned_widget_entities.insert(entity, target);
+                        target
+                    }
                 } else {
                     let target = world.spawn_empty().insert(PreviousWidget).id();
                     cloned_widget_entities.insert(entity.0, target);
@@ -571,16 +721,23 @@ fn update_widget(
 
         if should_rerender {
             if let Ok(cloned_widget_entities) = cloned_widget_entities.try_read() {
-                let target_entity = cloned_widget_entities.get(&entity.0).unwrap();
-                if let Ok(clone_systems) = clone_systems.try_read() {
-                    for s in clone_systems.0.iter() {
-                        s.0(world, *target_entity, entity.0);
-                        s.1(world, *target_entity, entity.0, &widget_state);
-                        if let Some(styles) = world.entity(entity.0).get::<KStyle>().cloned() {
-                            world.entity_mut(*target_entity).insert(styles);
-                        }
-                        if let Some(children) = world.entity(entity.0).get::<KChildren>().cloned() {
-                            world.entity_mut(*target_entity).insert(children);
+                if let Some(target_entity) = cloned_widget_entities.get(&entity.0) {
+                    if let Ok(clone_systems) = clone_systems.try_read() {
+                        for s in clone_systems.0.iter() {
+                            s.0(world, *target_entity, entity.0);
+                            s.1(world, *target_entity, entity.0, &widget_state);
+                            if let Some(styles) = world.entity(entity.0).get::<KStyle>().cloned() {
+                                if let Some(mut entity) = world.get_entity_mut(*target_entity) {
+                                    entity.insert(styles);
+                                }
+                            }
+                            if let Some(children) =
+                                world.entity(entity.0).get::<KChildren>().cloned()
+                            {
+                                if let Some(mut entity) = world.get_entity_mut(*target_entity) {
+                                    entity.insert(children);
+                                }
+                            }
                         }
                     }
                 }
@@ -600,8 +757,31 @@ fn update_widget(
     // }
 
     let should_update_children;
-    log::trace!("Re-rendering: {:?} {:?}", &widget_type, entity.0.id());
+    if let Ok(tree) = tree.try_read() {
+        log::trace!(
+            "Re-rendering: {:?} {:?}, parent: {:?}",
+            &widget_type,
+            entity.0.id(),
+            tree.parent(entity)
+                .unwrap_or(WrappedIndex(Entity::from_raw(99999)))
+                .0
+                .id()
+        );
+    }
     {
+        // Before rendering widget we need to advance the indices correctly..
+        if let Some(children) = world.get::<KChildren>(entity.0) {
+            let child_count = children.len();
+            if let Ok(mut indices) = widget_context.index.try_write() {
+                indices.insert(entity.0, 0);
+                log::trace!(
+                    "Advancing children for: {:?} by: {:?}",
+                    entity.0.id(),
+                    child_count
+                );
+            }
+        }
+
         // Remove children from previous render.
         widget_context.remove_children(previous_children);
         let widget_render_system = &mut systems.get_mut(&widget_type).unwrap().1;
@@ -612,6 +792,10 @@ fn update_widget(
         new_ticks.insert(widget_type.clone(), new_tick);
         widget_render_system.set_last_change_tick(old_tick);
         widget_render_system.apply_buffers(world);
+
+        if let Ok(mut indices) = widget_context.index.try_write() {
+            indices.insert(entity.0, 0);
+        }
     }
     let widget_context = widget_context.take();
     let mut command_queue = CommandQueue::default();
@@ -631,34 +815,36 @@ fn update_widget(
     // Mark node as needing a recalculation of rendering/layout.
     commands.entity(entity.0).insert(DirtyNode);
 
-    for child in widget_context.child_iter(entity) {
-        commands.entity(child.0).insert(DirtyNode);
-    }
-
-    if let Ok(cloned_widget_entities) = cloned_widget_entities.try_read() {
-        let target_entity = cloned_widget_entities.get(&entity.0).unwrap();
-        if let Some(styles) = world.entity(entity.0).get::<KStyle>().cloned() {
-            commands.entity(*target_entity).insert(styles);
+    for (_index, changed_entity, _parent, changes) in diff.changes.iter() {
+        if changes.iter().any(|change| *change == Change::Deleted) {
+            // commands.entity(changed_entity.0).despawn();
+            // commands.entity(changed_entity.0).remove::<DirtyNode>();
+            // commands.entity(changed_entity.0).despawn_recursive();
         }
-        if let Some(children) = world.entity(entity.0).get::<KChildren>().cloned() {
-            commands.entity(*target_entity).insert(children);
-        }
-    }
-
-    if should_update_children {
-        for (_, changed_entity, _, changes) in diff.changes.iter() {
-            if changes.iter().any(|change| *change == Change::Deleted) {
-                // commands.entity(changed_entity.0).despawn();
-                commands.entity(changed_entity.0).remove::<DirtyNode>();
-            }
-            if changes.iter().any(|change| *change == Change::Inserted) {
-                commands.entity(changed_entity.0).insert(Mounted);
+        if changes.iter().any(|change| *change == Change::Inserted) {
+            if let Some(mut entity_commands) = commands.get_entity(changed_entity.0) {
+                entity_commands.insert(Mounted);
             }
         }
     }
+
     command_queue.apply(world);
 
     if should_update_children {
+        if let Ok(cloned_widget_entities) = cloned_widget_entities.try_read() {
+            if let Some(target_entity) = cloned_widget_entities.get(&entity.0) {
+                if let Some(styles) = world.entity(entity.0).get::<KStyle>().cloned() {
+                    if let Some(mut entity) = world.get_entity_mut(*target_entity) {
+                        entity.insert(styles);
+                    }
+                }
+                if let Some(children) = world.entity(entity.0).get::<KChildren>().cloned() {
+                    if let Some(mut entity) = world.get_entity_mut(*target_entity) {
+                        entity.insert(children);
+                    }
+                }
+            }
+        }
         for (_, child_entity, _, changes) in diff.changes.iter() {
             // Clone to entity.
             if changes.iter().any(|change| *change == Change::Deleted) {
@@ -729,7 +915,7 @@ fn calculate_ui(world: &mut World) {
     let mut layout_system = IntoSystem::into_system(calculate_layout);
     layout_system.initialize(world);
 
-    for _ in 0..5 {
+    for _ in 0..3 {
         node_system.run((), world);
         node_system.apply_buffers(world);
 
@@ -771,7 +957,7 @@ fn calculate_ui(world: &mut World) {
 
 /// A simple component that stores the type name of a widget
 /// This is used by Kayak in order to find out which systems to run.
-#[derive(Component, Debug)]
+#[derive(Component, Debug, Clone, PartialEq)]
 pub struct WidgetName(pub String);
 
 impl From<String> for WidgetName {

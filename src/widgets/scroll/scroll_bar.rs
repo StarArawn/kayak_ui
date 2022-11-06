@@ -78,7 +78,7 @@ pub fn scroll_bar_render(
                 let thickness = scrollbar.thickness;
                 let thumb_color = scrollbar
                     .thumb_color
-                    .unwrap_or_else(|| Color::rgba(0.2981, 0.3098, 0.321, 0.95));
+                    .unwrap_or_else(|| Color::rgba(0.239, 0.258, 0.337, 1.0));
                 let thumb_styles = scrollbar.thumb_styles.clone();
                 let track_color = scrollbar
                     .track_color

@@ -38,22 +38,44 @@ fn current_count_render(
     if let Ok(current_count) = query.get(state_entity) {
         let parent_id = Some(entity);
         rsx! {
-            <TextWidgetBundle
-                text={
-                    TextProps {
-                        content: format!("Current Count: {}", current_count.foo).into(),
-                        size: 16.0,
-                        line_height: Some(40.0),
-                        ..Default::default()
+            <ElementBundle>
+                <TextWidgetBundle
+                    text={
+                        TextProps {
+                            content: format!("Current Count: {}", current_count.foo).into(),
+                            size: 16.0,
+                            line_height: Some(40.0),
+                            ..Default::default()
+                        }
                     }
-                }
-            />
+                />
+                <KButtonBundle
+                    button={KButton {
+                        text: "Click me!".into(),
+                        ..Default::default()
+                    }}
+                    on_event={OnEvent::new(
+                        move |In((event_dispatcher_context, _, mut event, _entity)): In<(EventDispatcherContext, WidgetState, Event, Entity)>,
+                            mut query: Query<&mut CurrentCountState>| {
+                            match event.event_type {
+                                EventType::Click(..) => {
+                                    event.prevent_default();
+                                    event.stop_propagation();
+                                    if let Ok(mut current_count) = query.get_mut(state_entity) {
+                                        current_count.foo += 1;
+                                    }
+                                }
+                                _ => {}
+                            }
+                            (event_dispatcher_context, event)
+                        },
+                    )}
+                />
+            </ElementBundle>
         }
-
-        return true;
     }
 
-    false
+    true
 }
 
 fn startup(
@@ -61,7 +83,7 @@ fn startup(
     mut font_mapping: ResMut<FontMapping>,
     asset_server: Res<AssetServer>,
 ) {
-    font_mapping.set_default(asset_server.load("roboto.kayak_font"));
+    font_mapping.set_default(asset_server.load("lato-light.kayak_font"));
 
     // Camera 2D forces a clear pass in bevy.
     // We do this because our scene is not rendering anything else.
@@ -78,44 +100,30 @@ fn startup(
     );
     rsx! {
         <KayakAppBundle>
-            <WindowBundle
-                window={KWindow {
-                    title: "State Example Window".into(),
-                    draggable: true,
-                    initial_position: Vec2::new(10.0, 10.0),
-                    size: Vec2::new(300.0, 250.0),
-                    ..KWindow::default()
-                }}
-            >
-                <CurrentCountBundle id={"current_count_entity"} />
-                <KButtonBundle
-                    on_event={OnEvent::new(
-                        move |In((event_dispatcher_context, widget_state, event, _entity)): In<(EventDispatcherContext, WidgetState, Event, Entity)>,
-                            mut query: Query<&mut CurrentCountState>| {
-                            match event.event_type {
-                                EventType::Click(..) => {
-                                    if let Some(state_entity) = widget_state.get(current_count_entity) {
-                                        if let Ok(mut current_count) = query.get_mut(state_entity) {
-                                            current_count.foo += 1;
-                                        }
-                                    }
-                                }
-                                _ => {}
-                            }
-                            (event_dispatcher_context, event)
-                        },
-                    )}
+            <WindowContextProviderBundle>
+                <WindowBundle
+                    window={KWindow {
+                        title: "State Example Window".into(),
+                        draggable: true,
+                        initial_position: Vec2::new(10.0, 10.0),
+                        size: Vec2::new(300.0, 250.0),
+                        ..KWindow::default()
+                    }}
                 >
-                    <TextWidgetBundle
-                        text={TextProps {
-                            content: "Click me!".into(),
-                            size: 16.0,
-                            alignment: Alignment::Start,
-                            ..Default::default()
-                        }}
-                    />
-                </KButtonBundle>
-            </WindowBundle>
+                    <CurrentCountBundle />
+                </WindowBundle>
+                <WindowBundle
+                    window={KWindow {
+                        title: "State Example Window".into(),
+                        draggable: true,
+                        initial_position: Vec2::new(500.0, 10.0),
+                        size: Vec2::new(300.0, 250.0),
+                        ..KWindow::default()
+                    }}
+                >
+                    <CurrentCountBundle />
+                </WindowBundle>
+            </WindowContextProviderBundle>
         </KayakAppBundle>
     }
     commands.insert_resource(widget_context);

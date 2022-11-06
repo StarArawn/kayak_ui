@@ -9,13 +9,7 @@ fn startup(
     commands.spawn(UICameraBundle::new());
     let mut widget_context = KayakRootContext::new();
 
-    let pre_existing_app_entity = widget_context.get_child_at(None);
-    let app_entity = if let Some(entity) = pre_existing_app_entity {
-        commands.get_or_spawn(entity).id()
-    } else {
-        commands.spawn_empty().id()
-    };
-
+    let app_entity = widget_context.spawn_widget(&mut commands, None);
     // Create default app bundle
     let mut app_bundle = KayakAppBundle {
         ..Default::default()
@@ -25,12 +19,7 @@ fn startup(
     let mut children = KChildren::new();
 
     // Create the text child
-    let pre_existing_text_entity = widget_context.get_child_at(Some(app_entity));
-    let text_entity = if let Some(entity) = pre_existing_text_entity {
-        commands.get_or_spawn(entity).id()
-    } else {
-        commands.spawn_empty().id()
-    };
+    let text_entity = widget_context.spawn_widget(&mut commands, Some(app_entity));
     commands.entity(text_entity).insert(TextWidgetBundle {
         text: TextProps {
             content: "Hello World".into(),

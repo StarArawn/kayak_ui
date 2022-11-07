@@ -219,6 +219,7 @@ fn create_primitive(
             font,
             properties,
             text_layout,
+            word_wrap,
             ..
         } => {
             // --- Bind to Font Asset --- //
@@ -246,6 +247,11 @@ fn create_primitive(
                                 parent_layout.width - border_x,
                                 parent_layout.height - border_y,
                             );
+
+                            // TODO: Fix this hack.
+                            if !*word_wrap {
+                                properties.max_size.0 = 100000.0;
+                            }
 
                             needs_layout = false;
 

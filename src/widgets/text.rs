@@ -33,6 +33,9 @@ pub struct TextProps {
     pub alignment: Alignment,
     /// Custom styles to pass in.
     pub user_styles: KStyle,
+    /// Basic word wrapping.
+    /// Defautls to true
+    pub word_wrap: bool,
 }
 
 impl Default for TextProps {
@@ -44,6 +47,7 @@ impl Default for TextProps {
             show_cursor: false,
             size: -1.0,
             alignment: Alignment::Start,
+            word_wrap: true,
             user_styles: Default::default(),
         }
     }
@@ -84,6 +88,7 @@ pub fn text_render(
             render_command: StyleProp::Value(RenderCommand::Text {
                 content: text.content.clone(),
                 alignment: text.alignment,
+                word_wrap: text.word_wrap,
             }),
             font: if let Some(ref font) = text.font {
                 StyleProp::Value(font.clone())

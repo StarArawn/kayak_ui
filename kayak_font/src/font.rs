@@ -92,6 +92,11 @@ impl KayakFont {
         width
     }
 
+    /// Splits up the provided &str into grapheme clusters.
+    pub fn get_graphemes<'a>(&'a self, content: &'a str) -> Vec<&'a str> {
+        UnicodeSegmentation::graphemes(content, true).collect::<Vec<_>>()
+    }
+
     /// Measures the given text content and calculates an appropriate layout
     /// given a set of properties.
     ///

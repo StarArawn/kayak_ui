@@ -86,7 +86,8 @@ pub struct KayakWidgets;
 
 impl Plugin for KayakWidgets {
     fn build(&self, app: &mut bevy::prelude::App) {
-        app.add_startup_system_to_stage(StartupStage::PostStartup, add_widget_systems);
+        app.add_startup_system_to_stage(StartupStage::PostStartup, add_widget_systems)
+            .add_system(text_box::cursor_animation_system);
     }
 }
 

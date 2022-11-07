@@ -10,7 +10,7 @@ bevy_renderer = ["bevy"]
 [dependencies]
 anyhow = { version = "1.0" }
 nanoserde = "0.1.30"
-unicode-segmentation = "1.9"
+unicode-segmentation = "1.10.0"
 
 # Provides UAX #14 line break segmentation
 xi-unicode = "0.3"

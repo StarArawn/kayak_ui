@@ -45,7 +45,7 @@ Use bevy main! Make sure the version of Kayak you are using uses the same versio
 
 ```rust
 kayak_ui = { git="https://github.com/StarArawn/kayak_ui", rev="{INSERT_COMMIT_SHA_HERE}" }
-bevy = { git = "https://github.com/bevyengine/bevy", rev="4bcf49b2ea6fb5f42388b0e15d204020053ee5c7" }
+bevy = { git = "https://github.com/bevyengine/bevy", rev="1914a3f288a812667f735ee9e7806cf1560dacc0" }
 ```
 
 ## Check out the book!

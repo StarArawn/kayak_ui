@@ -17,7 +17,7 @@ impl WindowContext {
     }
 
     pub fn shift_to_top(&mut self, entity: Entity) {
-        if let Some(index) = self.order.iter().position(|e| e.id() == entity.id()) {
+        if let Some(index) = self.order.iter().position(|e| *e == entity) {
             self.order.remove(index);
             self.order.push(entity);
         }
@@ -33,7 +33,7 @@ impl WindowContext {
     }
 
     pub fn get_or_add(&mut self, entity: Entity) -> usize {
-        if self.order.iter().any(|e| e.id() == entity.id()) {
+        if self.order.iter().any(|e| *e == entity) {
             self.get(entity)
         } else {
             self.add(entity, 0);

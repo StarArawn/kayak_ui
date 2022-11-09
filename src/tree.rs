@@ -587,7 +587,7 @@ impl Tree {
 
         for (id, _node, _parent_node, _change) in changes.changes.iter() {
             if let Some(child) = children_a.get(*id) {
-                if child.0.id() == 0 {
+                if child.0.index() == 0 {
                     children_a.remove(*id);
                 }
             }
@@ -659,7 +659,7 @@ impl Tree {
 
     fn dump_at_internal(&self, start_index: WrappedIndex, depth: usize) {
         let indent = "  ".repeat(depth);
-        let raw_parts = start_index.0.id();
+        let raw_parts = start_index.0.index();
         println!("{} [{}]", indent, raw_parts,);
 
         if let Some(children) = self.children.get(&start_index) {

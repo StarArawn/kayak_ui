@@ -210,7 +210,7 @@ impl KayakRootContext {
             let children = self.get_children_ordered(parent_entity);
             let child = children.get(self.get_and_add_index(parent_entity)).cloned();
             if let Some(child) = child {
-                log::trace!("Reusing widget entity {:?}!", child.id());
+                log::trace!("Reusing widget entity {:?}!", child.index());
                 entity = Some(commands.get_or_spawn(child).id());
             }
         }
@@ -220,7 +220,7 @@ impl KayakRootContext {
             entity = Some(commands.spawn_empty().id());
             log::trace!(
                 "Spawning new widget with entity {:?}!",
-                entity.unwrap().id()
+                entity.unwrap().index()
             );
             // We need to add it to the ordered tree
             if let Ok(mut tree) = self.order_tree.try_write() {
@@ -343,7 +343,7 @@ fn recurse_node_tree_to_build_primitives(
             log::warn!(
                 "No layout for node: {}-{}",
                 widget_names.get(current_node.0).unwrap().0,
-                current_node.0.id()
+                current_node.0.index()
             );
             Rect::default()
         };
@@ -353,7 +353,7 @@ fn recurse_node_tree_to_build_primitives(
                 log::trace!(
                     "Text node: {}-{} is equal to: {}",
                     widget_names.get(current_node.0).unwrap().0,
-                    current_node.0.id(),
+                    current_node.0.index(),
                     content,
                 );
             }
@@ -361,7 +361,7 @@ fn recurse_node_tree_to_build_primitives(
                 log::trace!(
                     "Empty node: {}-{}",
                     widget_names.get(current_node.0).unwrap().0,
-                    current_node.0.id(),
+                    current_node.0.index(),
                 );
             }
             _ => {}
@@ -411,7 +411,7 @@ fn recurse_node_tree_to_build_primitives(
             log::trace!(
                 "No children for node: {}-{}",
                 widget_names.get(current_node.0).unwrap().0,
-                current_node.0.id()
+                current_node.0.index()
             );
         }
     } else {
@@ -419,7 +419,7 @@ fn recurse_node_tree_to_build_primitives(
             "No render node: {}-{} > {}-{}",
             node_tree
                 .get_parent(current_node)
-                .and_then(|v| Some(v.0.id() as i32))
+                .and_then(|v| Some(v.0.index() as i32))
                 .unwrap_or(-1),
             widget_names
                 .get(
@@ -434,7 +434,7 @@ fn recurse_node_tree_to_build_primitives(
                 .get(current_node.0)
                 .and_then(|v| Ok(v.0.clone()))
                 .unwrap_or("None".into()),
-            current_node.0.id()
+            current_node.0.index()
         );
     }
 
@@ -603,9 +603,9 @@ fn update_widgets(
                                         // had_removal = true;
                                         log::trace!(
                                             "Removing entity! {:?} inside of: {}-{:?}",
-                                            child.0.id(),
+                                            child.0.index(),
                                             widget_name,
-                                            entity.0.id()
+                                            entity.0.index()
                                         );
                                         order_tree.remove(child);
                                     }
@@ -761,11 +761,11 @@ fn update_widget(
         log::trace!(
             "Re-rendering: {:?} {:?}, parent: {:?}",
             &widget_type,
-            entity.0.id(),
+            entity.0.index(),
             tree.parent(entity)
                 .unwrap_or(WrappedIndex(Entity::from_raw(99999)))
                 .0
-                .id()
+                .index()
         );
     }
     {
@@ -776,7 +776,7 @@ fn update_widget(
                 indices.insert(entity.0, 0);
                 log::trace!(
                     "Advancing children for: {:?} by: {:?}",
-                    entity.0.id(),
+                    entity.0.index(),
                     child_count
                 );
             }

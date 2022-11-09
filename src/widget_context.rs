@@ -180,8 +180,8 @@ impl KayakWidgetContext {
             if let Some(child) = child {
                 log::trace!(
                     "Reusing widget entity {:?} with parent: {:?}!",
-                    child.id(),
-                    parent_id.unwrap().id()
+                    child.index(),
+                    parent_id.unwrap().index()
                 );
                 entity = Some(commands.get_or_spawn(child).id());
             }
@@ -192,7 +192,7 @@ impl KayakWidgetContext {
             entity = Some(commands.spawn_empty().id());
             log::trace!(
                 "Spawning new widget with entity {:?}!",
-                entity.unwrap().id()
+                entity.unwrap().index()
             );
 
             // We need to add it to the ordered tree

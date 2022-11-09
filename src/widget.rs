@@ -42,7 +42,7 @@ pub fn widget_update_with_context<
                 "Entity context: {} has changed! {}-{}",
                 std::any::type_name::<Context>(),
                 widget_param.widget_names.get(entity).unwrap().0,
-                entity.id()
+                entity.index()
             );
             return true;
         }
@@ -75,7 +75,7 @@ impl<'w, 's, Props: PartialEq + Component, State: PartialEq + Component>
             log::trace!(
                 "Entity was mounted! {}-{}",
                 self.widget_names.get(current_entity).unwrap().0,
-                current_entity.id()
+                current_entity.index()
             );
             return true;
         }
@@ -89,7 +89,7 @@ impl<'w, 's, Props: PartialEq + Component, State: PartialEq + Component>
                 log::trace!(
                     "Entity styles have changed! {}-{}",
                     self.widget_names.get(current_entity).unwrap().0,
-                    current_entity.id()
+                    current_entity.index()
                 );
                 return true;
             }
@@ -105,7 +105,7 @@ impl<'w, 's, Props: PartialEq + Component, State: PartialEq + Component>
                 log::trace!(
                     "Entity children have changed! {}-{}",
                     self.widget_names.get(current_entity).unwrap().0,
-                    current_entity.id()
+                    current_entity.index()
                 );
                 return true;
             }
@@ -120,7 +120,7 @@ impl<'w, 's, Props: PartialEq + Component, State: PartialEq + Component>
                 log::trace!(
                     "Entity props have changed! {}-{}",
                     self.widget_names.get(current_entity).unwrap().0,
-                    current_entity.id()
+                    current_entity.index()
                 );
                 return true;
             }

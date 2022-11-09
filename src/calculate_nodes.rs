@@ -286,10 +286,10 @@ fn create_primitive(
                                 styles.height = StyleProp::Value(Units::Pixels(measurement.1));
                             }
                         } else {
-                            log::trace!("no layout for: {:?}", parent_id.0.id());
+                            log::trace!("no layout for: {:?}", parent_id.0.index());
                         }
                     } else {
-                        log::trace!("No parent found for: {:?}", id.0.id());
+                        log::trace!("No parent found for: {:?}", id.0.index());
                     }
                 }
             }

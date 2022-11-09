@@ -19,6 +19,7 @@ fn my_widget_1_render(
         style.render_command = StyleProp::Value(RenderCommand::Text {
             content: format!("My number is: {}", my_widget.foo).to_string(),
             alignment: Alignment::Start,
+            word_wrap: false,
         });
     }
 

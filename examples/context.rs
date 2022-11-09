@@ -255,18 +255,17 @@ fn update_theme_demo(
                 };
 
                 let parent_id = Some(entity);
-                let mut children = kayak_ui::prelude::KChildren::new();
                 rsx! {
-                    <>
+                    <ElementBundle>
                         <TextWidgetBundle
                             text={TextProps {
                                 content: select_lbl,
                                 size: 14.0,
                                 line_height: Some(28.0),
-                                ..Default::default()
-                            }}
-                            styles={KStyle {
-                                height: StyleProp::Value(Units::Pixels(28.0)),
+                                user_styles: KStyle {
+                                    height: StyleProp::Value(Units::Pixels(28.0)),
+                                    ..Default::default()
+                                },
                                 ..Default::default()
                             }}
                         />
@@ -284,21 +283,14 @@ fn update_theme_demo(
                                 text={TextProps {
                                     content: "Lorem ipsum dolor...".into(),
                                     size: 12.0,
+                                    user_styles: text_styles.clone(),
                                     ..Default::default()
                                 }}
-                                styles={text_styles.clone()}
                             />
                             <KButtonBundle
+                                button={KButton { text: "BUTTON".into(), ..Default::default() }}
                                 styles={btn_style.clone()}
-                            >
-                                <TextWidgetBundle
-                                    text={TextProps {
-                                        content: "BUTTON".into(),
-                                        size: 14.0,
-                                        ..Default::default()
-                                    }}
-                                />
-                            </KButtonBundle>
+                            />
                             {
                                 if theme_demo.is_root {
                                     widget_context.set_context_entity::<Theme>(
@@ -321,10 +313,8 @@ fn update_theme_demo(
                                 }
                             }
                         </BackgroundBundle>
-                    </>
+                    </ElementBundle>
                 }
-
-                children.process(&widget_context, parent_id);
             }
         }
     }

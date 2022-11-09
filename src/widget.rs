@@ -38,6 +38,12 @@ pub fn widget_update_with_context<
     // Uses bevy state changes to see if context has changed.
     if let Some(context_entity) = widget_context.get_context_entity::<Context>(entity) {
         if context_query.contains(context_entity) {
+            log::trace!(
+                "Entity context: {} has changed! {}-{}",
+                std::any::type_name::<Context>(),
+                widget_param.widget_names.get(entity).unwrap().0,
+                entity.index()
+            );
             return true;
         }
     }
@@ -66,6 +72,11 @@ impl<'w, 's, Props: PartialEq + Component, State: PartialEq + Component>
         previous_entity: Entity,
     ) -> bool {
         if !self.mounted_query.is_empty() {
+            log::trace!(
+                "Entity was mounted! {}-{}",
+                self.widget_names.get(current_entity).unwrap().0,
+                current_entity.index()
+            );
             return true;
         }
 
@@ -78,7 +89,7 @@ impl<'w, 's, Props: PartialEq + Component, State: PartialEq + Component>
                 log::trace!(
                     "Entity styles have changed! {}-{}",
                     self.widget_names.get(current_entity).unwrap().0,
-                    current_entity.id()
+                    current_entity.index()
                 );
                 return true;
             }
@@ -91,6 +102,11 @@ impl<'w, 's, Props: PartialEq + Component, State: PartialEq + Component>
             self.children_query.get(previous_entity),
         ) {
             if children != old_children {
+                log::trace!(
+                    "Entity children have changed! {}-{}",
+                    self.widget_names.get(current_entity).unwrap().0,
+                    current_entity.index()
+                );
                 return true;
             }
         }
@@ -104,7 +120,7 @@ impl<'w, 's, Props: PartialEq + Component, State: PartialEq + Component>
                 log::trace!(
                     "Entity props have changed! {}-{}",
                     self.widget_names.get(current_entity).unwrap().0,
-                    current_entity.id()
+                    current_entity.index()
                 );
                 return true;
             }

@@ -361,6 +361,8 @@ define_styles! {
         pub top: StyleProp<Units>,
         /// The width of this widget
         pub width: StyleProp<Units>,
+        /// The z-index relative to it's parent.
+        pub z_index: StyleProp<i32>,
     }
 }
 
@@ -402,6 +404,7 @@ impl KStyle {
             row_between: StyleProp::Default,
             top: StyleProp::Default,
             width: StyleProp::Default,
+            z_index: StyleProp::Default,
         }
     }
 }

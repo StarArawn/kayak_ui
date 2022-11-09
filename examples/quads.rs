@@ -9,6 +9,7 @@ pub struct MyQuad {
     pos: Vec2,
     pub size: Vec2,
     pub color: Color,
+    pub z_index: i32,
 }
 
 fn my_quad_update(
@@ -24,16 +25,19 @@ fn my_quad_update(
             style.width = StyleProp::Value(Units::Pixels(quad.size.x));
             style.height = StyleProp::Value(Units::Pixels(quad.size.y));
             style.background_color = StyleProp::Value(quad.color);
+            style.z_index = StyleProp::Value(quad.z_index);
         }
 
         *on_event = OnEvent::new(
-            move |In((event_dispatcher_context, _, event, entity)): In<(
+            move |In((event_dispatcher_context, _, mut event, entity)): In<(
                 EventDispatcherContext,
                 WidgetState,
                 Event,
                 Entity,
             )>,
                   mut query: Query<(&mut KStyle, &MyQuad)>| {
+                event.prevent_default();
+                event.stop_propagation();
                 match event.event_type {
                     EventType::MouseIn(..) => {
                         if let Ok((mut styles, _)) = query.get_mut(entity) {
@@ -99,7 +103,7 @@ fn startup(
     rsx! {
         <KayakAppBundle>
             {
-                (0..1000).for_each(|_| {
+                (0..1000i32).for_each(|i| {
                     let pos = Vec2::new(fastrand::i32(0..1280) as f32, fastrand::i32(0..720) as f32);
                     let size = Vec2::new(
                         fastrand::i32(32..64) as f32,
@@ -113,7 +117,7 @@ fn startup(
                     );
                     constructor! {
                         <MyQuadBundle
-                            my_quad={MyQuad { pos, size, color }}
+                            my_quad={MyQuad { pos, size, color, z_index: i }}
                         />
                     }
                 });

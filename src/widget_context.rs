@@ -23,8 +23,9 @@ pub struct KayakWidgetContext {
     new_tree: Arc<RwLock<Tree>>,
     context_entities: ContextEntities,
     layout_cache: Arc<RwLock<LayoutCache>>,
-    index: Arc<RwLock<HashMap<Entity, usize>>>,
+    pub(crate) index: Arc<RwLock<HashMap<Entity, usize>>>,
     widget_state: WidgetState,
+    order_tree: Arc<RwLock<Tree>>,
 }
 
 impl KayakWidgetContext {
@@ -33,14 +34,17 @@ impl KayakWidgetContext {
         context_entities: ContextEntities,
         layout_cache: Arc<RwLock<LayoutCache>>,
         widget_state: WidgetState,
+        order_tree: Arc<RwLock<Tree>>,
+        index: Arc<RwLock<HashMap<Entity, usize>>>,
     ) -> Self {
         Self {
             old_tree,
             new_tree: Arc::new(RwLock::new(Tree::default())),
             context_entities,
             layout_cache,
-            index: Arc::new(RwLock::new(HashMap::default())),
+            index,
             widget_state,
+            order_tree,
         }
     }
 
@@ -121,9 +125,9 @@ impl KayakWidgetContext {
         children
     }
 
-    fn get_children_old(&self, entity: Entity) -> Vec<Entity> {
+    fn get_children_ordered(&self, entity: Entity) -> Vec<Entity> {
         let mut children = vec![];
-        if let Ok(tree) = self.old_tree.read() {
+        if let Ok(tree) = self.order_tree.read() {
             let iterator = tree.child_iter(WrappedIndex(entity));
 
             children = iterator.map(|index| index.0).collect::<Vec<_>>();
@@ -164,15 +168,42 @@ impl KayakWidgetContext {
         self.widget_state.get(widget_entity)
     }
 
-    /// Returns a child entity or none if it does not exist.
+    /// Returns a new/existing widget entity.
     /// Because a re-render can potentially spawn new entities it's advised to use this
     /// to avoid creating a new entity.
-    pub fn get_child_at(&self, entity: Option<Entity>) -> Option<Entity> {
-        if let Some(entity) = entity {
-            let children = self.get_children_old(entity);
-            return children.get(self.get_and_add_index(entity)).cloned();
+    pub fn spawn_widget(&self, commands: &mut Commands, parent_id: Option<Entity>) -> Entity {
+        let mut entity = None;
+        if let Some(parent_entity) = parent_id {
+            let children = self.get_children_ordered(parent_entity);
+            let index = self.get_and_add_index(parent_entity);
+            let child = children.get(index).cloned();
+            if let Some(child) = child {
+                log::trace!(
+                    "Reusing widget entity {:?} with parent: {:?}!",
+                    child.index(),
+                    parent_id.unwrap().index()
+                );
+                entity = Some(commands.get_or_spawn(child).id());
+            }
         }
-        None
+
+        // If we have no entity spawn it!
+        if entity.is_none() {
+            entity = Some(commands.spawn_empty().id());
+            log::trace!(
+                "Spawning new widget with entity {:?}!",
+                entity.unwrap().index()
+            );
+
+            // We need to add it to the ordered tree
+            if let Ok(mut tree) = self.order_tree.try_write() {
+                tree.add(
+                    WrappedIndex(entity.unwrap()),
+                    parent_id.and_then(|parent| Some(WrappedIndex(parent))),
+                )
+            }
+        }
+        entity.unwrap()
     }
 
     /// Removes all matching children from the tree.
@@ -186,6 +217,9 @@ impl KayakWidgetContext {
 
     /// Adds a new widget to the tree with a given parent.
     pub fn add_widget(&self, parent: Option<Entity>, entity: Entity) {
+        if let Some(parent) = parent {
+            assert!(parent != entity, "Parent cannot equal entity!");
+        }
         if let Ok(mut tree) = self.new_tree.write() {
             tree.add(
                 WrappedIndex(entity),

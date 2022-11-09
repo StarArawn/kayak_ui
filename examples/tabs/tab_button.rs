@@ -1,9 +1,10 @@
 use bevy::prelude::{Bundle, Color, Commands, Component, Entity, In, Query};
-use kayak_ui::prelude::{
-    rsx,
-    widgets::{KButtonBundle, TextProps, TextWidgetBundle},
-    Event, EventDispatcherContext, EventType, KChildren, KStyle, KayakWidgetContext, OnEvent,
-    StyleProp, Units, Widget, WidgetName, WidgetState,
+use kayak_ui::{
+    prelude::{
+        rsx, widgets::KButtonBundle, Corner, Event, EventDispatcherContext, EventType, KStyle,
+        KayakWidgetContext, OnEvent, StyleProp, Units, Widget, WidgetName, WidgetState,
+    },
+    widgets::KButton,
 };
 
 use crate::tab_context::TabContext;
@@ -74,14 +75,18 @@ pub fn tab_button_render(
 
             rsx! {
                 <KButtonBundle
-                    on_event={on_event}
-                    styles={KStyle {
-                        background_color: StyleProp::Value(background_color),
-                        height: StyleProp::Value(Units::Pixels(25.0)),
+                    button={KButton {
+                        text: tab_button.title.clone(),
+                        user_styles: KStyle {
+                            background_color: StyleProp::Value(background_color),
+                            border_radius: Corner::all(0.0).into(),
+                            height: StyleProp::Value(Units::Pixels(25.0)),
+                            ..Default::default()
+                        },
                         ..Default::default()
-                    }}>
-                    <TextWidgetBundle text={TextProps { content: tab_button.title.clone(), size: 16.0, line_height: Some(16.0), ..Default::default() }} />
-                </KButtonBundle>
+                    }}
+                    on_event={on_event}
+                />
             }
         }
     }

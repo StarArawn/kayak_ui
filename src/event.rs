@@ -21,6 +21,8 @@ pub struct Event {
     pub(crate) default_prevented: bool,
     /// OnChange systems to call afterwards
     pub(crate) on_change_systems: Vec<OnChange>,
+
+    pub testing_z_index: f32,
 }
 
 impl Default for Event {
@@ -32,6 +34,7 @@ impl Default for Event {
             should_propagate: true,
             default_prevented: false,
             on_change_systems: Vec::new(),
+            testing_z_index: 0.0,
         }
     }
 }
@@ -49,6 +52,7 @@ impl Event {
             should_propagate: event_type.propagates(),
             default_prevented: false,
             on_change_systems: Vec::new(),
+            testing_z_index: 0.0,
         }
     }
 
@@ -59,7 +63,17 @@ impl Event {
 
     /// If called, prevents this event from propagating up the hierarchy
     pub fn stop_propagation(&mut self) {
-        self.should_propagate = false;
+        if matches!(
+            self.event_type,
+            EventType::Click(..)
+                | EventType::MouseIn(..)
+                | EventType::MouseDown(..)
+                | EventType::Scroll(..)
+                | EventType::Focus
+                | EventType::Hover(..)
+        ) {
+            self.should_propagate = false;
+        }
     }
 
     /// Returns whether this event's default action has been prevented or not

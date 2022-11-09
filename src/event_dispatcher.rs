@@ -11,7 +11,7 @@ use crate::{
     input_event::{InputEvent, InputEventCategory},
     keyboard_event::{KeyboardEvent, KeyboardModifiers},
     layout::Rect,
-    node::WrappedIndex,
+    node::{Node, WrappedIndex},
     on_event::OnEvent,
     prelude::KayakWidgetContext,
     styles::{KStyle, RenderCommand},
@@ -243,6 +243,8 @@ impl EventDispatcher {
                             context.context_entities.clone(),
                             context.layout_cache.clone(),
                             context.widget_state.clone(),
+                            context.order_tree.clone(),
+                            context.index.clone(),
                         );
                         node_event.run_on_change(world, widget_context);
                     }
@@ -382,30 +384,32 @@ impl EventDispatcher {
                     let (current, depth) = stack.pop().unwrap();
                     let mut enter_children = true;
 
-                    for input_event in input_events {
-                        // --- Process Event --- //
-                        if matches!(input_event.category(), InputEventCategory::Mouse) {
-                            // A widget's PointerEvents style will determine how it and its children are processed
-                            let pointer_events = Self::resolve_pointer_events(current, world);
+                    if world.entity(current.0).contains::<OnEvent>() {
+                        for input_event in input_events {
+                            // --- Process Event --- //
+                            if matches!(input_event.category(), InputEventCategory::Mouse) {
+                                // A widget's PointerEvents style will determine how it and its children are processed
+                                let pointer_events = Self::resolve_pointer_events(current, world);
 
-                            match pointer_events {
-                                PointerEvents::All | PointerEvents::SelfOnly => {
-                                    let events = self.process_pointer_events(
-                                        input_event,
-                                        (current, depth),
-                                        &mut states,
-                                        world,
-                                        context,
-                                        false,
-                                    );
-                                    event_stream.extend(events);
+                                match pointer_events {
+                                    PointerEvents::All | PointerEvents::SelfOnly => {
+                                        let events = self.process_pointer_events(
+                                            input_event,
+                                            (current, depth),
+                                            &mut states,
+                                            world,
+                                            context,
+                                            false,
+                                        );
+                                        event_stream.extend(events);
 
-                                    if matches!(pointer_events, PointerEvents::SelfOnly) {
-                                        enter_children = false;
+                                        if matches!(pointer_events, PointerEvents::SelfOnly) {
+                                            enter_children = false;
+                                        }
                                     }
+                                    PointerEvents::None => enter_children = false,
+                                    PointerEvents::ChildrenOnly => {}
                                 }
-                                PointerEvents::None => enter_children = false,
-                                PointerEvents::ChildrenOnly => {}
                             }
                         }
                     }
@@ -413,9 +417,17 @@ impl EventDispatcher {
                     // --- Push Children to Stack --- //
                     if enter_children {
                         if let Some(children) = node_tree.children.get(&current) {
+                            let mut stack_children = Vec::new();
                             for child in children {
-                                stack.push((*child, depth + 1));
+                                let child_z = world
+                                    .entity(child.0)
+                                    .get::<Node>()
+                                    .and_then(|node| Some(node.z))
+                                    .unwrap_or(0.0);
+                                stack_children.push((child_z, (*child, depth + 1)));
                             }
+                            stack_children.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap());
+                            stack.extend(stack_children.iter().map(|c| c.1));
                         }
                     }
                 }
@@ -511,6 +523,9 @@ impl EventDispatcher {
         let mut event_stream = Vec::<Event>::new();
         let (node, depth) = tree_node;
 
+        // let widget_name = world.entity(node.0).get::<WidgetName>();
+        // dbg!(widget_name);
+
         match input_event {
             InputEvent::MouseMoved(point) => {
                 if let Some(layout) = context.get_layout(&node) {
@@ -519,10 +534,23 @@ impl EventDispatcher {
                     let is_contained = layout.contains(point);
                     if !ignore_layout && was_contained != is_contained {
                         if was_contained {
+                            // Mouse out should fire even when
                             event_stream
                                 .push(Event::new(node.0, EventType::MouseOut(cursor_event)));
+                            // Self::update_state(
+                            //     states,
+                            //     (node, depth),
+                            //     &layout,
+                            //     EventType::MouseOut(cursor_event),
+                            // );
                         } else {
-                            event_stream.push(Event::new(node.0, EventType::MouseIn(cursor_event)));
+                            // event_stream.push(Event::new(node.0, EventType::MouseIn(cursor_event)));
+                            Self::update_state(
+                                states,
+                                (node, depth),
+                                &layout,
+                                EventType::MouseIn(cursor_event),
+                            );
                         }
                     }
                     if self.contains_cursor.is_none() || !self.contains_cursor.unwrap_or_default() {
@@ -557,7 +585,13 @@ impl EventDispatcher {
                 if let Some(layout) = context.get_layout(&node) {
                     if ignore_layout || layout.contains(&self.current_mouse_position) {
                         let cursor_event = self.get_cursor_event(self.current_mouse_position);
-                        event_stream.push(Event::new(node.0, EventType::MouseDown(cursor_event)));
+                        // event_stream.push(Event::new(node.0, EventType::MouseDown(cursor_event)));
+                        Self::update_state(
+                            states,
+                            (node, depth),
+                            &layout,
+                            EventType::MouseDown(cursor_event),
+                        );
 
                         if world.get::<Focusable>(node.0).is_some() {
                             Self::update_state(states, (node, depth), &layout, EventType::Focus);
@@ -578,7 +612,13 @@ impl EventDispatcher {
                 if let Some(layout) = context.get_layout(&node) {
                     if ignore_layout || layout.contains(&self.current_mouse_position) {
                         let cursor_event = self.get_cursor_event(self.current_mouse_position);
-                        event_stream.push(Event::new(node.0, EventType::MouseUp(cursor_event)));
+                        // event_stream.push(Event::new(node.0, EventType::MouseUp(cursor_event)));
+                        Self::update_state(
+                            states,
+                            (node, depth),
+                            &layout,
+                            EventType::MouseUp(cursor_event),
+                        );
                         // self.last_clicked.set(node);
 
                         if Self::contains_event(
@@ -701,11 +741,13 @@ impl EventDispatcher {
 
         let (node, depth) = tree_node;
         // Node is at or above best depth and is at or above best z-level
+
         let mut should_update = depth >= state.best_depth && layout.z_index >= state.best_z_index;
         // OR node is above best z-level
-        should_update |= layout.z_index > state.best_z_index;
+        should_update |= layout.z_index >= state.best_z_index;
 
         if should_update {
+            // dbg!(node.0.id(), layout.z_index);
             state.best_match = Some(node);
             state.best_z_index = layout.z_index;
             state.best_depth = depth;

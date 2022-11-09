@@ -16,7 +16,6 @@ impl Widget for Tab {}
 #[derive(Bundle)]
 pub struct TabBundle {
     pub tab: Tab,
-    pub styles: KStyle,
     pub children: KChildren,
     pub widget_name: WidgetName,
 }
@@ -26,11 +25,6 @@ impl Default for TabBundle {
         Self {
             tab: Default::default(),
             children: Default::default(),
-            styles: KStyle {
-                height: Units::Auto.into(),
-                top: Units::Pixels(0.0).into(),
-                ..Default::default()
-            },
             widget_name: Tab::default().get_name(),
         }
     }
@@ -51,7 +45,7 @@ pub fn tab_render(
             let styles = KStyle {
                 background_color: StyleProp::Value(Color::rgba(0.0781, 0.0898, 0.101, 1.0)),
                 padding: StyleProp::Value(Edge::all(Units::Pixels(15.0))),
-                height: Units::Pixels(100.0).into(),
+                height: Units::Stretch(1.0).into(),
                 width: Units::Stretch(1.0).into(),
                 ..Default::default()
             };

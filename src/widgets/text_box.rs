@@ -1,5 +1,8 @@
-use bevy::prelude::{Bundle, Color, Commands, Component, Entity, In, Query};
-use kayak_ui_macros::rsx;
+use std::time::Instant;
+
+use bevy::prelude::*;
+use kayak_font::{KayakFont, TextProperties};
+use kayak_ui_macros::{constructor, rsx};
 
 use crate::{
     context::WidgetName,
@@ -8,15 +11,18 @@ use crate::{
     on_event::OnEvent,
     on_layout::OnLayout,
     prelude::{KChildren, KayakWidgetContext, OnChange},
-    styles::{Corner, KStyle, RenderCommand, StyleProp, Units},
+    render::font::FontMapping,
+    styles::{Edge, KPositionType, KStyle, RenderCommand, StyleProp, Units},
     widget::Widget,
     widget_state::WidgetState,
     widgets::{
         text::{TextProps, TextWidgetBundle},
         BackgroundBundle, ClipBundle,
     },
-    Focusable,
+    Focusable, DEFAULT_FONT,
 };
+
+use super::ElementBundle;
 
 /// Props used by the [`TextBox`] widget
 #[derive(Component, PartialEq, Default, Debug, Clone)]
@@ -32,9 +38,29 @@ pub struct TextBoxProps {
     pub value: String,
 }
 
-#[derive(Component, Default, Clone, PartialEq)]
+#[derive(Component, Clone, PartialEq)]
 pub struct TextBoxState {
     pub focused: bool,
+    pub graphemes: Vec<String>,
+    pub cursor_x: f32,
+    pub cursor_position: usize,
+    pub cursor_visible: bool,
+    pub cursor_last_update: Instant,
+    pub current_value: String,
+}
+
+impl Default for TextBoxState {
+    fn default() -> Self {
+        Self {
+            focused: Default::default(),
+            graphemes: Default::default(),
+            cursor_x: 0.0,
+            cursor_position: Default::default(),
+            cursor_visible: Default::default(),
+            cursor_last_update: Instant::now(),
+            current_value: String::new(),
+        }
+    }
 }
 
 pub struct TextBoxValue(pub String);
@@ -74,110 +100,253 @@ pub fn text_box_render(
     In((widget_context, entity)): In<(KayakWidgetContext, Entity)>,
     mut commands: Commands,
     mut query: Query<(&mut KStyle, &TextBoxProps, &mut OnEvent, &OnChange)>,
+    mut state_query: ParamSet<(Query<&TextBoxState>, Query<&mut TextBoxState>)>,
+    font_assets: Res<Assets<KayakFont>>,
+    font_mapping: Res<FontMapping>,
 ) -> bool {
     if let Ok((mut styles, text_box, mut on_event, on_change)) = query.get_mut(entity) {
         let state_entity = widget_context.use_state::<TextBoxState>(
             &mut commands,
             entity,
-            TextBoxState::default(),
-        );
-
-        *styles = KStyle::default()
-            // Required styles
-            .with_style(KStyle {
-                render_command: RenderCommand::Layout.into(),
-                ..Default::default()
-            })
-            // Apply any prop-given styles
-            .with_style(&*styles)
-            // If not set by props, apply these styles
-            .with_style(KStyle {
-                top: Units::Pixels(0.0).into(),
-                bottom: Units::Pixels(0.0).into(),
-                height: Units::Pixels(26.0).into(),
-                // cursor: CursorIcon::Text.into(),
-                ..Default::default()
-            });
-
-        let background_styles = KStyle {
-            render_command: StyleProp::Value(RenderCommand::Quad),
-            background_color: StyleProp::Value(Color::rgba(0.176, 0.196, 0.215, 1.0)),
-            border_radius: Corner::all(5.0).into(),
-            height: Units::Pixels(26.0).into(),
-            padding_left: Units::Pixels(5.0).into(),
-            padding_right: Units::Pixels(5.0).into(),
-            ..Default::default()
-        };
-
-        let current_value = text_box.value.clone();
-        let cloned_on_change = on_change.clone();
-
-        *on_event = OnEvent::new(
-            move |In((event_dispatcher_context, _, mut event, _entity)): In<(
-                EventDispatcherContext,
-                WidgetState,
-                Event,
-                Entity,
-            )>,
-                  mut state_query: Query<&mut TextBoxState>| {
-                match event.event_type {
-                    EventType::CharInput { c } => {
-                        let mut current_value = current_value.clone();
-                        let cloned_on_change = cloned_on_change.clone();
-                        if let Ok(state) = state_query.get(state_entity) {
-                            if !state.focused {
-                                return (event_dispatcher_context, event);
-                            }
-                        } else {
-                            return (event_dispatcher_context, event);
-                        }
-                        if is_backspace(c) {
-                            if !current_value.is_empty() {
-                                current_value.truncate(current_value.len() - 1);
-                            }
-                        } else if !c.is_control() {
-                            current_value.push(c);
-                        }
-                        cloned_on_change.set_value(current_value);
-                        event.add_system(cloned_on_change);
-                    }
-                    EventType::Focus => {
-                        if let Ok(mut state) = state_query.get_mut(state_entity) {
-                            state.focused = true;
-                        }
-                    }
-                    EventType::Blur => {
-                        if let Ok(mut state) = state_query.get_mut(state_entity) {
-                            state.focused = false;
-                        }
-                    }
-                    _ => {}
-                }
-                (event_dispatcher_context, event)
+            TextBoxState {
+                current_value: text_box.value.clone(),
+                ..TextBoxState::default()
             },
         );
 
-        let parent_id = Some(entity);
-        rsx! {
-            <BackgroundBundle styles={background_styles}>
-                <ClipBundle styles={KStyle {
-                    height: Units::Pixels(26.0).into(),
-                    padding_left: StyleProp::Value(Units::Stretch(0.0)),
-                    padding_right: StyleProp::Value(Units::Stretch(0.0)),
-                    padding_bottom: StyleProp::Value(Units::Stretch(1.0)),
-                    padding_top: StyleProp::Value(Units::Stretch(1.0)),
+        let mut is_different = false;
+        if let Ok(state) = state_query.p0().get(state_entity) {
+            if state.current_value != text_box.value {
+                is_different = true;
+            }
+        }
+
+        if is_different {
+            if let Ok(mut state) = state_query.p1().get_mut(state_entity) {
+                state.current_value = text_box.value.clone();
+            }
+        }
+
+        if let Ok(state) = state_query.p0().get(state_entity) {
+            *styles = KStyle::default()
+                // Required styles
+                .with_style(KStyle {
+                    render_command: RenderCommand::Layout.into(),
                     ..Default::default()
-                }}>
-                    <TextWidgetBundle
-                        text={TextProps {
-                            content: text_box.value.clone(),
-                            size: 14.0,
-                            line_height: Some(18.0),
-                            ..Default::default()
-                        }}
-                    />
-                </ClipBundle>
-            </BackgroundBundle>
+                })
+                // Apply any prop-given styles
+                .with_style(&*styles)
+                // If not set by props, apply these styles
+                .with_style(KStyle {
+                    top: Units::Pixels(0.0).into(),
+                    bottom: Units::Pixels(0.0).into(),
+                    height: Units::Pixels(26.0).into(),
+                    // cursor: CursorIcon::Text.into(),
+                    ..Default::default()
+                });
+
+            let background_styles = KStyle {
+                render_command: StyleProp::Value(RenderCommand::Quad),
+                background_color: Color::rgba(0.160, 0.172, 0.235, 1.0).into(),
+                border_color: if state.focused {
+                    Color::rgba(0.933, 0.745, 0.745, 1.0).into()
+                } else {
+                    Color::rgba(0.360, 0.380, 0.474, 1.0).into()
+                },
+                border: Edge::new(0.0, 0.0, 0.0, 2.0).into(),
+                height: Units::Pixels(26.0).into(),
+                padding_left: Units::Pixels(5.0).into(),
+                padding_right: Units::Pixels(5.0).into(),
+                ..Default::default()
+            };
+
+            let cloned_on_change = on_change.clone();
+            let style_font = styles.font.clone();
+
+            *on_event = OnEvent::new(
+                move |In((event_dispatcher_context, _, mut event, _entity)): In<(
+                    EventDispatcherContext,
+                    WidgetState,
+                    Event,
+                    Entity,
+                )>,
+                      font_assets: Res<Assets<KayakFont>>,
+                      font_mapping: Res<FontMapping>,
+                      mut state_query: Query<&mut TextBoxState>| {
+                    match event.event_type {
+                        EventType::KeyDown(key_event) => {
+                            if key_event.key() == KeyCode::Right {
+                                if let Ok(mut state) = state_query.get_mut(state_entity) {
+                                    if state.cursor_position < state.graphemes.len() {
+                                        state.cursor_position += 1;
+                                    }
+                                    set_new_cursor_position(
+                                        &mut state,
+                                        &font_assets,
+                                        &font_mapping,
+                                        &style_font,
+                                    );
+                                }
+                            }
+                            if key_event.key() == KeyCode::Left {
+                                if let Ok(mut state) = state_query.get_mut(state_entity) {
+                                    if state.cursor_position > 0 {
+                                        state.cursor_position -= 1;
+                                    }
+                                    set_new_cursor_position(
+                                        &mut state,
+                                        &font_assets,
+                                        &font_mapping,
+                                        &style_font,
+                                    );
+                                }
+                            }
+                        }
+                        EventType::CharInput { c } => {
+                            if let Ok(mut state) = state_query.get_mut(state_entity) {
+                                let cloned_on_change = cloned_on_change.clone();
+                                if !state.focused {
+                                    return (event_dispatcher_context, event);
+                                }
+                                let cursor_pos = state.cursor_position;
+                                if is_backspace(c) {
+                                    if !state.current_value.is_empty() {
+                                        // TODO: This doesn't respect graphemes!
+                                        state.current_value.remove(cursor_pos - 1);
+                                        state.cursor_position -= 1;
+                                    }
+                                } else if !c.is_control() {
+                                    // TODO: This doesn't respect graphemes!
+                                    state.current_value.insert(cursor_pos, c);
+                                    state.cursor_position += 1;
+                                }
+
+                                // Update graphemes
+                                set_graphemes(&mut state, &font_assets, &font_mapping, &style_font);
+
+                                set_new_cursor_position(
+                                    &mut state,
+                                    &font_assets,
+                                    &font_mapping,
+                                    &style_font,
+                                );
+                                cloned_on_change.set_value(state.current_value.clone());
+                                event.add_system(cloned_on_change);
+                            }
+                        }
+                        EventType::Focus => {
+                            if let Ok(mut state) = state_query.get_mut(state_entity) {
+                                state.focused = true;
+                                // Update graphemes
+                                set_graphemes(&mut state, &font_assets, &font_mapping, &style_font);
+
+                                state.cursor_position = state.graphemes.len();
+
+                                set_new_cursor_position(
+                                    &mut state,
+                                    &font_assets,
+                                    &font_mapping,
+                                    &style_font,
+                                );
+                            }
+                        }
+                        EventType::Blur => {
+                            if let Ok(mut state) = state_query.get_mut(state_entity) {
+                                state.focused = false;
+                            }
+                        }
+                        _ => {}
+                    }
+                    (event_dispatcher_context, event)
+                },
+            );
+
+            let cursor_styles = KStyle {
+                background_color: Color::rgba(0.933, 0.745, 0.745, 1.0).into(),
+                position_type: KPositionType::SelfDirected.into(),
+                top: Units::Pixels(5.0).into(),
+                left: Units::Pixels(state.cursor_x).into(),
+                width: Units::Pixels(2.0).into(),
+                height: Units::Pixels(26.0 - 10.0).into(),
+                ..Default::default()
+            };
+
+            let text_styles = KStyle {
+                top: Units::Stretch(1.0).into(),
+                bottom: Units::Stretch(1.0).into(),
+                ..Default::default()
+            };
+
+            let shift = if let Some(layout) = widget_context.get_layout(entity) {
+                let font_handle = match &styles.font {
+                    StyleProp::Value(font) => font_mapping.get_handle(font.clone()).unwrap(),
+                    _ => font_mapping.get_handle(DEFAULT_FONT.into()).unwrap(),
+                };
+                if let Some(font) = font_assets.get(&font_handle) {
+                    let string_to_cursor = state.graphemes[0..state.cursor_position].join("");
+                    let measurement = font.measure(
+                        &string_to_cursor,
+                        TextProperties {
+                            font_size: 14.0,
+                            line_height: 18.0,
+                            max_size: (10000.0, 18.0),
+                            alignment: kayak_font::Alignment::Start,
+                            tab_size: 4,
+                        },
+                    );
+                    if measurement.size().0 > layout.width {
+                        (layout.width - measurement.size().0) - 20.0
+                    } else {
+                        0.0
+                    }
+                } else {
+                    0.0
+                }
+            } else {
+                0.0
+            };
+
+            let scroll_styles = KStyle {
+                position_type: KPositionType::SelfDirected.into(),
+                padding_left: StyleProp::Value(Units::Stretch(0.0)),
+                padding_right: StyleProp::Value(Units::Stretch(0.0)),
+                padding_bottom: StyleProp::Value(Units::Stretch(1.0)),
+                padding_top: StyleProp::Value(Units::Stretch(1.0)),
+                left: Units::Pixels(shift).into(),
+                ..Default::default()
+            };
+
+            let parent_id = Some(entity);
+            rsx! {
+                <BackgroundBundle styles={background_styles}>
+                    <ClipBundle styles={KStyle {
+                        height: Units::Pixels(26.0).into(),
+                        padding_left: StyleProp::Value(Units::Stretch(0.0)),
+                        padding_right: StyleProp::Value(Units::Stretch(0.0)),
+                        ..Default::default()
+                    }}>
+                        <ElementBundle styles={scroll_styles}>
+                            <TextWidgetBundle
+                                text={TextProps {
+                                    content: text_box.value.clone(),
+                                    size: 14.0,
+                                    line_height: Some(18.0),
+                                    user_styles: text_styles,
+                                    word_wrap: false,
+                                    ..Default::default()
+                                }}
+                            />
+                            {
+                                if state.focused && state.cursor_visible {
+                                    constructor! {
+                                        <BackgroundBundle styles={cursor_styles} />
+                                    }
+                                }
+                            }
+                        </ElementBundle>
+                    </ClipBundle>
+                </BackgroundBundle>
+            }
         }
     }
 
@@ -189,4 +358,71 @@ pub fn text_box_render(
 /// Context: [Wikipedia](https://en.wikipedia.org/wiki/Backspace#Common_use)
 fn is_backspace(c: char) -> bool {
     c == '\u{8}' || c == '\u{7f}'
+}
+
+fn set_graphemes(
+    state: &mut TextBoxState,
+    font_assets: &Res<Assets<KayakFont>>,
+    font_mapping: &FontMapping,
+    style_font: &StyleProp<String>,
+) {
+    let font_handle = match style_font {
+        StyleProp::Value(font) => font_mapping.get_handle(font.clone()).unwrap(),
+        _ => font_mapping.get_handle(DEFAULT_FONT.into()).unwrap(),
+    };
+
+    if let Some(font) = font_assets.get(&font_handle) {
+        state.graphemes = font
+            .get_graphemes(&state.current_value)
+            .iter()
+            .map(|s| s.to_string())
+            .collect::<Vec<_>>();
+    }
+}
+
+fn set_new_cursor_position(
+    state: &mut TextBoxState,
+    font_assets: &Res<Assets<KayakFont>>,
+    font_mapping: &FontMapping,
+    style_font: &StyleProp<String>,
+) {
+    let font_handle = match style_font {
+        StyleProp::Value(font) => font_mapping.get_handle(font.clone()).unwrap(),
+        _ => font_mapping.get_handle(DEFAULT_FONT.into()).unwrap(),
+    };
+
+    if let Some(font) = font_assets.get(&font_handle) {
+        let string_to_cursor = state.graphemes[0..state.cursor_position].join("");
+        let measurement = font.measure(
+            &string_to_cursor,
+            TextProperties {
+                font_size: 14.0,
+                line_height: 18.0,
+                max_size: (10000.0, 18.0),
+                alignment: kayak_font::Alignment::Start,
+                tab_size: 4,
+            },
+        );
+
+        state.cursor_x = measurement.size().0;
+    }
+}
+
+pub fn cursor_animation_system(
+    mut state_query: ParamSet<(Query<(Entity, &TextBoxState)>, Query<&mut TextBoxState>)>,
+) {
+    let mut should_update = Vec::new();
+
+    for (entity, state) in state_query.p0().iter() {
+        if state.cursor_last_update.elapsed().as_secs_f32() > 0.5 && state.focused {
+            should_update.push(entity);
+        }
+    }
+
+    for state_entity in should_update.drain(..) {
+        if let Ok(mut state) = state_query.p1().get_mut(state_entity) {
+            state.cursor_last_update = Instant::now();
+            state.cursor_visible = !state.cursor_visible;
+        }
+    }
 }

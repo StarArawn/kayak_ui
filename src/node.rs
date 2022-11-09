@@ -23,6 +23,7 @@ pub struct Node {
     pub primitive: RenderPrimitive,
     /// The z-index of this node, used for controlling layering
     pub z: f32,
+    pub old_z: f32,
 }
 
 impl Default for Node {
@@ -34,6 +35,7 @@ impl Default for Node {
             raw_styles: Default::default(),
             primitive: RenderPrimitive::Empty,
             z: Default::default(),
+            old_z: Default::default(),
         }
     }
 }
@@ -54,6 +56,7 @@ impl NodeBuilder {
                 raw_styles: None,
                 primitive: RenderPrimitive::Empty,
                 z: 0.0,
+                old_z: 0.0,
             },
         }
     }
@@ -68,6 +71,7 @@ impl NodeBuilder {
                 raw_styles: None,
                 primitive: RenderPrimitive::Empty,
                 z: 0.0,
+                old_z: 0.0,
             },
         }
     }

@@ -45,9 +45,10 @@ impl Default for ClipBundle {
 pub fn clip_render(
     In((widget_context, entity)): In<(KayakWidgetContext, Entity)>,
     _: Commands,
-    mut query: Query<(&KStyle, &KChildren)>,
+    mut query: Query<(&mut KStyle, &KChildren)>,
 ) -> bool {
-    if let Ok((_, children)) = query.get_mut(entity) {
+    if let Ok((mut styles, children)) = query.get_mut(entity) {
+        styles.render_command = StyleProp::Value(RenderCommand::Clip);
         children.process(&widget_context, Some(entity));
     }
     true

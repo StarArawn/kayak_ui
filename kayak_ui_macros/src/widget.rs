@@ -73,6 +73,7 @@ impl Widget {
                     (
                         entity_id,
                         quote! {{
+                            let parent_org = parent_id;
                             #props
                             #widget_block
                         }},
@@ -197,14 +198,7 @@ impl Widget {
         }
 
         let props = quote! {
-            let entity = widget_context.get_child_at(parent_id);
-            let #entity_id = if let Some(entity) = entity {
-                // use bevy::prelude::DespawnRecursiveExt;
-                // commands.entity(entity).despawn_recursive();
-                commands.get_or_spawn(entity).id()
-            } else {
-                commands.spawn_empty().id()
-            };
+            let #entity_id = widget_context.spawn_widget(&mut commands, parent_org);
             let mut #prop_ident = #name {
                 #assigned_attrs
                 ..Default::default()

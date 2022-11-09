@@ -30,6 +30,14 @@ impl KChildren {
         }
     }
 
+    pub fn iter(&self) -> std::slice::Iter<Entity> {
+        self.inner.iter()
+    }
+
+    pub fn len(&self) -> usize {
+        self.inner.len()
+    }
+
     pub fn despawn(&mut self, commands: &mut Commands) {
         for child in self.inner.drain(..) {
             commands.entity(child).despawn_recursive();

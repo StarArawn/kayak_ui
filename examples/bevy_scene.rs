@@ -227,29 +227,28 @@ fn startup(
                     text={TextProps {
                         size: 13.0,
                         content: "You can check if the cursor is over the UI or on a focusable widget using the BevyContext resource.".to_string(),
+                        user_styles: text_styles.clone(),
                         ..Default::default()
                     }}
-                    styles={text_styles.clone()}
                 />
                 <KButtonBundle
+                    button={KButton {
+                        text: "Change Tile Color".into(),
+                        ..Default::default()
+                    }}
                     on_event={handle_change_color}
                     styles={button_styles}
-                >
-                    <TextWidgetBundle
-                        text={TextProps {
-                            size: 16.0,
-                            content: "Change Tile Color".to_string(),
-                            ..Default::default()
-                        }}
-                    />
-                </KButtonBundle>
+                />
                 <TextWidgetBundle
                     text={TextProps {
                         size: 11.0,
                         content: "Go ahead and click the button! The tile won't move.".to_string(),
+                        user_styles: KStyle {
+                            top: Units::Pixels(10.0).into(),
+                            ..text_styles
+                        },
                         ..Default::default()
                     }}
-                    styles={text_styles}
                 />
             </WindowBundle>
         </KayakAppBundle>

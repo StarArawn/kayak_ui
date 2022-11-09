@@ -20,7 +20,9 @@ pub(crate) fn clone_system<T: Clone + Component>(
 ) {
     if let Some(v) = world.entity(reference).get::<T>() {
         let v = v.clone();
-        world.entity_mut(target).insert(v);
+        if let Some(mut entity) = world.get_entity_mut(target) {
+            entity.insert(v);
+        }
     }
 }
 

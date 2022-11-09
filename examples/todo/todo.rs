@@ -48,6 +48,9 @@ fn startup(
 ) {
     font_mapping.set_default(asset_server.load("roboto.kayak_font"));
 
+    // Camera 2D forces a clear pass in bevy.
+    // We do this because our scene is not rendering anything else.
+    commands.spawn(Camera2dBundle::default());
     commands.spawn(UICameraBundle::new());
 
     let mut widget_context = KayakRootContext::new();
@@ -93,6 +96,7 @@ fn startup(
 
 fn main() {
     App::new()
+        .insert_resource(ClearColor(Color::rgb(0.0, 0.0, 0.0)))
         .add_plugins(DefaultPlugins)
         .add_plugin(KayakContextPlugin)
         .add_plugin(KayakWidgets)

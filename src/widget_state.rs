@@ -1,7 +1,7 @@
 use std::sync::{Arc, RwLock};
 
 use bevy::{
-    prelude::{Commands, Component, Entity},
+    prelude::{BuildChildren, Commands, Component, Entity},
     utils::HashMap,
 };
 
@@ -23,9 +23,14 @@ impl WidgetState {
             if mapping.contains_key(&widget_entity) {
                 *mapping.get(&widget_entity).unwrap()
             } else {
-                let state_entity = commands.spawn(initial_state).id();
-                mapping.insert(widget_entity, state_entity);
-                state_entity
+                let mut state_entity = None;
+                commands
+                    .entity(widget_entity)
+                    .with_children(|child_builder| {
+                        state_entity = Some(child_builder.spawn(initial_state).id());
+                        mapping.insert(widget_entity, state_entity.unwrap());
+                    });
+                state_entity.expect("State entity did not spawn!")
             }
         } else {
             panic!("Couldn't get mapping lock!");

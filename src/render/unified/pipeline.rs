@@ -329,7 +329,7 @@ pub struct ExtractQuadBundle {
     pub extracted_quad: ExtractedQuad,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum UIQuadType {
     Quad,
     Text,
@@ -497,7 +497,7 @@ pub fn prepare_quads(
                 Quat::default(),
                 sprite_rect.min.extend(0.0),
             );
-            let final_position = (world * Vec3::from(*vertex_position).extend(1.0)).truncate();
+            let final_position = (world * (*vertex_position).extend(1.0)).truncate();
             sprite_meta.vertices.push(QuadVertex {
                 position: final_position.into(),
                 color,
@@ -560,7 +560,7 @@ pub fn queue_quads(
         for mut transparent_phase in views.iter_mut() {
             for (entity, quad) in extracted_sprites.iter_mut() {
                 if let Some(image_handle) = quad.image.as_ref() {
-                    if let Some(gpu_image) = gpu_images.get(&image_handle) {
+                    if let Some(gpu_image) = gpu_images.get(image_handle) {
                         image_bind_groups
                             .values
                             .entry(image_handle.clone_weak())
@@ -692,7 +692,7 @@ impl Draw<TransparentUI> for DrawUI {
 
             if let Some(image_handle) = extracted_quad.image.as_ref() {
                 if let Some(bind_group) = image_bind_groups.into_inner().values.get(image_handle) {
-                    pass.set_bind_group(3, &bind_group, &[]);
+                    pass.set_bind_group(3, bind_group, &[]);
                 } else {
                     pass.set_bind_group(3, &unified_pipeline.default_image.1, &[]);
                 }

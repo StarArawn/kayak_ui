@@ -18,10 +18,7 @@ impl LayoutEventDispatcher {
     pub fn dispatch(context: &mut KayakRootContext, world: &mut World) {
         let on_event_entities = {
             let mut query = world.query_filtered::<Entity, With<OnLayout>>();
-            query
-                .iter(world)
-                .map(|entity| entity)
-                .collect::<HashSet<_>>()
+            query.iter(world).collect::<HashSet<_>>()
         };
 
         if let Ok(layout_cache) = context.layout_cache.try_read() {

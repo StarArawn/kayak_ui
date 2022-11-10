@@ -25,7 +25,7 @@ use crate::{
 use super::ElementBundle;
 
 /// Props used by the [`TextBox`] widget
-#[derive(Component, PartialEq, Default, Debug, Clone)]
+#[derive(Component, PartialEq, Eq, Default, Debug, Clone)]
 pub struct TextBoxProps {
     /// If true, prevents the widget from being focused (and consequently edited)
     pub disabled: bool,

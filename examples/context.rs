@@ -162,7 +162,7 @@ fn update_theme_selector(
     mut commands: Commands,
     query: Query<&ThemeSelector>,
 ) -> bool {
-    if let Ok(_) = query.get(entity) {
+    if query.get(entity).is_ok() {
         let button_container_style = KStyle {
             layout_type: StyleProp::Value(LayoutType::Row),
             width: StyleProp::Value(Units::Stretch(1.0)),
@@ -188,7 +188,7 @@ fn update_theme_selector(
     true
 }
 
-#[derive(Component, Debug, Default, Clone, PartialEq)]
+#[derive(Component, Debug, Default, Clone, PartialEq, Eq)]
 pub struct ThemeDemo {
     is_root: bool,
     context_entity: Option<Entity>,
@@ -227,11 +227,9 @@ fn update_theme_demo(
                     format!("Select A Different Theme (Current: {})", theme.name)
                 };
 
-                if theme_demo.is_root {
-                    if theme_demo.context_entity.is_none() {
-                        let theme_entity = commands.spawn(Theme::vector()).id();
-                        theme_demo.context_entity = Some(theme_entity);
-                    }
+                if theme_demo.is_root && theme_demo.context_entity.is_none() {
+                    let theme_entity = commands.spawn(Theme::vector()).id();
+                    theme_demo.context_entity = Some(theme_entity);
                 }
 
                 let context_entity = if let Some(entity) = theme_demo.context_entity {
@@ -283,13 +281,13 @@ fn update_theme_demo(
                                 text={TextProps {
                                     content: "Lorem ipsum dolor...".into(),
                                     size: 12.0,
-                                    user_styles: text_styles.clone(),
+                                    user_styles: text_styles,
                                     ..Default::default()
                                 }}
                             />
                             <KButtonBundle
                                 button={KButton { text: "BUTTON".into(), ..Default::default() }}
-                                styles={btn_style.clone()}
+                                styles={btn_style}
                             />
                             {
                                 if theme_demo.is_root {

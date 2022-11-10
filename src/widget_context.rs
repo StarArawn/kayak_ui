@@ -140,7 +140,7 @@ impl KayakWidgetContext {
         if let Ok(mut hash_map) = self.index.try_write() {
             if hash_map.contains_key(&parent) {
                 let index = hash_map.get_mut(&parent).unwrap();
-                let current_index = index.clone();
+                let current_index = *index;
                 *index += 1;
                 return current_index;
             } else {
@@ -197,10 +197,7 @@ impl KayakWidgetContext {
 
             // We need to add it to the ordered tree
             if let Ok(mut tree) = self.order_tree.try_write() {
-                tree.add(
-                    WrappedIndex(entity.unwrap()),
-                    parent_id.and_then(|parent| Some(WrappedIndex(parent))),
-                )
+                tree.add(WrappedIndex(entity.unwrap()), parent_id.map(WrappedIndex))
             }
         }
         entity.unwrap()
@@ -221,10 +218,7 @@ impl KayakWidgetContext {
             assert!(parent != entity, "Parent cannot equal entity!");
         }
         if let Ok(mut tree) = self.new_tree.write() {
-            tree.add(
-                WrappedIndex(entity),
-                parent.map(|parent| WrappedIndex(parent)),
-            );
+            tree.add(WrappedIndex(entity), parent.map(WrappedIndex));
         }
     }
 

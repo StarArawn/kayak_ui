@@ -7,7 +7,7 @@ pub trait AsRefOption<T> {
 
 impl AsRefOption<KStyle> for KStyle {
     fn as_ref_option(&self) -> Option<&KStyle> {
-        Some(&self)
+        Some(self)
     }
 }
 

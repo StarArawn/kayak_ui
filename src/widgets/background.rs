@@ -9,7 +9,7 @@ use crate::{
     widget::Widget,
 };
 
-#[derive(Component, PartialEq, Clone, Default)]
+#[derive(Component, PartialEq, Eq, Clone, Default)]
 pub struct Background;
 
 impl Widget for Background {}

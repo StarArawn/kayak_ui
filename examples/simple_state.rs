@@ -42,7 +42,7 @@ fn current_count_render(
                 <TextWidgetBundle
                     text={
                         TextProps {
-                            content: format!("Current Count: {}", current_count.foo).into(),
+                            content: format!("Current Count: {}", current_count.foo),
                             size: 16.0,
                             line_height: Some(40.0),
                             ..Default::default()

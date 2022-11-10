@@ -35,21 +35,11 @@ use kayak_font::KayakFont;
 ///   # commands.insert_resource(context);
 /// }
 /// ```
-#[derive(Resource)]
+#[derive(Resource, Default)]
 pub struct FontMapping {
     font_ids: HashMap<Handle<KayakFont>, String>,
     font_handles: HashMap<String, Handle<KayakFont>>,
     new_fonts: Vec<String>,
-}
-
-impl Default for FontMapping {
-    fn default() -> Self {
-        Self {
-            font_ids: HashMap::default(),
-            font_handles: HashMap::default(),
-            new_fonts: Vec::new(),
-        }
-    }
 }
 
 impl FontMapping {
@@ -69,22 +59,17 @@ impl FontMapping {
     }
 
     pub(crate) fn mark_all_as_new(&mut self) {
-        self.new_fonts
-            .extend(self.font_handles.keys().map(|key| key.clone()));
+        self.new_fonts.extend(self.font_handles.keys().cloned());
     }
 
     /// Get the handle for the given font name
     pub fn get_handle(&self, id: String) -> Option<Handle<KayakFont>> {
-        self.font_handles
-            .get(&id)
-            .and_then(|item| Some(item.clone()))
+        self.font_handles.get(&id).cloned()
     }
 
     /// Get the font name for the given handle
     pub fn get(&self, font: &Handle<KayakFont>) -> Option<String> {
-        self.font_ids
-            .get(font)
-            .and_then(|font_id| Some(font_id.clone()))
+        self.font_ids.get(font).cloned()
     }
 
     // pub(crate) fn add_loaded_to_kayak(

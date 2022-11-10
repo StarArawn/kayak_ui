@@ -5,7 +5,7 @@ use crate::{node::WrappedIndex, prelude::Tree};
 #[derive(Component, Default, Clone, Copy)]
 pub struct Focusable;
 
-#[derive(Debug, Default, PartialEq)]
+#[derive(Debug, Default, PartialEq, Eq)]
 pub struct FocusTree {
     tree: Tree,
     current_focus: Option<WrappedIndex>,
@@ -208,10 +208,8 @@ impl FocusTracker {
     pub fn get_focusability(&self, index: WrappedIndex) -> Option<bool> {
         if let Some(focusable) = self.widgets.get(&index) {
             Some(*focusable)
-        } else if let Some(focusable) = self.parents.get(&index) {
-            Some(*focusable)
         } else {
-            None
+            self.parents.get(&index).copied()
         }
     }
 }

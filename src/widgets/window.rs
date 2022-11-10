@@ -93,8 +93,8 @@ pub fn window_render(
             None
         };
 
-        window_style.z_index = if z_index.is_some() {
-            StyleProp::Value(z_index.unwrap() as i32 * 1000)
+        window_style.z_index = if let Some(z_index) = z_index {
+            StyleProp::Value(z_index as i32 * 1000)
         } else {
             StyleProp::Default
         };
@@ -191,7 +191,7 @@ pub fn window_render(
                     >
                         <TextWidgetBundle
                             text={TextProps {
-                                content: title.clone(),
+                                content: title,
                                 size: 14.0,
                                 user_styles: KStyle {
                                     top: Units::Stretch(1.0).into(),

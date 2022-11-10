@@ -60,11 +60,11 @@ fn startup(
             />
             <TextureAtlasBundle
                 atlas={TextureAtlasProps {
-                    handle: image_handle.clone(),
+                    handle: image_handle,
                     position: flower_position,
                     tile_size: flower_size,
                 }}
-                styles={atlas_styles.clone()}
+                styles={atlas_styles}
             />
         </KayakAppBundle>
     }

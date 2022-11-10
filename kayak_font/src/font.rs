@@ -63,10 +63,8 @@ impl KayakFont {
     }
 
     pub fn generate_char_ids(&mut self) {
-        let mut count = 0;
-        for glyph in self.sdf.glyphs.iter() {
-            self.char_ids.insert(glyph.unicode, count);
-            count += 1;
+        for (count, glyph) in self.sdf.glyphs.iter().enumerate() {
+            self.char_ids.insert(glyph.unicode, count as u32);
         }
     }
 
@@ -408,7 +406,7 @@ impl KayakFont {
         }
 
         // 9.
-        return (Some(best_break_index), Some(best_break_index));
+        (Some(best_break_index), Some(best_break_index))
     }
 
     /// Returns the pixel width of a space.

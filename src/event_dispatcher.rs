@@ -380,7 +380,7 @@ impl EventDispatcher {
             } else {
                 // No capturing widget -> process cursor events as normal
                 let mut stack: Vec<TreeNode> = vec![(root, 0)];
-                while stack.len() > 0 {
+                while !stack.is_empty() {
                     let (current, depth) = stack.pop().unwrap();
                     let mut enter_children = true;
 
@@ -422,7 +422,7 @@ impl EventDispatcher {
                                 let child_z = world
                                     .entity(child.0)
                                     .get::<Node>()
-                                    .and_then(|node| Some(node.z))
+                                    .map(|node| node.z)
                                     .unwrap_or(0.0);
                                 stack_children.push((child_z, (*child, depth + 1)));
                             }
@@ -737,7 +737,7 @@ impl EventDispatcher {
         layout: &Rect,
         event_type: EventType,
     ) {
-        let state = states.entry(event_type).or_insert(EventState::default());
+        let state = states.entry(event_type).or_default();
 
         let (node, depth) = tree_node;
         // Node is at or above best depth and is at or above best z-level
@@ -769,7 +769,7 @@ impl EventDispatcher {
         widget_id: &WrappedIndex,
         event_type: EventType,
     ) -> bool {
-        let entry = events.entry(*widget_id).or_insert(HashSet::default());
+        let entry = events.entry(*widget_id).or_default();
         entry.insert(event_type)
     }
 

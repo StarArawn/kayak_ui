@@ -13,7 +13,7 @@ use crate::{
 
 use super::ClipBundle;
 
-#[derive(Component, Default, Clone, PartialEq)]
+#[derive(Component, Default, Clone, PartialEq, Eq)]
 pub struct KayakApp;
 
 impl Widget for KayakApp {}

@@ -26,18 +26,18 @@ pub fn extract_texture_atlas(
         _ => panic!(""),
     };
 
-    let image = images.get(&handle);
+    let image = images.get(handle);
 
     if image.is_none() {
         return vec![];
     }
 
     let image_size = image
-        .and_then(|i| {
-            Some(Vec2::new(
+        .map(|i| {
+            Vec2::new(
                 i.texture_descriptor.size.width as f32,
                 i.texture_descriptor.size.height as f32,
-            ))
+            )
         })
         .unwrap()
         * dpi;

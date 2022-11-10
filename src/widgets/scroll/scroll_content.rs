@@ -13,7 +13,7 @@ use crate::{
 
 use super::scroll_context::ScrollContext;
 
-#[derive(Component, Default, PartialEq, Clone)]
+#[derive(Component, Default, PartialEq, Eq, Clone)]
 pub struct ScrollContentProps;
 
 impl Widget for ScrollContentProps {}

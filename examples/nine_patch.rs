@@ -40,7 +40,7 @@ fn startup(
         <KayakAppBundle>
             <NinePatchBundle
                 nine_patch={NinePatch {
-                    handle: image.clone(),
+                    handle: image,
                     border: Edge::all(15.0),
                 }}
                 styles={KStyle {

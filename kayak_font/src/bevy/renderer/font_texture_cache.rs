@@ -52,11 +52,9 @@ impl FontTextureCache {
         if !self.fonts.contains_key(&kayak_font_handle) {
             self.fonts.insert(kayak_font_handle.clone(), font);
             self.new_fonts.push(kayak_font_handle);
-        } else {
-            if let Some(old_font) = self.fonts.get_mut(&kayak_font_handle) {
-                *old_font = font;
-                self.updated_fonts.push(kayak_font_handle);
-            }
+        } else if let Some(old_font) = self.fonts.get_mut(&kayak_font_handle) {
+            *old_font = font;
+            self.updated_fonts.push(kayak_font_handle);
         }
     }
 
@@ -256,7 +254,7 @@ impl FontTextureCache {
                     resource: BindingResource::Sampler(&gpu_image.sampler),
                 },
             ],
-            layout: &pipeline.get_font_image_layout(),
+            layout: pipeline.get_font_image_layout(),
         });
 
         bind_groups.insert(font_handle.clone_weak(), binding);

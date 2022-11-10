@@ -3,7 +3,7 @@ use std::ops::{Mul, MulAssign};
 /// A struct for defining properties related to the edges of widgets
 ///
 /// This is useful for things like borders, padding, etc.
-#[derive(Debug, Default, Copy, Clone, PartialEq)]
+#[derive(Debug, Default, Copy, Clone, PartialEq, Eq)]
 pub struct Edge<T>
 where
     T: Copy + Default + PartialEq,

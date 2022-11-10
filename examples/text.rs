@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use kayak_ui::prelude::{widgets::*, KStyle, *};
 
-#[derive(Component, Default, Clone, PartialEq)]
+#[derive(Component, Default, Clone, PartialEq, Eq)]
 pub struct MyWidgetProps {
     pub foo: u32,
 }
@@ -17,7 +17,7 @@ fn my_widget_1_render(
         // Note: We will see two updates because of the mutable change to styles.
         // Which means when foo changes MyWidget will render twice!
         style.render_command = StyleProp::Value(RenderCommand::Text {
-            content: format!("My number is: {}", my_widget.foo).to_string(),
+            content: format!("My number is: {}", my_widget.foo),
             alignment: Alignment::Start,
             word_wrap: false,
         });

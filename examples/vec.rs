@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use kayak_ui::prelude::{widgets::*, KStyle, *};
 
-#[derive(Component, Default, PartialEq, Clone)]
+#[derive(Component, Default, PartialEq, Eq, Clone)]
 pub struct MyWidgetProps {}
 
 fn my_widget_1_update(
@@ -9,7 +9,7 @@ fn my_widget_1_update(
     mut commands: Commands,
     query: Query<Entity, Or<(With<Mounted>, Changed<MyWidgetProps>)>>,
 ) -> bool {
-    if let Ok(_) = query.get(entity) {
+    if query.get(entity).is_ok() {
         let parent_id = Some(entity);
         let data = vec![
             "Text 1", "Text 2", "Text 3", "Text 4", "Text 5", "Text 6", "Text 7", "Text 8",
@@ -21,7 +21,7 @@ fn my_widget_1_update(
                     constructor! {
                         <TextWidgetBundle
                             text={TextProps {
-                                content: text.clone().into(),
+                                content: (*text).clone().into(),
                                 ..Default::default()
                             }}
                         />

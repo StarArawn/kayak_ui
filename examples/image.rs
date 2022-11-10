@@ -17,7 +17,7 @@ fn startup(
     rsx! {
         <KayakAppBundle>
             <KImageBundle
-                image={KImage(image.clone())}
+                image={KImage(image)}
                 style={KStyle {
                     position_type: StyleProp::Value(KPositionType::SelfDirected),
                     left: StyleProp::Value(Units::Pixels(10.0)),

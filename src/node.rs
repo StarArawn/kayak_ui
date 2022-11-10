@@ -121,7 +121,7 @@ impl<'a> morphorm::Node<'a> for WrappedIndex {
                 _ => Some(morphorm::LayoutType::default()),
             };
         }
-        return Some(morphorm::LayoutType::default());
+        Some(morphorm::LayoutType::default())
     }
 
     fn position_type(&self, store: &'_ Self::Data) -> Option<morphorm::PositionType> {
@@ -132,7 +132,7 @@ impl<'a> morphorm::Node<'a> for WrappedIndex {
                 _ => Some(morphorm::PositionType::default()),
             };
         }
-        return Some(morphorm::PositionType::default());
+        Some(morphorm::PositionType::default())
     }
 
     fn width(&self, store: &'_ Self::Data) -> Option<morphorm::Units> {
@@ -143,7 +143,7 @@ impl<'a> morphorm::Node<'a> for WrappedIndex {
                 _ => Some(morphorm::Units::Stretch(1.0)),
             };
         }
-        return Some(morphorm::Units::Stretch(1.0));
+        Some(morphorm::Units::Stretch(1.0))
     }
 
     fn height(&self, store: &'_ Self::Data) -> Option<morphorm::Units> {
@@ -154,7 +154,7 @@ impl<'a> morphorm::Node<'a> for WrappedIndex {
                 _ => Some(morphorm::Units::Stretch(1.0)),
             };
         }
-        return Some(morphorm::Units::Stretch(1.0));
+        Some(morphorm::Units::Stretch(1.0))
     }
 
     fn min_width(&self, store: &'_ Self::Data) -> Option<morphorm::Units> {
@@ -213,7 +213,7 @@ impl<'a> morphorm::Node<'a> for WrappedIndex {
                 _ => Some(morphorm::Units::Auto),
             };
         }
-        return Some(morphorm::Units::Auto);
+        Some(morphorm::Units::Auto)
     }
 
     fn right(&self, store: &'_ Self::Data) -> Option<morphorm::Units> {
@@ -228,7 +228,7 @@ impl<'a> morphorm::Node<'a> for WrappedIndex {
                 _ => Some(morphorm::Units::Auto),
             };
         }
-        return Some(morphorm::Units::Auto);
+        Some(morphorm::Units::Auto)
     }
 
     fn top(&self, store: &'_ Self::Data) -> Option<morphorm::Units> {
@@ -243,7 +243,7 @@ impl<'a> morphorm::Node<'a> for WrappedIndex {
                 _ => Some(morphorm::Units::Auto),
             };
         }
-        return Some(morphorm::Units::Auto);
+        Some(morphorm::Units::Auto)
     }
 
     fn bottom(&self, store: &'_ Self::Data) -> Option<morphorm::Units> {
@@ -258,7 +258,7 @@ impl<'a> morphorm::Node<'a> for WrappedIndex {
                 _ => Some(morphorm::Units::Auto),
             };
         }
-        return Some(morphorm::Units::Auto);
+        Some(morphorm::Units::Auto)
     }
 
     fn min_left(&self, _store: &'_ Self::Data) -> Option<morphorm::Units> {
@@ -305,7 +305,7 @@ impl<'a> morphorm::Node<'a> for WrappedIndex {
                 _ => Some(morphorm::Units::Auto),
             };
         }
-        return Some(morphorm::Units::Auto);
+        Some(morphorm::Units::Auto)
     }
 
     fn child_right(&self, store: &'_ Self::Data) -> Option<morphorm::Units> {
@@ -320,7 +320,7 @@ impl<'a> morphorm::Node<'a> for WrappedIndex {
                 _ => Some(morphorm::Units::Auto),
             };
         }
-        return Some(morphorm::Units::Auto);
+        Some(morphorm::Units::Auto)
     }
 
     fn child_top(&self, store: &'_ Self::Data) -> Option<morphorm::Units> {
@@ -335,7 +335,7 @@ impl<'a> morphorm::Node<'a> for WrappedIndex {
                 _ => Some(morphorm::Units::Auto),
             };
         }
-        return Some(morphorm::Units::Auto);
+        Some(morphorm::Units::Auto)
     }
 
     fn child_bottom(&self, store: &'_ Self::Data) -> Option<morphorm::Units> {
@@ -350,7 +350,7 @@ impl<'a> morphorm::Node<'a> for WrappedIndex {
                 _ => Some(morphorm::Units::Auto),
             };
         }
-        return Some(morphorm::Units::Auto);
+        Some(morphorm::Units::Auto)
     }
 
     fn row_between(&self, store: &'_ Self::Data) -> Option<morphorm::Units> {

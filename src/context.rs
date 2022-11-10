@@ -85,6 +85,12 @@ pub struct KayakRootContext {
     pub(crate) index: Arc<RwLock<HashMap<Entity, usize>>>,
 }
 
+impl Default for KayakRootContext {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl KayakRootContext {
     /// Creates a new widget context.
     pub fn new() -> Self {
@@ -166,10 +172,7 @@ impl KayakRootContext {
     /// so that the correct ordering is preserved for updates and rendering.
     pub fn add_widget(&mut self, parent: Option<Entity>, entity: Entity) {
         if let Ok(mut tree) = self.tree.write() {
-            tree.add(
-                WrappedIndex(entity),
-                parent.and_then(|p| Some(WrappedIndex(p))),
-            );
+            tree.add(WrappedIndex(entity), parent.map(WrappedIndex));
             if let Ok(mut cache) = self.layout_cache.try_write() {
                 cache.add(WrappedIndex(entity));
             }
@@ -224,10 +227,7 @@ impl KayakRootContext {
             );
             // We need to add it to the ordered tree
             if let Ok(mut tree) = self.order_tree.try_write() {
-                tree.add(
-                    WrappedIndex(entity.unwrap()),
-                    parent_id.and_then(|parent| Some(WrappedIndex(parent))),
-                )
+                tree.add(WrappedIndex(entity.unwrap()), parent_id.map(WrappedIndex))
             }
         }
         entity.unwrap()
@@ -248,7 +248,7 @@ impl KayakRootContext {
         if let Ok(mut hash_map) = self.index.try_write() {
             if hash_map.contains_key(&parent) {
                 let index = hash_map.get_mut(&parent).unwrap();
-                let current_index = index.clone();
+                let current_index = *index;
                 *index += 1;
                 return current_index;
             } else {
@@ -282,7 +282,7 @@ impl KayakRootContext {
 
         let render_primitives = if let Ok(mut layout_cache) = self.layout_cache.try_write() {
             recurse_node_tree_to_build_primitives(
-                &*node_tree,
+                &node_tree,
                 &mut layout_cache,
                 nodes,
                 widget_names,
@@ -320,19 +320,16 @@ fn recurse_node_tree_to_build_primitives(
     let mut render_primitives = Vec::new();
     if let Ok(node) = nodes.get(current_node.0) {
         let mut render_primitive = node.primitive.clone();
-        let mut new_z_index = if matches!(render_primitive, RenderPrimitive::Clip { .. }) {
-            main_z_index
-        } else {
-            main_z_index
-        };
+        let mut new_z_index = main_z_index;
+
         let _layout = if let Some(layout) = layout_cache.rect.get_mut(&current_node) {
-            // log::info!(
-            //     "z_index is {} and node.z is {} for: {}-{}",
-            //     new_z_index,
-            //     node.z,
-            //     widget_names.get(current_node.0).unwrap().0,
-            //     current_node.0.id(),
-            // );
+            log::trace!(
+                "z_index is {} and node.z is {} for: {}-{}",
+                new_z_index,
+                node.z,
+                widget_names.get(current_node.0).unwrap().0,
+                current_node.0.index(),
+            );
 
             new_z_index += if node.z <= 0.0 { 0.0 } else { node.z };
 
@@ -419,21 +416,21 @@ fn recurse_node_tree_to_build_primitives(
             "No render node: {}-{} > {}-{}",
             node_tree
                 .get_parent(current_node)
-                .and_then(|v| Some(v.0.index() as i32))
+                .map(|v| v.0.index() as i32)
                 .unwrap_or(-1),
             widget_names
                 .get(
                     node_tree
                         .get_parent(current_node)
-                        .and_then(|v| Some(v.0))
+                        .map(|v| v.0)
                         .unwrap_or(Entity::from_raw(0))
                 )
-                .and_then(|v| Ok(v.0.clone()))
-                .unwrap_or("None".into()),
+                .map(|v| v.0.clone())
+                .unwrap_or_else(|_| "None".into()),
             widget_names
                 .get(current_node.0)
-                .and_then(|v| Ok(v.0.clone()))
-                .unwrap_or("None".into()),
+                .map(|v| v.0.clone())
+                .unwrap_or_else(|_| "None".into()),
             current_node.0.index()
         );
     }
@@ -548,7 +545,7 @@ fn update_widgets(
                     order_tree.clone(),
                     index.clone(),
                 );
-                widget_context.copy_from_point(&tree, *entity);
+                widget_context.copy_from_point(tree, *entity);
                 let children_before = widget_context.get_children(entity.0);
                 let widget_name = widget_type.0.clone();
                 let (widget_context, should_update_children) = update_widget(
@@ -725,7 +722,7 @@ fn update_widget(
                     if let Ok(clone_systems) = clone_systems.try_read() {
                         for s in clone_systems.0.iter() {
                             s.0(world, *target_entity, entity.0);
-                            s.1(world, *target_entity, entity.0, &widget_state);
+                            s.1(world, *target_entity, entity.0, widget_state);
                             if let Some(styles) = world.entity(entity.0).get::<KStyle>().cloned() {
                                 if let Some(mut entity) = world.get_entity_mut(*target_entity) {
                                     entity.insert(styles);
@@ -957,7 +954,7 @@ fn calculate_ui(world: &mut World) {
 
 /// A simple component that stores the type name of a widget
 /// This is used by Kayak in order to find out which systems to run.
-#[derive(Component, Debug, Clone, PartialEq)]
+#[derive(Component, Debug, Clone, PartialEq, Eq)]
 pub struct WidgetName(pub String);
 
 impl From<String> for WidgetName {
@@ -968,6 +965,6 @@ impl From<String> for WidgetName {
 
 impl Into<String> for WidgetName {
     fn into(self) -> String {
-        self.0.into()
+        self.0
     }
 }

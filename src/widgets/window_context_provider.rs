@@ -4,7 +4,7 @@ use crate::{
     children::KChildren, context::WidgetName, prelude::KayakWidgetContext, widget::Widget,
 };
 
-#[derive(Component, Default, Debug, Clone, PartialEq)]
+#[derive(Component, Default, Debug, Clone, PartialEq, Eq)]
 pub struct WindowContext {
     order: Vec<Entity>,
     z_indices: HashMap<Entity, usize>,
@@ -43,12 +43,12 @@ impl WindowContext {
     }
 }
 
-#[derive(Component, Default, Debug, Clone, PartialEq)]
+#[derive(Component, Default, Debug, Clone, PartialEq, Eq)]
 pub struct WindowContextProvider;
 
 impl Widget for WindowContextProvider {}
 
-#[derive(Bundle, Debug, Clone, PartialEq)]
+#[derive(Bundle, Debug, Clone, PartialEq, Eq)]
 pub struct WindowContextProviderBundle {
     pub context_provider: WindowContextProvider,
     pub children: KChildren,

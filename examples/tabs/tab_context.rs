@@ -1,12 +1,12 @@
 use bevy::prelude::{Bundle, Commands, Component, Entity, In, Query};
 use kayak_ui::prelude::*;
 
-#[derive(Component, Default, PartialEq, Clone)]
+#[derive(Component, Default, PartialEq, Eq, Clone)]
 pub struct TabContext {
     pub current_index: usize,
 }
 
-#[derive(Component, Default, PartialEq, Clone)]
+#[derive(Component, Default, PartialEq, Eq, Clone)]
 pub struct TabContextProvider {
     pub initial_index: usize,
 }

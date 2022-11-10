@@ -35,6 +35,6 @@ impl ContextEntities {
             return None;
         }
         let inner = self.ce.get(&parent_id).unwrap();
-        inner.get(&T::default().type_id()).and_then(|e| Some(*e))
+        inner.get(&T::default().type_id()).map(|e| *e)
     }
 }

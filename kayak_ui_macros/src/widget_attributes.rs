@@ -107,7 +107,7 @@ impl<'a, 'c> CustomWidgetAttributes<'a, 'c> {
 
     /// Determines whether `children` should be added to this widget or not
     pub fn should_add_children(&self) -> bool {
-        if self.children.nodes.len() == 0 {
+        if self.children.nodes.is_empty() {
             // No children
             false
         } else if self.children.nodes.len() == 1 {
@@ -115,7 +115,7 @@ impl<'a, 'c> CustomWidgetAttributes<'a, 'c> {
             match child {
                 Child::RawBlock((block, _)) => {
                     // Is child NOT an empty block? (`<Foo>{}</Foo>`)
-                    block.stmts.len() > 0
+                    !block.stmts.is_empty()
                 }
                 // Child is a widget
                 _ => true,

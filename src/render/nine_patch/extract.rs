@@ -32,11 +32,11 @@ pub fn extract_nine_patch(
     }
 
     let image_size = image
-        .and_then(|i| {
-            Some(Vec2::new(
+        .map(|i| {
+            Vec2::new(
                 i.texture_descriptor.size.width as f32,
                 i.texture_descriptor.size.height as f32,
-            ))
+            )
         })
         .unwrap()
         * dpi;
@@ -228,7 +228,7 @@ pub fn extract_nine_patch(
                 (image_size.x - border.right) / image_size.x,
                 middle_uv_max_y,
             )),
-            ..extracted_quad_template.clone()
+            ..extracted_quad_template
         },
     };
     extracted_quads.push(middle_quad);

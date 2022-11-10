@@ -15,6 +15,12 @@ pub struct TodoList {
     pub items: Vec<String>,
 }
 
+impl Default for TodoList {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl TodoList {
     pub fn new() -> Self {
         Self {

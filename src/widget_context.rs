@@ -197,10 +197,7 @@ impl KayakWidgetContext {
 
             // We need to add it to the ordered tree
             if let Ok(mut tree) = self.order_tree.try_write() {
-                tree.add(
-                    WrappedIndex(entity.unwrap()),
-                    parent_id.map(WrappedIndex),
-                )
+                tree.add(WrappedIndex(entity.unwrap()), parent_id.map(WrappedIndex))
             }
         }
         entity.unwrap()
@@ -221,10 +218,7 @@ impl KayakWidgetContext {
             assert!(parent != entity, "Parent cannot equal entity!");
         }
         if let Ok(mut tree) = self.new_tree.write() {
-            tree.add(
-                WrappedIndex(entity),
-                parent.map(WrappedIndex),
-            );
+            tree.add(WrappedIndex(entity), parent.map(WrappedIndex));
         }
     }
 

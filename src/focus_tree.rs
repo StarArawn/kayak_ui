@@ -208,7 +208,9 @@ impl FocusTracker {
     pub fn get_focusability(&self, index: WrappedIndex) -> Option<bool> {
         if let Some(focusable) = self.widgets.get(&index) {
             Some(*focusable)
-        } else { self.parents.get(&index).copied() }
+        } else {
+            self.parents.get(&index).copied()
+        }
     }
 }
 

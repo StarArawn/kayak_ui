@@ -196,21 +196,19 @@ impl Tree {
     }
 
     pub fn get_parent(&self, index: WrappedIndex) -> Option<WrappedIndex> {
-        self.parents
-            .get(&index).copied()
+        self.parents.get(&index).copied()
     }
 
     pub fn get_first_child(&self, index: WrappedIndex) -> Option<WrappedIndex> {
-        self.children.get(&index).and_then(|children| {
-            children
-                .first().copied()
-        })
+        self.children
+            .get(&index)
+            .and_then(|children| children.first().copied())
     }
 
     pub fn get_last_child(&self, index: WrappedIndex) -> Option<WrappedIndex> {
-        self.children.get(&index).and_then(|children| {
-            children.last().copied()
-        })
+        self.children
+            .get(&index)
+            .and_then(|children| children.last().copied())
     }
 
     pub fn get_next_sibling(&self, index: WrappedIndex) -> Option<WrappedIndex> {
@@ -218,10 +216,8 @@ impl Tree {
             self.children.get(&parent_index).and_then(|children| {
                 children
                     .iter()
-                    .position(|child| *child == index).and_then(|child_index| {
-                        children
-                            .get(child_index + 1).copied()
-                    })
+                    .position(|child| *child == index)
+                    .and_then(|child_index| children.get(child_index + 1).copied())
             })
         } else {
             None
@@ -233,10 +229,10 @@ impl Tree {
             self.children.get(&parent_index).and_then(|children| {
                 children
                     .iter()
-                    .position(|child| *child == index).and_then(|child_index| {
+                    .position(|child| *child == index)
+                    .and_then(|child_index| {
                         if child_index > 0 {
-                            children
-                                .get(child_index - 1).copied()
+                            children.get(child_index - 1).copied()
                         } else {
                             None
                         }
@@ -285,12 +281,14 @@ impl Tree {
 
         let children_a = children_a
             .unwrap()
-            .iter().copied()
+            .iter()
+            .copied()
             .enumerate()
             .collect::<Vec<(usize, WrappedIndex)>>();
         let children_b = children_b
             .unwrap()
-            .iter().copied()
+            .iter()
+            .copied()
             .enumerate()
             .collect::<Vec<(usize, WrappedIndex)>>();
 
@@ -834,7 +832,7 @@ impl<'a> Hierarchy<'a> for Tree {
     fn is_first_child(&self, node: WrappedIndex) -> bool {
         if let Some(parent) = self.parent(node) {
             if let Some(first_child) = self.get_first_child(parent) {
-                return first_child == node
+                return first_child == node;
             }
         }
 

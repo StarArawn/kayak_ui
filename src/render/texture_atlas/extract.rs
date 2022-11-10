@@ -32,10 +32,13 @@ pub fn extract_texture_atlas(
         return vec![];
     }
 
-    let image_size = image.map(|i| Vec2::new(
+    let image_size = image
+        .map(|i| {
+            Vec2::new(
                 i.texture_descriptor.size.width as f32,
                 i.texture_descriptor.size.height as f32,
-            ))
+            )
+        })
         .unwrap()
         * dpi;
 

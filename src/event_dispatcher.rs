@@ -421,7 +421,8 @@ impl EventDispatcher {
                             for child in children {
                                 let child_z = world
                                     .entity(child.0)
-                                    .get::<Node>().map(|node| node.z)
+                                    .get::<Node>()
+                                    .map(|node| node.z)
                                     .unwrap_or(0.0);
                                 stack_children.push((child_z, (*child, depth + 1)));
                             }

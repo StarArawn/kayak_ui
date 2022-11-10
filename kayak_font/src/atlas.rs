@@ -1,12 +1,12 @@
 use nanoserde::DeJson;
 
-#[derive(DeJson, Debug, Copy, Clone, PartialEq)]
+#[derive(DeJson, Debug, Copy, Clone, PartialEq, Eq)]
 pub enum SDFType {
     #[nserde(rename = "msdf")]
     Msdf,
 }
 
-#[derive(DeJson, Debug, Copy, Clone, PartialEq)]
+#[derive(DeJson, Debug, Copy, Clone, PartialEq, Eq)]
 pub enum Origin {
     #[nserde(rename = "bottom")]
     Bottom,

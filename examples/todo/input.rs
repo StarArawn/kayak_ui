@@ -3,7 +3,7 @@ use kayak_ui::prelude::{widgets::*, *};
 
 use crate::TodoList;
 
-#[derive(Component, Default, Clone, PartialEq)]
+#[derive(Component, Default, Clone, PartialEq, Eq)]
 pub struct TodoInputProps;
 
 impl Widget for TodoInputProps {}

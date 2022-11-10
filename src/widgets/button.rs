@@ -47,7 +47,7 @@ impl Default for KButtonBundle {
 
 impl Widget for KButton {}
 
-#[derive(Component, Default, Debug, Clone, PartialEq)]
+#[derive(Component, Default, Debug, Clone, PartialEq, Eq)]
 pub struct ButtonState {
     hovering: bool,
 }

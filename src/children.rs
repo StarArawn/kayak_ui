@@ -3,7 +3,7 @@ use bevy::prelude::*;
 use crate::prelude::KayakWidgetContext;
 
 /// Defers widgets being added to the widget tree.
-#[derive(Component, Debug, Default, Clone, PartialEq)]
+#[derive(Component, Debug, Default, Clone, PartialEq, Eq)]
 pub struct KChildren {
     inner: Vec<Entity>,
 }
@@ -19,7 +19,7 @@ impl KChildren {
     }
 
     pub fn get(&self, index: usize) -> Option<Entity> {
-        self.inner.get(index).and_then(|e| Some(*e))
+        self.inner.get(index).copied()
     }
 
     pub fn remove(&mut self, index: usize) -> Option<Entity> {
@@ -36,6 +36,10 @@ impl KChildren {
 
     pub fn len(&self) -> usize {
         self.inner.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.inner.len() == 0
     }
 
     pub fn despawn(&mut self, commands: &mut Commands) {

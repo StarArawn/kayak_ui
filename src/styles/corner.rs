@@ -3,7 +3,7 @@ use std::ops::{Mul, MulAssign};
 /// A struct for defining properties related to the corners of widgets
 ///
 /// This is useful for things like border radii, etc.
-#[derive(Debug, Default, Copy, Clone, PartialEq)]
+#[derive(Debug, Default, Copy, Clone, PartialEq, Eq)]
 pub struct Corner<T>
 where
     T: Copy + Default + PartialEq,

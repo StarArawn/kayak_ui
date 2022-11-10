@@ -9,7 +9,7 @@ use crate::{
     widget::Widget,
 };
 
-#[derive(Component, PartialEq, Clone, Default)]
+#[derive(Component, PartialEq, Eq, Clone, Default)]
 pub struct Element;
 
 impl Widget for Element {}
@@ -39,7 +39,7 @@ impl Default for ElementBundle {
 }
 
 pub fn element_render(
-    In((mut widget_context, entity)): In<(KayakWidgetContext, Entity)>,
+    In((widget_context, entity)): In<(KayakWidgetContext, Entity)>,
     _: Commands,
     mut query: Query<(&mut KStyle, &KChildren)>,
 ) -> bool {
@@ -50,7 +50,7 @@ pub fn element_render(
                 render_command: StyleProp::Value(RenderCommand::Layout),
                 ..Default::default()
             });
-        children.process(&mut widget_context, Some(entity));
+        children.process(&widget_context, Some(entity));
     }
     true
 }

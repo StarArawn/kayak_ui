@@ -114,13 +114,12 @@ pub fn calculate_nodes(
                 dirty_entity,
                 &mut styles,
                 node_query
-                    .get(dirty_entity.0)
-                    .and_then(|(_, node)| Ok(node.raw_styles.clone().unwrap_or_default()))
+                    .get(dirty_entity.0).map(|(_, node)| node.raw_styles.clone().unwrap_or_default())
                     .unwrap_or_default(),
                 &all_styles_query,
             );
 
-            let children = tree.children.get(&dirty_entity).cloned().unwrap_or(vec![]);
+            let children = tree.children.get(&dirty_entity).cloned().unwrap_or_default();
 
             let width = styles.width.resolve().value_or(0.0, 0.0);
             let height = styles.height.resolve().value_or(0.0, 0.0);
@@ -147,8 +146,7 @@ pub fn calculate_nodes(
                 }
             }
             node.old_z = node_query
-                .get(dirty_entity.0)
-                .and_then(|old_node| Ok(old_node.1.z))
+                .get(dirty_entity.0).map(|old_node| old_node.1.z)
                 .unwrap_or(0.0);
             node.z = current_z;
             new_nodes.insert(dirty_entity.0, (node, needs_layout));
@@ -268,7 +266,7 @@ fn create_primitive(
                             }
 
                             // --- Calculate Text Layout --- //
-                            *text_layout = font.measure(&content, *properties);
+                            *text_layout = font.measure(content, *properties);
                             let measurement = text_layout.size();
 
                             log::trace!(

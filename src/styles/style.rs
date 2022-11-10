@@ -15,7 +15,7 @@ pub use super::Edge;
 use super::RenderCommand;
 
 /// Just a wrapper around bevy's CursorIcon so we can define a default.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct KCursorIcon(pub CursorIcon);
 
 impl Default for KCursorIcon {
@@ -27,7 +27,7 @@ impl Default for KCursorIcon {
 /// The base container of all style properties
 ///
 /// The default value for this enum is [`StyleProp::Unset`].
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum StyleProp<T: Default + Clone> {
     /// This prop is unset, meaning its actual value is not determined until style resolution,
     /// wherein it will be set to the property's default value.
@@ -593,7 +593,7 @@ mod tests {
     #[test]
     fn value_should_convert_to_property() {
         let expected_width = Units::Pixels(123.0);
-        let expected = StyleProp::Value(expected_width.clone());
+        let expected = StyleProp::Value(expected_width);
 
         let property: StyleProp<_> = expected_width.into();
 

@@ -7,7 +7,7 @@ use crate::{
 };
 
 /// An event type sent to widgets
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Clone)]
 pub struct Event {
     /// The node targeted by this event
     pub target: Entity,
@@ -21,8 +21,16 @@ pub struct Event {
     pub(crate) default_prevented: bool,
     /// OnChange systems to call afterwards
     pub(crate) on_change_systems: Vec<OnChange>,
+}
 
-    pub testing_z_index: f32,
+impl PartialEq for Event {
+    fn eq(&self, other: &Self) -> bool {
+        self.target == other.target
+            && self.current_target == other.current_target
+            && self.event_type == other.event_type
+            && self.should_propagate == other.should_propagate
+            && self.default_prevented == other.default_prevented
+    }
 }
 
 impl Default for Event {
@@ -34,7 +42,6 @@ impl Default for Event {
             should_propagate: true,
             default_prevented: false,
             on_change_systems: Vec::new(),
-            testing_z_index: 0.0,
         }
     }
 }
@@ -52,7 +59,6 @@ impl Event {
             should_propagate: event_type.propagates(),
             default_prevented: false,
             on_change_systems: Vec::new(),
-            testing_z_index: 0.0,
         }
     }
 

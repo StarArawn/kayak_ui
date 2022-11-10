@@ -62,7 +62,7 @@ fn set_active_tile_target(
     // }
     // ```
 
-    let world_pos = cursor_to_world(&windows, &camera_transform.single());
+    let world_pos = cursor_to_world(&windows, camera_transform.single());
     let tile_pos = world_to_tile(world_pos);
     let mut tile = tile.single_mut();
     tile.target = tile_pos;
@@ -87,7 +87,7 @@ fn move_ghost_tile(
 ) {
     for _ in cursor_moved.iter() {
         if !event_context.contains_cursor() {
-            let world_pos = cursor_to_world(&windows, &camera_transform.single());
+            let world_pos = cursor_to_world(&windows, camera_transform.single());
             let tile_pos = world_to_tile(world_pos);
             let mut ghost = tile.single_mut();
             ghost.translation.x = tile_pos.x;

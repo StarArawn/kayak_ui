@@ -20,7 +20,6 @@ impl LayoutEventDispatcher {
             let mut query = world.query_filtered::<Entity, With<OnLayout>>();
             query
                 .iter(world)
-                .map(|entity| entity)
                 .collect::<HashSet<_>>()
         };
 

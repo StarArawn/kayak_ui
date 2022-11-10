@@ -41,6 +41,12 @@ pub struct UICameraBundle {
     pub camera_ui: CameraUIKayak,
 }
 
+impl Default for UICameraBundle {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl UICameraBundle {
     pub const UI_CAMERA: &'static str = "KAYAK_UI_CAMERA";
     pub fn new() -> Self {

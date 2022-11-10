@@ -9,7 +9,7 @@ use crate::{
 
 /// Renders a bevy image asset within the GUI
 /// The rendered image respects the styles.
-#[derive(Component, PartialEq, Clone, Default)]
+#[derive(Component, PartialEq, Eq, Clone, Default)]
 pub struct KImage(pub Handle<bevy::prelude::Image>);
 
 impl Widget for KImage {}

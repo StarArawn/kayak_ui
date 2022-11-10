@@ -228,11 +228,10 @@ pub fn scroll_box_render(
                                             disabled: disable_horizontal,
                                             horizontal: true,
                                             thickness: hori_thickness,
-                                            thumb_color: thumb_color,
+                                            thumb_color,
                                             thumb_styles: thumb_styles.clone(),
-                                            track_color: track_color,
+                                            track_color,
                                             track_styles: track_styles.clone(),
-                                            ..Default::default()
                                         }}
                                     />
                                 }
@@ -244,10 +243,10 @@ pub fn scroll_box_render(
                                     scrollbar_props={ScrollBarProps {
                                         disabled: disable_vertical,
                                         thickness: hori_thickness,
-                                        thumb_color: thumb_color.clone(),
-                                        thumb_styles: thumb_styles.clone(),
-                                        track_color: track_color,
-                                        track_styles: track_styles.clone(),
+                                        thumb_color,
+                                        thumb_styles,
+                                        track_color,
+                                        track_styles,
                                         ..Default::default()
                                     }}
                                 />

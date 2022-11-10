@@ -5,7 +5,7 @@ use std::iter::Rev;
 
 use crate::node::WrappedIndex;
 
-#[derive(Default, Debug, Clone, PartialEq)]
+#[derive(Default, Debug, Clone, PartialEq, Eq)]
 pub struct Tree {
     pub children: HashMap<WrappedIndex, Vec<WrappedIndex>>,
     pub parents: HashMap<WrappedIndex, WrappedIndex>,
@@ -68,8 +68,7 @@ impl Tree {
                 .remove(&index)
                 .unwrap_or_default()
                 .into_iter()
-                .map(|child| self.remove(child))
-                .flatten()
+                .flat_map(|child| self.remove(child))
                 .collect();
             if let Some(siblings) = self.children.get_mut(&parent) {
                 siblings.retain(|node| *node != index);
@@ -177,7 +176,7 @@ impl Tree {
             return Vec::new();
         }
 
-        DownwardIterator::new(&self, Some(self.root_node.unwrap()), true).collect::<Vec<_>>()
+        DownwardIterator::new(self, Some(self.root_node.unwrap()), true).collect::<Vec<_>>()
     }
 
     pub fn flatten_node(&self, root_node: WrappedIndex) -> Vec<WrappedIndex> {
@@ -185,7 +184,7 @@ impl Tree {
             return Vec::new();
         }
 
-        DownwardIterator::new(&self, Some(root_node), true).collect::<Vec<_>>()
+        DownwardIterator::new(self, Some(root_node), true).collect::<Vec<_>>()
     }
 
     pub fn flatten_node_up(&self, root_node: WrappedIndex) -> Vec<WrappedIndex> {
@@ -193,39 +192,35 @@ impl Tree {
             return Vec::new();
         }
 
-        UpwardIterator::new(&self, Some(root_node), true).collect::<Vec<_>>()
+        UpwardIterator::new(self, Some(root_node), true).collect::<Vec<_>>()
     }
 
     pub fn get_parent(&self, index: WrappedIndex) -> Option<WrappedIndex> {
         self.parents
-            .get(&index)
-            .map_or(None, |parent| Some(*parent))
+            .get(&index).copied()
     }
 
     pub fn get_first_child(&self, index: WrappedIndex) -> Option<WrappedIndex> {
-        self.children.get(&index).map_or(None, |children| {
+        self.children.get(&index).and_then(|children| {
             children
-                .first()
-                .map_or(None, |first_child| Some(*first_child))
+                .first().copied()
         })
     }
 
     pub fn get_last_child(&self, index: WrappedIndex) -> Option<WrappedIndex> {
-        self.children.get(&index).map_or(None, |children| {
-            children.last().map_or(None, |last_child| Some(*last_child))
+        self.children.get(&index).and_then(|children| {
+            children.last().copied()
         })
     }
 
     pub fn get_next_sibling(&self, index: WrappedIndex) -> Option<WrappedIndex> {
         if let Some(parent_index) = self.get_parent(index) {
-            self.children.get(&parent_index).map_or(None, |children| {
+            self.children.get(&parent_index).and_then(|children| {
                 children
                     .iter()
-                    .position(|child| *child == index)
-                    .map_or(None, |child_index| {
+                    .position(|child| *child == index).and_then(|child_index| {
                         children
-                            .get(child_index + 1)
-                            .map_or(None, |next_child| Some(*next_child))
+                            .get(child_index + 1).copied()
                     })
             })
         } else {
@@ -235,15 +230,13 @@ impl Tree {
 
     pub fn get_prev_sibling(&self, index: WrappedIndex) -> Option<WrappedIndex> {
         if let Some(parent_index) = self.get_parent(index) {
-            self.children.get(&parent_index).map_or(None, |children| {
+            self.children.get(&parent_index).and_then(|children| {
                 children
                     .iter()
-                    .position(|child| *child == index)
-                    .map_or(None, |child_index| {
+                    .position(|child| *child == index).and_then(|child_index| {
                         if child_index > 0 {
                             children
-                                .get(child_index - 1)
-                                .map_or(None, |prev_child| Some(*prev_child))
+                                .get(child_index - 1).copied()
                         } else {
                             None
                         }
@@ -292,14 +285,12 @@ impl Tree {
 
         let children_a = children_a
             .unwrap()
-            .into_iter()
-            .map(|i| *i)
+            .iter().copied()
             .enumerate()
             .collect::<Vec<(usize, WrappedIndex)>>();
         let children_b = children_b
             .unwrap()
-            .into_iter()
-            .map(|i| *i)
+            .iter().copied()
             .enumerate()
             .collect::<Vec<(usize, WrappedIndex)>>();
 
@@ -336,7 +327,7 @@ impl Tree {
             .collect::<Vec<_>>();
         child_changes.changes.extend(inserted_and_changed);
 
-        if child_changes.changes.len() > 0
+        if !child_changes.changes.is_empty()
             && child_changes.changes.iter().any(|a| {
                 child_changes
                     .changes
@@ -382,12 +373,10 @@ impl Tree {
                 if definitely_moved {
                     let change = if change[0] == Change::Unchanged {
                         vec![Change::Moved]
+                    } else if change[0] == Change::Updated {
+                        vec![Change::Moved, Change::Updated]
                     } else {
-                        if change[0] == Change::Updated {
-                            vec![Change::Moved, Change::Updated]
-                        } else {
-                            vec![Change::Moved]
-                        }
+                        vec![Change::Moved]
                     };
                     return (*id, *node, *parent_node, change);
                 }
@@ -507,12 +496,10 @@ impl Tree {
                 if definitely_moved {
                     let change = if change[0] == Change::Unchanged {
                         vec![Change::Moved]
+                    } else if change[0] == Change::Updated {
+                        vec![Change::Moved, Change::Updated]
                     } else {
-                        if change[0] == Change::Updated {
-                            vec![Change::Moved, Change::Updated]
-                        } else {
-                            vec![Change::Moved]
-                        }
+                        vec![Change::Moved]
                     };
                     return (*id, *node, *parent_node, change);
                 }
@@ -551,7 +538,7 @@ impl Tree {
             if has_changes {
                 let children_a = children_a.unwrap();
                 for child in children_a.iter() {
-                    self.parents.remove(&*child);
+                    self.parents.remove(child);
                 }
                 self.children.remove(&root_node);
             }
@@ -748,7 +735,7 @@ impl<'a> Iterator for DownwardIterator<'a> {
             }
         }
 
-        return self.current_node;
+        self.current_node
     }
 }
 
@@ -791,7 +778,7 @@ impl<'a> Iterator for UpwardIterator<'a> {
         }
 
         self.current_node = self.tree.get_parent(self.current_node?);
-        return self.current_node;
+        self.current_node
     }
 }
 
@@ -847,11 +834,7 @@ impl<'a> Hierarchy<'a> for Tree {
     fn is_first_child(&self, node: WrappedIndex) -> bool {
         if let Some(parent) = self.parent(node) {
             if let Some(first_child) = self.get_first_child(parent) {
-                if first_child == node {
-                    return true;
-                } else {
-                    return false;
-                }
+                return first_child == node
             }
         }
 

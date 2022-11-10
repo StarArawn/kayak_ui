@@ -93,7 +93,7 @@ impl Widget {
             }
         } else {
             let attrs = &open_tag.attributes.for_custom_element(&children);
-            let name = syn::parse_str::<syn::Path>(&"fragment").unwrap();
+            let name = syn::parse_str::<syn::Path>("fragment").unwrap();
             let (entity_id, props, _) = Self::construct(&name, attrs, true, true, index);
             (
                 entity_id,
@@ -137,7 +137,7 @@ impl Widget {
             let value = attribute.value_tokens();
             let key_name = quote! { #key }.to_string();
             if key_name == "id" {
-                return Some(value);
+                Some(value)
             } else {
                 None
             }
@@ -145,7 +145,7 @@ impl Widget {
 
         let prop_ident = format_ident!("internal_rsx_props");
         let entity_id = if let Some(entity_name_id) = entity_name_id {
-            let entity_name_id = format_ident!("{}", entity_name_id.to_string().replace("\"", ""));
+            let entity_name_id = format_ident!("{}", entity_name_id.to_string().replace('"', ""));
             quote! { #entity_name_id }
         } else {
             quote! { widget_entity }

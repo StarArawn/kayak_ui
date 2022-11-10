@@ -23,7 +23,7 @@ pub struct ScrollContext {
 }
 
 #[non_exhaustive]
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum ScrollMode {
     /// Clamps the scroll offset to stay within the scroll range
     Clamped,

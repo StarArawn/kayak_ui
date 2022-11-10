@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use kayak_ui::prelude::{widgets::*, *};
 
-#[derive(Debug, Component, Default, Clone, PartialEq)]
+#[derive(Debug, Component, Default, Clone, PartialEq, Eq)]
 pub struct MyWidget {
     pub foo: u32,
 }

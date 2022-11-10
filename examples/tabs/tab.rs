@@ -6,7 +6,7 @@ use kayak_ui::prelude::{
 
 use crate::tab_context::TabContext;
 
-#[derive(Component, Default, PartialEq, Clone)]
+#[derive(Component, Default, PartialEq, Eq, Clone)]
 pub struct Tab {
     pub index: usize,
 }

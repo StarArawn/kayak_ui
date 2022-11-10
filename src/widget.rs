@@ -16,7 +16,7 @@ pub trait Widget: Send + Sync {
     }
 }
 
-#[derive(Component, Default, PartialEq, Clone)]
+#[derive(Component, Default, PartialEq, Eq, Clone)]
 pub struct EmptyState;
 
 pub fn widget_update<Props: PartialEq + Component + Clone, State: PartialEq + Component + Clone>(

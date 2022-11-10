@@ -1,3 +1,8 @@
+<p align="center">
+    <img src="img/kayak.svg" alt="Kayak UI" width="600" />
+</p>
+<br/>
+
 # Introduction
 
 Kayak UI is a declarative UI that can be used to make user interfaces in Rust primarily targeting games. It's free and open-source!

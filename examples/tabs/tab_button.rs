@@ -9,7 +9,7 @@ use kayak_ui::{
 
 use crate::tab_context::TabContext;
 
-#[derive(Component, Default, PartialEq, Clone)]
+#[derive(Component, Default, PartialEq, Eq, Clone)]
 pub struct TabButton {
     pub index: usize,
     pub title: String,
@@ -83,7 +83,6 @@ pub fn tab_button_render(
                             height: StyleProp::Value(Units::Pixels(25.0)),
                             ..Default::default()
                         },
-                        ..Default::default()
                     }}
                     on_event={on_event}
                 />

@@ -70,6 +70,6 @@ pub fn extract_baseline(
         1.0
     };
 
-    commands.insert_resource(window_size.clone());
+    commands.insert_resource(**window_size);
     commands.insert_resource(Dpi(dpi));
 }

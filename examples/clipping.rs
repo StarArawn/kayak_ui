@@ -39,7 +39,7 @@ Lorem ipsum dolor sit amet, consectetur adipiscing elit. Cras sed tellus neque. 
         <KayakAppBundle>
             <NinePatchBundle
                 nine_patch={NinePatch {
-                    handle: image.clone(),
+                    handle: image,
                     border: Edge::all(30.0),
                 }}
                 styles={nine_patch_styles}

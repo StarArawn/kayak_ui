@@ -6,11 +6,11 @@ fn startup(
     mut font_mapping: ResMut<FontMapping>,
     asset_server: Res<AssetServer>,
 ) {
-    font_mapping.set_default(asset_server.load("roboto.kayak_font"));
+    font_mapping.set_default(asset_server.load("lato-light.kayak_font"));
 
     commands.spawn(UICameraBundle::new());
 
-    let image = asset_server.load("kenny/panel_brown.png");
+    let image = asset_server.load("panel.png");
 
     let mut widget_context = KayakRootContext::new();
     let parent_id = None;

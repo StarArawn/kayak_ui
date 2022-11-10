@@ -18,7 +18,7 @@ fn startup(
         <KayakAppBundle>
             <KImageBundle
                 image={KImage(image)}
-                style={KStyle {
+                styles={KStyle {
                     position_type: StyleProp::Value(KPositionType::SelfDirected),
                     left: StyleProp::Value(Units::Pixels(10.0)),
                     top: StyleProp::Value(Units::Pixels(10.0)),

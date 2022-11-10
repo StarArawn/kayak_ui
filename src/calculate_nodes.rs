@@ -164,7 +164,7 @@ pub fn calculate_nodes(
             if !needs_layout {
                 commands.entity(entity).remove::<DirtyNode>();
             } else {
-                // log::info!("{:?} needs layout!", entity.id());
+                log::trace!("{:?} needs layout!", entity.index());
             }
 
             commands.entity(entity).insert(node);

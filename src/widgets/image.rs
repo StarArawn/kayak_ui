@@ -17,7 +17,7 @@ impl Widget for KImage {}
 #[derive(Bundle)]
 pub struct KImageBundle {
     pub image: KImage,
-    pub style: KStyle,
+    pub styles: KStyle,
     pub widget_name: WidgetName,
 }
 
@@ -25,7 +25,7 @@ impl Default for KImageBundle {
     fn default() -> Self {
         Self {
             image: Default::default(),
-            style: Default::default(),
+            styles: Default::default(),
             widget_name: KImage::default().get_name(),
         }
     }

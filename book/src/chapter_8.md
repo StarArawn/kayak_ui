@@ -34,6 +34,7 @@ The nine patch widget is a special widget designed to render a sliced UI image. 
     - `handle`: A bevy handle to a nine patch image asset which.
     - `border`: This represents the area that is sliced into eight pieces along the edge of the image. The ninth piece is the middle which is repeated.
 - KStyle
+- OnEvent
 - KChildren
 
 ### Text

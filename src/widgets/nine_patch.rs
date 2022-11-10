@@ -3,6 +3,7 @@ use bevy::prelude::{Bundle, Commands, Component, Entity, Handle, Image, In, Quer
 use crate::{
     children::KChildren,
     context::WidgetName,
+    on_event::OnEvent,
     prelude::KayakWidgetContext,
     styles::{Edge, KStyle, RenderCommand, StyleProp},
     widget::Widget,
@@ -52,6 +53,7 @@ pub struct NinePatchBundle {
     pub nine_patch: NinePatch,
     pub styles: KStyle,
     pub children: KChildren,
+    pub on_event: OnEvent,
     pub widget_name: WidgetName,
 }
 
@@ -61,6 +63,7 @@ impl Default for NinePatchBundle {
             nine_patch: Default::default(),
             styles: Default::default(),
             children: KChildren::default(),
+            on_event: OnEvent::default(),
             widget_name: NinePatch::default().get_name(),
         }
     }
@@ -76,7 +79,6 @@ pub fn nine_patch_render(
             border: nine_patch.border,
             handle: nine_patch.handle.clone_weak(),
         });
-
         children.process(&widget_context, Some(entity));
     }
 

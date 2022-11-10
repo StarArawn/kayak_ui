@@ -49,7 +49,7 @@ impl Widget for KButton {}
 
 #[derive(Component, Default, Debug, Clone, PartialEq, Eq)]
 pub struct ButtonState {
-    hovering: bool,
+    pub hovering: bool,
 }
 
 pub fn button_render(

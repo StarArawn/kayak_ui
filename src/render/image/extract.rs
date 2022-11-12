@@ -18,8 +18,8 @@ pub fn extract_images(render_command: &RenderPrimitive, dpi: f32) -> Vec<Extract
     vec![ExtractQuadBundle {
         extracted_quad: ExtractedQuad {
             rect: Rect {
-                min: Vec2::new(layout.posx, layout.posy) * dpi,
-                max: Vec2::new(layout.posx + layout.width, layout.posy + layout.height) * dpi,
+                min: Vec2::new(layout.posx, layout.posy),
+                max: Vec2::new(layout.posx + layout.width, layout.posy + layout.height),
             },
             color: Color::WHITE,
             vertex_index: 0,

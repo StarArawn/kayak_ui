@@ -14,17 +14,17 @@ use crate::{
 };
 
 pub(crate) fn process_events(world: &mut World) {
-    // let window_size = if let Some(windows) = world.get_resource::<Windows>() {
-    //     if let Some(window) = windows.get_primary() {
-    //         Vec2::new(window.width(), window.height())
-    //     } else {
-    //         // log::warn!("Couldn't find primiary window!");
-    //         return;
-    //     }
-    // } else {
-    //     // log::warn!("Couldn't find primiary window!");
-    //     return;
-    // };
+    let window_size = if let Some(windows) = world.get_resource::<Windows>() {
+        if let Some(window) = windows.get_primary() {
+            Vec2::new(window.width(), window.height())
+        } else {
+            log::warn!("Couldn't find primiary window!");
+            return;
+        }
+    } else {
+        log::warn!("Couldn't find primiary window!");
+        return;
+    };
 
     let mut input_events = Vec::new();
 
@@ -64,7 +64,7 @@ pub(crate) fn process_events(world: &mut World) {
                 // Currently, we can only handle a single MouseMoved event at a time so everything but the last needs to be skipped
                 input_events.push(InputEvent::MouseMoved((
                     event.position.x as f32,
-                    event.position.y as f32,
+                    window_size.y - event.position.y as f32,
                 )));
             }
 

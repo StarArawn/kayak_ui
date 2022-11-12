@@ -15,8 +15,8 @@ unicode-segmentation = "1.10.0"
 # Provides UAX #14 line break segmentation
 xi-unicode = "0.3"
 
-bevy = { git = "https://github.com/bevyengine/bevy", rev="1914a3f288a812667f735ee9e7806cf1560dacc0", optional = true, default-features = false, features = ["bevy_asset", "bevy_render", "bevy_core_pipeline"] }
+bevy = { git = "https://github.com/bevyengine/bevy", version = "0.9", optional = true, default-features = false, features = ["bevy_asset", "bevy_render", "bevy_core_pipeline"] }
 
 [dev-dependencies]
-bevy = { git = "https://github.com/bevyengine/bevy", rev="1914a3f288a812667f735ee9e7806cf1560dacc0" }
+bevy = { git = "https://github.com/bevyengine/bevy", version = "0.9" }
 bytemuck = "1.12.0"

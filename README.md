@@ -12,8 +12,11 @@
 ## What is Kayak UI?
 Kayak UI is a declarative UI that can be used to make user interfaces in Rust primarily targeting games. It's free and open-source!
 
+Check out the book!
+[Kayak UI Book](./book/src/SUMMARY.md)
+
 ## WARNING
-Kayak UI is in the very early stages of development. Important features are missing and documentation is non-existent. Kayak UI is designed to only work with Bevy.
+Kayak UI is in the very early stages of development. Important features are missing and some documentation is missing. Kayak UI is designed to only work with Bevy.
 
 ## Features
 - Easy to use declarative syntax using a custom proc macro

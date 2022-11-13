@@ -8,7 +8,7 @@ authors = ["John Mitchell"]
 homepage = "https://github.com/StarArawn/kayak_ui"
 repository = "https://github.com/StarArawn/kayak_ui"
 license-file = "LICENSE"
-exclude = ["assets/*", "screenshots/*"]
+exclude = ["assets/*", "screenshots/*", "book"]
 
 [workspace]
 members = ["kayak_ui_macros", "kayak_font"]

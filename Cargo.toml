@@ -1,11 +1,17 @@
 [package]
 name = "kayak_ui"
+description = "A UI library built using the bevy game engine!"
 version = "0.1.0"
 edition = "2021"
 resolver = "2"
+authors = ["John Mitchell"]
+homepage = "https://github.com/StarArawn/kayak_ui"
+repository = "https://github.com/StarArawn/kayak_ui"
+license-file = "LICENSE"
+exclude = ["assets/*", "screenshots/*"]
 
 [workspace]
-members = ["kayak_ui_macros"]
+members = ["kayak_ui_macros", "kayak_font"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -14,7 +20,7 @@ bevy = { git = "https://github.com/bevyengine/bevy", version = "0.9" }
 bytemuck = "1.12"
 dashmap = "5.4"
 kayak_font = { path = "./kayak_font" }
-morphorm = { git = "https://github.com/geom3trik/morphorm", rev = "1243152d4cebea46fd3e5098df26402c73acae91" }
+morphorm = "0.3"
 kayak_ui_macros = { path = "./kayak_ui_macros" }
 indexmap = "1.9"
 log = "0.4"

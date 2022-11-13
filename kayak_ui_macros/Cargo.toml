@@ -1,7 +1,13 @@
 [package]
 name = "kayak_ui_macros"
+description = "A proc macro library that provides RSX like syntax for Kayak UI."
 version = "0.1.0"
 edition = "2021"
+authors = ["John Mitchell"]
+homepage = "https://github.com/StarArawn/kayak_ui"
+repository = "https://github.com/StarArawn/kayak_ui"
+license-file = "../LICENSE"
+exclude = ["assets/*", "screenshots/*"]
 
 [lib]
 proc-macro = true

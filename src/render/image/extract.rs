@@ -5,7 +5,7 @@ use crate::{
 };
 use bevy::{math::Vec2, prelude::Rect, render::color::Color};
 
-pub fn extract_images(render_command: &RenderPrimitive, dpi: f32) -> Vec<ExtractQuadBundle> {
+pub fn extract_images(render_command: &RenderPrimitive, _dpi: f32) -> Vec<ExtractQuadBundle> {
     let (border_radius, layout, handle) = match render_command {
         RenderPrimitive::Image {
             border_radius,

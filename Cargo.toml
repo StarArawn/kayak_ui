@@ -1,8 +1,14 @@
 [package]
 name = "kayak_ui"
+description = "A UI library built using the bevy game engine!"
 version = "0.1.0"
 edition = "2021"
 resolver = "2"
+authors = ["John Mitchell"]
+homepage = "https://github.com/StarArawn/kayak_ui"
+repository = "https://github.com/StarArawn/kayak_ui"
+license-file = "LICENSE"
+exclude = ["assets/*", "screenshots/*"]
 
 [workspace]
 members = ["kayak_ui_macros"]

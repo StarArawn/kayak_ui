@@ -1,5 +1,6 @@
 [package]
 name = "kayak_font"
+description = "An SDF font renderer for Kayak UI and the Bevy game engine"
 version = "0.1.0"
 edition = "2021"
 authors = ["John Mitchell"]

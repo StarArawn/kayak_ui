@@ -65,6 +65,10 @@ fn startup(
     mut font_mapping: ResMut<FontMapping>,
     asset_server: Res<AssetServer>,
 ) {
+    // Camera 2D forces a clear pass in bevy.
+    // We do this because our scene is not rendering anything else.
+    commands.spawn(Camera2dBundle::default());
+
     font_mapping.set_default(asset_server.load("roboto.kayak_font"));
 
     let mut widget_context = KayakRootContext::new();

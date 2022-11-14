@@ -339,7 +339,7 @@ pub enum UIQuadType {
 
 #[derive(Debug, Component, Clone)]
 pub struct ExtractedQuad {
-    pub camera_entity: Entity, 
+    pub camera_entity: Entity,
     pub rect: Rect,
     pub color: Color,
     pub vertex_index: usize,

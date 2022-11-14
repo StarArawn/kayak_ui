@@ -5,7 +5,7 @@ use crate::{
     styles::Corner,
 };
 use bevy::{
-    prelude::{Assets, Camera, Color, Commands, Image, Plugin, Query, Rect, Res, Vec2, Entity},
+    prelude::{Assets, Camera, Color, Commands, Entity, Image, Plugin, Query, Rect, Res, Vec2},
     render::{Extract, RenderApp, RenderStage},
     window::Windows,
 };
@@ -59,7 +59,13 @@ pub fn extract(
     for (camera_entity, dpi, render_primitive) in render_primitives {
         match render_primitive {
             RenderPrimitive::Text { .. } => {
-                let text_quads = font::extract_texts(camera_entity, &render_primitive, &fonts, &font_mapping, dpi);
+                let text_quads = font::extract_texts(
+                    camera_entity,
+                    &render_primitive,
+                    &fonts,
+                    &font_mapping,
+                    dpi,
+                );
                 extracted_quads.extend(text_quads);
             }
             RenderPrimitive::Image { .. } => {
@@ -76,8 +82,12 @@ pub fn extract(
                 extracted_quads.extend(nine_patch_quads);
             }
             RenderPrimitive::TextureAtlas { .. } => {
-                let texture_atlas_quads =
-                    texture_atlas::extract_texture_atlas(camera_entity, &render_primitive, &images, dpi);
+                let texture_atlas_quads = texture_atlas::extract_texture_atlas(
+                    camera_entity,
+                    &render_primitive,
+                    &images,
+                    dpi,
+                );
                 extracted_quads.extend(texture_atlas_quads);
             }
             RenderPrimitive::Clip { layout } => {

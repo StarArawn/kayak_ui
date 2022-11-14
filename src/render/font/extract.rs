@@ -1,6 +1,6 @@
 use bevy::{
     math::Vec2,
-    prelude::{Assets, Rect, Res, Entity},
+    prelude::{Assets, Entity, Rect, Res},
 };
 use kayak_font::KayakFont;
 

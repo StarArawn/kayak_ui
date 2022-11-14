@@ -3,7 +3,10 @@ use crate::{
     render_primitive::RenderPrimitive,
     styles::Corner,
 };
-use bevy::{math::Vec2, prelude::{Rect, Entity}};
+use bevy::{
+    math::Vec2,
+    prelude::{Entity, Rect},
+};
 
 pub fn extract_quads(
     camera_entity: Entity,

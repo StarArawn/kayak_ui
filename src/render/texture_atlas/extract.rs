@@ -5,7 +5,7 @@ use crate::{
 };
 use bevy::{
     math::Vec2,
-    prelude::{Assets, Rect, Res, Entity},
+    prelude::{Assets, Entity, Rect, Res},
     render::{color::Color, texture::Image},
 };
 

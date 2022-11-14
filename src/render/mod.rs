@@ -1,5 +1,5 @@
 use bevy::{
-    prelude::{App, Commands, Entity, Plugin, Query, With, Camera},
+    prelude::{App, Camera, Commands, Entity, Plugin, Query, With},
     render::{
         render_graph::{RenderGraph, RunGraphOnViewNode, SlotInfo, SlotType},
         render_phase::{DrawFunctions, RenderPhase},

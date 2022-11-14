@@ -3,7 +3,11 @@ use crate::{
     render_primitive::RenderPrimitive,
     styles::Corner,
 };
-use bevy::{math::Vec2, prelude::{Rect, Entity}, render::color::Color};
+use bevy::{
+    math::Vec2,
+    prelude::{Entity, Rect},
+    render::color::Color,
+};
 
 pub fn extract_images(
     camera_entity: Entity,

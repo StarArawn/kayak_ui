@@ -113,8 +113,17 @@ impl KayakRootContext {
         }
     }
 
+    /// Adds a kayak plugin and runs the build function on the context.
     pub fn add_plugin(&mut self, plugin: impl KayakUIPlugin) {
         plugin.build(self)
+    }
+
+    /// Retreives the current entity that has focus or None if nothing is focused.
+    pub fn get_current_focus(&self) -> Option<Entity> {
+        if let Ok(tree) = self.focus_tree.try_read() {
+            return tree.current().and_then(|a| Some(a.0));
+        }
+        None
     }
 
     /// Get's the layout for th given widget index.

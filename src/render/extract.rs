@@ -5,7 +5,7 @@ use crate::{
     styles::Corner,
 };
 use bevy::{
-    prelude::{Assets, Camera, Color, Commands, Image, Plugin, Query, Rect, Res, Vec2},
+    prelude::{Assets, Camera, Color, Commands, Image, Plugin, Query, Rect, Res, Vec2, Entity},
     render::{Extract, RenderApp, RenderStage},
     window::Windows,
 };
@@ -31,7 +31,7 @@ impl Plugin for BevyKayakUIExtractPlugin {
 
 pub fn extract(
     mut commands: Commands,
-    context_query: Extract<Query<(&KayakRootContext, &Camera)>>,
+    context_query: Extract<Query<(Entity, &KayakRootContext, &Camera)>>,
     fonts: Extract<Res<Assets<KayakFont>>>,
     font_mapping: Extract<Res<FontMapping>>,
     node_query: Extract<Query<&Node>>,
@@ -40,7 +40,7 @@ pub fn extract(
     windows: Extract<Res<Windows>>,
 ) {
     let mut render_primitives = Vec::new();
-    for (context, camera) in context_query.iter() {
+    for (entity, context, camera) in context_query.iter() {
         let dpi = match &camera.target {
             bevy::render::camera::RenderTarget::Window(window_id) => {
                 if let Some(window) = windows.get(*window_id) {
@@ -52,37 +52,38 @@ pub fn extract(
             _ => 1.0,
         };
         let mut new_render_primitives = context.build_render_primitives(&node_query, &widget_names);
-        render_primitives.extend(new_render_primitives.drain(..).map(|r| (dpi, r)));
+        render_primitives.extend(new_render_primitives.drain(..).map(|r| (entity, dpi, r)));
     }
 
     let mut extracted_quads = Vec::new();
-    for (dpi, render_primitive) in render_primitives {
+    for (camera_entity, dpi, render_primitive) in render_primitives {
         match render_primitive {
             RenderPrimitive::Text { .. } => {
-                let text_quads = font::extract_texts(&render_primitive, &fonts, &font_mapping, dpi);
+                let text_quads = font::extract_texts(camera_entity, &render_primitive, &fonts, &font_mapping, dpi);
                 extracted_quads.extend(text_quads);
             }
             RenderPrimitive::Image { .. } => {
-                let image_quads = image::extract_images(&render_primitive, dpi);
+                let image_quads = image::extract_images(camera_entity, &render_primitive, dpi);
                 extracted_quads.extend(image_quads);
             }
             RenderPrimitive::Quad { .. } => {
-                let quad_quads = super::quad::extract_quads(&render_primitive, 1.0);
+                let quad_quads = super::quad::extract_quads(camera_entity, &render_primitive, 1.0);
                 extracted_quads.extend(quad_quads);
             }
             RenderPrimitive::NinePatch { .. } => {
                 let nine_patch_quads =
-                    nine_patch::extract_nine_patch(&render_primitive, &images, dpi);
+                    nine_patch::extract_nine_patch(camera_entity, &render_primitive, &images, dpi);
                 extracted_quads.extend(nine_patch_quads);
             }
             RenderPrimitive::TextureAtlas { .. } => {
                 let texture_atlas_quads =
-                    texture_atlas::extract_texture_atlas(&render_primitive, &images, dpi);
+                    texture_atlas::extract_texture_atlas(camera_entity, &render_primitive, &images, dpi);
                 extracted_quads.extend(texture_atlas_quads);
             }
             RenderPrimitive::Clip { layout } => {
                 extracted_quads.push(ExtractQuadBundle {
                     extracted_quad: ExtractedQuad {
+                        camera_entity,
                         rect: Rect {
                             min: Vec2::new(layout.posx, layout.posy) * dpi,
                             max: Vec2::new(layout.posx + layout.width, layout.posy + layout.height)

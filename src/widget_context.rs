@@ -26,6 +26,7 @@ pub struct KayakWidgetContext {
     pub(crate) index: Arc<RwLock<HashMap<Entity, usize>>>,
     widget_state: WidgetState,
     order_tree: Arc<RwLock<Tree>>,
+    pub camera_entity: Option<Entity>,
 }
 
 impl KayakWidgetContext {
@@ -36,6 +37,7 @@ impl KayakWidgetContext {
         widget_state: WidgetState,
         order_tree: Arc<RwLock<Tree>>,
         index: Arc<RwLock<HashMap<Entity, usize>>>,
+        camera_entity: Option<Entity>,
     ) -> Self {
         Self {
             old_tree,
@@ -45,6 +47,7 @@ impl KayakWidgetContext {
             index,
             widget_state,
             order_tree,
+            camera_entity,
         }
     }
 

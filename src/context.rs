@@ -468,7 +468,7 @@ fn update_widgets_sys(world: &mut World) {
         world,
     );
 
-    for (entity, mut context) in context_data.drain(..) {
+    for (camera_entity, mut context) in context_data.drain(..) {
         for system_id in context.uninitilized_systems.drain() {
             if let Some(system) = context.systems.get_mut(&system_id) {
                 system.0.initialize(world);
@@ -501,6 +501,7 @@ fn update_widgets_sys(world: &mut World) {
 
         // dbg!("Updating widgets!");
         update_widgets(
+            camera_entity,
             world,
             &context.tree,
             &context.layout_cache,
@@ -548,11 +549,12 @@ fn update_widgets_sys(world: &mut World) {
             indices.clear();
         }
 
-        world.entity_mut(entity).insert(context);
+        world.entity_mut(camera_entity).insert(context);
     }
 }
 
 fn update_widgets(
+    camera_entity: Entity,
     world: &mut World,
     tree: &Arc<RwLock<Tree>>,
     layout_cache: &Arc<RwLock<LayoutCache>>,
@@ -577,6 +579,7 @@ fn update_widgets(
                     widget_state.clone(),
                     order_tree.clone(),
                     index.clone(),
+                    Some(camera_entity),
                 );
                 widget_context.copy_from_point(tree, *entity);
                 let children_before = widget_context.get_children(entity.0);
@@ -674,6 +677,7 @@ fn update_widgets(
                     vec![]
                 };
                 update_widgets(
+                    camera_entity,
                     world,
                     tree,
                     layout_cache,

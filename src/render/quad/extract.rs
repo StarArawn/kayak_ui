@@ -3,9 +3,13 @@ use crate::{
     render_primitive::RenderPrimitive,
     styles::Corner,
 };
-use bevy::{math::Vec2, prelude::Rect};
+use bevy::{math::Vec2, prelude::{Rect, Entity}};
 
-pub fn extract_quads(render_primitive: &RenderPrimitive, dpi: f32) -> Vec<ExtractQuadBundle> {
+pub fn extract_quads(
+    camera_entity: Entity,
+    render_primitive: &RenderPrimitive,
+    dpi: f32,
+) -> Vec<ExtractQuadBundle> {
     let (background_color, border_color, layout, border_radius, mut border) = match render_primitive
     {
         RenderPrimitive::Quad {
@@ -30,6 +34,7 @@ pub fn extract_quads(render_primitive: &RenderPrimitive, dpi: f32) -> Vec<Extrac
         // Border
         ExtractQuadBundle {
             extracted_quad: ExtractedQuad {
+                camera_entity,
                 rect: Rect {
                     min: Vec2::new(layout.posx, layout.posy),
                     max: Vec2::new(
@@ -57,6 +62,7 @@ pub fn extract_quads(render_primitive: &RenderPrimitive, dpi: f32) -> Vec<Extrac
         },
         ExtractQuadBundle {
             extracted_quad: ExtractedQuad {
+                camera_entity,
                 rect: Rect {
                     min: Vec2::new(layout.posx + border.left, layout.posy + border.top),
                     max: Vec2::new(

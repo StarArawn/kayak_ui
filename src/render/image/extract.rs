@@ -3,9 +3,13 @@ use crate::{
     render_primitive::RenderPrimitive,
     styles::Corner,
 };
-use bevy::{math::Vec2, prelude::Rect, render::color::Color};
+use bevy::{math::Vec2, prelude::{Rect, Entity}, render::color::Color};
 
-pub fn extract_images(render_command: &RenderPrimitive, _dpi: f32) -> Vec<ExtractQuadBundle> {
+pub fn extract_images(
+    camera_entity: Entity,
+    render_command: &RenderPrimitive,
+    _dpi: f32,
+) -> Vec<ExtractQuadBundle> {
     let (border_radius, layout, handle) = match render_command {
         RenderPrimitive::Image {
             border_radius,
@@ -17,6 +21,7 @@ pub fn extract_images(render_command: &RenderPrimitive, _dpi: f32) -> Vec<Extrac
 
     vec![ExtractQuadBundle {
         extracted_quad: ExtractedQuad {
+            camera_entity,
             rect: Rect {
                 min: Vec2::new(layout.posx, layout.posy),
                 max: Vec2::new(layout.posx + layout.width, layout.posy + layout.height),

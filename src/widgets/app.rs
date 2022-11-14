@@ -69,10 +69,12 @@ pub fn app_render(
 ) -> bool {
     let (mut width, mut height) = (0.0, 0.0);
 
-    if let Ok(camera) = camera.get_single() {
-        if let Some(size) = camera.logical_viewport_size() {
-            width = size.x;
-            height = size.y;
+    if let Some(camera_entity) = widget_context.camera_entity {
+        if let Ok(camera) = camera.get(camera_entity) {
+            if let Some(size) = camera.logical_viewport_size() {
+                width = size.x;
+                height = size.y;
+            }
         }
     }
 

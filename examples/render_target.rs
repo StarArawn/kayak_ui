@@ -59,14 +59,20 @@ fn startup(
     rsx! {
         <KayakAppBundle
             styles={KStyle {
-                padding: Edge::all(Units::Stretch(1.0)).into(),
+                padding: Edge::new(
+                    Units::Stretch(1.0),
+                    Units::Stretch(0.0),
+                    Units::Stretch(1.0),
+                    Units::Stretch(0.0),
+                ).into(),
                 ..Default::default()
             }}
         >
             <TextWidgetBundle
                 text={TextProps {
                     size: 150.0,
-                    content: "Hello World".into(),
+                    content: "Hello Cube!".into(),
+                    alignment: Alignment::Middle,
                     ..Default::default()
                 }}
             />
@@ -123,6 +129,23 @@ fn startup(
             .looking_at(Vec3::default(), Vec3::Y),
         ..default()
     });
+
+    // Spawn another UI in 2D space!
+    let mut widget_context = KayakRootContext::new();
+    widget_context.add_plugin(KayakWidgetsContextPlugin);
+    let parent_id = None;
+    rsx! {
+        <KayakAppBundle>
+            <TextWidgetBundle
+                text={TextProps {
+                    size: 100.0,
+                    content: "Hello World!".into(),
+                    ..Default::default()
+                }}
+            />
+        </KayakAppBundle>
+    }
+    commands.spawn(UICameraBundle::new(widget_context));
 }
 
 /// Rotates the outer cube (main pass)

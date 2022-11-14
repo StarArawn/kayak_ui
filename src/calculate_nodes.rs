@@ -24,19 +24,12 @@ pub fn calculate_nodes(
     node_query: Query<(Entity, &Node)>,
 ) -> KayakRootContext {
     let mut new_nodes = HashMap::<Entity, (Node, bool)>::default();
-    // This is the maximum recursion depth for this method.
-    // Recursion involves recalculating layout which should be done sparingly.
-    // const MAX_RECURSION_DEPTH: usize = 2;
 
     context.current_z = 0.0;
 
     let initial_styles = KStyle::initial();
     let default_styles = KStyle::new_default();
 
-    // Jump out early.
-    // if query.is_empty() {
-    //     return;
-    // }
     if let Ok(tree) = context.tree.clone().try_read() {
         if tree.root_node.is_none() {
             return context;

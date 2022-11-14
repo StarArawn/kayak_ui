@@ -64,7 +64,6 @@ pub fn app_update(
 pub fn app_render(
     In((widget_context, entity)): In<(KayakWidgetContext, Entity)>,
     mut commands: Commands,
-    windows: Res<Windows>,
     mut query: Query<(&mut KStyle, &KChildren)>,
     camera: Query<&Camera, With<CameraUIKayak>>,
 ) -> bool {
@@ -77,12 +76,6 @@ pub fn app_render(
         }
     }
 
-    if width == 0.0 {
-        let primary_window = windows.get_primary().unwrap();
-        width = primary_window.width();
-        height = primary_window.height();
-    }
-
     if let Ok((mut app_style, children)) = query.get_mut(entity) {
         if app_style.width != StyleProp::Value(Units::Pixels(width)) {
             app_style.width = StyleProp::Value(Units::Pixels(width));
@@ -90,8 +83,8 @@ pub fn app_render(
         if app_style.height != StyleProp::Value(Units::Pixels(height)) {
             app_style.height = StyleProp::Value(Units::Pixels(height));
         }
+
         app_style.render_command = StyleProp::Value(RenderCommand::Layout);
-        // children.process(&widget_context, Some(entity));
         let parent_id = Some(entity);
         rsx! {
             <ClipBundle

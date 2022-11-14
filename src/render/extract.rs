@@ -5,7 +5,7 @@ use crate::{
     styles::Corner,
 };
 use bevy::{
-    prelude::{Assets, Color, Commands, Image, Plugin, Query, Rect, Res, Vec2},
+    prelude::{Assets, Camera, Color, Commands, Image, Plugin, Query, Rect, Res, Vec2},
     render::{Extract, RenderApp, RenderStage},
     window::Windows,
 };
@@ -31,7 +31,7 @@ impl Plugin for BevyKayakUIExtractPlugin {
 
 pub fn extract(
     mut commands: Commands,
-    context: Extract<Res<KayakRootContext>>,
+    context_query: Extract<Query<(&KayakRootContext, &Camera)>>,
     fonts: Extract<Res<Assets<KayakFont>>>,
     font_mapping: Extract<Res<FontMapping>>,
     node_query: Extract<Query<&Node>>,
@@ -39,20 +39,24 @@ pub fn extract(
     images: Extract<Res<Assets<Image>>>,
     windows: Extract<Res<Windows>>,
 ) {
-    // dbg!("STARTED");
-    let render_primitives = context.build_render_primitives(&node_query, &widget_names);
-    // dbg!("FINISHED");
-
-    let dpi = if let Some(window) = windows.get_primary() {
-        window.scale_factor() as f32
-    } else {
-        1.0
-    };
-
-    // dbg!(&render_primitives);
+    let mut render_primitives = Vec::new();
+    for (context, camera) in context_query.iter() {
+        let dpi = match &camera.target {
+            bevy::render::camera::RenderTarget::Window(window_id) => {
+                if let Some(window) = windows.get(*window_id) {
+                    window.scale_factor() as f32
+                } else {
+                    1.0
+                }
+            }
+            _ => 1.0,
+        };
+        let mut new_render_primitives = context.build_render_primitives(&node_query, &widget_names);
+        render_primitives.extend(new_render_primitives.drain(..).map(|r| (dpi, r)));
+    }
 
     let mut extracted_quads = Vec::new();
-    for render_primitive in render_primitives {
+    for (dpi, render_primitive) in render_primitives {
         match render_primitive {
             RenderPrimitive::Text { .. } => {
                 let text_quads = font::extract_texts(&render_primitive, &fonts, &font_mapping, dpi);

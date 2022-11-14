@@ -8,8 +8,6 @@ fn startup(
 ) {
     font_mapping.set_default(asset_server.load("roboto.kayak_font"));
 
-    commands.spawn(UICameraBundle::new());
-
     let image_handle = asset_server.load("texture_atlas.png");
 
     //texture_atlas.png uses 16 pixel sprites and is 272x128 pixels
@@ -31,6 +29,7 @@ fn startup(
     let flower_index = columns * 5 + 15;
 
     let mut widget_context = KayakRootContext::new();
+    widget_context.add_plugin(KayakWidgetsContextPlugin);
     let parent_id = None;
 
     let atlas_styles = KStyle {
@@ -69,7 +68,7 @@ fn startup(
         </KayakAppBundle>
     }
 
-    commands.insert_resource(widget_context);
+    commands.spawn(UICameraBundle::new(widget_context));
 }
 
 fn main() {

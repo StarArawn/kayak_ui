@@ -1,5 +1,5 @@
 use bevy::{
-    prelude::{Entity, KeyCode, Resource, World},
+    prelude::{Component, Entity, KeyCode, World},
     utils::{HashMap, HashSet},
 };
 
@@ -43,7 +43,7 @@ impl Default for EventState {
     }
 }
 
-#[derive(Resource, Debug, Clone)]
+#[derive(Component, Debug, Clone, Default)]
 pub struct EventDispatcher {
     is_mouse_pressed: bool,
     next_mouse_pressed: bool,
@@ -177,11 +177,11 @@ impl EventDispatcher {
     /// Process and dispatch a set of [InputEvents](crate::InputEvent)
     pub(crate) fn process_events(
         &mut self,
-        input_events: Vec<InputEvent>,
+        input_events: &Vec<InputEvent>,
         context: &mut KayakRootContext,
         world: &mut World,
     ) {
-        let events = { self.build_event_stream(&input_events, context, world) };
+        let events = { self.build_event_stream(input_events, context, world) };
         self.dispatch_events(events, context, world);
     }
 

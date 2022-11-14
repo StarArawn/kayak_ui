@@ -8,11 +8,10 @@ fn startup(
 ) {
     font_mapping.set_default(asset_server.load("lato-light.kayak_font"));
 
-    commands.spawn(UICameraBundle::new());
-
     let image = asset_server.load("panel.png");
 
     let mut widget_context = KayakRootContext::new();
+    widget_context.add_plugin(KayakWidgetsContextPlugin);
     let parent_id = None;
 
     let nine_patch_styles = KStyle {
@@ -56,7 +55,8 @@ Lorem ipsum dolor sit amet, consectetur adipiscing elit. Cras sed tellus neque. 
             </NinePatchBundle>
         </KayakAppBundle>
     }
-    commands.insert_resource(widget_context);
+
+    commands.spawn(UICameraBundle::new(widget_context));
 }
 
 fn main() {

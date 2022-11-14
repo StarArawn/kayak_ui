@@ -29,6 +29,7 @@ mod widget_state;
 pub mod widgets;
 mod window_size;
 
+use context::KayakRootContext;
 pub use window_size::WindowSize;
 
 pub use camera::*;
@@ -63,3 +64,7 @@ pub mod prelude {
 }
 
 pub use focus_tree::Focusable;
+
+pub trait KayakUIPlugin {
+    fn build(&self, context: &mut KayakRootContext);
+}

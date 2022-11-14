@@ -1,5 +1,5 @@
 use bevy::{
-    prelude::{Assets, Commands, Entity, Query, Res, ResMut, With},
+    prelude::{Assets, Commands, Entity, In, Query, Res, With},
     utils::HashMap,
 };
 use kayak_font::KayakFont;
@@ -15,14 +15,14 @@ use crate::{
 };
 
 pub fn calculate_nodes(
+    In(mut context): In<KayakRootContext>,
     mut commands: Commands,
-    mut context: ResMut<KayakRootContext>,
     fonts: Res<Assets<KayakFont>>,
     font_mapping: Res<FontMapping>,
     query: Query<Entity, With<DirtyNode>>,
     all_styles_query: Query<&KStyle>,
     node_query: Query<(Entity, &Node)>,
-) {
+) -> KayakRootContext {
     let mut new_nodes = HashMap::<Entity, (Node, bool)>::default();
     // This is the maximum recursion depth for this method.
     // Recursion involves recalculating layout which should be done sparingly.
@@ -39,11 +39,15 @@ pub fn calculate_nodes(
     // }
     if let Ok(tree) = context.tree.clone().try_read() {
         if tree.root_node.is_none() {
-            return;
+            return context;
         }
 
         for dirty_entity in query.iter() {
             let dirty_entity = WrappedIndex(dirty_entity);
+            if !tree.contains(dirty_entity) {
+                continue;
+            }
+
             let styles = all_styles_query
                 .get(dirty_entity.0)
                 .unwrap_or(&default_styles);
@@ -170,14 +174,15 @@ pub fn calculate_nodes(
             commands.entity(entity).insert(node);
         }
     }
+
+    context
 }
 
 pub fn calculate_layout(
+    In(context): In<KayakRootContext>,
     mut commands: Commands,
-    mut context: ResMut<KayakRootContext>,
     nodes_no_entity_query: Query<&'static Node>,
-) {
-    let context = context.as_mut();
+) -> KayakRootContext {
     if let Ok(tree) = context.tree.try_read() {
         // tree.dump();
         let node_tree = &*tree;
@@ -200,6 +205,8 @@ pub fn calculate_layout(
             }
         }
     }
+
+    context
 }
 
 fn create_primitive(

@@ -22,6 +22,7 @@ impl Widget for MyWidget {}
 
 fn startup(mut commands: Commands) {
     let mut context = KayakRootContext::new();
+    context.add_plugin(KayakWidgetsContextPlugin);
     context.add_widget_system(
         MyWidget::default().get_name(),
         widget_update::<MyWidget, EmptyState>,
@@ -46,7 +47,7 @@ fn startup(mut commands: Commands) {
     });
     context.add_widget(None, app_entity);
 
-    commands.insert_resource(context);
+    commands.spawn(UICameraBundle::new(context));
 }
 
 // Note this example shows prop changing not state changing which is quite different.

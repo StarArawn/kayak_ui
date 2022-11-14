@@ -53,19 +53,8 @@ fn startup(
 
     let image_handle = images.add(image);
 
-    commands.spawn(UICameraBundle {
-        camera: Camera {
-            priority: -1,
-            target: RenderTarget::Image(image_handle.clone()),
-            ..Camera::default()
-        },
-        camera_ui: CameraUIKayak {
-            clear_color: bevy::core_pipeline::clear_color::ClearColorConfig::Default,
-        },
-        ..UICameraBundle::new()
-    });
-
     let mut widget_context = KayakRootContext::new();
+    widget_context.add_plugin(KayakWidgetsContextPlugin);
     let parent_id = None;
     rsx! {
         <KayakAppBundle
@@ -83,7 +72,18 @@ fn startup(
             />
         </KayakAppBundle>
     }
-    commands.insert_resource(widget_context);
+
+    commands.spawn(UICameraBundle {
+        camera: Camera {
+            priority: -1,
+            target: RenderTarget::Image(image_handle.clone()),
+            ..Camera::default()
+        },
+        camera_ui: CameraUIKayak {
+            clear_color: bevy::core_pipeline::clear_color::ClearColorConfig::Default,
+        },
+        ..UICameraBundle::new(widget_context)
+    });
 
     // Setup 3D scene
     // Light

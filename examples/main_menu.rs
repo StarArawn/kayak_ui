@@ -122,9 +122,8 @@ fn startup(
 ) {
     font_mapping.set_default(asset_server.load("lato-light.kayak_font"));
 
-    commands.spawn(UICameraBundle::new());
-
     let mut widget_context = KayakRootContext::new();
+    widget_context.add_plugin(KayakWidgetsContextPlugin);
     widget_context.add_widget_data::<MenuButton, ButtonState>();
     widget_context.add_widget_system(
         MenuButton::default().get_name(),
@@ -214,7 +213,7 @@ fn startup(
         </KayakAppBundle>
     }
 
-    commands.insert_resource(widget_context);
+    commands.spawn(UICameraBundle::new(widget_context));
 }
 
 fn main() {

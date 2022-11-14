@@ -1,5 +1,4 @@
-use bevy::prelude::{Assets, Plugin, Res, ResMut};
-use kayak_font::KayakFont;
+use bevy::prelude::{Added, Entity, Plugin, Query, ResMut};
 
 mod extract;
 mod font_mapping;
@@ -21,13 +20,9 @@ impl Plugin for TextRendererPlugin {
 
 fn process_loaded_fonts(
     mut font_mapping: ResMut<FontMapping>,
-    _fonts: Res<Assets<KayakFont>>,
-    context_resource: Res<KayakRootContext>,
+    context_query: Query<Entity, Added<KayakRootContext>>,
 ) {
-    // if let Some(context = context_resource.as_ref() {
-    if context_resource.is_added() {
+    for _ in context_query.iter() {
         font_mapping.mark_all_as_new();
     }
-    // font_mapping.add_loaded_to_kayak(&fonts, &context);
-    // }
 }

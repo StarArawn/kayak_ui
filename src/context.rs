@@ -3,7 +3,7 @@ use std::sync::{Arc, RwLock};
 use bevy::{
     ecs::{event::ManualEventReader, system::CommandQueue},
     prelude::*,
-    utils::HashMap,
+    utils::{HashMap, HashSet},
 };
 use morphorm::Hierarchy;
 
@@ -14,6 +14,7 @@ use crate::{
     context_entities::ContextEntities,
     event_dispatcher::EventDispatcher,
     focus_tree::FocusTree,
+    input::query_world,
     layout::{LayoutCache, Rect},
     layout_dispatcher::LayoutEventDispatcher,
     node::{DirtyNode, WrappedIndex},
@@ -22,7 +23,7 @@ use crate::{
     styles::KStyle,
     tree::{Change, Tree},
     widget_state::WidgetState,
-    Focusable, WindowSize,
+    Focusable, KayakUIPlugin, WindowSize,
 };
 
 /// A tag component representing when a widget has been mounted(added to the tree).
@@ -58,7 +59,7 @@ type WidgetSystems = HashMap<
 ///     }).id();
 ///     // Stores the kayak app widget in the widget context's tree.
 ///     widget_context.add_widget(None, app_entity);
-///     commands.insert_resource(widget_context);
+///     commands.spawn(UICameraBundle::new(widget_context));
 /// }
 ///
 /// fn main() {
@@ -69,7 +70,7 @@ type WidgetSystems = HashMap<
 ///     .add_startup_system(setup);
 /// }
 /// ```
-#[derive(Resource)]
+#[derive(Component)]
 pub struct KayakRootContext {
     pub tree: Arc<RwLock<Tree>>,
     pub(crate) layout_cache: Arc<RwLock<LayoutCache>>,
@@ -83,6 +84,7 @@ pub struct KayakRootContext {
     pub(crate) widget_state: WidgetState,
     pub(crate) order_tree: Arc<RwLock<Tree>>,
     pub(crate) index: Arc<RwLock<HashMap<Entity, usize>>>,
+    pub(crate) uninitilized_systems: HashSet<String>,
 }
 
 impl Default for KayakRootContext {
@@ -107,7 +109,12 @@ impl KayakRootContext {
             widget_state: Default::default(),
             index: Default::default(),
             order_tree: Default::default(),
+            uninitilized_systems: Default::default(),
         }
+    }
+
+    pub fn add_plugin(&mut self, plugin: impl KayakUIPlugin) {
+        plugin.build(self)
     }
 
     /// Get's the layout for th given widget index.
@@ -141,10 +148,12 @@ impl KayakRootContext {
         update: impl IntoSystem<(KayakWidgetContext, Entity, Entity), bool, Params>,
         render: impl IntoSystem<(KayakWidgetContext, Entity), bool, Params2>,
     ) {
+        let type_name = type_name.into();
         let update_system = Box::new(IntoSystem::into_system(update));
         let render_system = Box::new(IntoSystem::into_system(render));
         self.systems
-            .insert(type_name.into(), (update_system, render_system));
+            .insert(type_name.clone(), (update_system, render_system));
+        self.uninitilized_systems.insert(type_name);
     }
 
     /// Let's the widget context know what data types are used for a given widget.
@@ -278,8 +287,6 @@ impl KayakRootContext {
             return vec![];
         }
 
-        // self.node_tree.dump();
-
         let render_primitives = if let Ok(mut layout_cache) = self.layout_cache.try_write() {
             recurse_node_tree_to_build_primitives(
                 &node_tree,
@@ -346,12 +353,23 @@ fn recurse_node_tree_to_build_primitives(
         };
 
         match &render_primitive {
-            RenderPrimitive::Text { content, .. } => {
+            RenderPrimitive::Text {
+                content, layout, ..
+            } => {
                 log::trace!(
-                    "Text node: {}-{} is equal to: {}",
+                    "Text node: {}-{} is equal to: {}, {:?}",
                     widget_names.get(current_node.0).unwrap().0,
                     current_node.0.index(),
                     content,
+                    layout,
+                );
+            }
+            RenderPrimitive::Clip { layout } => {
+                log::trace!(
+                    "Clip node: {}-{} is equal to: {:?}",
+                    widget_names.get(current_node.0).unwrap().0,
+                    current_node.0.index(),
+                    layout,
                 );
             }
             RenderPrimitive::Empty => {
@@ -439,84 +457,99 @@ fn recurse_node_tree_to_build_primitives(
 }
 
 fn update_widgets_sys(world: &mut World) {
-    let mut context = world.remove_resource::<KayakRootContext>().unwrap();
-    let tree_iterator = if let Ok(tree) = context.tree.read() {
-        tree.down_iter().collect::<Vec<_>>()
-    } else {
-        panic!("Failed to acquire read lock.");
-    };
+    let mut context_data = Vec::new();
 
-    // let change_tick = world.increment_change_tick();
-
-    let old_focus = if let Ok(mut focus_tree) = context.focus_tree.try_write() {
-        let current = focus_tree.current();
-        focus_tree.clear();
-        if let Ok(tree) = context.tree.read() {
-            if let Some(root_node) = tree.root_node {
-                focus_tree.add(root_node, &tree);
+    query_world::<Query<(Entity, &mut KayakRootContext)>, _, _>(
+        |mut query| {
+            for (entity, mut kayak_root_context) in query.iter_mut() {
+                context_data.push((entity, std::mem::take(&mut *kayak_root_context)));
             }
-        }
-        current
-    } else {
-        None
-    };
-
-    let mut new_ticks = HashMap::new();
-
-    // dbg!("Updating widgets!");
-    update_widgets(
+        },
         world,
-        &context.tree,
-        &context.layout_cache,
-        &mut context.systems,
-        tree_iterator,
-        &context.context_entities,
-        &context.focus_tree,
-        &context.clone_systems,
-        &context.cloned_widget_entities,
-        &context.widget_state,
-        &mut new_ticks,
-        &context.order_tree,
-        &context.index,
     );
 
-    if let Some(old_focus) = old_focus {
-        if let Ok(mut focus_tree) = context.focus_tree.try_write() {
-            if focus_tree.contains(old_focus) {
-                focus_tree.focus(old_focus);
+    for (entity, mut context) in context_data.drain(..) {
+        for system_id in context.uninitilized_systems.drain() {
+            if let Some(system) = context.systems.get_mut(&system_id) {
+                system.0.initialize(world);
+                system.1.initialize(world);
             }
         }
-    }
 
-    // dbg!("Finished updating widgets!");
-    let tick = world.read_change_tick();
-
-    for (key, system) in context.systems.iter_mut() {
-        if let Some(new_tick) = new_ticks.get(key) {
-            system.0.set_last_change_tick(*new_tick);
-            system.1.set_last_change_tick(*new_tick);
+        let tree_iterator = if let Ok(tree) = context.tree.read() {
+            tree.down_iter().collect::<Vec<_>>()
         } else {
-            system.0.set_last_change_tick(tick);
-            system.1.set_last_change_tick(tick);
+            panic!("Failed to acquire read lock.");
+        };
+
+        // let change_tick = world.increment_change_tick();
+
+        let old_focus = if let Ok(mut focus_tree) = context.focus_tree.try_write() {
+            let current = focus_tree.current();
+            focus_tree.clear();
+            if let Ok(tree) = context.tree.read() {
+                if let Some(root_node) = tree.root_node {
+                    focus_tree.add(root_node, &tree);
+                }
+            }
+            current
+        } else {
+            None
+        };
+
+        let mut new_ticks = HashMap::new();
+
+        // dbg!("Updating widgets!");
+        update_widgets(
+            world,
+            &context.tree,
+            &context.layout_cache,
+            &mut context.systems,
+            tree_iterator,
+            &context.context_entities,
+            &context.focus_tree,
+            &context.clone_systems,
+            &context.cloned_widget_entities,
+            &context.widget_state,
+            &mut new_ticks,
+            &context.order_tree,
+            &context.index,
+        );
+
+        if let Some(old_focus) = old_focus {
+            if let Ok(mut focus_tree) = context.focus_tree.try_write() {
+                if focus_tree.contains(old_focus) {
+                    focus_tree.focus(old_focus);
+                }
+            }
         }
-        // system.apply_buffers(world);
+
+        // dbg!("Finished updating widgets!");
+        let tick = world.read_change_tick();
+
+        for (key, system) in context.systems.iter_mut() {
+            if let Some(new_tick) = new_ticks.get(key) {
+                system.0.set_last_change_tick(*new_tick);
+                system.1.set_last_change_tick(*new_tick);
+            } else {
+                system.0.set_last_change_tick(tick);
+                system.1.set_last_change_tick(tick);
+            }
+            // system.apply_buffers(world);
+        }
+
+        // Clear out indices
+        if let Ok(mut indices) = context.index.try_write() {
+            // for (entity, value) in indices.iter_mut() {
+            //     if tree.root_node.unwrap().0.id() != entity.id() {
+            //         *value = 0;
+            //     }
+            // }
+            indices.clear();
+        }
+
+        world.entity_mut(entity).insert(context);
     }
-
-    // Clear out indices
-    if let Ok(mut indices) = context.index.try_write() {
-        // for (entity, value) in indices.iter_mut() {
-        //     if tree.root_node.unwrap().0.id() != entity.id() {
-        //         *value = 0;
-        //     }
-        // }
-        indices.clear();
-    }
-
-    // if let Ok(order_tree) = context.order_tree.try_read() {
-    //     order_tree.dump();
-    // }
-
-    world.insert_resource(context);
 }
 
 fn update_widgets(
@@ -623,7 +656,7 @@ fn update_widgets(
                         tree.merge(&widget_context, *entity, diff, UPDATE_DEPTH);
 
                         // if had_removal {
-                        //     tree.dump();
+                        // tree.dump();
                         // }
 
                         for child in widget_context.child_iter(*entity) {
@@ -708,7 +741,13 @@ fn update_widget(
                 panic!("Couldn't get write lock!")
             };
 
-        let widget_update_system = &mut systems.get_mut(&widget_type).unwrap().0;
+        let widget_update_system = &mut systems
+            .get_mut(&widget_type)
+            .expect(&format!(
+                "Wasn't able to find render/update systems for widget: {}!",
+                widget_type
+            ))
+            .0;
         let old_tick = widget_update_system.get_last_change_tick();
         let should_rerender =
             widget_update_system.run((widget_context.clone(), entity.0, old_props_entity), world);
@@ -857,16 +896,6 @@ fn update_widget(
     (widget_context, should_update_children)
 }
 
-fn init_systems(world: &mut World) {
-    let mut context = world.remove_resource::<KayakRootContext>().unwrap();
-    for system in context.systems.values_mut() {
-        system.0.initialize(world);
-        system.1.initialize(world);
-    }
-
-    world.insert_resource(context);
-}
-
 /// The default Kayak Context plugin
 /// Creates systems and resources for kayak.
 pub struct KayakContextPlugin;
@@ -877,7 +906,6 @@ pub struct CustomEventReader<T: bevy::ecs::event::Event>(pub ManualEventReader<T
 impl Plugin for KayakContextPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(WindowSize::default())
-            .insert_resource(EventDispatcher::new())
             .insert_resource(CustomEventReader(ManualEventReader::<
                 bevy::window::CursorMoved,
             >::default()))
@@ -896,7 +924,6 @@ impl Plugin for KayakContextPlugin {
             .add_plugin(crate::camera::KayakUICameraPlugin)
             .add_plugin(crate::render::BevyKayakUIRenderPlugin)
             .register_type::<Node>()
-            .add_startup_system_to_stage(StartupStage::PostStartup, init_systems.at_end())
             .add_system_to_stage(CoreStage::Update, crate::input::process_events)
             .add_system_to_stage(CoreStage::PostUpdate, update_widgets_sys.at_start())
             .add_system_to_stage(CoreStage::PostUpdate, calculate_ui.at_end())
@@ -906,30 +933,40 @@ impl Plugin for KayakContextPlugin {
 
 fn calculate_ui(world: &mut World) {
     // dbg!("Calculating nodes!");
-    let mut node_system = IntoSystem::into_system(calculate_nodes);
-    node_system.initialize(world);
 
-    let mut layout_system = IntoSystem::into_system(calculate_layout);
-    layout_system.initialize(world);
+    let mut context_data = Vec::new();
 
-    for _ in 0..3 {
-        node_system.run((), world);
-        node_system.apply_buffers(world);
-
-        layout_system.run((), world);
-        layout_system.apply_buffers(world);
-        world.resource_scope::<KayakRootContext, _>(|world, mut context| {
-            LayoutEventDispatcher::dispatch(&mut context, world);
-        });
-    }
-
-    world.resource_scope::<KayakRootContext, _>(|world, mut context| {
-        world.resource_scope::<EventDispatcher, _>(|world, event_dispatcher| {
-            if event_dispatcher.hovered.is_none() {
-                context.current_cursor = CursorIcon::Default;
-                return;
+    query_world::<Query<(Entity, &mut EventDispatcher, &mut KayakRootContext)>, _, _>(
+        |mut query| {
+            for (entity, mut event_dispatcher, mut kayak_root_context) in query.iter_mut() {
+                context_data.push((
+                    entity,
+                    std::mem::take(&mut *event_dispatcher),
+                    std::mem::take(&mut *kayak_root_context),
+                ));
             }
+        },
+        world,
+    );
 
+    for (entity, event_dispatcher, mut context) in context_data.drain(..) {
+        let mut node_system = IntoSystem::into_system(calculate_nodes);
+        node_system.initialize(world);
+        let mut layout_system = IntoSystem::into_system(calculate_layout);
+        layout_system.initialize(world);
+
+        for _ in 0..3 {
+            context = node_system.run(context, world);
+            node_system.apply_buffers(world);
+
+            context = layout_system.run(context, world);
+            layout_system.apply_buffers(world);
+            LayoutEventDispatcher::dispatch(&mut context, world);
+        }
+
+        if event_dispatcher.hovered.is_none() {
+            context.current_cursor = CursorIcon::Default;
+        } else {
             let hovered = event_dispatcher.hovered.unwrap();
             if let Some(entity) = world.get_entity(hovered.0) {
                 if let Some(node) = entity.get::<crate::node::Node>() {
@@ -937,15 +974,16 @@ fn calculate_ui(world: &mut World) {
                     context.current_cursor = icon.0;
                 }
             }
-        });
 
-        if let Some(ref mut windows) = world.get_resource_mut::<Windows>() {
-            if let Some(window) = windows.get_primary_mut() {
-                window.set_cursor_icon(context.current_cursor);
+            if let Some(ref mut windows) = world.get_resource_mut::<Windows>() {
+                if let Some(window) = windows.get_primary_mut() {
+                    window.set_cursor_icon(context.current_cursor);
+                }
             }
         }
-    });
 
+        world.entity_mut(entity).insert((event_dispatcher, context));
+    }
     // dbg!("Finished calculating nodes!");
 
     // dbg!("Dispatching layout events!");

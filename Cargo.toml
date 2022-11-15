@@ -16,7 +16,7 @@ members = ["kayak_ui_macros", "kayak_font"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-bevy = { git = "https://github.com/bevyengine/bevy", version = "0.9" }
+bevy = { version = "0.9" }
 bytemuck = "1.12"
 dashmap = "5.4"
 kayak_font = { path = "./kayak_font", version = "0.1" }

@@ -77,6 +77,7 @@ impl Tree {
             children
         } else {
             // Is root node
+            self.root_node = None;
             Vec::default()
         }
     }

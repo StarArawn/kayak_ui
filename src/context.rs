@@ -579,6 +579,16 @@ fn update_widgets(
     index: &Arc<RwLock<HashMap<Entity, usize>>>,
 ) {
     for entity in widgets.iter() {
+        // A small hack to add parents to widgets
+        let mut command_queue = CommandQueue::default();
+        {
+            let mut commands = Commands::new(&mut command_queue, &world);
+            if let Some(mut entity_commands) = commands.get_entity(entity.0) {
+                entity_commands.set_parent(camera_entity);
+            }
+        }
+        command_queue.apply(world);
+
         if let Some(entity_ref) = world.get_entity(entity.0) {
             if let Some(widget_type) = entity_ref.get::<WidgetName>() {
                 let widget_context = KayakWidgetContext::new(
@@ -703,6 +713,31 @@ fn update_widgets(
                 );
                 // }
             }
+        } else {
+            // In this case the entity we are trying to process no longer exists.
+            // The approach taken here removes said entities from the tree.
+            let mut despawn_list = Vec::default();
+            if let Ok(mut tree) = tree.write() {
+                for child in tree.down_iter_at(*entity, true) {
+                    despawn_list.push(child.0);
+                    if let Ok(mut order_tree) = order_tree.try_write() {
+                        // had_removal = true;
+                        log::trace!(
+                            "Removing entity! {:?} inside of: {:?}",
+                            child.0.index(),
+                            entity.0.index()
+                        );
+                        order_tree.remove(child);
+                    }
+                }
+                
+                for entity in despawn_list.drain(..) {
+                    tree.remove(WrappedIndex(entity));
+                    if let Some(entity_mut) = world.get_entity_mut(entity) {
+                        entity_mut.despawn();
+                    }
+                }
+            } 
         }
 
         if let Some(entity_ref) = world.get_entity(entity.0) {

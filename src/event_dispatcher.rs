@@ -385,36 +385,37 @@ impl EventDispatcher {
                     let (current, depth) = stack.pop().unwrap();
                     let mut enter_children = true;
 
-                    if world.entity(current.0).contains::<OnEvent>() {
-                        for input_event in input_events {
-                            // --- Process Event --- //
-                            if matches!(input_event.category(), InputEventCategory::Mouse) {
-                                // A widget's PointerEvents style will determine how it and its children are processed
-                                let pointer_events = Self::resolve_pointer_events(current, world);
+                    if let Some(entity_ref) = world.get_entity(current.0) {
+                        if entity_ref.contains::<OnEvent>() {
+                            for input_event in input_events {
+                                // --- Process Event --- //
+                                if matches!(input_event.category(), InputEventCategory::Mouse) {
+                                    // A widget's PointerEvents style will determine how it and its children are processed
+                                    let pointer_events = Self::resolve_pointer_events(current, world);
 
-                                match pointer_events {
-                                    PointerEvents::All | PointerEvents::SelfOnly => {
-                                        let events = self.process_pointer_events(
-                                            input_event,
-                                            (current, depth),
-                                            &mut states,
-                                            world,
-                                            context,
-                                            false,
-                                        );
-                                        event_stream.extend(events);
+                                    match pointer_events {
+                                        PointerEvents::All | PointerEvents::SelfOnly => {
+                                            let events = self.process_pointer_events(
+                                                input_event,
+                                                (current, depth),
+                                                &mut states,
+                                                world,
+                                                context,
+                                                false,
+                                            );
+                                            event_stream.extend(events);
 
-                                        if matches!(pointer_events, PointerEvents::SelfOnly) {
-                                            enter_children = false;
+                                            if matches!(pointer_events, PointerEvents::SelfOnly) {
+                                                enter_children = false;
+                                            }
                                         }
+                                        PointerEvents::None => enter_children = false,
+                                        PointerEvents::ChildrenOnly => {}
                                     }
-                                    PointerEvents::None => enter_children = false,
-                                    PointerEvents::ChildrenOnly => {}
                                 }
                             }
                         }
                     }
-
                     // --- Push Children to Stack --- //
                     if enter_children {
                         if let Some(children) = node_tree.children.get(&current) {

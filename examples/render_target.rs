@@ -16,6 +16,9 @@ use kayak_ui::{
 #[derive(Component)]
 struct MainPassCube;
 
+#[derive(Component)]
+struct MainUI;
+
 fn startup(
     mut commands: Commands,
     mut font_mapping: ResMut<FontMapping>,
@@ -145,7 +148,7 @@ fn startup(
             />
         </KayakAppBundle>
     }
-    commands.spawn(UICameraBundle::new(widget_context));
+    commands.spawn((UICameraBundle::new(widget_context), MainUI));
 }
 
 /// Rotates the outer cube (main pass)
@@ -156,6 +159,18 @@ fn cube_rotator_system(time: Res<Time>, mut query: Query<&mut Transform, With<Ma
     }
 }
 
+fn depsawn_ui(
+    mut commands: Commands,
+    keyboard_input: Res<Input<KeyCode>>,
+    ui_query: Query<(Entity, &KayakRootContext), With<MainUI>>,
+) {
+    if keyboard_input.pressed(KeyCode::Escape) {
+        if let Ok((entity, _)) = ui_query.get_single() {
+            commands.entity(entity).despawn_descendants();
+        }
+    }
+}
+
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
@@ -163,5 +178,6 @@ fn main() {
         .add_plugin(KayakWidgets)
         .add_startup_system(startup)
         .add_system(cube_rotator_system)
+        .add_system(depsawn_ui)
         .run()
 }

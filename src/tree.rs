@@ -77,7 +77,11 @@ impl Tree {
             children
         } else {
             // Is root node
-            self.root_node = None;
+            if let Some(root_node) = self.root_node {
+                if root_node == index {
+                    self.root_node = None;
+                }
+            }
             Vec::default()
         }
     }

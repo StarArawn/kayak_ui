@@ -391,7 +391,8 @@ impl EventDispatcher {
                                 // --- Process Event --- //
                                 if matches!(input_event.category(), InputEventCategory::Mouse) {
                                     // A widget's PointerEvents style will determine how it and its children are processed
-                                    let pointer_events = Self::resolve_pointer_events(current, world);
+                                    let pointer_events =
+                                        Self::resolve_pointer_events(current, world);
 
                                     match pointer_events {
                                         PointerEvents::All | PointerEvents::SelfOnly => {

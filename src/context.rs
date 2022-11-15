@@ -730,14 +730,14 @@ fn update_widgets(
                         order_tree.remove(child);
                     }
                 }
-                
+
                 for entity in despawn_list.drain(..) {
                     tree.remove(WrappedIndex(entity));
                     if let Some(entity_mut) = world.get_entity_mut(entity) {
                         entity_mut.despawn();
                     }
                 }
-            } 
+            }
         }
 
         if let Some(entity_ref) = world.get_entity(entity.0) {

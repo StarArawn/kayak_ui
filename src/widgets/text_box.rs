@@ -131,12 +131,7 @@ pub fn text_box_render(
 
                 state.cursor_position = state.graphemes.len();
 
-                set_new_cursor_position(
-                    &mut state,
-                    &font_assets,
-                    &font_mapping,
-                    &style_font,
-                );
+                set_new_cursor_position(&mut state, &font_assets, &font_mapping, &style_font);
             }
         }
 

@@ -121,9 +121,22 @@ pub fn text_box_render(
             }
         }
 
+        let style_font = styles.font.clone();
+
         if is_different {
             if let Ok(mut state) = state_query.p1().get_mut(state_entity) {
                 state.current_value = text_box.value.clone();
+                // Update graphemes
+                set_graphemes(&mut state, &font_assets, &font_mapping, &style_font);
+
+                state.cursor_position = state.graphemes.len();
+
+                set_new_cursor_position(
+                    &mut state,
+                    &font_assets,
+                    &font_mapping,
+                    &style_font,
+                );
             }
         }
 
@@ -161,7 +174,6 @@ pub fn text_box_render(
             };
 
             let cloned_on_change = on_change.clone();
-            let style_font = styles.font.clone();
 
             *on_event = OnEvent::new(
                 move |In((event_dispatcher_context, _, mut event, _entity)): In<(

@@ -1,4 +1,7 @@
-use bevy::prelude::{Component, Entity, Query};
+use bevy::{
+    prelude::{Component, Entity, Query, Reflect, ReflectComponent},
+    reflect::FromReflect,
+};
 
 use crate::{
     render_primitive::RenderPrimitive,
@@ -9,7 +12,8 @@ use crate::{
 pub struct DirtyNode;
 
 /// A widget node used for building the layout tree
-#[derive(Debug, Clone, PartialEq, Component)]
+#[derive(Debug, Reflect, Clone, PartialEq, Component)]
+#[reflect(Component)]
 pub struct Node {
     /// The list of children directly under this node
     pub children: Vec<WrappedIndex>,
@@ -107,7 +111,7 @@ impl NodeBuilder {
     }
 }
 
-#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
+#[derive(Debug, Reflect, FromReflect, Clone, Copy, Hash, PartialEq, Eq)]
 pub struct WrappedIndex(pub Entity);
 
 impl<'a> morphorm::Node<'a> for WrappedIndex {
@@ -117,7 +121,7 @@ impl<'a> morphorm::Node<'a> for WrappedIndex {
         if let Ok(node) = store.get(self.0) {
             return match node.resolved_styles.layout_type {
                 StyleProp::Default => Some(morphorm::LayoutType::default()),
-                StyleProp::Value(prop) => Some(prop),
+                StyleProp::Value(prop) => Some(prop.into()),
                 _ => Some(morphorm::LayoutType::default()),
             };
         }
@@ -128,7 +132,7 @@ impl<'a> morphorm::Node<'a> for WrappedIndex {
         if let Ok(node) = store.get(self.0) {
             return match node.resolved_styles.position_type {
                 StyleProp::Default => Some(morphorm::PositionType::default()),
-                StyleProp::Value(prop) => Some(prop),
+                StyleProp::Value(prop) => Some(prop.into()),
                 _ => Some(morphorm::PositionType::default()),
             };
         }
@@ -139,7 +143,7 @@ impl<'a> morphorm::Node<'a> for WrappedIndex {
         if let Ok(node) = store.get(self.0) {
             return match node.resolved_styles.width {
                 StyleProp::Default => Some(morphorm::Units::Stretch(1.0)),
-                StyleProp::Value(prop) => Some(prop),
+                StyleProp::Value(prop) => Some(prop.into()),
                 _ => Some(morphorm::Units::Stretch(1.0)),
             };
         }
@@ -150,7 +154,7 @@ impl<'a> morphorm::Node<'a> for WrappedIndex {
         if let Ok(node) = store.get(self.0) {
             return match node.resolved_styles.height {
                 StyleProp::Default => Some(morphorm::Units::Stretch(1.0)),
-                StyleProp::Value(prop) => Some(prop),
+                StyleProp::Value(prop) => Some(prop.into()),
                 _ => Some(morphorm::Units::Stretch(1.0)),
             };
         }
@@ -161,7 +165,7 @@ impl<'a> morphorm::Node<'a> for WrappedIndex {
         if let Ok(node) = store.get(self.0) {
             return match node.resolved_styles.min_width {
                 StyleProp::Default => Some(morphorm::Units::Pixels(0.0)),
-                StyleProp::Value(prop) => Some(prop),
+                StyleProp::Value(prop) => Some(prop.into()),
                 _ => Some(morphorm::Units::Auto),
             };
         }
@@ -172,7 +176,7 @@ impl<'a> morphorm::Node<'a> for WrappedIndex {
         if let Ok(node) = store.get(self.0) {
             return match node.resolved_styles.min_height {
                 StyleProp::Default => Some(morphorm::Units::Pixels(0.0)),
-                StyleProp::Value(prop) => Some(prop),
+                StyleProp::Value(prop) => Some(prop.into()),
                 _ => Some(morphorm::Units::Auto),
             };
         }
@@ -183,7 +187,7 @@ impl<'a> morphorm::Node<'a> for WrappedIndex {
         if let Ok(node) = store.get(self.0) {
             return match node.resolved_styles.max_width {
                 StyleProp::Default => Some(morphorm::Units::Auto),
-                StyleProp::Value(prop) => Some(prop),
+                StyleProp::Value(prop) => Some(prop.into()),
                 _ => Some(morphorm::Units::Auto),
             };
         }
@@ -194,7 +198,7 @@ impl<'a> morphorm::Node<'a> for WrappedIndex {
         if let Ok(node) = store.get(self.0) {
             return match node.resolved_styles.max_height {
                 StyleProp::Default => Some(morphorm::Units::Auto),
-                StyleProp::Value(prop) => Some(prop),
+                StyleProp::Value(prop) => Some(prop.into()),
                 _ => Some(morphorm::Units::Auto),
             };
         }
@@ -206,10 +210,10 @@ impl<'a> morphorm::Node<'a> for WrappedIndex {
             return match node.resolved_styles.left {
                 StyleProp::Default => match node.resolved_styles.offset {
                     StyleProp::Default => Some(morphorm::Units::Auto),
-                    StyleProp::Value(prop) => Some(prop.left),
+                    StyleProp::Value(prop) => Some(prop.left.into()),
                     _ => Some(morphorm::Units::Auto),
                 },
-                StyleProp::Value(prop) => Some(prop),
+                StyleProp::Value(prop) => Some(prop.into()),
                 _ => Some(morphorm::Units::Auto),
             };
         }
@@ -221,10 +225,10 @@ impl<'a> morphorm::Node<'a> for WrappedIndex {
             return match node.resolved_styles.right {
                 StyleProp::Default => match node.resolved_styles.offset {
                     StyleProp::Default => Some(morphorm::Units::Auto),
-                    StyleProp::Value(prop) => Some(prop.right),
+                    StyleProp::Value(prop) => Some(prop.right.into()),
                     _ => Some(morphorm::Units::Auto),
                 },
-                StyleProp::Value(prop) => Some(prop),
+                StyleProp::Value(prop) => Some(prop.into()),
                 _ => Some(morphorm::Units::Auto),
             };
         }
@@ -236,10 +240,10 @@ impl<'a> morphorm::Node<'a> for WrappedIndex {
             return match node.resolved_styles.top {
                 StyleProp::Default => match node.resolved_styles.offset {
                     StyleProp::Default => Some(morphorm::Units::Auto),
-                    StyleProp::Value(prop) => Some(prop.top),
+                    StyleProp::Value(prop) => Some(prop.top.into()),
                     _ => Some(morphorm::Units::Auto),
                 },
-                StyleProp::Value(prop) => Some(prop),
+                StyleProp::Value(prop) => Some(prop.into()),
                 _ => Some(morphorm::Units::Auto),
             };
         }
@@ -251,10 +255,10 @@ impl<'a> morphorm::Node<'a> for WrappedIndex {
             return match node.resolved_styles.bottom {
                 StyleProp::Default => match node.resolved_styles.offset {
                     StyleProp::Default => Some(morphorm::Units::Auto),
-                    StyleProp::Value(prop) => Some(prop.bottom),
+                    StyleProp::Value(prop) => Some(prop.bottom.into()),
                     _ => Some(morphorm::Units::Auto),
                 },
-                StyleProp::Value(prop) => Some(prop),
+                StyleProp::Value(prop) => Some(prop.into()),
                 _ => Some(morphorm::Units::Auto),
             };
         }
@@ -298,10 +302,10 @@ impl<'a> morphorm::Node<'a> for WrappedIndex {
             return match node.resolved_styles.padding_left {
                 StyleProp::Default => match node.resolved_styles.padding {
                     StyleProp::Default => Some(morphorm::Units::Auto),
-                    StyleProp::Value(prop) => Some(prop.left),
+                    StyleProp::Value(prop) => Some(prop.left.into()),
                     _ => Some(morphorm::Units::Auto),
                 },
-                StyleProp::Value(prop) => Some(prop),
+                StyleProp::Value(prop) => Some(prop.into()),
                 _ => Some(morphorm::Units::Auto),
             };
         }
@@ -313,10 +317,10 @@ impl<'a> morphorm::Node<'a> for WrappedIndex {
             return match node.resolved_styles.padding_right {
                 StyleProp::Default => match node.resolved_styles.padding {
                     StyleProp::Default => Some(morphorm::Units::Auto),
-                    StyleProp::Value(prop) => Some(prop.right),
+                    StyleProp::Value(prop) => Some(prop.right.into()),
                     _ => Some(morphorm::Units::Auto),
                 },
-                StyleProp::Value(prop) => Some(prop),
+                StyleProp::Value(prop) => Some(prop.into()),
                 _ => Some(morphorm::Units::Auto),
             };
         }
@@ -328,10 +332,10 @@ impl<'a> morphorm::Node<'a> for WrappedIndex {
             return match node.resolved_styles.padding_top {
                 StyleProp::Default => match node.resolved_styles.padding {
                     StyleProp::Default => Some(morphorm::Units::Auto),
-                    StyleProp::Value(prop) => Some(prop.top),
+                    StyleProp::Value(prop) => Some(prop.top.into()),
                     _ => Some(morphorm::Units::Auto),
                 },
-                StyleProp::Value(prop) => Some(prop),
+                StyleProp::Value(prop) => Some(prop.into()),
                 _ => Some(morphorm::Units::Auto),
             };
         }
@@ -343,10 +347,10 @@ impl<'a> morphorm::Node<'a> for WrappedIndex {
             return match node.resolved_styles.padding_bottom {
                 StyleProp::Default => match node.resolved_styles.padding {
                     StyleProp::Default => Some(morphorm::Units::Auto),
-                    StyleProp::Value(prop) => Some(prop.bottom),
+                    StyleProp::Value(prop) => Some(prop.bottom.into()),
                     _ => Some(morphorm::Units::Auto),
                 },
-                StyleProp::Value(prop) => Some(prop),
+                StyleProp::Value(prop) => Some(prop.into()),
                 _ => Some(morphorm::Units::Auto),
             };
         }
@@ -357,7 +361,7 @@ impl<'a> morphorm::Node<'a> for WrappedIndex {
         if let Ok(node) = store.get(self.0) {
             return match node.resolved_styles.row_between {
                 StyleProp::Default => Some(morphorm::Units::Auto),
-                StyleProp::Value(prop) => Some(prop),
+                StyleProp::Value(prop) => Some(prop.into()),
                 _ => Some(morphorm::Units::Auto),
             };
         }
@@ -368,7 +372,7 @@ impl<'a> morphorm::Node<'a> for WrappedIndex {
         if let Ok(node) = store.get(self.0) {
             return match node.resolved_styles.col_between {
                 StyleProp::Default => Some(morphorm::Units::Auto),
-                StyleProp::Value(prop) => Some(prop),
+                StyleProp::Value(prop) => Some(prop.into()),
                 _ => Some(morphorm::Units::Auto),
             };
         }

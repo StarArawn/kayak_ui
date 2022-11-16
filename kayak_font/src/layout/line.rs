@@ -1,10 +1,12 @@
+use bevy::reflect::{FromReflect, Reflect};
+
 use crate::layout::grapheme::Grapheme;
 use std::cmp::Ordering;
 use std::ops::Index;
 use std::slice::SliceIndex;
 
 /// Contains details for a calculated line of text.
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Reflect, FromReflect, Debug, PartialEq)]
 pub struct Line {
     grapheme_index: usize,
     graphemes: Vec<Grapheme>,

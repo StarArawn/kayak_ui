@@ -1,12 +1,14 @@
 use std::ops::{Mul, MulAssign};
 
+use bevy::reflect::{FromReflect, Reflect};
+
 /// A struct for defining properties related to the corners of widgets
 ///
 /// This is useful for things like border radii, etc.
-#[derive(Debug, Default, Copy, Clone, PartialEq, Eq)]
+#[derive(Debug, Default, Reflect, FromReflect, Copy, Clone, PartialEq, Eq)]
 pub struct Corner<T>
 where
-    T: Copy + Default + PartialEq,
+    T: Copy + Default + PartialEq + Reflect,
 {
     /// The value of the top-left corner
     pub top_left: T,
@@ -20,7 +22,7 @@ where
 
 impl<T> Corner<T>
 where
-    T: Copy + Default + PartialEq,
+    T: Copy + Default + PartialEq + Reflect,
 {
     /// Creates a new `Corner` with values individually specified for each corner
     ///
@@ -116,7 +118,7 @@ where
 
 impl<T> From<Corner<T>> for (T, T, T, T)
 where
-    T: Copy + Default + PartialEq,
+    T: Copy + Default + PartialEq + Reflect,
 {
     /// Creates a tuple matching the pattern: `(Top Left, Top Right, Bottom Left, Bottom Right)`
     fn from(edge: Corner<T>) -> Self {
@@ -126,7 +128,7 @@ where
 
 impl<T> From<T> for Corner<T>
 where
-    T: Copy + Default + PartialEq,
+    T: Copy + Default + PartialEq + Reflect,
 {
     fn from(value: T) -> Self {
         Corner::all(value)
@@ -135,7 +137,7 @@ where
 
 impl<T> From<(T, T, T, T)> for Corner<T>
 where
-    T: Copy + Default + PartialEq,
+    T: Copy + Default + PartialEq + Reflect,
 {
     /// Converts the tuple according to the pattern: `(Top Left, Top Right, Bottom Left, Bottom Right)`
     fn from(value: (T, T, T, T)) -> Self {
@@ -145,7 +147,7 @@ where
 
 impl<T> Mul<T> for Corner<T>
 where
-    T: Copy + Default + PartialEq + Mul<Output = T>,
+    T: Copy + Default + PartialEq + Mul<Output = T> + Reflect,
 {
     type Output = Self;
 
@@ -161,7 +163,7 @@ where
 
 impl<T> Mul<Corner<T>> for Corner<T>
 where
-    T: Copy + Default + PartialEq + Mul<Output = T>,
+    T: Copy + Default + PartialEq + Mul<Output = T> + Reflect,
 {
     type Output = Self;
 
@@ -177,7 +179,7 @@ where
 
 impl<T> MulAssign<T> for Corner<T>
 where
-    T: Copy + Default + PartialEq + MulAssign,
+    T: Copy + Default + PartialEq + MulAssign + Reflect,
 {
     fn mul_assign(&mut self, rhs: T) {
         self.top_left *= rhs;
@@ -189,7 +191,7 @@ where
 
 impl<T> MulAssign<Corner<T>> for Corner<T>
 where
-    T: Copy + Default + PartialEq + MulAssign,
+    T: Copy + Default + PartialEq + MulAssign + Reflect,
 {
     fn mul_assign(&mut self, rhs: Corner<T>) {
         self.top_left *= rhs.top_left;

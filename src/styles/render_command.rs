@@ -1,9 +1,12 @@
-use bevy::prelude::{Handle, Image, Vec2};
+use bevy::{
+    prelude::{Handle, Image, Vec2},
+    reflect::{FromReflect, Reflect},
+};
 use kayak_font::Alignment;
 
 use super::Edge;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Reflect, FromReflect, Clone, PartialEq)]
 pub enum RenderCommand {
     Empty,
     /// Represents a node that has no renderable object but contributes to the layout.

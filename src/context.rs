@@ -12,6 +12,7 @@ use crate::{
     children::KChildren,
     clone_component::{clone_state, clone_system, EntityCloneSystems, PreviousWidget},
     context_entities::ContextEntities,
+    cursor::PointerEvents,
     event_dispatcher::EventDispatcher,
     focus_tree::FocusTree,
     input::query_world,
@@ -20,14 +21,18 @@ use crate::{
     node::{DirtyNode, WrappedIndex},
     prelude::KayakWidgetContext,
     render_primitive::RenderPrimitive,
-    styles::KStyle,
+    styles::{
+        Corner, Edge, KCursorIcon, KPositionType, KStyle, LayoutType, RenderCommand, StyleProp,
+        Units,
+    },
     tree::{Change, Tree},
     widget_state::WidgetState,
     Focusable, KayakUIPlugin, WindowSize,
 };
 
 /// A tag component representing when a widget has been mounted(added to the tree).
-#[derive(Component)]
+#[derive(Component, Reflect, Default)]
+#[reflect(Component)]
 pub struct Mounted;
 
 const UPDATE_DEPTH: u32 = 0;
@@ -976,6 +981,25 @@ impl Plugin for KayakContextPlugin {
             .add_system_to_stage(CoreStage::PostUpdate, update_widgets_sys.at_start())
             .add_system_to_stage(CoreStage::PostUpdate, calculate_ui.at_end())
             .add_system(crate::window_size::update_window_size);
+
+        // Register reflection types.
+        // A bit annoying..
+        app.register_type::<KStyle>()
+            .register_type::<KChildren>()
+            .register_type::<WidgetName>()
+            .register_type::<StyleProp<Color>>()
+            .register_type::<StyleProp<Corner<f32>>>()
+            .register_type::<StyleProp<Edge<f32>>>()
+            .register_type::<StyleProp<Units>>()
+            .register_type::<StyleProp<KCursorIcon>>()
+            .register_type::<StyleProp<String>>()
+            .register_type::<StyleProp<f32>>()
+            .register_type::<StyleProp<LayoutType>>()
+            .register_type::<StyleProp<Edge<Units>>>()
+            .register_type::<StyleProp<PointerEvents>>()
+            .register_type::<StyleProp<KPositionType>>()
+            .register_type::<StyleProp<RenderCommand>>()
+            .register_type::<StyleProp<i32>>();
     }
 }
 
@@ -1040,8 +1064,16 @@ fn calculate_ui(world: &mut World) {
 
 /// A simple component that stores the type name of a widget
 /// This is used by Kayak in order to find out which systems to run.
-#[derive(Component, Debug, Clone, PartialEq, Eq)]
+#[derive(Component, Reflect, Debug, Clone, PartialEq, Eq)]
+#[reflect(Component)]
 pub struct WidgetName(pub String);
+
+impl Default for WidgetName {
+    fn default() -> Self {
+        log::warn!("You did not specify a widget name for a widget!");
+        Self("NO_NAME".to_string())
+    }
+}
 
 impl From<String> for WidgetName {
     fn from(value: String) -> Self {

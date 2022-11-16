@@ -1,8 +1,12 @@
-use bevy::{prelude::Component, utils::HashMap};
+use bevy::{
+    prelude::{Component, Reflect, ReflectComponent},
+    utils::HashMap,
+};
 
 use crate::{node::WrappedIndex, prelude::Tree};
 
-#[derive(Component, Default, Clone, Copy)]
+#[derive(Component, Reflect, Default, Clone, Copy)]
+#[reflect(Component)]
 pub struct Focusable;
 
 #[derive(Debug, Default, PartialEq, Eq)]

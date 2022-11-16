@@ -30,6 +30,7 @@ resources = "1.1"
 
 [dev-dependencies]
 fastrand = "1.8"
+bevy-inspector-egui = "0.14"
 
 [[example]]
 name = "tabs"

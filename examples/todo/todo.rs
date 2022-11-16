@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use bevy_inspector_egui::WorldInspectorPlugin;
 use kayak_ui::prelude::{widgets::*, *};
 
 mod input;
@@ -105,6 +106,7 @@ fn main() {
     App::new()
         .insert_resource(ClearColor(Color::rgb(0.0, 0.0, 0.0)))
         .add_plugins(DefaultPlugins)
+        .add_plugin(WorldInspectorPlugin::new())
         .add_plugin(KayakContextPlugin)
         .add_plugin(KayakWidgets)
         .insert_non_send_resource(TodoList::new())

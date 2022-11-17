@@ -1,12 +1,14 @@
 use std::ops::{Mul, MulAssign};
 
+use bevy::reflect::{FromReflect, Reflect};
+
 /// A struct for defining properties related to the edges of widgets
 ///
 /// This is useful for things like borders, padding, etc.
-#[derive(Debug, Default, Copy, Clone, PartialEq, Eq)]
+#[derive(Debug, Default, Reflect, FromReflect, Copy, Clone, PartialEq, Eq)]
 pub struct Edge<T>
 where
-    T: Copy + Default + PartialEq,
+    T: Copy + Default + PartialEq + Reflect,
 {
     /// The value of the top edge
     pub top: T,
@@ -20,7 +22,7 @@ where
 
 impl<T> Edge<T>
 where
-    T: Copy + Default + PartialEq,
+    T: Copy + Default + PartialEq + Reflect,
 {
     /// Creates a new `Edge` with values individually specified for each edge
     ///
@@ -79,7 +81,7 @@ where
 
 impl<T> From<Edge<T>> for (T, T, T, T)
 where
-    T: Copy + Default + PartialEq,
+    T: Copy + Default + PartialEq + Reflect,
 {
     fn from(edge: Edge<T>) -> Self {
         edge.into_tuple()
@@ -88,7 +90,7 @@ where
 
 impl<T> From<T> for Edge<T>
 where
-    T: Copy + Default + PartialEq,
+    T: Copy + Default + PartialEq + Reflect,
 {
     fn from(value: T) -> Self {
         Edge::all(value)
@@ -97,7 +99,7 @@ where
 
 impl<T> From<(T, T)> for Edge<T>
 where
-    T: Copy + Default + PartialEq,
+    T: Copy + Default + PartialEq + Reflect,
 {
     fn from(value: (T, T)) -> Self {
         Edge::axis(value.0, value.1)
@@ -106,7 +108,7 @@ where
 
 impl<T> From<(T, T, T, T)> for Edge<T>
 where
-    T: Copy + Default + PartialEq,
+    T: Copy + Default + PartialEq + Reflect,
 {
     fn from(value: (T, T, T, T)) -> Self {
         Edge::new(value.0, value.1, value.2, value.3)
@@ -115,7 +117,7 @@ where
 
 impl<T> Mul<T> for Edge<T>
 where
-    T: Copy + Default + PartialEq + Mul<Output = T>,
+    T: Copy + Default + PartialEq + Mul<Output = T> + Reflect,
 {
     type Output = Self;
 
@@ -131,7 +133,7 @@ where
 
 impl<T> Mul<Edge<T>> for Edge<T>
 where
-    T: Copy + Default + PartialEq + Mul<Output = T>,
+    T: Copy + Default + PartialEq + Mul<Output = T> + Reflect,
 {
     type Output = Self;
 
@@ -147,7 +149,7 @@ where
 
 impl<T> MulAssign<T> for Edge<T>
 where
-    T: Copy + Default + PartialEq + MulAssign,
+    T: Copy + Default + PartialEq + MulAssign + Reflect,
 {
     fn mul_assign(&mut self, rhs: T) {
         self.top *= rhs;
@@ -159,7 +161,7 @@ where
 
 impl<T> MulAssign<Edge<T>> for Edge<T>
 where
-    T: Copy + Default + PartialEq + MulAssign,
+    T: Copy + Default + PartialEq + MulAssign + Reflect,
 {
     fn mul_assign(&mut self, rhs: Edge<T>) {
         self.top *= rhs.top;

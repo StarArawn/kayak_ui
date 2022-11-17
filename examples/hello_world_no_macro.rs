@@ -6,8 +6,8 @@ fn startup(
     asset_server: Res<AssetServer>,
 ) {
     font_mapping.set_default(asset_server.load("roboto.kayak_font"));
-    commands.spawn(UICameraBundle::new());
     let mut widget_context = KayakRootContext::new();
+    widget_context.add_plugin(KayakWidgetsContextPlugin);
 
     let app_entity = widget_context.spawn_widget(&mut commands, None);
     // Create default app bundle
@@ -19,7 +19,7 @@ fn startup(
     let mut children = KChildren::new();
 
     // Create the text child
-    let text_entity = widget_context.spawn_widget(&mut commands, Some(app_entity));
+    let text_entity = widget_context.spawn_widget(&mut commands, None);
     commands.entity(text_entity).insert(TextWidgetBundle {
         text: TextProps {
             content: "Hello World".into(),
@@ -38,7 +38,8 @@ fn startup(
     widget_context.add_widget(None, app_entity);
 
     // Add widget context as resource.
-    commands.insert_resource(widget_context);
+
+    commands.spawn(UICameraBundle::new(widget_context));
 }
 fn main() {
     App::new()

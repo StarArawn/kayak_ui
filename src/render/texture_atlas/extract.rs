@@ -5,11 +5,12 @@ use crate::{
 };
 use bevy::{
     math::Vec2,
-    prelude::{Assets, Rect, Res},
+    prelude::{Assets, Entity, Rect, Res},
     render::{color::Color, texture::Image},
 };
 
 pub fn extract_texture_atlas(
+    camera_entity: Entity,
     render_primitive: &RenderPrimitive,
     images: &Res<Assets<Image>>,
     dpi: f32,
@@ -44,6 +45,7 @@ pub fn extract_texture_atlas(
 
     let quad = ExtractQuadBundle {
         extracted_quad: ExtractedQuad {
+            camera_entity,
             rect: Rect {
                 min: Vec2::new(layout.posx, layout.posy),
                 max: Vec2::new(layout.posx + layout.width, layout.posy + layout.height),

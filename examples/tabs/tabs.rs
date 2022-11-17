@@ -20,9 +20,9 @@ fn startup(
     // Camera 2D forces a clear pass in bevy.
     // We do this because our scene is not rendering anything else.
     commands.spawn(Camera2dBundle::default());
-    commands.spawn(UICameraBundle::new());
 
     let mut widget_context = KayakRootContext::new();
+    widget_context.add_plugin(KayakWidgetsContextPlugin);
     widget_context.add_widget_data::<Tab, EmptyState>();
     widget_context.add_widget_data::<TabContextProvider, EmptyState>();
     widget_context.add_widget_data::<TabButton, EmptyState>();
@@ -87,7 +87,7 @@ fn startup(
         </KayakAppBundle>
     }
 
-    commands.insert_resource(widget_context);
+    commands.spawn(UICameraBundle::new(widget_context));
 }
 
 fn main() {

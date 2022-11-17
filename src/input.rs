@@ -105,16 +105,35 @@ pub(crate) fn process_events(world: &mut World) {
         world,
     );
 
-    world.resource_scope::<EventDispatcher, _>(|world, mut event_dispatcher| {
-        world.resource_scope::<KayakRootContext, _>(|world, mut context| {
-            event_dispatcher.process_events(input_events, &mut context, world);
-        });
-    });
+    // TODO: find a faster way of doing this.
+    let mut context_data = Vec::new();
+
+    query_world::<Query<(Entity, &mut EventDispatcher, &mut KayakRootContext)>, _, _>(
+        |mut query| {
+            for (entity, mut event_dispatcher, mut kayak_root_context) in query.iter_mut() {
+                context_data.push((
+                    entity,
+                    std::mem::take(&mut *event_dispatcher),
+                    std::mem::take(&mut *kayak_root_context),
+                ));
+            }
+        },
+        world,
+    );
+
+    for (entity, mut event_dispatcher, mut context) in context_data.drain(..) {
+        event_dispatcher.process_events(&input_events, &mut context, world);
+
+        world.entity_mut(entity).insert((event_dispatcher, context));
+    }
 }
 
-fn query_world<T: bevy::ecs::system::SystemParam + 'static, F, R>(mut f: F, world: &mut World) -> R
+pub(crate) fn query_world<T: bevy::ecs::system::SystemParam + 'static, F, R>(
+    f: F,
+    world: &mut World,
+) -> R
 where
-    F: FnMut(<T::Fetch as bevy::ecs::system::SystemParamFetch<'_, '_>>::Item) -> R,
+    F: FnOnce(<T::Fetch as bevy::ecs::system::SystemParamFetch<'_, '_>>::Item) -> R,
 {
     let mut system_state = bevy::ecs::system::SystemState::<T>::new(world);
     let r = {

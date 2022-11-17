@@ -38,7 +38,7 @@ struct WorldCamera;
 fn set_active_tile_target(
     mut tile: Query<&mut ActiveTile>,
     cursor: Res<Input<MouseButton>>,
-    event_context: Res<EventDispatcher>,
+    event_context: Query<&EventDispatcher, With<GameUI>>,
     camera_transform: Query<&GlobalTransform, With<WorldCamera>>,
     windows: Res<Windows>,
 ) {
@@ -47,7 +47,7 @@ fn set_active_tile_target(
         return;
     }
 
-    if event_context.contains_cursor() {
+    if event_context.single().contains_cursor() {
         // This is the important bit:
         // If the cursor is over a part of the UI, then we should not allow clicks to pass through to the world
         return;
@@ -79,14 +79,14 @@ fn move_active_tile(mut tile: Query<(&mut Transform, &ActiveTile)>) {
 
 /// A system that moves the ghost tile to the cursor's position
 fn move_ghost_tile(
-    event_context: Res<EventDispatcher>,
+    event_context: Query<&EventDispatcher, With<GameUI>>,
     mut tile: Query<&mut Transform, With<GhostTile>>,
     mut cursor_moved: EventReader<CursorMoved>,
     camera_transform: Query<&GlobalTransform, With<WorldCamera>>,
     windows: Res<Windows>,
 ) {
     for _ in cursor_moved.iter() {
-        if !event_context.contains_cursor() {
+        if !event_context.single().contains_cursor() {
             let world_pos = cursor_to_world(&windows, camera_transform.single());
             let tile_pos = world_to_tile(world_pos);
             let mut ghost = tile.single_mut();
@@ -144,7 +144,6 @@ fn cursor_to_world(windows: &Windows, camera_transform: &GlobalTransform) -> Vec
     let size = Vec2::new(window.width(), window.height());
 
     let mut pos = window.cursor_position().unwrap_or_default();
-    pos.y = size.y - pos.y;
     pos -= size / 2.0;
 
     let point = camera_transform.compute_matrix() * pos.extend(0.0).extend(1.0);
@@ -165,6 +164,9 @@ fn ghost_color(color: Color) -> Color {
     c
 }
 
+#[derive(Component)]
+pub struct GameUI;
+
 fn startup(
     mut commands: Commands,
     mut font_mapping: ResMut<FontMapping>,
@@ -172,9 +174,8 @@ fn startup(
 ) {
     font_mapping.set_default(asset_server.load("roboto.kayak_font"));
 
-    commands.spawn(UICameraBundle::new());
-
     let mut widget_context = KayakRootContext::new();
+    widget_context.add_plugin(KayakWidgetsContextPlugin);
 
     let handle_change_color = OnEvent::new(
         move |In((event_dispatcher_context, _, event, _)): In<(
@@ -254,7 +255,7 @@ fn startup(
         </KayakAppBundle>
     }
 
-    commands.insert_resource(widget_context);
+    commands.spawn((UICameraBundle::new(widget_context), GameUI));
 }
 
 fn main() {

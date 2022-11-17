@@ -339,6 +339,7 @@ pub enum UIQuadType {
 
 #[derive(Debug, Component, Clone)]
 pub struct ExtractedQuad {
+    pub camera_entity: Entity,
     pub rect: Rect,
     pub color: Color,
     pub vertex_index: usize,
@@ -525,7 +526,7 @@ pub fn queue_quads(
     mut pipelines: ResMut<SpecializedRenderPipelines<UnifiedPipeline>>,
     mut pipeline_cache: ResMut<PipelineCache>,
     mut extracted_sprites: Query<(Entity, &ExtractedQuad)>,
-    mut views: Query<&mut RenderPhase<TransparentUI>>,
+    mut views: Query<(Entity, &mut RenderPhase<TransparentUI>)>,
     mut image_bind_groups: ResMut<ImageBindGroups>,
     unified_pipeline: Res<UnifiedPipeline>,
     gpu_images: Res<RenderAssets<Image>>,
@@ -557,8 +558,11 @@ pub fn queue_quads(
         let spec_pipeline = pipelines.specialize(&mut pipeline_cache, &quad_pipeline, key);
 
         let draw_quad = draw_functions.read().get_id::<DrawUI>().unwrap();
-        for mut transparent_phase in views.iter_mut() {
+        for (camera_entity, mut transparent_phase) in views.iter_mut() {
             for (entity, quad) in extracted_sprites.iter_mut() {
+                if quad.camera_entity != camera_entity {
+                    continue;
+                }
                 if let Some(image_handle) = quad.image.as_ref() {
                     if let Some(gpu_image) = gpu_images.get(image_handle) {
                         image_bind_groups

@@ -10,6 +10,8 @@ use bevy::{
     },
 };
 
+use crate::{context::KayakRootContext, event_dispatcher::EventDispatcher};
+
 use super::ortho::UIOrthographicProjection;
 
 /// Kayak UI's default UI camera.
@@ -39,17 +41,19 @@ pub struct UICameraBundle {
     pub transform: Transform,
     pub global_transform: GlobalTransform,
     pub camera_ui: CameraUIKayak,
+    pub context: KayakRootContext,
+    pub event_disaptcher: EventDispatcher,
 }
 
 impl Default for UICameraBundle {
     fn default() -> Self {
-        Self::new()
+        Self::new(KayakRootContext::default())
     }
 }
 
 impl UICameraBundle {
     pub const UI_CAMERA: &'static str = "KAYAK_UI_CAMERA";
-    pub fn new() -> Self {
+    pub fn new(kayak_root_context: KayakRootContext) -> Self {
         // we want 0 to be "closest" and +far to be "farthest" in 2d, so we offset
         // the camera's translation by far and use a right handed coordinate system
         let far = 1000.0;
@@ -85,6 +89,8 @@ impl UICameraBundle {
             camera_ui: CameraUIKayak {
                 clear_color: ClearColorConfig::None,
             },
+            context: kayak_root_context,
+            event_disaptcher: EventDispatcher::new(),
         }
     }
 }

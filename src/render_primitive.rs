@@ -2,10 +2,13 @@ use crate::{
     layout::Rect,
     styles::{Corner, Edge, KStyle, RenderCommand},
 };
-use bevy::prelude::{Color, Handle, Image, Vec2};
+use bevy::{
+    prelude::{Color, Handle, Image, Vec2},
+    reflect::Reflect,
+};
 use kayak_font::{TextLayout, TextProperties};
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Reflect, Clone, PartialEq)]
 pub enum RenderPrimitive {
     Empty,
     Clip {

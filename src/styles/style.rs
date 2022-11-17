@@ -2,10 +2,13 @@
 
 use std::ops::Add;
 
+pub use super::units::{KPositionType, LayoutType, Units};
 use bevy::prelude::Color;
 use bevy::prelude::Component;
+use bevy::prelude::ReflectComponent;
+use bevy::reflect::FromReflect;
+use bevy::reflect::Reflect;
 use bevy::window::CursorIcon;
-pub use morphorm::{LayoutType, PositionType as KPositionType, Units};
 
 use crate::cursor::PointerEvents;
 
@@ -15,8 +18,14 @@ pub use super::Edge;
 use super::RenderCommand;
 
 /// Just a wrapper around bevy's CursorIcon so we can define a default.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct KCursorIcon(pub CursorIcon);
+#[derive(Debug, Reflect, Clone, PartialEq, Eq)]
+pub struct KCursorIcon(#[reflect(ignore)] pub CursorIcon);
+
+impl FromReflect for KCursorIcon {
+    fn from_reflect(_reflect: &dyn Reflect) -> Option<Self> {
+        None
+    }
+}
 
 impl Default for KCursorIcon {
     fn default() -> Self {
@@ -27,8 +36,8 @@ impl Default for KCursorIcon {
 /// The base container of all style properties
 ///
 /// The default value for this enum is [`StyleProp::Unset`].
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum StyleProp<T: Default + Clone> {
+#[derive(Debug, Reflect, FromReflect, Clone, PartialEq, Eq)]
+pub enum StyleProp<T: Default + Clone + Reflect + FromReflect> {
     /// This prop is unset, meaning its actual value is not determined until style resolution,
     /// wherein it will be set to the property's default value.
     ///
@@ -46,7 +55,7 @@ pub enum StyleProp<T: Default + Clone> {
 
 impl<T> Default for StyleProp<T>
 where
-    T: Default + Clone,
+    T: Default + Clone + Reflect + FromReflect,
 {
     fn default() -> Self {
         Self::Unset
@@ -55,7 +64,7 @@ where
 
 impl<T> StyleProp<T>
 where
-    T: Default + Clone,
+    T: Default + Clone + Reflect + FromReflect,
 {
     /// Resolves this style property into a concrete value.
     ///
@@ -122,7 +131,7 @@ where
     }
 }
 
-impl<T: Default + Clone> From<T> for StyleProp<T> {
+impl<T: Default + Clone + Reflect + FromReflect> From<T> for StyleProp<T> {
     fn from(value: T) -> Self {
         StyleProp::Value(value)
     }
@@ -239,7 +248,8 @@ define_styles! {
     ///   // Applied second (sets any remaining `StyleProp::Unset` fields)
     ///   .with_style(&style_b);
     /// ```
-    #[derive(Component, Debug, Default, Clone, PartialEq)]
+    #[derive(Component, Reflect, FromReflect, Debug, Default, Clone, PartialEq)]
+    #[reflect(Component)]
     pub struct KStyle {
         /// The background color of this widget
         ///
@@ -275,6 +285,7 @@ define_styles! {
         /// The spacing between child widgets along the horizontal axis
         pub col_between: StyleProp<Units>,
         /// The cursor icon to display when hovering this widget
+        #[reflect(ignore)]
         pub cursor: StyleProp<KCursorIcon>,
         /// The font name for this widget
         ///

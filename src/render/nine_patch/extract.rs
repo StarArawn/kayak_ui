@@ -5,11 +5,12 @@ use crate::{
 };
 use bevy::{
     math::Vec2,
-    prelude::{Assets, Rect, Res},
+    prelude::{Assets, Entity, Rect, Res},
     render::{color::Color, texture::Image},
 };
 
 pub fn extract_nine_patch(
+    camera_entity: Entity,
     render_primitive: &RenderPrimitive,
     images: &Res<Assets<Image>>,
     dpi: f32,
@@ -42,6 +43,7 @@ pub fn extract_nine_patch(
         * dpi;
 
     let extracted_quad_template = ExtractedQuad {
+        camera_entity,
         rect: Rect {
             min: Vec2::ZERO,
             max: Vec2::ZERO,

@@ -121,9 +121,17 @@ pub fn text_box_render(
             }
         }
 
+        let style_font = styles.font.clone();
+
         if is_different {
             if let Ok(mut state) = state_query.p1().get_mut(state_entity) {
                 state.current_value = text_box.value.clone();
+                // Update graphemes
+                set_graphemes(&mut state, &font_assets, &font_mapping, &style_font);
+
+                state.cursor_position = state.graphemes.len();
+
+                set_new_cursor_position(&mut state, &font_assets, &font_mapping, &style_font);
             }
         }
 
@@ -161,7 +169,6 @@ pub fn text_box_render(
             };
 
             let cloned_on_change = on_change.clone();
-            let style_font = styles.font.clone();
 
             *on_event = OnEvent::new(
                 move |In((event_dispatcher_context, _, mut event, _entity)): In<(
@@ -211,13 +218,20 @@ pub fn text_box_render(
                                 let cursor_pos = state.cursor_position;
                                 if is_backspace(c) {
                                     if !state.current_value.is_empty() {
-                                        // TODO: This doesn't respect graphemes!
-                                        state.current_value.remove(cursor_pos - 1);
+                                        let char_pos: usize = state.graphemes[0..cursor_pos - 1]
+                                            .iter()
+                                            .map(|g| g.len())
+                                            .sum();
+                                        state.current_value.remove(char_pos);
                                         state.cursor_position -= 1;
                                     }
                                 } else if !c.is_control() {
-                                    // TODO: This doesn't respect graphemes!
-                                    state.current_value.insert(cursor_pos, c);
+                                    let char_pos: usize = state.graphemes[0..cursor_pos]
+                                        .iter()
+                                        .map(|g| g.len())
+                                        .sum();
+                                    state.current_value.insert(char_pos, c);
+
                                     state.cursor_position += 1;
                                 }
 
@@ -378,6 +392,25 @@ fn set_graphemes(
             .map(|s| s.to_string())
             .collect::<Vec<_>>();
     }
+}
+
+fn get_single_grapheme_length(
+    font_assets: &Res<Assets<KayakFont>>,
+    font_mapping: &FontMapping,
+    style_font: &StyleProp<String>,
+    text: &String,
+) -> usize {
+    let font_handle = match style_font {
+        StyleProp::Value(font) => font_mapping.get_handle(font.clone()).unwrap(),
+        _ => font_mapping.get_handle(DEFAULT_FONT.into()).unwrap(),
+    };
+
+    if let Some(font) = font_assets.get(&font_handle) {
+        let graphemes = font.get_graphemes(&text);
+        return graphemes[0].len();
+    }
+
+    0
 }
 
 fn set_new_cursor_position(

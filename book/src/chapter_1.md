@@ -39,7 +39,8 @@ fn startup(
             />
         </KayakAppBundle>
     }
-    commands.insert_resource(widget_context);
+    
+    commands.spawn(UICameraBundle::new(widget_context));
 }
 
 fn main() {
@@ -98,7 +99,8 @@ fn startup(
     widget_context.add_widget(None, app_entity);
 
     // Add widget context as resource.
-    commands.insert_resource(widget_context);
+    
+ commands.spawn(UICameraBundle::new(widget_context));
 }
 fn main() {
     App::new()

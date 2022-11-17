@@ -16,6 +16,9 @@ use kayak_ui::{
 #[derive(Component)]
 struct MainPassCube;
 
+#[derive(Component)]
+struct MainUI;
+
 fn startup(
     mut commands: Commands,
     mut font_mapping: ResMut<FontMapping>,
@@ -53,6 +56,32 @@ fn startup(
 
     let image_handle = images.add(image);
 
+    let mut widget_context = KayakRootContext::new();
+    widget_context.add_plugin(KayakWidgetsContextPlugin);
+    let parent_id = None;
+    rsx! {
+        <KayakAppBundle
+            styles={KStyle {
+                padding: Edge::new(
+                    Units::Stretch(1.0),
+                    Units::Stretch(0.0),
+                    Units::Stretch(1.0),
+                    Units::Stretch(0.0),
+                ).into(),
+                ..Default::default()
+            }}
+        >
+            <TextWidgetBundle
+                text={TextProps {
+                    size: 150.0,
+                    content: "Hello Cube!".into(),
+                    alignment: Alignment::Middle,
+                    ..Default::default()
+                }}
+            />
+        </KayakAppBundle>
+    }
+
     commands.spawn(UICameraBundle {
         camera: Camera {
             priority: -1,
@@ -62,28 +91,8 @@ fn startup(
         camera_ui: CameraUIKayak {
             clear_color: bevy::core_pipeline::clear_color::ClearColorConfig::Default,
         },
-        ..UICameraBundle::new()
+        ..UICameraBundle::new(widget_context)
     });
-
-    let mut widget_context = KayakRootContext::new();
-    let parent_id = None;
-    rsx! {
-        <KayakAppBundle
-            styles={KStyle {
-                padding: Edge::all(Units::Stretch(1.0)).into(),
-                ..Default::default()
-            }}
-        >
-            <TextWidgetBundle
-                text={TextProps {
-                    size: 150.0,
-                    content: "Hello World".into(),
-                    ..Default::default()
-                }}
-            />
-        </KayakAppBundle>
-    }
-    commands.insert_resource(widget_context);
 
     // Setup 3D scene
     // Light
@@ -123,6 +132,23 @@ fn startup(
             .looking_at(Vec3::default(), Vec3::Y),
         ..default()
     });
+
+    // Spawn another UI in 2D space!
+    let mut widget_context = KayakRootContext::new();
+    widget_context.add_plugin(KayakWidgetsContextPlugin);
+    let parent_id = None;
+    rsx! {
+        <KayakAppBundle>
+            <TextWidgetBundle
+                text={TextProps {
+                    size: 100.0,
+                    content: "Hello World!".into(),
+                    ..Default::default()
+                }}
+            />
+        </KayakAppBundle>
+    }
+    commands.spawn((UICameraBundle::new(widget_context), MainUI));
 }
 
 /// Rotates the outer cube (main pass)
@@ -133,6 +159,18 @@ fn cube_rotator_system(time: Res<Time>, mut query: Query<&mut Transform, With<Ma
     }
 }
 
+fn depsawn_ui(
+    mut commands: Commands,
+    keyboard_input: Res<Input<KeyCode>>,
+    ui_query: Query<(Entity, &KayakRootContext), With<MainUI>>,
+) {
+    if keyboard_input.pressed(KeyCode::Escape) {
+        if let Ok((entity, _)) = ui_query.get_single() {
+            commands.entity(entity).despawn_descendants();
+        }
+    }
+}
+
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
@@ -140,5 +178,6 @@ fn main() {
         .add_plugin(KayakWidgets)
         .add_startup_system(startup)
         .add_system(cube_rotator_system)
+        .add_system(depsawn_ui)
         .run()
 }

@@ -1,13 +1,16 @@
 use std::collections::hash_map::Iter;
 use std::collections::HashMap;
 
-use bevy::prelude::{Entity, Query};
+use bevy::{
+    prelude::{Entity, Query},
+    reflect::{FromReflect, Reflect},
+};
 use morphorm::Cache;
 pub use morphorm::GeometryChanged;
 
 use crate::node::WrappedIndex;
 
-#[derive(Debug, Default, Clone, Copy, PartialEq)]
+#[derive(Debug, Reflect, FromReflect, Default, Clone, Copy, PartialEq)]
 pub struct Rect {
     pub posx: f32,
     pub posy: f32,

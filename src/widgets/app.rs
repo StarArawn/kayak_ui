@@ -1,12 +1,11 @@
 use bevy::prelude::*;
 use kayak_ui_macros::rsx;
-use morphorm::Units;
 
 use crate::{
     children::KChildren,
     context::WidgetName,
     prelude::KayakWidgetContext,
-    styles::{KStyle, RenderCommand, StyleProp},
+    styles::{KStyle, RenderCommand, StyleProp, Units},
     widget::{EmptyState, Widget, WidgetParam},
     CameraUIKayak,
 };
@@ -64,23 +63,18 @@ pub fn app_update(
 pub fn app_render(
     In((widget_context, entity)): In<(KayakWidgetContext, Entity)>,
     mut commands: Commands,
-    windows: Res<Windows>,
     mut query: Query<(&mut KStyle, &KChildren)>,
     camera: Query<&Camera, With<CameraUIKayak>>,
 ) -> bool {
     let (mut width, mut height) = (0.0, 0.0);
 
-    if let Ok(camera) = camera.get_single() {
-        if let Some(size) = camera.logical_viewport_size() {
-            width = size.x;
-            height = size.y;
+    if let Some(camera_entity) = widget_context.camera_entity {
+        if let Ok(camera) = camera.get(camera_entity) {
+            if let Some(size) = camera.logical_viewport_size() {
+                width = size.x;
+                height = size.y;
+            }
         }
-    }
-
-    if width == 0.0 {
-        let primary_window = windows.get_primary().unwrap();
-        width = primary_window.width();
-        height = primary_window.height();
     }
 
     if let Ok((mut app_style, children)) = query.get_mut(entity) {
@@ -90,8 +84,8 @@ pub fn app_render(
         if app_style.height != StyleProp::Value(Units::Pixels(height)) {
             app_style.height = StyleProp::Value(Units::Pixels(height));
         }
+
         app_style.render_command = StyleProp::Value(RenderCommand::Layout);
-        // children.process(&widget_context, Some(entity));
         let parent_id = Some(entity);
         rsx! {
             <ClipBundle

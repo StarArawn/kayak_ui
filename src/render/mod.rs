@@ -1,5 +1,5 @@
 use bevy::{
-    prelude::{App, Commands, Entity, Plugin, Query, With},
+    prelude::{App, Camera, Commands, Entity, Plugin, Query, With},
     render::{
         render_graph::{RenderGraph, RunGraphOnViewNode, SlotInfo, SlotType},
         render_phase::{DrawFunctions, RenderPhase},
@@ -167,11 +167,13 @@ fn get_ui_graph(render_app: &mut App) -> RenderGraph {
 
 pub fn extract_core_pipeline_camera_phases(
     mut commands: Commands,
-    active_camera: Extract<Query<Entity, With<CameraUIKayak>>>,
+    active_cameras: Extract<Query<(Entity, &Camera), With<CameraUIKayak>>>,
 ) {
-    if let Ok(entity) = active_camera.get_single() {
-        commands
-            .get_or_spawn(entity)
-            .insert(RenderPhase::<TransparentUI>::default());
+    for (entity, camera) in &active_cameras {
+        if camera.is_active {
+            commands
+                .get_or_spawn(entity)
+                .insert(RenderPhase::<TransparentUI>::default());
+        }
     }
 }

@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use bevy_inspector_egui::WorldInspectorPlugin;
 use kayak_ui::prelude::{widgets::*, *};
 
 mod input;
@@ -57,9 +58,9 @@ fn startup(
     // Camera 2D forces a clear pass in bevy.
     // We do this because our scene is not rendering anything else.
     commands.spawn(Camera2dBundle::default());
-    commands.spawn(UICameraBundle::new());
 
     let mut widget_context = KayakRootContext::new();
+    widget_context.add_plugin(KayakWidgetsContextPlugin);
     widget_context.add_widget_data::<TodoItemsProps, EmptyState>();
     widget_context.add_widget_data::<TodoInputProps, EmptyState>();
 
@@ -97,13 +98,15 @@ fn startup(
             </WindowBundle>
         </KayakAppBundle>
     }
-    commands.insert_resource(widget_context);
+
+    commands.spawn(UICameraBundle::new(widget_context));
 }
 
 fn main() {
     App::new()
         .insert_resource(ClearColor(Color::rgb(0.0, 0.0, 0.0)))
         .add_plugins(DefaultPlugins)
+        .add_plugin(WorldInspectorPlugin::new())
         .add_plugin(KayakContextPlugin)
         .add_plugin(KayakWidgets)
         .insert_non_send_resource(TodoList::new())

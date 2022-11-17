@@ -1,6 +1,6 @@
 use bevy::{
     math::Vec2,
-    prelude::{Assets, Rect, Res},
+    prelude::{Assets, Entity, Rect, Res},
 };
 use kayak_font::KayakFont;
 
@@ -13,6 +13,7 @@ use crate::{
 use super::font_mapping::FontMapping;
 
 pub fn extract_texts(
+    camera_entity: Entity,
     render_primitive: &RenderPrimitive,
     fonts: &Res<Assets<KayakFont>>,
     font_mapping: &Res<FontMapping>,
@@ -49,6 +50,7 @@ pub fn extract_texts(
 
         extracted_texts.push(ExtractQuadBundle {
             extracted_quad: ExtractedQuad {
+                camera_entity,
                 font_handle: Some(font_handle.clone()),
                 rect: Rect {
                     min: position,

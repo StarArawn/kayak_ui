@@ -61,9 +61,8 @@ fn startup(
 ) {
     font_mapping.set_default(asset_server.load("roboto.kayak_font"));
 
-    commands.spawn(UICameraBundle::new());
-
     let mut widget_context = KayakRootContext::new();
+    widget_context.add_plugin(KayakWidgetsContextPlugin);
     let parent_id = None;
     widget_context.add_widget_data::<MyWidgetProps, EmptyState>();
     widget_context.add_widget_system(
@@ -74,7 +73,8 @@ fn startup(
     rsx! {
         <KayakAppBundle><MyWidgetBundle /></KayakAppBundle>
     }
-    commands.insert_resource(widget_context);
+
+    commands.spawn(UICameraBundle::new(widget_context));
 }
 
 fn main() {

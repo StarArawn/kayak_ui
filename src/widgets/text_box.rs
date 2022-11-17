@@ -218,12 +218,18 @@ pub fn text_box_render(
                                 let cursor_pos = state.cursor_position;
                                 if is_backspace(c) {
                                     if !state.current_value.is_empty() {
-                                        let char_pos: usize = state.graphemes[0..cursor_pos - 1].iter().map(|g| g.len()).sum();
+                                        let char_pos: usize = state.graphemes[0..cursor_pos - 1]
+                                            .iter()
+                                            .map(|g| g.len())
+                                            .sum();
                                         state.current_value.remove(char_pos);
                                         state.cursor_position -= 1;
                                     }
                                 } else if !c.is_control() {
-                                    let char_pos: usize = state.graphemes[0..cursor_pos].iter().map(|g| g.len()).sum();
+                                    let char_pos: usize = state.graphemes[0..cursor_pos]
+                                        .iter()
+                                        .map(|g| g.len())
+                                        .sum();
                                     state.current_value.insert(char_pos, c);
 
                                     state.cursor_position += 1;

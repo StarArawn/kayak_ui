@@ -343,7 +343,7 @@ fn recurse_node_tree_to_build_primitives(
         let mut render_primitive = node.primitive.clone();
         let mut new_z_index = main_z_index;
 
-        let _layout = if let Some(layout) = layout_cache.rect.get_mut(&current_node) {
+        let layout = if let Some(layout) = layout_cache.rect.get_mut(&current_node) {
             log::trace!(
                 "z_index is {} and node.z is {} for: {}-{}",
                 new_z_index,
@@ -388,9 +388,10 @@ fn recurse_node_tree_to_build_primitives(
             }
             RenderPrimitive::Empty => {
                 log::trace!(
-                    "Empty node: {}-{}",
+                    "Empty node: {}-{} is equal to: {:?}",
                     widget_names.get(current_node.0).unwrap().0,
                     current_node.0.index(),
+                    layout
                 );
             }
             _ => {}

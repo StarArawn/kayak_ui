@@ -43,8 +43,10 @@ pub fn app_update(
     In((widget_context, entity, previous_props_entity)): In<(KayakWidgetContext, Entity, Entity)>,
     widget_param: WidgetParam<KayakApp, EmptyState>,
     camera: Query<&Camera, With<CameraUIKayak>>,
+    windows: Res<Windows>,
 ) -> bool {
     let mut window_change = false;
+
     if let Ok(app_style) = widget_param.style_query.get(entity) {
         if let Some(camera_entity) = widget_context.camera_entity {
             if let Ok(camera) = camera.get(camera_entity) {
@@ -53,6 +55,15 @@ pub fn app_update(
                         window_change = true;
                     }
                     if app_style.height != StyleProp::Value(Units::Pixels(size.y)) {
+                        window_change = true;
+                    }
+                } else {
+                    let primary_window = windows.get_primary().unwrap();
+                    if app_style.width != StyleProp::Value(Units::Pixels(primary_window.width())) {
+                        window_change = true;
+                    }
+                    if app_style.height != StyleProp::Value(Units::Pixels(primary_window.height()))
+                    {
                         window_change = true;
                     }
                 }
@@ -69,6 +80,8 @@ pub fn app_render(
     mut commands: Commands,
     mut query: Query<(&mut KStyle, &KChildren)>,
     camera: Query<&Camera, With<CameraUIKayak>>,
+    windows: Res<Windows>,
+    images: Res<Assets<Image>>,
 ) -> bool {
     let (mut width, mut height) = (0.0, 0.0);
 
@@ -77,6 +90,17 @@ pub fn app_render(
             if let Some(size) = camera.logical_viewport_size() {
                 width = size.x;
                 height = size.y;
+            } else if let Some(viewport) = camera
+                .target
+                .get_render_target_info(&windows, &images)
+                .as_ref()
+                .map(|target_info| {
+                    let scale = target_info.scale_factor;
+                    (target_info.physical_size.as_dvec2() / scale).as_vec2()
+                })
+            {
+                width = viewport.x;
+                height = viewport.y;
             }
         }
     }

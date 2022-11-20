@@ -41,18 +41,22 @@ impl Default for KayakAppBundle {
 
 pub fn app_update(
     In((widget_context, entity, previous_props_entity)): In<(KayakWidgetContext, Entity, Entity)>,
-    windows: Res<Windows>,
     widget_param: WidgetParam<KayakApp, EmptyState>,
+    camera: Query<&Camera, With<CameraUIKayak>>,
 ) -> bool {
-    let primary_window = windows.get_primary().unwrap();
-
     let mut window_change = false;
     if let Ok(app_style) = widget_param.style_query.get(entity) {
-        if app_style.width != StyleProp::Value(Units::Pixels(primary_window.width())) {
-            window_change = true;
-        }
-        if app_style.height != StyleProp::Value(Units::Pixels(primary_window.height())) {
-            window_change = true;
+        if let Some(camera_entity) = widget_context.camera_entity {
+            if let Ok(camera) = camera.get(camera_entity) {
+                if let Some(size) = camera.logical_viewport_size() {
+                    if app_style.width != StyleProp::Value(Units::Pixels(size.x)) {
+                        window_change = true;
+                    }
+                    if app_style.height != StyleProp::Value(Units::Pixels(size.y)) {
+                        window_change = true;
+                    }
+                }
+            }
         }
     }
 

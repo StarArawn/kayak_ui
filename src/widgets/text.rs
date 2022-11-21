@@ -1,15 +1,12 @@
 use bevy::prelude::*;
 use kayak_font::Alignment;
-use kayak_ui_macros::rsx;
 
 use crate::{
     context::WidgetName,
     prelude::KayakWidgetContext,
-    styles::{KCursorIcon, KStyle, RenderCommand, StyleProp},
+    styles::{KCursorIcon, KStyle, RenderCommand, StyleProp, Units},
     widget::Widget,
 };
-
-use super::ElementBundle;
 
 #[derive(Component, Debug, PartialEq, Clone)]
 pub struct TextProps {
@@ -69,6 +66,8 @@ impl Default for TextWidgetBundle {
         Self {
             text: Default::default(),
             styles: KStyle {
+                width: Units::Stretch(1.0).into(),
+                height: Units::Stretch(1.0).into(),
                 ..Default::default()
             },
             widget_name: TextProps::default().get_name(),
@@ -77,52 +76,46 @@ impl Default for TextWidgetBundle {
 }
 
 pub fn text_render(
-    In((widget_context, entity)): In<(KayakWidgetContext, Entity)>,
-    mut commands: Commands,
-    mut query: Query<&TextProps>,
+    In((_widget_context, entity)): In<(KayakWidgetContext, Entity)>,
+    mut query: Query<(&mut KStyle, &TextProps)>,
 ) -> bool {
-    if let Ok(text) = query.get_mut(entity) {
-        let mut style = KStyle::default();
-
-        style = style.with_style(&text.user_styles).with_style(KStyle {
-            render_command: StyleProp::Value(RenderCommand::Text {
-                content: text.content.clone(),
-                alignment: text.alignment,
-                word_wrap: text.word_wrap,
-            }),
-            font: if let Some(ref font) = text.font {
-                StyleProp::Value(font.clone())
-            } else {
-                StyleProp::default()
-            },
-            cursor: if text.show_cursor {
-                StyleProp::Value(KCursorIcon(CursorIcon::Text))
-            } else {
-                StyleProp::default()
-            },
-            font_size: if text.size >= 0.0 {
-                StyleProp::Value(text.size)
-            } else {
-                StyleProp::default()
-            },
-            line_height: if let Some(line_height) = text.line_height {
-                StyleProp::Value(line_height)
-            } else {
-                StyleProp::default()
-            },
-            // bottom: Units::Stretch(1.0).into(),
-            // top: Units::Stretch(1.0).into(),
-            // left: Units::Stretch(0.0).into(),
-            // right: Units::Stretch(0.0).into(),
-            ..Default::default()
-        });
+    if let Ok((mut styles, text)) = query.get_mut(entity) {
+        *styles = KStyle::default()
+            .with_style(&text.user_styles)
+            .with_style(KStyle {
+                render_command: StyleProp::Value(RenderCommand::Text {
+                    content: text.content.clone(),
+                    alignment: text.alignment,
+                    word_wrap: text.word_wrap,
+                }),
+                font: if let Some(ref font) = text.font {
+                    StyleProp::Value(font.clone())
+                } else {
+                    StyleProp::default()
+                },
+                cursor: if text.show_cursor {
+                    StyleProp::Value(KCursorIcon(CursorIcon::Text))
+                } else {
+                    StyleProp::default()
+                },
+                font_size: if text.size >= 0.0 {
+                    StyleProp::Value(text.size)
+                } else {
+                    StyleProp::default()
+                },
+                line_height: if let Some(line_height) = text.line_height {
+                    StyleProp::Value(line_height)
+                } else {
+                    StyleProp::default()
+                },
+                // bottom: Units::Stretch(1.0).into(),
+                // top: Units::Stretch(1.0).into(),
+                // left: Units::Stretch(0.0).into(),
+                // right: Units::Stretch(0.0).into(),
+                ..Default::default()
+            });
 
         // style.cursor = StyleProp::Value(KCursorIcon(CursorIcon::Hand));
-
-        let parent_id = Some(entity);
-        rsx! {
-            <ElementBundle styles={style} />
-        }
     }
 
     true

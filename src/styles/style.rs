@@ -54,8 +54,8 @@ pub enum StyleProp<T: Default + Clone + Reflect + FromReflect> {
 }
 
 impl<T> Default for StyleProp<T>
-where
-    T: Default + Clone + Reflect + FromReflect,
+    where
+        T: Default + Clone + Reflect + FromReflect,
 {
     fn default() -> Self {
         Self::Unset
@@ -63,8 +63,8 @@ where
 }
 
 impl<T> StyleProp<T>
-where
-    T: Default + Clone + Reflect + FromReflect,
+    where
+        T: Default + Clone + Reflect + FromReflect,
 {
     /// Resolves this style property into a concrete value.
     ///
@@ -374,6 +374,30 @@ define_styles! {
         pub width: StyleProp<Units>,
         /// The z-index relative to it's parent.
         pub z_index: StyleProp<i32>,
+        /// The list of rows when using the grid layout
+        ///
+        /// This is specified in the parent widget and the children have to specify their `row_index`.
+        pub grid_rows: StyleProp<Vec<Units>>,
+        /// The list of columns when using the grid layout
+        ///
+        /// This is specified in the parent widget and the children have to specify their `col_index`.
+        pub grid_cols: StyleProp<Vec<Units>>,
+        /// The row index of this widget when using the grid layout
+        ///
+        /// This references the `grid_rows` property of the parent widget.
+        pub row_index: StyleProp<usize>,
+        /// The column index of this widget when using the grid layout
+        ///
+        /// This references the `grid_cols` property of the parent widget.
+        pub col_index: StyleProp<usize>,
+        /// The number rows that this widget spans when using the grid layout
+        ///
+        /// Specified in the child widget.
+        pub row_span: StyleProp<usize>,
+        /// The number columns that this widget spans when using the grid layout
+        ///
+        /// Specified in the child widget.
+        pub col_span: StyleProp<usize>,
     }
 }
 
@@ -416,6 +440,12 @@ impl KStyle {
             top: StyleProp::Default,
             width: StyleProp::Default,
             z_index: StyleProp::Default,
+            grid_rows: StyleProp::Default,
+            grid_cols: StyleProp::Default,
+            row_index: StyleProp::Default,
+            col_index: StyleProp::Default,
+            row_span: StyleProp::Default,
+            col_span: StyleProp::Default,
         }
     }
 }

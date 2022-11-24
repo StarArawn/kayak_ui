@@ -20,8 +20,6 @@ fn startup(
 ) {
     font_mapping.set_default(asset_server.load("roboto.kayak_font"));
 
-    commands.spawn(UICameraBundle::new());
-
     let mut widget_context = KayakRootContext::new();
     let parent_id = None;
 

@@ -54,8 +54,8 @@ pub enum StyleProp<T: Default + Clone + Reflect + FromReflect> {
 }
 
 impl<T> Default for StyleProp<T>
-    where
-        T: Default + Clone + Reflect + FromReflect,
+where
+    T: Default + Clone + Reflect + FromReflect,
 {
     fn default() -> Self {
         Self::Unset
@@ -63,8 +63,8 @@ impl<T> Default for StyleProp<T>
 }
 
 impl<T> StyleProp<T>
-    where
-        T: Default + Clone + Reflect + FromReflect,
+where
+    T: Default + Clone + Reflect + FromReflect,
 {
     /// Resolves this style property into a concrete value.
     ///

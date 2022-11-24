@@ -415,14 +415,8 @@ impl<'a> morphorm::Node<'a> for WrappedIndex {
     fn col_index(&self, store: &'_ Self::Data) -> Option<usize> {
         if let Ok(node) = store.get(self.0) {
             return match node.resolved_styles.col_index {
-                StyleProp::Default => {
-                    println!("col_index default");
-                    Some(0)
-                },
-                StyleProp::Value(prop) => {
-                    println!("col_index value {prop}");
-                    Some(prop)
-                },
+                StyleProp::Default => Some(0),
+                StyleProp::Value(prop) => Some(prop),
                 _ => Some(0),
             };
         }

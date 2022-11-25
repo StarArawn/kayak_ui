@@ -6,6 +6,12 @@ pub enum SDFType {
     Msdf,
 }
 
+impl Default for SDFType {
+    fn default() -> Self {
+        Self::Msdf
+    }
+}
+
 #[derive(DeJson, Debug, Copy, Clone, PartialEq, Eq)]
 pub enum Origin {
     #[nserde(rename = "bottom")]
@@ -18,7 +24,13 @@ pub enum Origin {
     Top,
 }
 
-#[derive(DeJson, Debug, Copy, Clone, PartialEq)]
+impl Default for Origin {
+    fn default() -> Self {
+        Self::Bottom
+    }
+}
+
+#[derive(DeJson, Default, Debug, Copy, Clone, PartialEq)]
 pub struct Atlas {
     #[nserde(rename = "type")]
     pub sdf_type: SDFType,

@@ -24,6 +24,7 @@ mod plugin {
     impl Plugin for KayakFontPlugin {
         fn build(&self, app: &mut bevy::prelude::App) {
             app.add_asset::<KayakFont>()
+                .add_asset_loader(crate::ttf::loader::TTFLoader)
                 .add_asset_loader(KayakFontLoader)
                 .add_system(init_font_texture);
 

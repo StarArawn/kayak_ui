@@ -5,6 +5,8 @@ mod layout;
 mod metrics;
 mod sdf;
 mod utility;
+mod ttf;
+mod msdf;
 
 pub use atlas::*;
 pub use font::*;
@@ -18,14 +20,14 @@ pub mod bevy;
 
 #[cfg(test)]
 mod tests {
-    use crate::{Alignment, KayakFont, Sdf, TextProperties};
+    use crate::{Alignment, KayakFont, Sdf, TextProperties, ImageType};
 
     fn make_font() -> KayakFont {
         let bytes = std::fs::read("assets/roboto.kayak_font")
             .expect("a `roboto.kayak_font` file in the `assets/` directory of this crate");
 
         #[cfg(feature = "bevy_renderer")]
-        return KayakFont::new(Sdf::from_bytes(&bytes), bevy::asset::Handle::default());
+        return KayakFont::new(Sdf::from_bytes(&bytes), ImageType::Atlas(bevy::asset::Handle::default()));
 
         #[cfg(not(feature = "bevy_renderer"))]
         return KayakFont::new(Sdf::from_bytes(&bytes));

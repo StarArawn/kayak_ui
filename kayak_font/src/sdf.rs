@@ -1,7 +1,7 @@
 use crate::{atlas::Atlas, glyph::Glyph, metrics::Metrics};
 use nanoserde::DeJson;
 
-#[derive(DeJson, Debug, Clone, PartialEq)]
+#[derive(DeJson, Default, Debug, Clone, PartialEq)]
 pub struct Sdf {
     pub atlas: Atlas,
     metrics: Metrics,
@@ -9,7 +9,7 @@ pub struct Sdf {
     kerning: Vec<KerningData>,
 }
 
-#[derive(DeJson, Debug, Clone, Copy, PartialEq)]
+#[derive(DeJson, Default, Debug, Clone, Copy, PartialEq)]
 pub struct KerningData {
     pub unicode1: u32,
     pub unicode2: u32,
@@ -17,6 +17,15 @@ pub struct KerningData {
 }
 
 impl Sdf {
+    pub fn new() -> Self {
+        Self {
+            atlas: Atlas::default(),
+            metrics: Metrics::default(),
+            glyphs: Vec::default(),
+            kerning: Vec::default(),
+        }
+    }
+
     pub fn from_string(data: String) -> Sdf {
         let value: Sdf = match DeJson::deserialize_json(data.as_str()) {
             Ok(v) => v,

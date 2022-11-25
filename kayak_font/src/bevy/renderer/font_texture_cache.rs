@@ -1,4 +1,4 @@
-use crate::{KayakFont, Sdf};
+use crate::{KayakFont, Sdf, ImageType};
 use bevy::{
     math::Vec2,
     prelude::{Handle, Res, Resource},
@@ -73,20 +73,34 @@ impl FontTextureCache {
         for kayak_font_handle in new_fonts {
             let mut was_processed = true;
             if let Some(font) = self.fonts.get(&kayak_font_handle) {
-                if let Some(atlas_texture) = render_images.get(&font.atlas_image) {
-                    Self::create_from_atlas(
-                        &mut self.images,
-                        &mut self.bind_groups,
-                        &font.sdf,
-                        kayak_font_handle.clone_weak(),
-                        device,
-                        queue,
-                        pipeline,
-                        atlas_texture,
-                        font.sdf.max_glyph_size().into(),
-                    );
+                if matches!(font.image, ImageType::Array(..)) {
+                    if let Some(array_texture) = render_images.get(font.image.get()) {
+                        Self::create_from_array(
+                            &mut self.bind_groups,
+                            kayak_font_handle.clone_weak(),
+                            device,
+                            pipeline,
+                            array_texture,
+                        );
+                    } else {
+                        was_processed = false;
+                    }
                 } else {
-                    was_processed = false;
+                    if let Some(atlas_texture) = render_images.get(font.image.get()) {
+                        Self::create_from_atlas(
+                            &mut self.images,
+                            &mut self.bind_groups,
+                            &font.sdf,
+                            kayak_font_handle.clone_weak(),
+                            device,
+                            queue,
+                            pipeline,
+                            atlas_texture,
+                            font.sdf.max_glyph_size().into(),
+                        );
+                    } else {
+                        was_processed = false;
+                    }
                 }
             }
             if !was_processed {
@@ -299,5 +313,31 @@ impl FontTextureCache {
 
         let command_buffer = command_encoder.finish();
         queue.submit(vec![command_buffer]);
+    }
+
+    pub fn create_from_array<T: FontRenderingPipeline>(
+        bind_groups: &mut HashMap<Handle<KayakFont>, BindGroup>,
+        font_handle: Handle<KayakFont>,
+        device: &RenderDevice,
+        pipeline: &T,
+        array_texture: &GpuImage,
+    ) {
+        // create bind group
+        let binding = device.create_bind_group(&BindGroupDescriptor {
+            label: Some("text_image_bind_group"),
+            entries: &[
+                BindGroupEntry {
+                    binding: 0,
+                    resource: BindingResource::TextureView(&array_texture.texture_view),
+                },
+                BindGroupEntry {
+                    binding: 1,
+                    resource: BindingResource::Sampler(&array_texture.sampler),
+                },
+            ],
+            layout: pipeline.get_font_image_layout(),
+        });
+
+        bind_groups.insert(font_handle.clone_weak(), binding);
     }
 }

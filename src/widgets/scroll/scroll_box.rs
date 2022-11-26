@@ -10,7 +10,7 @@ use crate::{
     on_event::OnEvent,
     on_layout::OnLayout,
     prelude::{constructor, rsx, KayakWidgetContext},
-    styles::{KPositionType, KStyle, LayoutType, RenderCommand, Units},
+    styles::{ComputedStyles, KPositionType, KStyle, LayoutType, RenderCommand, Units},
     widget::Widget,
     widget_state::WidgetState,
     widgets::{
@@ -59,6 +59,7 @@ impl Widget for ScrollBoxProps {}
 pub struct ScrollBoxBundle {
     pub scroll_box_props: ScrollBoxProps,
     pub styles: KStyle,
+    pub computed_styles: ComputedStyles,
     pub children: KChildren,
     pub on_layout: OnLayout,
     pub widget_name: WidgetName,
@@ -69,6 +70,7 @@ impl Default for ScrollBoxBundle {
         Self {
             scroll_box_props: Default::default(),
             styles: Default::default(),
+            computed_styles: ComputedStyles::default(),
             children: Default::default(),
             on_layout: Default::default(),
             widget_name: ScrollBoxProps::default().get_name(),
@@ -79,10 +81,17 @@ impl Default for ScrollBoxBundle {
 pub fn scroll_box_render(
     In((widget_context, entity)): In<(KayakWidgetContext, Entity)>,
     mut commands: Commands,
-    mut query: Query<(&ScrollBoxProps, &mut KStyle, &KChildren, &mut OnLayout)>,
+    mut query: Query<(
+        &ScrollBoxProps,
+        &KStyle,
+        &mut ComputedStyles,
+        &KChildren,
+        &mut OnLayout,
+    )>,
     mut context_query: ParamSet<(Query<&ScrollContext>, Query<&mut ScrollContext>)>,
 ) -> bool {
-    if let Ok((scroll_box, mut styles, scroll_box_children, mut on_layout)) = query.get_mut(entity)
+    if let Ok((scroll_box, styles, mut computed_styles, scroll_box_children, mut on_layout)) =
+        query.get_mut(entity)
     {
         if let Some(context_entity) = widget_context.get_context_entity::<ScrollContext>(entity) {
             if let Ok(scroll_context) = context_query.p0().get(context_entity).cloned() {
@@ -139,17 +148,18 @@ pub fn scroll_box_render(
                 );
 
                 // === Styles === //
-                *styles = KStyle::default()
+                *computed_styles = KStyle::default()
                     .with_style(KStyle {
                         render_command: RenderCommand::Layout.into(),
                         ..Default::default()
                     })
-                    .with_style(styles.clone())
+                    .with_style(styles)
                     .with_style(KStyle {
                         width: Units::Stretch(1.0).into(),
                         height: Units::Stretch(1.0).into(),
                         ..Default::default()
-                    });
+                    })
+                    .into();
 
                 let hbox_styles = KStyle::default().with_style(KStyle {
                     render_command: RenderCommand::Layout.into(),

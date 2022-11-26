@@ -4,7 +4,7 @@ use kayak_font::Alignment;
 use crate::{
     context::WidgetName,
     prelude::KayakWidgetContext,
-    styles::{KCursorIcon, KStyle, RenderCommand, StyleProp, Units},
+    styles::{ComputedStyles, KCursorIcon, KStyle, RenderCommand, StyleProp},
     widget::Widget,
 };
 
@@ -28,8 +28,6 @@ pub struct TextProps {
     pub size: f32,
     /// Text alignment.
     pub alignment: Alignment,
-    /// Custom styles to pass in.
-    pub user_styles: KStyle,
     /// Basic word wrapping.
     /// Defautls to true
     pub word_wrap: bool,
@@ -45,7 +43,6 @@ impl Default for TextProps {
             size: -1.0,
             alignment: Alignment::Start,
             word_wrap: true,
-            user_styles: Default::default(),
         }
     }
 }
@@ -58,6 +55,7 @@ impl Widget for TextProps {}
 pub struct TextWidgetBundle {
     pub text: TextProps,
     pub styles: KStyle,
+    pub computed_styles: ComputedStyles,
     pub widget_name: WidgetName,
 }
 
@@ -65,11 +63,8 @@ impl Default for TextWidgetBundle {
     fn default() -> Self {
         Self {
             text: Default::default(),
-            styles: KStyle {
-                width: Units::Stretch(1.0).into(),
-                height: Units::Stretch(1.0).into(),
-                ..Default::default()
-            },
+            styles: KStyle::default(),
+            computed_styles: ComputedStyles::default(),
             widget_name: TextProps::default().get_name(),
         }
     }
@@ -77,11 +72,11 @@ impl Default for TextWidgetBundle {
 
 pub fn text_render(
     In((_widget_context, entity)): In<(KayakWidgetContext, Entity)>,
-    mut query: Query<(&mut KStyle, &TextProps)>,
+    mut query: Query<(&KStyle, &mut ComputedStyles, &TextProps)>,
 ) -> bool {
-    if let Ok((mut styles, text)) = query.get_mut(entity) {
-        *styles = KStyle::default()
-            .with_style(&text.user_styles)
+    if let Ok((styles, mut computed_styles, text)) = query.get_mut(entity) {
+        *computed_styles = KStyle::default()
+            .with_style(styles)
             .with_style(KStyle {
                 render_command: StyleProp::Value(RenderCommand::Text {
                     content: text.content.clone(),
@@ -108,13 +103,9 @@ pub fn text_render(
                 } else {
                     StyleProp::default()
                 },
-                // bottom: Units::Stretch(1.0).into(),
-                // top: Units::Stretch(1.0).into(),
-                // left: Units::Stretch(0.0).into(),
-                // right: Units::Stretch(0.0).into(),
                 ..Default::default()
-            });
-
+            })
+            .into();
         // style.cursor = StyleProp::Value(KCursorIcon(CursorIcon::Hand));
     }
 

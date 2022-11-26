@@ -14,7 +14,7 @@ use crate::{
     node::{Node, WrappedIndex},
     on_event::OnEvent,
     prelude::KayakWidgetContext,
-    styles::{KStyle, RenderCommand},
+    styles::{ComputedStyles, KStyle, RenderCommand},
     Focusable,
 };
 
@@ -557,9 +557,9 @@ impl EventDispatcher {
                         }
                     }
                     if self.contains_cursor.is_none() || !self.contains_cursor.unwrap_or_default() {
-                        if let Some(styles) = world.get::<KStyle>(node.0) {
+                        if let Some(styles) = world.get::<ComputedStyles>(node.0) {
                             // Check if the cursor moved onto a widget that qualifies as one that can contain it
-                            if ignore_layout || Self::can_contain_cursor(styles) {
+                            if ignore_layout || Self::can_contain_cursor(&styles.0) {
                                 self.contains_cursor = Some(is_contained);
                             }
                         }
@@ -601,9 +601,9 @@ impl EventDispatcher {
                         }
 
                         if self.has_cursor.is_none() {
-                            if let Some(styles) = world.get::<KStyle>(node.0) {
+                            if let Some(styles) = world.get::<ComputedStyles>(node.0) {
                                 // Check if the cursor moved onto a widget that qualifies as one that can contain it
-                                if Self::can_contain_cursor(styles) {
+                                if Self::can_contain_cursor(&styles.0) {
                                     self.has_cursor = Some(node);
                                 }
                             }
@@ -666,8 +666,8 @@ impl EventDispatcher {
 
     fn resolve_pointer_events(index: WrappedIndex, world: &mut World) -> PointerEvents {
         let mut pointer_events = PointerEvents::default();
-        if let Some(styles) = world.get::<KStyle>(index.0) {
-            pointer_events = styles.pointer_events.resolve();
+        if let Some(styles) = world.get::<ComputedStyles>(index.0) {
+            pointer_events = styles.0.pointer_events.resolve();
         }
         pointer_events
     }

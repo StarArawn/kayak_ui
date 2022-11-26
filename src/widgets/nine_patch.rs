@@ -5,7 +5,7 @@ use crate::{
     context::WidgetName,
     on_event::OnEvent,
     prelude::KayakWidgetContext,
-    styles::{Edge, KStyle, RenderCommand, StyleProp},
+    styles::{ComputedStyles, Edge, KStyle, RenderCommand},
     widget::Widget,
 };
 
@@ -52,6 +52,7 @@ impl Widget for NinePatch {}
 pub struct NinePatchBundle {
     pub nine_patch: NinePatch,
     pub styles: KStyle,
+    pub computed_styles: ComputedStyles,
     pub children: KChildren,
     pub on_event: OnEvent,
     pub widget_name: WidgetName,
@@ -62,6 +63,7 @@ impl Default for NinePatchBundle {
         Self {
             nine_patch: Default::default(),
             styles: Default::default(),
+            computed_styles: ComputedStyles::default(),
             children: KChildren::default(),
             on_event: OnEvent::default(),
             widget_name: NinePatch::default().get_name(),
@@ -72,13 +74,20 @@ impl Default for NinePatchBundle {
 pub fn nine_patch_render(
     In((widget_context, entity)): In<(KayakWidgetContext, Entity)>,
     _: Commands,
-    mut query: Query<(&mut KStyle, &NinePatch, &KChildren)>,
+    mut query: Query<(&KStyle, &mut ComputedStyles, &NinePatch, &KChildren)>,
 ) -> bool {
-    if let Ok((mut style, nine_patch, children)) = query.get_mut(entity) {
-        style.render_command = StyleProp::Value(RenderCommand::NinePatch {
-            border: nine_patch.border,
-            handle: nine_patch.handle.clone_weak(),
-        });
+    if let Ok((style, mut computed_styles, nine_patch, children)) = query.get_mut(entity) {
+        *computed_styles = KStyle::default()
+            .with_style(KStyle {
+                render_command: RenderCommand::NinePatch {
+                    border: nine_patch.border,
+                    handle: nine_patch.handle.clone_weak(),
+                }
+                .into(),
+                ..Default::default()
+            })
+            .with_style(style)
+            .into();
         children.process(&widget_context, Some(entity));
     }
 

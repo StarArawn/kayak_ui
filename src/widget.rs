@@ -7,7 +7,7 @@ use crate::{
     children::KChildren,
     context::{Mounted, WidgetName},
     prelude::KayakWidgetContext,
-    styles::KStyle,
+    styles::{ComputedStyles, KStyle},
 };
 
 pub trait Widget: Send + Sync {
@@ -57,6 +57,7 @@ pub struct WidgetParam<'w, 's, Props: PartialEq + Component, State: PartialEq + 
     pub old_props_query: Query<'w, 's, &'static Props>,
     pub mounted_query: Query<'w, 's, Entity, With<Mounted>>,
     pub style_query: Query<'w, 's, &'static KStyle>,
+    pub computed_style_query: Query<'w, 's, &'static ComputedStyles>,
     pub children_query: Query<'w, 's, &'static KChildren>,
     pub state_query: Query<'w, 's, &'static State>,
     pub widget_names: Query<'w, 's, &'static WidgetName>,
@@ -88,6 +89,21 @@ impl<'w, 's, Props: PartialEq + Component, State: PartialEq + Component>
             if style != old_style {
                 log::trace!(
                     "Entity styles have changed! {}-{}",
+                    self.widget_names.get(current_entity).unwrap().0,
+                    current_entity.index()
+                );
+                return true;
+            }
+        }
+
+        // Compare computed styles
+        if let (Ok(style), Ok(old_style)) = (
+            self.computed_style_query.get(current_entity),
+            self.computed_style_query.get(previous_entity),
+        ) {
+            if style != old_style {
+                log::trace!(
+                    "Entity computed styles have changed! {}-{}",
                     self.widget_names.get(current_entity).unwrap().0,
                     current_entity.index()
                 );

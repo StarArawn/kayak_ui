@@ -22,8 +22,8 @@ use crate::{
     prelude::KayakWidgetContext,
     render_primitive::RenderPrimitive,
     styles::{
-        Corner, Edge, KCursorIcon, KPositionType, KStyle, LayoutType, RenderCommand, StyleProp,
-        Units,
+        ComputedStyles, Corner, Edge, KCursorIcon, KPositionType, KStyle, LayoutType,
+        RenderCommand, StyleProp, Units,
     },
     tree::{Change, Tree},
     widget_state::WidgetState,
@@ -821,6 +821,13 @@ fn update_widget(
                                     entity.insert(styles);
                                 }
                             }
+                            if let Some(styles) =
+                                world.entity(entity.0).get::<ComputedStyles>().cloned()
+                            {
+                                if let Some(mut entity) = world.get_entity_mut(*target_entity) {
+                                    entity.insert(styles);
+                                }
+                            }
                             if let Some(children) =
                                 world.entity(entity.0).get::<KChildren>().cloned()
                             {
@@ -928,6 +935,11 @@ fn update_widget(
                         entity.insert(styles);
                     }
                 }
+                if let Some(styles) = world.entity(entity.0).get::<ComputedStyles>().cloned() {
+                    if let Some(mut entity) = world.get_entity_mut(*target_entity) {
+                        entity.insert(styles);
+                    }
+                }
                 if let Some(children) = world.entity(entity.0).get::<KChildren>().cloned() {
                     if let Some(mut entity) = world.get_entity_mut(*target_entity) {
                         entity.insert(children);
@@ -985,7 +997,8 @@ impl Plugin for KayakContextPlugin {
 
         // Register reflection types.
         // A bit annoying..
-        app.register_type::<KStyle>()
+        app.register_type::<ComputedStyles>()
+            .register_type::<KStyle>()
             .register_type::<KChildren>()
             .register_type::<WidgetName>()
             .register_type::<StyleProp<Color>>()

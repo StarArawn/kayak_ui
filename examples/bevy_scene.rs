@@ -225,10 +225,10 @@ fn startup(
                 }}
             >
                 <TextWidgetBundle
+                    styles={text_styles.clone()}
                     text={TextProps {
                         size: 13.0,
                         content: "You can check if the cursor is over the UI or on a focusable widget using the BevyContext resource.".to_string(),
-                        user_styles: text_styles.clone(),
                         ..Default::default()
                     }}
                 />
@@ -241,13 +241,13 @@ fn startup(
                     styles={button_styles}
                 />
                 <TextWidgetBundle
+                    styles={KStyle {
+                        top: Units::Pixels(10.0).into(),
+                        ..text_styles
+                    }}
                     text={TextProps {
                         size: 11.0,
                         content: "Go ahead and click the button! The tile won't move.".to_string(),
-                        user_styles: KStyle {
-                            top: Units::Pixels(10.0).into(),
-                            ..text_styles
-                        },
                         ..Default::default()
                     }}
                 />

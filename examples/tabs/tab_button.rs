@@ -75,14 +75,14 @@ pub fn tab_button_render(
 
             rsx! {
                 <KButtonBundle
+                    styles={KStyle {
+                        background_color: StyleProp::Value(background_color),
+                        border_radius: Corner::all(0.0).into(),
+                        height: StyleProp::Value(Units::Pixels(25.0)),
+                        ..Default::default()
+                    }}
                     button={KButton {
                         text: tab_button.title.clone(),
-                        user_styles: KStyle {
-                            background_color: StyleProp::Value(background_color),
-                            border_radius: Corner::all(0.0).into(),
-                            height: StyleProp::Value(Units::Pixels(25.0)),
-                            ..Default::default()
-                        },
                     }}
                     on_event={on_event}
                 />

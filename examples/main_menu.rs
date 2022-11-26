@@ -91,16 +91,15 @@ fn menu_button_render(
                 on_event={on_event}
             >
                 <TextWidgetBundle
+                    styles={KStyle {
+                        top: Units::Stretch(1.0).into(),
+                        bottom: Units::Stretch(1.0).into(),
+                        ..Default::default()
+                    }}
                     text={TextProps {
                         alignment: Alignment::Middle,
                         content: button_text,
                         size: 28.0,
-                        user_styles: KStyle {
-                            // top: Units::Stretch(1.0).into(),
-                            top: Units::Pixels(-16.0).into(),
-                            height: Units::Pixels(40.0).into(),
-                            ..Default::default()
-                        },
                         ..Default::default()
                     }}
                 />

@@ -15,6 +15,7 @@ struct CurrentCountState {
 struct CurrentCountBundle {
     count: CurrentCount,
     styles: KStyle,
+    computed_styles: ComputedStyles,
     widget_name: WidgetName,
 }
 
@@ -23,6 +24,7 @@ impl Default for CurrentCountBundle {
         Self {
             count: CurrentCount::default(),
             styles: KStyle::default(),
+            computed_styles: ComputedStyles::default(),
             widget_name: CurrentCount::default().get_name(),
         }
     }

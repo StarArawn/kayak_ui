@@ -11,7 +11,7 @@ use crate::{
     prelude::{KStyle, KayakRootContext, Tree},
     render::font::FontMapping,
     render_primitive::RenderPrimitive,
-    styles::{RenderCommand, StyleProp, Units},
+    styles::{ComputedStyles, RenderCommand, StyleProp, Units},
 };
 
 pub fn calculate_nodes(
@@ -20,7 +20,7 @@ pub fn calculate_nodes(
     fonts: Res<Assets<KayakFont>>,
     font_mapping: Res<FontMapping>,
     query: Query<Entity, With<DirtyNode>>,
-    all_styles_query: Query<&KStyle>,
+    all_styles_query: Query<&ComputedStyles>,
     node_query: Query<(Entity, &Node)>,
 ) -> KayakRootContext {
     let mut new_nodes = HashMap::<Entity, (Node, bool)>::default();
@@ -43,6 +43,7 @@ pub fn calculate_nodes(
 
             let styles = all_styles_query
                 .get(dirty_entity.0)
+                .map(|cs| &cs.0)
                 .unwrap_or(&default_styles);
             // Get the parent styles. Will be one of the following:
             // 1. Already-resolved node styles (best)
@@ -54,7 +55,7 @@ pub fn calculate_nodes(
                 } else if let Ok((_, parent_node)) = node_query.get(parent_widget_id.0) {
                     parent_node.resolved_styles.clone()
                 } else if let Ok(parent_styles) = all_styles_query.get(parent_widget_id.0) {
-                    parent_styles.clone()
+                    parent_styles.0.clone()
                 } else {
                     default_styles.clone()
                 }
@@ -211,8 +212,8 @@ fn create_primitive(
     dirty: &Query<Entity, With<DirtyNode>>,
     id: WrappedIndex,
     styles: &mut KStyle,
-    prev_styles: KStyle,
-    all_styles_query: &Query<&KStyle>,
+    _prev_styles: KStyle,
+    all_styles_query: &Query<&ComputedStyles>,
 ) -> (RenderPrimitive, bool) {
     let mut render_primitive = RenderPrimitive::from(&styles.clone());
     let mut needs_layout = true;
@@ -229,20 +230,19 @@ fn create_primitive(
             // --- Bind to Font Asset --- //
             let font_handle = font_mapping.get_handle(font.clone()).unwrap();
             if let Some(font) = fonts.get(&font_handle) {
-                // self.bind(id, &asset);
                 if let Ok(node_tree) = context.tree.try_read() {
                     if let Some(parent_id) =
                         find_not_empty_parent(&node_tree, all_styles_query, &id)
                     {
                         if let Some(parent_layout) = context.get_layout(&parent_id) {
                             let border_x = if let Ok(style) = all_styles_query.get(parent_id.0) {
-                                let border = style.border.resolve();
+                                let border = style.0.border.resolve();
                                 border.left + border.right
                             } else {
                                 0.0
                             };
                             let border_y = if let Ok(style) = all_styles_query.get(parent_id.0) {
-                                let border = style.border.resolve();
+                                let border = style.0.border.resolve();
                                 border.top + border.bottom
                             } else {
                                 0.0
@@ -308,24 +308,24 @@ fn create_primitive(
     }
 
     // If we have data from the previous frame no need to do anything here!
-    if matches!(prev_styles.width, StyleProp::Value(..)) {
-        styles.width = prev_styles.width;
-        styles.height = prev_styles.height;
-        needs_layout = false;
-    }
+    // if matches!(prev_styles.width, StyleProp::Value(..)) {
+    //     styles.width = prev_styles.width;
+    //     styles.height = prev_styles.height;
+    //     needs_layout = false;
+    // }
 
     (render_primitive, needs_layout)
 }
 
 pub fn find_not_empty_parent(
     tree: &Tree,
-    all_styles_query: &Query<&KStyle>,
+    all_styles_query: &Query<&ComputedStyles>,
     node: &WrappedIndex,
 ) -> Option<WrappedIndex> {
     if let Some(parent) = tree.parent(*node) {
         if let Ok(styles) = all_styles_query.get(parent.0) {
-            if matches!(styles.render_command.resolve(), RenderCommand::Empty)
-                || matches!(styles.render_command.resolve(), RenderCommand::Layout)
+            if matches!(styles.0.render_command.resolve(), RenderCommand::Empty)
+                || matches!(styles.0.render_command.resolve(), RenderCommand::Layout)
             {
                 find_not_empty_parent(tree, all_styles_query, &parent)
             } else {

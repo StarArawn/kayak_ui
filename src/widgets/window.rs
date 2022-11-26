@@ -11,7 +11,10 @@ use crate::{
     event_dispatcher::EventDispatcherContext,
     on_event::OnEvent,
     prelude::KayakWidgetContext,
-    styles::{Corner, Edge, KCursorIcon, KPositionType, KStyle, RenderCommand, StyleProp, Units},
+    styles::{
+        ComputedStyles, Corner, Edge, KCursorIcon, KPositionType, KStyle, RenderCommand, StyleProp,
+        Units,
+    },
     widget::Widget,
     widget_state::WidgetState,
     Focusable,
@@ -58,6 +61,7 @@ impl Widget for KWindow {}
 pub struct WindowBundle {
     pub window: KWindow,
     pub styles: KStyle,
+    pub computed_styles: ComputedStyles,
     pub children: KChildren,
     pub widget_name: WidgetName,
 }
@@ -67,6 +71,7 @@ impl Default for WindowBundle {
         Self {
             window: Default::default(),
             styles: Default::default(),
+            computed_styles: ComputedStyles::default(),
             children: Default::default(),
             widget_name: KWindow::default().get_name(),
         }
@@ -76,11 +81,13 @@ impl Default for WindowBundle {
 pub fn window_render(
     In((widget_context, window_entity)): In<(KayakWidgetContext, Entity)>,
     mut commands: Commands,
-    mut query: Query<(&mut KStyle, &KChildren, &KWindow)>,
+    mut query: Query<(&KStyle, &mut ComputedStyles, &KChildren, &KWindow)>,
     state_query: Query<&KWindowState>,
     mut context_query: Query<&mut WindowContext>,
 ) -> bool {
-    if let Ok((mut window_style, window_children, window)) = query.get_mut(window_entity) {
+    if let Ok((window_style, mut computed_styles, window_children, window)) =
+        query.get_mut(window_entity)
+    {
         let possible_context_entity =
             widget_context.get_context_entity::<WindowContext>(window_entity);
         let z_index = if let Some(window_context_entity) = possible_context_entity {
@@ -93,11 +100,17 @@ pub fn window_render(
             None
         };
 
-        window_style.z_index = if let Some(z_index) = z_index {
-            StyleProp::Value(z_index as i32 * 1000)
-        } else {
-            StyleProp::Default
-        };
+        *computed_styles = KStyle::default()
+            .with_style(KStyle {
+                z_index: if let Some(z_index) = z_index {
+                    StyleProp::Value(z_index as i32 * 1000)
+                } else {
+                    StyleProp::Default
+                },
+                ..Default::default()
+            })
+            .with_style(window_style)
+            .into();
 
         let title = window.title.clone();
 
@@ -190,14 +203,14 @@ pub fn window_render(
                         }}
                     >
                         <TextWidgetBundle
+                            styles={KStyle {
+                                top: Units::Stretch(1.0).into(),
+                                bottom: Units::Stretch(1.0).into(),
+                                ..Default::default()
+                            }}
                             text={TextProps {
                                 content: title,
                                 size: 14.0,
-                                user_styles: KStyle {
-                                    top: Units::Stretch(1.0).into(),
-                                    bottom: Units::Stretch(1.0).into(),
-                                    ..Default::default()
-                                },
                                 ..Default::default()
                             }}
                         />

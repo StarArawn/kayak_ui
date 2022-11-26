@@ -23,6 +23,7 @@ It's advised to have bundles that correspond to a group of components on a widge
 pub struct BackgroundBundle {
     pub background: Background,
     pub styles: KStyle,
+    pub computed_styles: ComputedStyles,
     pub children: KChildren,
     pub on_event: OnEvent,
     pub widget_name: WidgetName,

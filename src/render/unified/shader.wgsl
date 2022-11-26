@@ -104,7 +104,7 @@ fn fragment(in: VertexOutput) -> @location(0) vec4<f32> {
 
         let red = sample_subpixel(vec2(in.uv.x - subpixel_dimensions.x, 1. - in.uv.y), subpixel_dimensions, i32(in.uv.z), scale);
         let green = sample_subpixel(vec2(in.uv.x, 1. - in.uv.y), subpixel_dimensions, i32(in.uv.z), scale);
-        let blue = sample_subpixel(vec2(in.uv.x + subpixel_dimensions.y, 1. - in.uv.y), subpixel_dimensions, i32(in.uv.z), scale);
+        let blue = sample_subpixel(vec2(in.uv.x + subpixel_dimensions.x, 1. - in.uv.y), subpixel_dimensions, i32(in.uv.z), scale);
         let alpha = (red + green + blue) / 3.;
 
         return vec4(red * in.color.r, green * in.color.g, blue * in.color.b, alpha);

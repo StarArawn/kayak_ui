@@ -61,6 +61,25 @@ fn sdRoundBox(p: vec2<f32>, b: vec2<f32>, r: f32) -> f32 {
     return min(max(q.x, q.y), 0.0) + length(max(q, vec2<f32>(0.0))) - r;
 }
 
+fn median3(v: vec3<f32>) -> f32 {
+    return max(min(v.x, v.y), min(max(v.x, v.y), v.z));
+}
+
+fn sample_sdf(coords: vec2<f32>, arr: i32, scale: f32) -> f32 {
+    let sample = textureSample(font_texture, font_sampler, vec2(coords.xy), arr);
+    return clamp((median3(sample.rgb) - 0.5) * scale + 0.5, 0., 1.);
+}
+
+fn sample_subpixel(coords: vec2<f32>, dim: vec2<f32>, arr: i32, scale: f32) -> f32 {
+    return 0.2 * (
+        sample_sdf(coords.xy, arr, scale)
+        + sample_sdf(coords.xy + vec2(-dim.x, dim.y) / 3., arr, scale)
+        + sample_sdf(coords.xy + vec2(-dim.x, -dim.y) / 3., arr, scale)
+        + sample_sdf(coords.xy + vec2(dim.x, dim.y) / 3., arr, scale)
+        + sample_sdf(coords.xy + vec2(dim.x, -dim.y) / 3., arr, scale)
+    );
+}
+
 @fragment
 fn fragment(in: VertexOutput) -> @location(0) vec4<f32> {
     if quad_type.t == 0 {
@@ -77,14 +96,18 @@ fn fragment(in: VertexOutput) -> @location(0) vec4<f32> {
         return vec4<f32>(in.color.rgb, rect_dist * in.color.a);
     }
     if quad_type.t == 1 {
-        var px_range = 5.0;
+        var px_range = 5.;
         var tex_dimensions = textureDimensions(font_texture);
-        var msdf_unit = vec2<f32>(px_range, px_range) / vec2<f32>(f32(tex_dimensions.x), f32(tex_dimensions.y));
-        var x = textureSample(font_texture, font_sampler, vec2<f32>(in.uv.x, 1.0 - in.uv.y), i32(in.uv.z));
-        var v = max(min(x.r, x.g), min(max(x.r, x.g), x.b));
-        var sig_dist = (v - 0.5) * dot(msdf_unit, 0.5 / fwidth(in.uv.xy));
-        var a = clamp(sig_dist + 0.5, 0.0, 1.0);
-        return vec4<f32>(in.color.rgb, a);
+        var msdf_unit = vec2(px_range, px_range) / vec2(f32(tex_dimensions.x), f32(tex_dimensions.y));
+        let scale = dot(msdf_unit, 0.5 / fwidth(in.uv.xy));
+        let subpixel_dimensions = vec2(fwidth(in.uv.x) / 3., fwidth(in.uv.y));
+
+        let red = sample_subpixel(vec2(in.uv.x - subpixel_dimensions.x, 1. - in.uv.y), subpixel_dimensions, i32(in.uv.z), scale);
+        let green = sample_subpixel(vec2(in.uv.x, 1. - in.uv.y), subpixel_dimensions, i32(in.uv.z), scale);
+        let blue = sample_subpixel(vec2(in.uv.x + subpixel_dimensions.x, 1. - in.uv.y), subpixel_dimensions, i32(in.uv.z), scale);
+        let alpha = (red + green + blue) / 3.;
+
+        return vec4(red * in.color.r, green * in.color.g, blue * in.color.b, alpha);
     }
     if quad_type.t == 2 {
         var bs = min(in.border_radius, min(in.size.x, in.size.y));

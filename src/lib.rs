@@ -59,6 +59,7 @@ pub mod prelude {
     pub use crate::widget_context::*;
     pub use crate::widget_state::*;
     pub use crate::widgets;
+    pub use crate::cursor::*;
     pub use kayak_font::Alignment;
     pub use kayak_ui_macros::{constructor, rsx};
 }

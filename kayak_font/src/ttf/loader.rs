@@ -1,8 +1,12 @@
 use bevy::{
-    asset::{AssetLoader, FileAssetIo, LoadContext, LoadedAsset},
+    asset::{AssetLoader, LoadContext, LoadedAsset},
     render::render_resource::{Extent3d, TextureFormat},
     utils::{BoxedFuture, HashMap},
 };
+
+#[cfg(not(target_family = "wasm"))]
+use bevy::asset::FileAssetIo;
+
 use image::{EncodableLayout, RgbaImage};
 use nanoserde::DeJson;
 
@@ -26,10 +30,12 @@ impl AssetLoader for TTFLoader {
         load_context: &'a mut LoadContext,
     ) -> BoxedFuture<'a, Result<(), anyhow::Error>> {
         Box::pin(async move {
+            #[cfg(not(target_family = "wasm"))]
             let asset_io = load_context
                 .asset_io()
                 .downcast_ref::<FileAssetIo>()
                 .unwrap();
+
             let kttf: KTTF =
                 nanoserde::DeJson::deserialize_json(std::str::from_utf8(bytes).unwrap()).unwrap();
 
@@ -179,6 +185,7 @@ impl AssetLoader for TTFLoader {
             }
 
             let image_bytes = if cache_image.is_err() {
+                #[cfg(not(target_family = "wasm"))]
                 image_builder
                     .save(asset_io.root_path().join(cache_path))
                     .unwrap();

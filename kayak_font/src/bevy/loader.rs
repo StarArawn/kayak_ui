@@ -1,4 +1,4 @@
-use crate::{KayakFont, Sdf, ImageType};
+use crate::{ImageType, KayakFont, Sdf};
 use bevy::asset::{AssetLoader, AssetPath, BoxedFuture, LoadContext, LoadedAsset};
 
 #[derive(Default)]

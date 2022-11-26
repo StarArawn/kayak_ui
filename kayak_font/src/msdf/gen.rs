@@ -63,7 +63,9 @@ pub fn pixel_clash(a: FloatRGB, b: FloatRGB, threshold: f64) -> bool {
         }
     }
 
-    ((b1 - a1).abs() >= threshold as f32) && !(b0 == b1 && b0 == b2) && (a2 - 0.5).abs() >= (b2 - 0.5).abs()
+    ((b1 - a1).abs() >= threshold as f32)
+        && !(b0 == b1 && b0 == b2)
+        && (a2 - 0.5).abs() >= (b2 - 0.5).abs()
 
     // let a_calcd = if a.r > 0.5 { 1.0 } else { 0.0 }
     //     + if a.g > 0.5 { 1.0 } else { 0.0 }

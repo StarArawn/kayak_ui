@@ -54,12 +54,18 @@ impl EdgeSegment {
 
     pub fn new_quadratic(p0: Vector2, mut p1: Vector2, p2: Vector2, color: EdgeColor) -> Self {
         if p1 == p0 || p1 == p2 {
-            p1 = 0.5*(p0+p2);
+            p1 = 0.5 * (p0 + p2);
         }
         Self::QuadraticSegment { p0, p1, p2, color }
     }
 
-    pub fn new_cubic(p0: Vector2, mut p1: Vector2, mut p2: Vector2, p3: Vector2, color: EdgeColor) -> Self {
+    pub fn new_cubic(
+        p0: Vector2,
+        mut p1: Vector2,
+        mut p2: Vector2,
+        p3: Vector2,
+        color: EdgeColor,
+    ) -> Self {
         if (p1 == p0 || p1 == p3) && (p2 == p0 || p2 == p3) {
             p1 = mix(p0, p3, 1.0 / 3.0);
             p2 = mix(p0, p3, 2.0 / 3.0);

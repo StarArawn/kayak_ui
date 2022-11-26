@@ -128,8 +128,8 @@ pub fn signed_distance(
         ep_dir = direction(p0, p1, p2, p3, 1.0);
         let distance = (p3 - origin).length();
         if distance.abs() < min_distance.abs() {
-            min_distance = non_zero_sign(Vector2::cross_product(ep_dir, p3 - origin)) as f64
-            * distance;
+            min_distance =
+                non_zero_sign(Vector2::cross_product(ep_dir, p3 - origin)) as f64 * distance;
             param = Vector2::dot_product(ep_dir - (p3 - origin), ep_dir)
                 / Vector2::dot_product(ep_dir, ep_dir);
         }
@@ -137,12 +137,13 @@ pub fn signed_distance(
 
     for i in 0..MSDFGEN_CUBIC_SEARCH_STARTS {
         let mut t = (i / MSDFGEN_CUBIC_SEARCH_STARTS) as f64;
-        let mut qe = qa + 3.0 * t * ab + 3.0 * t * t * br + t * t *t * as_;
+        let mut qe = qa + 3.0 * t * ab + 3.0 * t * t * br + t * t * t * as_;
         for _ in 0..MSDFGEN_CUBIC_SEARCH_STEPS {
             let d1 = 3.0 * ab + 6.0 * t * br + 3.0 * t * t * as_;
             let d2 = 6.0 * br + 6.0 * t * as_;
-            t -= Vector2::dot_product(qe, d1) / (Vector2::dot_product(d1, d1) + Vector2::dot_product(qe, d2));
-           
+            t -= Vector2::dot_product(qe, d1)
+                / (Vector2::dot_product(d1, d1) + Vector2::dot_product(qe, d2));
+
             if t < 0.0 || t > 1.0 {
                 break;
             }

@@ -1,4 +1,4 @@
-use crate::{KayakFont, Sdf, ImageType};
+use crate::{ImageType, KayakFont, Sdf};
 use bevy::{
     math::Vec2,
     prelude::{Handle, Res, Resource},

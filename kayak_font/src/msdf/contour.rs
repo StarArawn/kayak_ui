@@ -148,11 +148,20 @@ impl Contour {
         return Vector2::sign(total) as i32;
     }
 
-    pub fn bound_miters(&self, l: &mut f64, b: &mut f64, r: &mut f64, t: &mut f64, border: f64, miter_limit: f64, polarity: i32) {
+    pub fn bound_miters(
+        &self,
+        l: &mut f64,
+        b: &mut f64,
+        r: &mut f64,
+        t: &mut f64,
+        border: f64,
+        miter_limit: f64,
+        polarity: i32,
+    ) {
         if self.edges.is_empty() {
             return;
         }
-        
+
         let mut prev_dir = self.edges.last().unwrap().direction(1.0).normalize(true);
 
         for edge in self.edges.iter() {
@@ -164,7 +173,8 @@ impl Contour {
                 let q = 0.5 * (1.0 - Vector2::dot_product(prev_dir, dir));
                 if q > 0.0 {
                     miter_length = (1.0 / q.sqrt()).min(miter_limit);
-                    let miter = edge.point(0.0) + border * miter_length * (prev_dir + dir).normalize(true);
+                    let miter =
+                        edge.point(0.0) + border * miter_length * (prev_dir + dir).normalize(true);
                     bound_point(l, b, r, t, miter);
                 }
             }

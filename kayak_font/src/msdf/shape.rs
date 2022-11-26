@@ -26,19 +26,22 @@ impl Shape {
         }
     }
 
-    fn find_bounds(
-        &mut self,
-        left: &mut f64,
-        bottom: &mut f64,
-        right: &mut f64,
-        top: &mut f64,
-    ) {
+    fn find_bounds(&mut self, left: &mut f64, bottom: &mut f64, right: &mut f64, top: &mut f64) {
         for contour in self.contours.iter_mut() {
             contour.find_bounds(left, bottom, right, top);
         }
     }
 
-    pub fn bound_miters(&self, l: &mut f64, b: &mut f64, r: &mut f64, t: &mut f64, border: f64, miter_limit: f64, polarity: i32) {
+    pub fn bound_miters(
+        &self,
+        l: &mut f64,
+        b: &mut f64,
+        r: &mut f64,
+        t: &mut f64,
+        border: f64,
+        miter_limit: f64,
+        polarity: i32,
+    ) {
         for contour in self.contours.iter() {
             contour.bound_miters(l, b, r, t, border, miter_limit, polarity);
         }

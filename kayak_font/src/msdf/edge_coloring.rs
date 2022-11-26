@@ -261,17 +261,27 @@ pub fn ink_trap(shape: &mut Shape, angle_threshold: f64, mut seed: usize) {
                     for i in 0..corner_count {
                         if !corners[i].minor {
                             major_corner_count -= 1;
-                            switch_color(&mut color, &mut seed, num::cast::FromPrimitive::from_usize(!major_corner_count * initial_color as usize).unwrap());
+                            switch_color(
+                                &mut color,
+                                &mut seed,
+                                num::cast::FromPrimitive::from_usize(
+                                    !major_corner_count * initial_color as usize,
+                                )
+                                .unwrap(),
+                            );
                             corners[i].color = color;
                             if initial_color != EdgeColor::BLACK {
                                 initial_color = color;
                             }
                         }
-                    } 
+                    }
                     for i in 0..corner_count {
                         if corners[i].minor {
                             let next_color = corners[(i + 1) % corner_count].color;
-                            corners[i].color = num::cast::FromPrimitive::from_usize((color as usize & next_color as usize) ^ EdgeColor::WHITE as usize).unwrap();
+                            corners[i].color = num::cast::FromPrimitive::from_usize(
+                                (color as usize & next_color as usize) ^ EdgeColor::WHITE as usize,
+                            )
+                            .unwrap();
                         } else {
                             color = corners[i].color;
                         }
@@ -283,7 +293,8 @@ pub fn ink_trap(shape: &mut Shape, angle_threshold: f64, mut seed: usize) {
                     let m = contour.edges.len();
                     for i in 0..m {
                         let index = (start + i) % m;
-                        if spline + 1 < corner_count && corners[spline + 1].index as usize == index {
+                        if spline + 1 < corner_count && corners[spline + 1].index as usize == index
+                        {
                             spline += 1;
                             color = corners[spline].color;
                         }

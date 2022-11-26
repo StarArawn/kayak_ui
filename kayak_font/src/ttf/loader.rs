@@ -1,5 +1,5 @@
 use bevy::{
-    asset::{AssetLoader, LoadContext, LoadedAsset, FileAssetIo},
+    asset::{AssetLoader, FileAssetIo, LoadContext, LoadedAsset},
     render::render_resource::{Extent3d, TextureFormat},
     utils::{BoxedFuture, HashMap},
 };
@@ -26,7 +26,10 @@ impl AssetLoader for TTFLoader {
         load_context: &'a mut LoadContext,
     ) -> BoxedFuture<'a, Result<(), anyhow::Error>> {
         Box::pin(async move {
-            let asset_io = load_context.asset_io().downcast_ref::<FileAssetIo>().unwrap();
+            let asset_io = load_context
+                .asset_io()
+                .downcast_ref::<FileAssetIo>()
+                .unwrap();
             let kttf: KTTF =
                 nanoserde::DeJson::deserialize_json(std::str::from_utf8(bytes).unwrap()).unwrap();
 
@@ -37,7 +40,13 @@ impl AssetLoader for TTFLoader {
             let font_bytes = load_context.read_asset_bytes(kttf.file).await?;
 
             let mut cache_path = std::path::PathBuf::from(load_context.path());
-            let file_name = load_context.path().file_name().unwrap().to_str().unwrap().to_string();
+            let file_name = load_context
+                .path()
+                .file_name()
+                .unwrap()
+                .to_str()
+                .unwrap()
+                .to_string();
             cache_path.set_file_name(format!("{}-cached.png", file_name));
             let cache_image = load_context.read_asset_bytes(&cache_path).await;
 
@@ -138,14 +147,16 @@ impl AssetLoader for TTFLoader {
                     );
 
                     // let left = (translation.x - char_bounds.x_min as f64 * pixel_scale).max(0.0).floor() as u32;
-                    let right = (translation.x + char_bounds.x_max as f64 * pixel_scale).floor() as u32;
+                    let right =
+                        (translation.x + char_bounds.x_max as f64 * pixel_scale).floor() as u32;
                     // let top = (translation.y - char_bounds.y_min as f64 * pixel_scale).max(0.0).floor() as u32;
-                    let bottom = (translation.y + char_bounds.y_max as f64 * pixel_scale).floor() as u32;
-            
+                    let bottom =
+                        (translation.y + char_bounds.y_max as f64 * pixel_scale).floor() as u32;
+
                     for x in 0..(right + 2).min(64) {
                         for y in 0..bottom + 48 {
-                    // for x in 0..size_x as u32 {
-                    //     for y  in 0..size_y as u32 {
+                            // for x in 0..size_x as u32 {
+                            //     for y  in 0..size_y as u32 {
                             let pixel = output.get_pixel(x as usize, y as usize);
                             image_builder.put_pixel(
                                 x,
@@ -168,7 +179,9 @@ impl AssetLoader for TTFLoader {
             }
 
             let image_bytes = if cache_image.is_err() {
-                image_builder.save(asset_io.root_path().join(cache_path)).unwrap();
+                image_builder
+                    .save(asset_io.root_path().join(cache_path))
+                    .unwrap();
                 image_builder.as_bytes().to_vec()
             } else {
                 let cache_image = cache_image.unwrap();
@@ -275,10 +288,10 @@ fn calculate_plane(
     (
         Vector2::new(translation_x, translation_y) * geometry_scale as f64,
         Rect {
-            left: 0.0,   // l as f32,
-            bottom: 0.0, // b as f32,
-            right: 0.0,  // r as f32,
-            top: 24.0 * geometry_scale,    // t as f32,
+            left: 0.0,                  // l as f32,
+            bottom: 0.0,                // b as f32,
+            right: 0.0,                 // r as f32,
+            top: 24.0 * geometry_scale, // t as f32,
         },
     )
 }

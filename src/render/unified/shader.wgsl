@@ -65,21 +65,19 @@ fn median3(v: vec3<f32>) -> f32 {
     return max(min(v.x, v.y), min(max(v.x, v.y), v.z));
 }
 
-fn sample_subpixel(coords: vec2<f32>, dim: vec2<f32>, arr: i32, scale: f32) -> f32 {
-    var contrib = 0.;
-    // collect a few samples
+fn sample_sdf(coords: vec2<f32>, arr: i32, scale: f32) -> f32 {
     let sample = textureSample(font_texture, font_sampler, vec2(coords.xy), arr);
-    contrib += clamp((median3(sample.rgb) - 0.5) * scale + 0.5, 0., 1.);
-    let sample = textureSample(font_texture, font_sampler, vec2(coords.xy) + vec2(-dim.x, dim.y) / 3., arr);
-    contrib += clamp((median3(sample.rgb) - 0.5) * scale + 0.5, 0., 1.);
-    let sample = textureSample(font_texture, font_sampler, vec2(coords.xy) + vec2(-dim.x, -dim.y) / 3., arr);
-    contrib += clamp((median3(sample.rgb) - 0.5) * scale + 0.5, 0., 1.);
-    let sample = textureSample(font_texture, font_sampler, vec2(coords.xy) + vec2(dim.x, dim.y) / 3., arr);
-    contrib += clamp((median3(sample.rgb) - 0.5) * scale + 0.5, 0., 1.);
-    let sample = textureSample(font_texture, font_sampler, vec2(coords.xy) + vec2(dim.x, -dim.y) / 3., arr);
-    contrib += clamp((median3(sample.rgb) - 0.5) * scale + 0.5, 0., 1.);
-    // take the average
-    return (contrib / 5.);
+    return clamp((median3(sample.rgb) - 0.5) * scale + 0.5, 0., 1.);
+}
+
+fn sample_subpixel(coords: vec2<f32>, dim: vec2<f32>, arr: i32, scale: f32) -> f32 {
+    return 0.2 * (
+        sample_sdf(coords.xy, arr, scale)
+        + sample_sdf(coords.xy + vec2(-dim.x, dim.y) / 3., arr, scale)
+        + sample_sdf(coords.xy + vec2(-dim.x, -dim.y) / 3., arr, scale)
+        + sample_sdf(coords.xy + vec2(dim.x, dim.y) / 3., arr, scale)
+        + sample_sdf(coords.xy + vec2(dim.x, -dim.y) / 3., arr, scale)
+    );
 }
 
 @fragment
@@ -104,9 +102,9 @@ fn fragment(in: VertexOutput) -> @location(0) vec4<f32> {
         let scale = dot(msdf_unit, 0.5 / fwidth(in.uv.xy));
         let subpixel_dimensions = vec2(fwidth(in.uv.x) / 3., fwidth(in.uv.y));
 
-        let red = sample_subpixel(vec2(in.uv.x - subpixel_dimensions.x, 1.0 - in.uv.y), subpixel_dimensions, i32(in.uv.z), scale);
-        let green = sample_subpixel(vec2(in.uv.x, 1.0 - in.uv.y), subpixel_dimensions, i32(in.uv.z), scale);
-        let blue = sample_subpixel(vec2(in.uv.x + subpixel_dimensions.y, 1.0 - in.uv.y), subpixel_dimensions, i32(in.uv.z), scale);
+        let red = sample_subpixel(vec2(in.uv.x - subpixel_dimensions.x, 1. - in.uv.y), subpixel_dimensions, i32(in.uv.z), scale);
+        let green = sample_subpixel(vec2(in.uv.x, 1. - in.uv.y), subpixel_dimensions, i32(in.uv.z), scale);
+        let blue = sample_subpixel(vec2(in.uv.x + subpixel_dimensions.y, 1. - in.uv.y), subpixel_dimensions, i32(in.uv.z), scale);
         let alpha = (red + green + blue) / 3.;
 
         return vec4(red * in.color.r, green * in.color.g, blue * in.color.b, alpha);

@@ -42,6 +42,7 @@ pub mod prelude {
     pub use crate::children::KChildren;
     pub use crate::clone_component::PreviousWidget;
     pub use crate::context::*;
+    pub use crate::cursor::*;
     pub use crate::event::*;
     pub use crate::event_dispatcher::{EventDispatcher, EventDispatcherContext};
     pub use crate::focus_tree::Focusable;

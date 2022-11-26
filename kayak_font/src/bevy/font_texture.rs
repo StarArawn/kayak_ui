@@ -22,7 +22,7 @@ pub fn init_font_texture(
     let not_processed_fonts = not_processed.drain(..).collect::<Vec<_>>();
     for font_handle in not_processed_fonts {
         if let Some(font) = fonts.get(&font_handle) {
-            if let Some(mut texture) = images.get_mut(&font.atlas_image) {
+            if let Some(mut texture) = images.get_mut(font.image.get()) {
                 texture.texture_descriptor.format = TextureFormat::Rgba8Unorm;
                 texture.sampler_descriptor = ImageSampler::Descriptor(SamplerDescriptor {
                     label: Some("Present Sampler"),

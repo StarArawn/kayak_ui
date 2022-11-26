@@ -14,10 +14,26 @@ use crate::{
 #[uuid = "4fe4732c-6731-49bb-bafc-4690d636b848"]
 pub struct KayakFont {
     pub sdf: Sdf,
-    pub atlas_image: Handle<Image>,
+    pub image: ImageType,
     pub missing_glyph: Option<char>,
     char_ids: HashMap<char, u32>,
     max_glyph_size: (f32, f32),
+}
+
+#[cfg(feature = "bevy_renderer")]
+#[derive(Debug, Clone, PartialEq)]
+pub enum ImageType {
+    Atlas(Handle<Image>),
+    Array(Handle<Image>),
+}
+
+impl ImageType {
+    pub fn get(&self) -> &Handle<Image> {
+        match self {
+            Self::Atlas(handle) => handle,
+            Self::Array(handle) => handle,
+        }
+    }
 }
 
 #[cfg(not(feature = "bevy_renderer"))]
@@ -30,7 +46,7 @@ pub struct KayakFont {
 }
 
 impl KayakFont {
-    pub fn new(sdf: Sdf, #[cfg(feature = "bevy_renderer")] atlas_image: Handle<Image>) -> Self {
+    pub fn new(sdf: Sdf, #[cfg(feature = "bevy_renderer")] image_type: ImageType) -> Self {
         let max_glyph_size = sdf.max_glyph_size();
         assert!(
             sdf.glyphs.len() < u32::MAX as usize,
@@ -55,7 +71,7 @@ impl KayakFont {
         Self {
             sdf,
             #[cfg(feature = "bevy_renderer")]
-            atlas_image,
+            image: image_type,
             missing_glyph,
             char_ids,
             max_glyph_size,
@@ -260,7 +276,6 @@ impl KayakFont {
                 rect.position.0 += shift_x;
             }
         }
-
         TextLayout::new(glyph_rects, lines, size, properties)
     }
 

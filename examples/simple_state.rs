@@ -83,7 +83,7 @@ fn startup(
     mut font_mapping: ResMut<FontMapping>,
     asset_server: Res<AssetServer>,
 ) {
-    font_mapping.set_default(asset_server.load("lato-light.kayak_font"));
+    font_mapping.set_default(asset_server.load("lato-light.kttf"));
 
     // Camera 2D forces a clear pass in bevy.
     // We do this because our scene is not rendering anything else.

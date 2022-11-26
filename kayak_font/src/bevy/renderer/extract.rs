@@ -46,7 +46,7 @@ pub(crate) fn extract_fonts(
 
     for handle in changed_assets {
         let font_asset = font_assets.get(&handle).unwrap();
-        if let Some(image) = textures.get(&font_asset.atlas_image) {
+        if let Some(image) = textures.get(font_asset.image.get()) {
             if !image
                 .texture_descriptor
                 .usage

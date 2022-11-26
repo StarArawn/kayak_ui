@@ -1,6 +1,6 @@
 use nanoserde::DeJson;
 
-#[derive(DeJson, Debug, Copy, Clone, PartialEq)]
+#[derive(DeJson, Default, Debug, Copy, Clone, PartialEq)]
 pub struct Metrics {
     #[nserde(rename = "emSize")]
     em_size: f32,

@@ -6,7 +6,7 @@ fn startup(
     mut font_mapping: ResMut<FontMapping>,
     asset_server: Res<AssetServer>,
 ) {
-    font_mapping.set_default(asset_server.load("lato-light.kayak_font"));
+    font_mapping.set_default(asset_server.load("lato-light.kttf"));
 
     let image = asset_server.load("panel.png");
 

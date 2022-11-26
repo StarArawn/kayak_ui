@@ -18,7 +18,7 @@ const FONT_SIZE: f32 = 24.0;
 const INITIAL_SIZE: Vec2 = Vec2::from_array([400.0, 300.0]);
 const INITIAL_POS: Vec2 = Vec2::from_array([-200.0, 0.0]);
 const INSTRUCTIONS: &str =
-    "Press 'A' and 'D' to shrink and grow the text box.\nPress 'Space' to cycle text alignment.";
+    "Press 'A' and 'D' to shrink and grow the text box.\nPress \"Space\" to cycle text alignment.";
 
 #[derive(Component)]
 struct Instructions;
@@ -26,7 +26,8 @@ struct Instructions;
 fn startup(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.spawn(Camera2dBundle::default());
 
-    let font_handle: Handle<KayakFont> = asset_server.load("roboto.kayak_font");
+    let font_handle: Handle<KayakFont> = asset_server.load("roboto.kttf");
+    // let font_handle: Handle<KayakFont> = asset_server.load("roboto.kayak_font");
 
     commands
         .spawn(Text {

@@ -14,19 +14,26 @@ pub struct MyQuad {
 
 fn my_quad_update(
     In((_widget_context, entity)): In<(KayakWidgetContext, Entity)>,
-    mut query: Query<(&MyQuad, &mut KStyle, &mut OnEvent)>,
+    mut query: Query<(&MyQuad, &KStyle, &mut ComputedStyles, &mut OnEvent)>,
 ) -> bool {
-    if let Ok((quad, mut style, mut on_event)) = query.get_mut(entity) {
-        if style.render_command.resolve() != RenderCommand::Quad {
-            style.render_command = StyleProp::Value(RenderCommand::Quad);
-            style.position_type = StyleProp::Value(KPositionType::SelfDirected);
-            style.left = StyleProp::Value(Units::Pixels(quad.pos.x));
-            style.top = StyleProp::Value(Units::Pixels(quad.pos.y));
-            style.width = StyleProp::Value(Units::Pixels(quad.size.x));
-            style.height = StyleProp::Value(Units::Pixels(quad.size.y));
-            style.background_color = StyleProp::Value(quad.color);
-            style.z_index = StyleProp::Value(quad.z_index);
-        }
+    if let Ok((quad, style, mut computed_styles, mut on_event)) = query.get_mut(entity) {
+        *computed_styles = KStyle::default()
+            .with_style(KStyle {
+                render_command: StyleProp::Value(RenderCommand::Quad),
+                position_type: StyleProp::Value(KPositionType::SelfDirected),
+                left: StyleProp::Value(Units::Pixels(quad.pos.x)),
+                top: StyleProp::Value(Units::Pixels(quad.pos.y)),
+                width: StyleProp::Value(Units::Pixels(quad.size.x)),
+                height: StyleProp::Value(Units::Pixels(quad.size.y)),
+                z_index: StyleProp::Value(quad.z_index),
+                ..Default::default()
+            })
+            .with_style(style)
+            .with_style(KStyle {
+                background_color: StyleProp::Value(quad.color),
+                ..Default::default()
+            })
+            .into();
 
         *on_event = OnEvent::new(
             move |In((event_dispatcher_context, _, mut event, entity)): In<(
@@ -65,6 +72,7 @@ impl Widget for MyQuad {}
 pub struct MyQuadBundle {
     my_quad: MyQuad,
     styles: KStyle,
+    computed_styles: ComputedStyles,
     on_event: OnEvent,
     widget_name: WidgetName,
 }
@@ -75,6 +83,7 @@ impl Default for MyQuadBundle {
             my_quad: Default::default(),
             styles: KStyle::default(),
             on_event: OnEvent::default(),
+            computed_styles: ComputedStyles::default(),
             widget_name: MyQuad::default().get_name(),
         }
     }

@@ -13,6 +13,7 @@ pub struct TodoInputBundle {
     pub widget: TodoInputProps,
     pub focusable: Focusable,
     pub styles: KStyle,
+    pub computed_styles: ComputedStyles,
     pub widget_name: WidgetName,
 }
 
@@ -21,14 +22,15 @@ impl Default for TodoInputBundle {
         Self {
             widget: TodoInputProps::default(),
             focusable: Default::default(),
-            styles: KStyle {
+            styles: KStyle::default(),
+            computed_styles: ComputedStyles(KStyle {
                 render_command: StyleProp::Value(RenderCommand::Layout),
                 // height: StyleProp::Value(Units::Stretch(1.0)),
                 height: StyleProp::Value(Units::Auto),
                 width: StyleProp::Value(Units::Stretch(1.0)),
                 bottom: StyleProp::Value(Units::Pixels(20.0)),
                 ..KStyle::default()
-            },
+            }),
             widget_name: TodoInputProps::default().get_name(),
         }
     }
@@ -85,8 +87,8 @@ pub fn render_todo_input(
             }
             <TextBoxBundle
                 styles={KStyle {
-                    bottom: StyleProp::Value(Units::Stretch(1.0)),
-                    top: StyleProp::Value(Units::Stretch(1.0)),
+                    // bottom: StyleProp::Value(Units::Stretch(1.0)),
+                    // top: StyleProp::Value(Units::Stretch(1.0)),
                     ..Default::default()
                 }}
                 text_box={TextBoxProps {
@@ -97,14 +99,14 @@ pub fn render_todo_input(
                 on_change={on_change}
             />
             <KButtonBundle
+                styles={KStyle {
+                    width: StyleProp::Value(Units::Pixels(32.0)),
+                    height: StyleProp::Value(Units::Pixels(32.0)),
+                    left: StyleProp::Value(Units::Pixels(5.0)),
+                    ..Default::default()
+                }}
                 button={KButton {
                     text: "+".into(),
-                    user_styles: KStyle {
-                        width: StyleProp::Value(Units::Pixels(32.0)),
-                        height: StyleProp::Value(Units::Pixels(32.0)),
-                        left: StyleProp::Value(Units::Pixels(5.0)),
-                        ..Default::default()
-                    }
                 }}
                 on_event={handle_click}
             />

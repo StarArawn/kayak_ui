@@ -256,14 +256,14 @@ fn update_theme_demo(
                 rsx! {
                     <ElementBundle>
                         <TextWidgetBundle
+                            styles={KStyle {
+                                height: StyleProp::Value(Units::Pixels(28.0)),
+                                ..Default::default()
+                            }}
                             text={TextProps {
                                 content: select_lbl,
                                 size: 14.0,
                                 line_height: Some(28.0),
-                                user_styles: KStyle {
-                                    height: StyleProp::Value(Units::Pixels(28.0)),
-                                    ..Default::default()
-                                },
                                 ..Default::default()
                             }}
                         />
@@ -278,10 +278,10 @@ fn update_theme_demo(
                             }}
                         >
                             <TextWidgetBundle
+                                styles={text_styles}
                                 text={TextProps {
                                     content: "Lorem ipsum dolor...".into(),
                                     size: 12.0,
-                                    user_styles: text_styles,
                                     ..Default::default()
                                 }}
                             />

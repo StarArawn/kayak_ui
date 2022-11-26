@@ -27,6 +27,7 @@ impl Widget for MyButtonProps { }
 pub struct MyButtonBundle {
     pub props: MyButtonProps,
     pub styles: KStyle,
+    pub computed_styles: ComputedStyles,
     pub children: KChildren,
     // This allows us to hook into on click events!
     pub on_event: OnEvent,
@@ -39,6 +40,7 @@ impl Default for MyButtonBundle {
         Self {
             props: MyButtonProps::default(),
             styles: KStyle::default(),
+            computed_styles: ComputedStyles::default(),
             children: KChildren::default(),
             on_event: OnEvent::default(),
             // Kayak uses this component to find out more information about your widget.
@@ -76,6 +78,7 @@ pub fn my_button_render(
 
         rsx! {
             <BackgroundBundle
+                styles={background_styles}
                 // We pass the children to the background bundle!
                 children={children.clone()}
             />

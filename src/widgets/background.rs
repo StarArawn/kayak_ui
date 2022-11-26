@@ -5,7 +5,7 @@ use crate::{
     context::WidgetName,
     on_event::OnEvent,
     prelude::KayakWidgetContext,
-    styles::{KStyle, RenderCommand, StyleProp},
+    styles::{ComputedStyles, KStyle, RenderCommand},
     widget::Widget,
 };
 
@@ -24,6 +24,7 @@ impl Widget for Background {}
 pub struct BackgroundBundle {
     pub background: Background,
     pub styles: KStyle,
+    pub computed_styles: ComputedStyles,
     pub children: KChildren,
     pub on_event: OnEvent,
     pub widget_name: WidgetName,
@@ -34,6 +35,7 @@ impl Default for BackgroundBundle {
         Self {
             background: Default::default(),
             styles: Default::default(),
+            computed_styles: Default::default(),
             children: Default::default(),
             on_event: Default::default(),
             widget_name: Background::default().get_name(),
@@ -44,10 +46,16 @@ impl Default for BackgroundBundle {
 pub fn background_render(
     In((widget_context, entity)): In<(KayakWidgetContext, Entity)>,
     _: Commands,
-    mut query: Query<(&mut KStyle, &KChildren)>,
+    mut query: Query<(&KStyle, &mut ComputedStyles, &KChildren)>,
 ) -> bool {
-    if let Ok((mut style, children)) = query.get_mut(entity) {
-        style.render_command = StyleProp::Value(RenderCommand::Quad);
+    if let Ok((style, mut computed_styles, children)) = query.get_mut(entity) {
+        *computed_styles = KStyle::default()
+            .with_style(KStyle {
+                render_command: RenderCommand::Quad.into(),
+                ..Default::default()
+            })
+            .with_style(style)
+            .into();
         children.process(&widget_context, Some(entity));
     }
     true

@@ -5,7 +5,7 @@ use crate::{
     children::KChildren,
     context::WidgetName,
     prelude::KayakWidgetContext,
-    styles::{KStyle, RenderCommand, StyleProp, Units},
+    styles::{ComputedStyles, KStyle, RenderCommand, StyleProp, Units},
     widget::{EmptyState, Widget, WidgetParam},
     CameraUIKayak,
 };
@@ -24,6 +24,7 @@ impl Widget for KayakApp {}
 pub struct KayakAppBundle {
     pub app: KayakApp,
     pub styles: KStyle,
+    pub computed_styles: ComputedStyles,
     pub children: KChildren,
     pub widget_name: WidgetName,
 }
@@ -33,6 +34,7 @@ impl Default for KayakAppBundle {
         Self {
             app: Default::default(),
             styles: Default::default(),
+            computed_styles: ComputedStyles::default(),
             children: Default::default(),
             widget_name: KayakApp::default().get_name(),
         }
@@ -47,22 +49,24 @@ pub fn app_update(
 ) -> bool {
     let mut window_change = false;
 
-    if let Ok(app_style) = widget_param.style_query.get(entity) {
+    if let Ok(app_style) = widget_param.computed_style_query.get(entity) {
         if let Some(camera_entity) = widget_context.camera_entity {
             if let Ok(camera) = camera.get(camera_entity) {
                 if let Some(size) = camera.logical_viewport_size() {
-                    if app_style.width != StyleProp::Value(Units::Pixels(size.x)) {
+                    if app_style.0.width != StyleProp::Value(Units::Pixels(size.x)) {
                         window_change = true;
                     }
-                    if app_style.height != StyleProp::Value(Units::Pixels(size.y)) {
+                    if app_style.0.height != StyleProp::Value(Units::Pixels(size.y)) {
                         window_change = true;
                     }
                 } else {
                     let primary_window = windows.get_primary().unwrap();
-                    if app_style.width != StyleProp::Value(Units::Pixels(primary_window.width())) {
+                    if app_style.0.width != StyleProp::Value(Units::Pixels(primary_window.width()))
+                    {
                         window_change = true;
                     }
-                    if app_style.height != StyleProp::Value(Units::Pixels(primary_window.height()))
+                    if app_style.0.height
+                        != StyleProp::Value(Units::Pixels(primary_window.height()))
                     {
                         window_change = true;
                     }
@@ -78,7 +82,7 @@ pub fn app_update(
 pub fn app_render(
     In((widget_context, entity)): In<(KayakWidgetContext, Entity)>,
     mut commands: Commands,
-    mut query: Query<(&mut KStyle, &KChildren)>,
+    mut query: Query<(&KStyle, &mut ComputedStyles, &KChildren)>,
     camera: Query<&Camera, With<CameraUIKayak>>,
     windows: Res<Windows>,
     images: Res<Assets<Image>>,
@@ -105,15 +109,17 @@ pub fn app_render(
         }
     }
 
-    if let Ok((mut app_style, children)) = query.get_mut(entity) {
-        if app_style.width != StyleProp::Value(Units::Pixels(width)) {
-            app_style.width = StyleProp::Value(Units::Pixels(width));
-        }
-        if app_style.height != StyleProp::Value(Units::Pixels(height)) {
-            app_style.height = StyleProp::Value(Units::Pixels(height));
-        }
+    if let Ok((app_style, mut computed_styles, children)) = query.get_mut(entity) {
+        *computed_styles = KStyle::default()
+            .with_style(KStyle {
+                render_command: RenderCommand::Layout.into(),
+                width: Units::Pixels(width).into(),
+                height: Units::Pixels(height).into(),
+                ..Default::default()
+            })
+            .with_style(app_style)
+            .into();
 
-        app_style.render_command = StyleProp::Value(RenderCommand::Layout);
         let parent_id = Some(entity);
         rsx! {
             <ClipBundle

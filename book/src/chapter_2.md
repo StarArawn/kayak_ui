@@ -8,7 +8,8 @@ Kayak UI builds out UI using a tree structure. A widget can be defined as any ob
 ### Widgets are entities
 Kayak UI uses Bevy ECS. Each widget is considered an entity with a collection of data. Typically an widget and it's entity can contain whatever data desired, but some common components are:
 - Mount - A component tag used to know that a widget was spawned and added to the tree.
-- KStyle - Used to describe how a widget looks. Kayak uses this component to dictate UI rendering.
+- KStyle - Used to pass in styles from outside of a widget.
+- ComputedStyles - The actual styles of a widget. Styles define the look and layout of the widget. Kayak uses this component to dictate UI rendering. 
 - KChildren - A collection of entities that are added to the tree in a deferred way. These entities are coming from higher up the hierarchy. 
 - OnEvent - A mini/micro bevy system that lets you respond to UI input events.
 - OnChange - A mini/micro system which allows changes to state based on value changes to state. 
@@ -23,6 +24,7 @@ It's advised to have bundles that correspond to a group of components on a widge
 pub struct BackgroundBundle {
     pub background: Background,
     pub styles: KStyle,
+    pub computed_styles: ComputedStyles,
     pub children: KChildren,
     pub on_event: OnEvent,
     pub widget_name: WidgetName,

@@ -96,8 +96,9 @@ fn menu_button_render(
                         content: button_text,
                         size: 28.0,
                         user_styles: KStyle {
-                            top: Units::Stretch(1.0).into(),
-                            bottom: Units::Stretch(1.0).into(),
+                            // top: Units::Stretch(1.0).into(),
+                            top: Units::Pixels(-16.0).into(),
+                            height: Units::Pixels(40.0).into(),
                             ..Default::default()
                         },
                         ..Default::default()
@@ -120,7 +121,7 @@ fn startup(
     asset_server: Res<AssetServer>,
     mut preload_resource: ResMut<PreloadResource>,
 ) {
-    font_mapping.set_default(asset_server.load("lato-light.kayak_font"));
+    font_mapping.set_default(asset_server.load("lato-light.kttf"));
 
     let mut widget_context = KayakRootContext::new();
     widget_context.add_plugin(KayakWidgetsContextPlugin);

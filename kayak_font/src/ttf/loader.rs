@@ -142,7 +142,7 @@ impl AssetLoader for TTFLoader {
                     // let top = (translation.y - char_bounds.y_min as f64 * pixel_scale).max(0.0).floor() as u32;
                     let bottom = (translation.y + char_bounds.y_max as f64 * pixel_scale).floor() as u32;
             
-                    for x in 0..right + 2 {
+                    for x in 0..(right + 2).min(64) {
                         for y in 0..bottom + 48 {
                     // for x in 0..size_x as u32 {
                     //     for y  in 0..size_y as u32 {
@@ -278,7 +278,7 @@ fn calculate_plane(
             left: 0.0,   // l as f32,
             bottom: 0.0, // b as f32,
             right: 0.0,  // r as f32,
-            top: 4.0 * geometry_scale,    // t as f32,
+            top: 24.0 * geometry_scale,    // t as f32,
         },
     )
 }

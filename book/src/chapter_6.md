@@ -4,7 +4,18 @@ Kayak UI uses SDF(signed distance fields) for rendering fonts. More specifically
 - Fast rendering!
 - No need for a new asset for each font size. MSDF's can size to any font size!
 
-Font's are stored as an atlased image and a json file which tells Kayak about the font glyphs. Check out `roboto.kayak_font` and `roboto.png` in the `assets` folder.
+Fonts are stored in two different ways. First a font can be defined as a Kayak TTF(kttf) file. 
+These font files are relatively simple and simply link to a ttf font:
+```json
+{
+    "file": "roboto.ttf",
+    "char_range_start": "0x20",
+    "char_range_end": "0x7f"
+}
+``` 
+The char range is a defined as u32 char values. 0x20 through 0x7f represents most of the standard English language characters. Font's using this method are processed in native rust into MSDF's. The output is cached as the generation can take a while. 
+
+Fonts are also stored as an atlased image and a json file which tells Kayak about the font glyphs. These fonts are generated using `msdf-atlas-gen`. Check out `roboto.kayak_font` and `roboto.png` in the `assets` folder. The cached file name will be located next to the kttf file and have the file format of: `{font_name}.kttf-cached.png`.
 
 ## Generating new fonts.
 In order to create a new font you need to use the `msdf-atlas-gen` tool. This can be found at:

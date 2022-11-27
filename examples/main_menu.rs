@@ -86,6 +86,9 @@ fn menu_button_render(
                 styles={KStyle {
                     width: Units::Stretch(1.0).into(),
                     height: Units::Pixels(40.0).into(),
+                    bottom: Units::Pixels(30.0).into(),
+                    left: Units::Pixels(50.0).into(),
+                    right: Units::Pixels(50.0).into(),
                     ..KStyle::default()
                 }}
                 on_event={on_event}
@@ -133,6 +136,7 @@ fn startup(
 
     let panel1_image = asset_server.load("main_menu/panel1.png");
     let logo_image = asset_server.load("main_menu/logo.png");
+    let kayak_image = asset_server.load("main_menu/kayak.png");
     let button_image = asset_server.load("main_menu/button.png");
     let button_image_hover = asset_server.load("main_menu/button-hover.png");
 
@@ -186,6 +190,16 @@ fn startup(
                 }}
             >
                 <KImageBundle
+                    image={KImage(kayak_image)}
+                    styles={KStyle {
+                        width: Units::Pixels(310.0).into(),
+                        height: Units::Pixels(104.0).into(),
+                        top: Units::Pixels(25.0).into(),
+                        bottom: Units::Pixels(25.0).into(),
+                        ..KStyle::default()
+                    }}
+                />
+                <KImageBundle
                     image={KImage(logo_image)}
                     styles={KStyle {
                         width: Units::Pixels(310.0).into(),
@@ -194,21 +208,12 @@ fn startup(
                         ..KStyle::default()
                     }}
                 />
-                <ElementBundle
-                    id={"button_area"}
-                    styles={KStyle {
-                        left: Units::Pixels(50.0).into(),
-                        right: Units::Pixels(50.0).into(),
-                        ..Default::default()
-                    }}
-                >
-                    <MenuButtonBundle button={MenuButton { text: "Play".into() }} />
-                    <MenuButtonBundle button={MenuButton { text: "Options".into() }} />
-                    <MenuButtonBundle
-                        button={MenuButton { text: "Quit".into() }}
-                        on_event={handle_click_close}
-                    />
-                </ElementBundle>
+                <MenuButtonBundle button={MenuButton { text: "Play".into() }} />
+                <MenuButtonBundle button={MenuButton { text: "Options".into() }} />
+                <MenuButtonBundle
+                    button={MenuButton { text: "Quit".into() }}
+                    on_event={handle_click_close}
+                />
             </NinePatchBundle>
         </KayakAppBundle>
     }

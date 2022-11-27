@@ -20,15 +20,17 @@ pub fn extract_texts(
     _dpi: f32,
 ) -> Vec<ExtractQuadBundle> {
     let mut extracted_texts = Vec::new();
-    let (background_color, text_layout, layout, font, properties) = match render_primitive {
+    let (background_color, text_layout, layout, font, properties, subpixel) = match render_primitive
+    {
         RenderPrimitive::Text {
             color,
             text_layout,
             layout,
             font,
             properties,
+            subpixel,
             ..
-        } => (color, text_layout, layout, font, *properties),
+        } => (color, text_layout, layout, font, *properties, subpixel),
         _ => panic!(""),
     };
 
@@ -39,6 +41,8 @@ pub fn extract_texts(
             return Vec::new();
         }
     };
+
+    let forced = font_mapping.get_subpixel_forced(&font_handle);
 
     let base_position = Vec2::new(layout.posx, layout.posy + properties.font_size);
 
@@ -60,7 +64,11 @@ pub fn extract_texts(
                 vertex_index: 0,
                 char_id: font.get_char_id(glyph_rect.content).unwrap(),
                 z_index: layout.z_index,
-                quad_type: UIQuadType::Text,
+                quad_type: if *subpixel || forced {
+                    UIQuadType::TextSubpixel
+                } else {
+                    UIQuadType::Text
+                },
                 type_index: 0,
                 border_radius: Corner::default(),
                 image: None,

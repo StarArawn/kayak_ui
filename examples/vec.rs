@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use kayak_ui::prelude::{widgets::*, KStyle, *};
+use kayak_ui::prelude::{widgets::*, *};
 
 #[derive(Component, Default, PartialEq, Eq, Clone)]
 pub struct MyWidgetProps {}

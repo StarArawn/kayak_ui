@@ -333,6 +333,7 @@ pub struct ExtractQuadBundle {
 pub enum UIQuadType {
     Quad,
     Text,
+    TextSubpixel,
     Image,
     Clip,
 }
@@ -416,14 +417,20 @@ pub fn prepare_quads(
         _padding_2: 0,
         _padding_3: 0,
     });
-    let text_type_offset = sprite_meta.types_buffer.push(QuadType {
+    let text_sub_pixel_type_offset = sprite_meta.types_buffer.push(QuadType {
         t: 1,
         _padding_1: 0,
         _padding_2: 0,
         _padding_3: 0,
     });
-    let image_type_offset = sprite_meta.types_buffer.push(QuadType {
+    let text_type_offset = sprite_meta.types_buffer.push(QuadType {
         t: 2,
+        _padding_1: 0,
+        _padding_2: 0,
+        _padding_3: 0,
+    });
+    let image_type_offset = sprite_meta.types_buffer.push(QuadType {
+        t: 3,
         _padding_1: 0,
         _padding_2: 0,
         _padding_3: 0,
@@ -450,6 +457,7 @@ pub fn prepare_quads(
         match extracted_sprite.quad_type {
             UIQuadType::Quad => extracted_sprite.type_index = quad_type_offset,
             UIQuadType::Text => extracted_sprite.type_index = text_type_offset,
+            UIQuadType::TextSubpixel => extracted_sprite.type_index = text_sub_pixel_type_offset,
             UIQuadType::Image => extracted_sprite.type_index = image_type_offset,
             UIQuadType::Clip => {}
         };

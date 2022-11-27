@@ -1,6 +1,6 @@
 use bevy::{
     prelude::{Handle, Resource},
-    utils::HashMap,
+    utils::{HashMap, HashSet},
 };
 use kayak_font::KayakFont;
 
@@ -40,6 +40,7 @@ pub struct FontMapping {
     font_ids: HashMap<Handle<KayakFont>, String>,
     font_handles: HashMap<String, Handle<KayakFont>>,
     new_fonts: Vec<String>,
+    subpixel: HashSet<Handle<KayakFont>>,
 }
 
 impl FontMapping {
@@ -70,6 +71,20 @@ impl FontMapping {
     /// Get the font name for the given handle
     pub fn get(&self, font: &Handle<KayakFont>) -> Option<String> {
         self.font_ids.get(font).cloned()
+    }
+
+    /// Forces any text render commands to use subpixel font rendering for this specific font asset.
+    pub fn force_subpixel(&mut self, font: &Handle<KayakFont>) {
+        self.subpixel.insert(font.clone_weak());
+    }
+
+    /// Turns off the forced subpixel rendering mode for this font.
+    pub fn disable_subpixel(&mut self, font: &Handle<KayakFont>) {
+        self.subpixel.remove(font);
+    }
+
+    pub fn get_subpixel_forced(&self, font: &Handle<KayakFont>) -> bool {
+        self.subpixel.contains(font)
     }
 
     // pub(crate) fn add_loaded_to_kayak(

@@ -31,6 +31,8 @@ pub struct TextProps {
     /// Basic word wrapping.
     /// Defautls to true
     pub word_wrap: bool,
+    /// Enables subpixel rendering of text. This is useful on smaller low-dpi screens.
+    pub subpixel: bool,
 }
 
 impl Default for TextProps {
@@ -43,6 +45,7 @@ impl Default for TextProps {
             size: -1.0,
             alignment: Alignment::Start,
             word_wrap: true,
+            subpixel: false,
         }
     }
 }
@@ -82,6 +85,7 @@ pub fn text_render(
                     content: text.content.clone(),
                     alignment: text.alignment,
                     word_wrap: text.word_wrap,
+                    subpixel: text.subpixel,
                 }),
                 font: if let Some(ref font) = text.font {
                     StyleProp::Value(font.clone())

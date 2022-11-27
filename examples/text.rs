@@ -21,6 +21,7 @@ fn my_widget_1_render(
                 content: format!("My number is: {}", my_widget.foo),
                 alignment: Alignment::Start,
                 word_wrap: false,
+                subpixel: false,
             }),
             ..Default::default()
         }

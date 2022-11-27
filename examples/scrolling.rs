@@ -6,7 +6,13 @@ fn startup(
     mut font_mapping: ResMut<FontMapping>,
     asset_server: Res<AssetServer>,
 ) {
-    font_mapping.set_default(asset_server.load("roboto.kayak_font"));
+    let font_asset = asset_server.load("roboto.kayak_font");
+    font_mapping.set_default(font_asset.clone());
+
+    // You can force the entire font to use subpixel rendering.
+    // Note: The subpixel settings on the text widget or render command
+    // will be ignored if this setting is used.
+    font_mapping.force_subpixel(&font_asset);
 
     // Camera 2D forces a clear pass in bevy.
     // We do this because our scene is not rendering anything else.

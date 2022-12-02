@@ -5,7 +5,7 @@ use bevy::{
 
 use crate::{
     children::KChildren,
-    context::{Mounted, WidgetName},
+    context::{Mounted, WidgetName, Created},
     prelude::KayakWidgetContext,
     styles::{ComputedStyles, KStyle},
 };
@@ -56,6 +56,7 @@ pub struct WidgetParam<'w, 's, Props: PartialEq + Component, State: PartialEq + 
     pub props_query: Query<'w, 's, &'static Props>,
     pub old_props_query: Query<'w, 's, &'static Props>,
     pub mounted_query: Query<'w, 's, Entity, With<Mounted>>,
+    pub created_query: Query<'w, 's, Entity, With<Created>>,
     pub style_query: Query<'w, 's, &'static KStyle>,
     pub computed_style_query: Query<'w, 's, &'static ComputedStyles>,
     pub children_query: Query<'w, 's, &'static KChildren>,
@@ -72,6 +73,15 @@ impl<'w, 's, Props: PartialEq + Component, State: PartialEq + Component>
         current_entity: Entity,
         previous_entity: Entity,
     ) -> bool {
+        if let Ok(_) = self.created_query.get(current_entity) {
+            log::trace!(
+                "Entity was created! {}-{}",
+                self.widget_names.get(current_entity).unwrap().0,
+                current_entity.index()
+            );
+            return true;
+        }
+        
         if !self.mounted_query.is_empty() {
             log::trace!(
                 "Entity was mounted! {}-{}",

@@ -71,11 +71,12 @@ impl Widget {
                     let widget_block =
                         build_widget_stream(quote! { built_widget }, constructor, 0, false);
                     (
-                        entity_id,
+                        entity_id.clone(),
                         quote! {{
                             let parent_org = parent_id;
                             #props
                             #widget_block
+                            #entity_id
                         }},
                     )
                 } else {

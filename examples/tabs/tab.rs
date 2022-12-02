@@ -52,7 +52,7 @@ pub fn tab_render(
             if tab_context.current_index == tab.index {
                 rsx! {
                     <BackgroundBundle styles={styles} children={children.clone()} />
-                }
+                };
             }
         }
     }

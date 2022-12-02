@@ -125,7 +125,7 @@ pub fn app_render(
             <ClipBundle
                 children={children.clone()}
             />
-        }
+        };
     }
 
     true

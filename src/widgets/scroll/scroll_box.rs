@@ -263,7 +263,7 @@ pub fn scroll_box_render(
                             }
                         }}
                     </ElementBundle>
-                }
+                };
             }
         }
     }

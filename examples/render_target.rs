@@ -80,7 +80,7 @@ fn startup(
                 }}
             />
         </KayakAppBundle>
-    }
+    };
 
     commands.spawn(UICameraBundle {
         camera: Camera {
@@ -147,7 +147,7 @@ fn startup(
                 }}
             />
         </KayakAppBundle>
-    }
+    };
     commands.spawn((UICameraBundle::new(widget_context), MainUI));
 }
 

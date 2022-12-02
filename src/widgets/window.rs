@@ -281,7 +281,7 @@ pub fn window_render(
                         children={window_children.clone()}
                     />
                 </ElementBundle>
-            }
+            };
         }
     }
 

@@ -58,7 +58,7 @@ Lorem ipsum dolor sit amet, consectetur adipiscing elit. Cras sed tellus neque. 
                 </ScrollContextProviderBundle>
             </WindowBundle>
         </KayakAppBundle>
-    }
+    };
 
     commands.spawn(UICameraBundle::new(widget_context));
 }

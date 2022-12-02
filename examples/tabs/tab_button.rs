@@ -86,7 +86,7 @@ pub fn tab_button_render(
                     }}
                     on_event={on_event}
                 />
-            }
+            };
         }
     }
     true

@@ -21,7 +21,7 @@ fn startup(
                 }}
             />
         </KayakAppBundle>
-    }
+    };
 
     commands.spawn(UICameraBundle::new(widget_context));
 }

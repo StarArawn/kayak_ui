@@ -371,7 +371,7 @@ pub fn text_box_render(
                         </ElementBundle>
                     </ClipBundle>
                 </BackgroundBundle>
-            }
+            };
         }
     }
 

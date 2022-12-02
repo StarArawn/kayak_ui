@@ -124,7 +124,7 @@ fn update_theme_button(
                             },
                         )}
                     />
-                }
+                };
             }
         }
     }
@@ -182,7 +182,7 @@ fn update_theme_selector(
                 <ThemeButtonBundle theme_button={ThemeButton { theme: solar_theme }} />
                 <ThemeButtonBundle theme_button={ThemeButton { theme: vector_theme }} />
             </ElementBundle>
-        }
+        };
     }
 
     true
@@ -312,7 +312,7 @@ fn update_theme_demo(
                             }
                         </BackgroundBundle>
                     </ElementBundle>
-                }
+                };
             }
         }
     }
@@ -375,7 +375,7 @@ fn startup(
                 />
             </WindowBundle>
         </KayakAppBundle>
-    }
+    };
 
     commands.spawn(UICameraBundle::new(widget_context));
 }

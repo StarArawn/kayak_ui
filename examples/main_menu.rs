@@ -107,7 +107,7 @@ fn menu_button_render(
                     }}
                 />
             </NinePatchBundle>
-        }
+        };
     }
     true
 }
@@ -216,7 +216,7 @@ fn startup(
                 />
             </NinePatchBundle>
         </KayakAppBundle>
-    }
+    };
 
     commands.spawn(UICameraBundle::new(widget_context));
 }

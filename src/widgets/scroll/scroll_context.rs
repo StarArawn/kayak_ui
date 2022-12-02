@@ -1,7 +1,10 @@
 use bevy::prelude::{Bundle, Commands, Component, Entity, In, Query, Vec2};
 
 use crate::{
-    children::KChildren, context::WidgetName, prelude::KayakWidgetContext, styles::KStyle,
+    children::KChildren,
+    context::WidgetName,
+    prelude::KayakWidgetContext,
+    styles::{ComputedStyles, KStyle},
     widget::Widget,
 };
 
@@ -143,6 +146,7 @@ pub struct ScrollContextProviderBundle {
     pub scroll_context_provider: ScrollContextProvider,
     pub children: KChildren,
     pub styles: KStyle,
+    pub computed_styles: ComputedStyles,
     pub widget_name: WidgetName,
 }
 
@@ -152,6 +156,7 @@ impl Default for ScrollContextProviderBundle {
             scroll_context_provider: Default::default(),
             children: KChildren::default(),
             styles: Default::default(),
+            computed_styles: ComputedStyles::default(),
             widget_name: ScrollContextProvider::default().get_name(),
         }
     }
@@ -160,11 +165,17 @@ impl Default for ScrollContextProviderBundle {
 pub fn scroll_context_render(
     In((widget_context, entity)): In<(KayakWidgetContext, Entity)>,
     mut commands: Commands,
-    mut query: Query<(&ScrollContextProvider, &KChildren)>,
+    mut query: Query<(
+        &ScrollContextProvider,
+        &KChildren,
+        &KStyle,
+        &mut ComputedStyles,
+    )>,
 ) -> bool {
-    if let Ok((context_provider, children)) = query.get_mut(entity) {
+    if let Ok((context_provider, children, styles, mut computed_styles)) = query.get_mut(entity) {
         let context_entity = commands.spawn(context_provider.initial_value).id();
         widget_context.set_context_entity::<ScrollContext>(Some(entity), context_entity);
+        *computed_styles = styles.clone().into();
         children.process(&widget_context, Some(entity));
     }
 

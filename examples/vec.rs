@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use kayak_ui::prelude::{widgets::*, KStyle, *};
+use kayak_ui::prelude::{widgets::*, *};
 
 #[derive(Component, Default, PartialEq, Eq, Clone)]
 pub struct MyWidgetProps {}
@@ -40,7 +40,6 @@ impl Widget for MyWidgetProps {}
 #[derive(Bundle)]
 pub struct MyWidgetBundle {
     props: MyWidgetProps,
-    styles: KStyle,
     widget_name: WidgetName,
 }
 
@@ -48,7 +47,6 @@ impl Default for MyWidgetBundle {
     fn default() -> Self {
         Self {
             props: Default::default(),
-            styles: Default::default(),
             widget_name: MyWidgetProps::default().get_name(),
         }
     }

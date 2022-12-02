@@ -1,4 +1,4 @@
-use crate::{KayakFont, Sdf};
+use crate::{ImageType, KayakFont, Sdf};
 use bevy::asset::{AssetLoader, AssetPath, BoxedFuture, LoadContext, LoadedAsset};
 
 #[derive(Default)]
@@ -16,7 +16,7 @@ impl AssetLoader for KayakFontLoader {
             let atlas_image_path = AssetPath::new(path, None);
             let font = KayakFont::new(
                 Sdf::from_bytes(bytes),
-                load_context.get_handle(atlas_image_path.clone()),
+                ImageType::Atlas(load_context.get_handle(atlas_image_path.clone())),
             );
 
             let asset = LoadedAsset::new(font).with_dependency(atlas_image_path);

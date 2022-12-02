@@ -12,6 +12,7 @@ impl Widget for TodoItemsProps {}
 pub struct TodoItemsBundle {
     pub widget: TodoItemsProps,
     pub styles: KStyle,
+    pub computed_styles: ComputedStyles,
     pub widget_name: WidgetName,
 }
 
@@ -19,12 +20,13 @@ impl Default for TodoItemsBundle {
     fn default() -> Self {
         Self {
             widget: TodoItemsProps::default(),
-            styles: KStyle {
+            styles: KStyle::default(),
+            computed_styles: ComputedStyles(KStyle {
                 render_command: StyleProp::Value(RenderCommand::Layout),
                 height: StyleProp::Value(Units::Auto),
                 width: StyleProp::Value(Units::Stretch(1.0)),
                 ..KStyle::default()
-            },
+            }),
             widget_name: TodoItemsProps::default().get_name(),
         }
     }
@@ -75,26 +77,26 @@ pub fn render_todo_items(
                         }}
                     >
                         <TextWidgetBundle
+                            styles={KStyle {
+                                right: StyleProp::Value(Units::Stretch(1.0)),
+                                top: StyleProp::Value(Units::Stretch(1.0)),
+                                bottom: StyleProp::Value(Units::Stretch(1.0)),
+                                ..Default::default()
+                            }}
                             text={TextProps {
                                 content: content.clone(),
-                                user_styles: KStyle {
-                                    right: StyleProp::Value(Units::Stretch(1.0)),
-                                    top: StyleProp::Value(Units::Stretch(1.0)),
-                                    bottom: StyleProp::Value(Units::Stretch(1.0)),
-                                    ..Default::default()
-                                },
                                 ..Default::default()
                             }}
                         />
                         <KButtonBundle
+                            styles={KStyle {
+                                width: StyleProp::Value(Units::Pixels(32.0)),
+                                height: StyleProp::Value(Units::Pixels(32.0)),
+                                left: StyleProp::Value(Units::Pixels(15.0)),
+                                ..Default::default()
+                            }}
                             button={KButton {
                                 text: "X".into(),
-                                user_styles: KStyle {
-                                    width: StyleProp::Value(Units::Pixels(32.0)),
-                                    height: StyleProp::Value(Units::Pixels(32.0)),
-                                    left: StyleProp::Value(Units::Pixels(15.0)),
-                                    ..Default::default()
-                                }
                             }}
                             on_event={handle_click}
                         />

@@ -7,7 +7,7 @@ use crate::{
     event_dispatcher::EventDispatcherContext,
     on_event::OnEvent,
     prelude::{KChildren, KayakWidgetContext},
-    styles::{Corner, Edge, KPositionType, KStyle, RenderCommand, Units},
+    styles::{ComputedStyles, Corner, Edge, KPositionType, KStyle, RenderCommand, Units},
     widget::Widget,
     widget_state::WidgetState,
     widgets::{BackgroundBundle, ClipBundle},
@@ -40,6 +40,7 @@ impl Widget for ScrollBarProps {}
 pub struct ScrollBarBundle {
     pub scrollbar_props: ScrollBarProps,
     pub styles: KStyle,
+    pub computed_styles: ComputedStyles,
     pub widget_name: WidgetName,
 }
 
@@ -48,6 +49,7 @@ impl Default for ScrollBarBundle {
         Self {
             scrollbar_props: Default::default(),
             styles: Default::default(),
+            computed_styles: ComputedStyles::default(),
             widget_name: ScrollBarProps::default().get_name(),
         }
     }
@@ -56,10 +58,10 @@ impl Default for ScrollBarBundle {
 pub fn scroll_bar_render(
     In((widget_context, entity)): In<(KayakWidgetContext, Entity)>,
     mut commands: Commands,
-    mut query: Query<(&ScrollBarProps, &mut KStyle)>,
+    mut query: Query<(&ScrollBarProps, &KStyle, &mut ComputedStyles)>,
     context_query: Query<&ScrollContext>,
 ) -> bool {
-    if let Ok((scrollbar, mut styles)) = query.get_mut(entity) {
+    if let Ok((scrollbar, styles, mut computed_styles)) = query.get_mut(entity) {
         if let Some(context_entity) = widget_context.get_context_entity::<ScrollContext>(entity) {
             if let Ok(scroll_context) = context_query.get(context_entity) {
                 let scroll_x = scroll_context.scroll_x();
@@ -112,22 +114,25 @@ pub fn scroll_bar_render(
                 );
 
                 // === Styles === //
-                *styles = KStyle::default().with_style(KStyle {
-                    render_command: RenderCommand::Layout.into(),
-                    width: if horizontal {
-                        Units::Stretch(1.0)
-                    } else {
-                        Units::Pixels(thickness)
-                    }
-                    .into(),
-                    height: if horizontal {
-                        Units::Pixels(thickness)
-                    } else {
-                        Units::Stretch(1.0)
-                    }
-                    .into(),
-                    ..Default::default()
-                });
+                *computed_styles = KStyle::default()
+                    .with_style(KStyle {
+                        render_command: RenderCommand::Layout.into(),
+                        width: if horizontal {
+                            Units::Stretch(1.0)
+                        } else {
+                            Units::Pixels(thickness)
+                        }
+                        .into(),
+                        height: if horizontal {
+                            Units::Pixels(thickness)
+                        } else {
+                            Units::Stretch(1.0)
+                        }
+                        .into(),
+                        ..Default::default()
+                    })
+                    .with_style(styles)
+                    .into();
 
                 let mut track_style =
                     KStyle::default()

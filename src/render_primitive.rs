@@ -29,6 +29,7 @@ pub enum RenderPrimitive {
         layout: Rect,
         properties: TextProperties,
         word_wrap: bool,
+        subpixel: bool,
     },
     Image {
         border_radius: Corner<f32>,
@@ -111,6 +112,7 @@ impl From<&KStyle> for RenderPrimitive {
                 content,
                 alignment,
                 word_wrap,
+                subpixel,
             } => Self::Text {
                 color: style.color.resolve(),
                 content,
@@ -124,6 +126,7 @@ impl From<&KStyle> for RenderPrimitive {
                     ..Default::default()
                 },
                 word_wrap,
+                subpixel,
             },
             RenderCommand::Image { handle } => Self::Image {
                 border_radius: style.border_radius.resolve(),

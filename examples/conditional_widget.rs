@@ -39,13 +39,13 @@ fn my_widget_render(
         rsx! {
             <ElementBundle>
                 <KButtonBundle
+                    styles={KStyle {
+                        left: Units::Stretch(1.0).into(),
+                        right: Units::Stretch(1.0).into(),
+                        ..Default::default()
+                    }}
                     button={KButton {
                         text: "Show Window".into(),
-                        user_styles: KStyle {
-                            left: Units::Stretch(1.0).into(),
-                            right: Units::Stretch(1.0).into(),
-                            ..Default::default()
-                        }
                     }}
                     on_event={OnEvent::new(
                         move |In((event_dispatcher_context, _, mut event, _entity)): In<(EventDispatcherContext, WidgetState, Event, Entity)>,
@@ -109,7 +109,7 @@ fn startup(
     mut font_mapping: ResMut<FontMapping>,
     asset_server: Res<AssetServer>,
 ) {
-    font_mapping.set_default(asset_server.load("lato-light.kayak_font"));
+    font_mapping.set_default(asset_server.load("lato-light.kttf"));
 
     // Camera 2D forces a clear pass in bevy.
     // We do this because our scene is not rendering anything else.

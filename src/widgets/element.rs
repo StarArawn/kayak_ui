@@ -5,7 +5,7 @@ use crate::{
     context::WidgetName,
     on_event::OnEvent,
     prelude::KayakWidgetContext,
-    styles::{KStyle, RenderCommand, StyleProp},
+    styles::{ComputedStyles, KStyle, RenderCommand, StyleProp},
     widget::Widget,
 };
 
@@ -21,6 +21,7 @@ impl Widget for Element {}
 pub struct ElementBundle {
     pub element: Element,
     pub styles: KStyle,
+    pub computed_styles: ComputedStyles,
     pub on_event: OnEvent,
     pub children: KChildren,
     pub widget_name: WidgetName,
@@ -31,6 +32,7 @@ impl Default for ElementBundle {
         Self {
             element: Default::default(),
             styles: Default::default(),
+            computed_styles: ComputedStyles::default(),
             children: Default::default(),
             on_event: OnEvent::default(),
             widget_name: Element::default().get_name(),
@@ -41,15 +43,16 @@ impl Default for ElementBundle {
 pub fn element_render(
     In((widget_context, entity)): In<(KayakWidgetContext, Entity)>,
     _: Commands,
-    mut query: Query<(&mut KStyle, &KChildren)>,
+    mut query: Query<(&KStyle, &mut ComputedStyles, &KChildren)>,
 ) -> bool {
-    if let Ok((mut style, children)) = query.get_mut(entity) {
-        *style = KStyle::default()
-            .with_style(style.clone())
+    if let Ok((style, mut computed_styles, children)) = query.get_mut(entity) {
+        *computed_styles = KStyle::default()
+            .with_style(style)
             .with_style(KStyle {
                 render_command: StyleProp::Value(RenderCommand::Layout),
                 ..Default::default()
-            });
+            })
+            .into();
         children.process(&widget_context, Some(entity));
     }
     true

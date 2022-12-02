@@ -17,6 +17,7 @@ pub enum RenderCommand {
         content: String,
         alignment: Alignment,
         word_wrap: bool,
+        subpixel: bool,
     },
     Image {
         handle: Handle<Image>,

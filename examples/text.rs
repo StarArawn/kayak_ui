@@ -9,18 +9,24 @@ pub struct MyWidgetProps {
 fn my_widget_1_render(
     In((_widget_context, entity)): In<(KayakWidgetContext, Entity)>,
     my_resource: Res<MyResource>,
-    mut query: Query<(&mut MyWidgetProps, &mut KStyle)>,
+    mut query: Query<(&mut MyWidgetProps, &KStyle, &mut ComputedStyles)>,
 ) -> bool {
-    if let Ok((mut my_widget, mut style)) = query.get_mut(entity) {
+    if let Ok((mut my_widget, style, mut computed_styles)) = query.get_mut(entity) {
         my_widget.foo = my_resource.0;
         dbg!(my_widget.foo);
         // Note: We will see two updates because of the mutable change to styles.
         // Which means when foo changes MyWidget will render twice!
-        style.render_command = StyleProp::Value(RenderCommand::Text {
-            content: format!("My number is: {}", my_widget.foo),
-            alignment: Alignment::Start,
-            word_wrap: false,
-        });
+        *computed_styles = KStyle {
+            render_command: StyleProp::Value(RenderCommand::Text {
+                content: format!("My number is: {}", my_widget.foo),
+                alignment: Alignment::Start,
+                word_wrap: false,
+                subpixel: false,
+            }),
+            ..Default::default()
+        }
+        .with_style(style)
+        .into();
     }
 
     true
@@ -44,6 +50,7 @@ impl Widget for MyWidgetProps {}
 pub struct MyWidgetBundle {
     props: MyWidgetProps,
     styles: KStyle,
+    computed_styles: ComputedStyles,
     widget_name: WidgetName,
 }
 
@@ -52,6 +59,7 @@ impl Default for MyWidgetBundle {
         Self {
             props: Default::default(),
             styles: Default::default(),
+            computed_styles: Default::default(),
             widget_name: MyWidgetProps::default().get_name(),
         }
     }

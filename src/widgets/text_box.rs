@@ -12,7 +12,7 @@ use crate::{
     on_layout::OnLayout,
     prelude::{KChildren, KayakWidgetContext, OnChange},
     render::font::FontMapping,
-    styles::{Edge, KPositionType, KStyle, RenderCommand, StyleProp, Units},
+    styles::{ComputedStyles, Edge, KPositionType, KStyle, RenderCommand, StyleProp, Units},
     widget::Widget,
     widget_state::WidgetState,
     widgets::{
@@ -75,6 +75,7 @@ impl Widget for TextBoxProps {}
 pub struct TextBoxBundle {
     pub text_box: TextBoxProps,
     pub styles: KStyle,
+    pub computed_styles: ComputedStyles,
     pub on_event: OnEvent,
     pub on_layout: OnLayout,
     pub on_change: OnChange,
@@ -87,6 +88,7 @@ impl Default for TextBoxBundle {
         Self {
             text_box: Default::default(),
             styles: Default::default(),
+            computed_styles: ComputedStyles::default(),
             on_event: Default::default(),
             on_layout: Default::default(),
             on_change: Default::default(),
@@ -99,12 +101,20 @@ impl Default for TextBoxBundle {
 pub fn text_box_render(
     In((widget_context, entity)): In<(KayakWidgetContext, Entity)>,
     mut commands: Commands,
-    mut query: Query<(&mut KStyle, &TextBoxProps, &mut OnEvent, &OnChange)>,
+    mut query: Query<(
+        &KStyle,
+        &mut ComputedStyles,
+        &TextBoxProps,
+        &mut OnEvent,
+        &OnChange,
+    )>,
     mut state_query: ParamSet<(Query<&TextBoxState>, Query<&mut TextBoxState>)>,
     font_assets: Res<Assets<KayakFont>>,
     font_mapping: Res<FontMapping>,
 ) -> bool {
-    if let Ok((mut styles, text_box, mut on_event, on_change)) = query.get_mut(entity) {
+    if let Ok((styles, mut computed_styles, text_box, mut on_event, on_change)) =
+        query.get_mut(entity)
+    {
         let state_entity = widget_context.use_state::<TextBoxState>(
             &mut commands,
             entity,
@@ -136,14 +146,14 @@ pub fn text_box_render(
         }
 
         if let Ok(state) = state_query.p0().get(state_entity) {
-            *styles = KStyle::default()
+            *computed_styles = KStyle::default()
                 // Required styles
                 .with_style(KStyle {
                     render_command: RenderCommand::Layout.into(),
                     ..Default::default()
                 })
                 // Apply any prop-given styles
-                .with_style(&*styles)
+                .with_style(styles)
                 // If not set by props, apply these styles
                 .with_style(KStyle {
                     top: Units::Pixels(0.0).into(),
@@ -151,7 +161,8 @@ pub fn text_box_render(
                     height: Units::Pixels(26.0).into(),
                     // cursor: CursorIcon::Text.into(),
                     ..Default::default()
-                });
+                })
+                .into();
 
             let background_styles = KStyle {
                 render_command: StyleProp::Value(RenderCommand::Quad),
@@ -341,11 +352,11 @@ pub fn text_box_render(
                     }}>
                         <ElementBundle styles={scroll_styles}>
                             <TextWidgetBundle
+                                styles={text_styles}
                                 text={TextProps {
                                     content: text_box.value.clone(),
                                     size: 14.0,
                                     line_height: Some(18.0),
-                                    user_styles: text_styles,
                                     word_wrap: false,
                                     ..Default::default()
                                 }}

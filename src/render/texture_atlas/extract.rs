@@ -40,8 +40,7 @@ pub fn extract_texture_atlas(
                 i.texture_descriptor.size.height as f32,
             )
         })
-        .unwrap()
-        * dpi;
+        .unwrap();
 
     let quad = ExtractQuadBundle {
         extracted_quad: ExtractedQuad {

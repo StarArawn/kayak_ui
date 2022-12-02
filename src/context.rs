@@ -35,6 +35,9 @@ use crate::{
 #[reflect(Component)]
 pub struct Mounted;
 
+#[derive(Component, Default)]
+pub struct Created;
+
 const UPDATE_DEPTH: u32 = 0;
 
 type WidgetSystems = HashMap<
@@ -254,6 +257,31 @@ impl KayakRootContext {
             }
         }
         entity.unwrap()
+    }
+
+    fn force_spawn_widget(&self, commands: &mut Commands, parent_id: Option<Entity>) -> Entity {
+        let entity = Some(commands.spawn((DirtyNode, Created)).id());
+        log::trace!(
+            "Force spawning new widget with entity {:?}!",
+            entity.unwrap().index()
+        );
+        // We need to add it to the ordered tree
+        if let Ok(mut tree) = self.order_tree.try_write() {
+            tree.add(WrappedIndex(entity.unwrap()), parent_id.map(WrappedIndex))
+        }
+        entity.unwrap()
+    }
+
+    pub fn spawn_widget_update(
+        &mut self,
+        commands: &mut Commands,
+        parent_id: Option<Entity>,
+        bundle: impl Bundle,
+    ) -> Entity {
+        let widget_entity = self.force_spawn_widget(commands, parent_id);
+        commands.entity(widget_entity).insert(bundle);
+        self.add_widget(parent_id, widget_entity);
+        widget_entity
     }
 
     fn get_children_ordered(&self, entity: Entity) -> Vec<Entity> {
@@ -898,6 +926,7 @@ fn update_widget(
     let mut command_queue = CommandQueue::default();
     let mut commands = Commands::new(&mut command_queue, world);
 
+    commands.entity(entity.0).remove::<Created>();
     commands.entity(entity.0).remove::<Mounted>();
 
     let diff = if let Ok(tree) = tree.read() {

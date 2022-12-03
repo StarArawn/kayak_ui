@@ -379,27 +379,69 @@ impl<'a> morphorm::Node<'a> for WrappedIndex {
         Some(morphorm::Units::Auto)
     }
 
-    fn grid_rows(&self, _store: &'_ Self::Data) -> Option<Vec<morphorm::Units>> {
+    fn grid_rows(&self, store: &'_ Self::Data) -> Option<Vec<morphorm::Units>> {
+        if let Ok(node) = store.get(self.0) {
+            return match &node.resolved_styles.grid_rows {
+                StyleProp::Default => Some(vec![]),
+                StyleProp::Value(prop) => Some(prop.iter().map(|&x| x.into()).collect()),
+                _ => Some(vec![]),
+            };
+        }
         Some(vec![])
     }
 
-    fn grid_cols(&self, _store: &'_ Self::Data) -> Option<Vec<morphorm::Units>> {
+    fn grid_cols(&self, store: &'_ Self::Data) -> Option<Vec<morphorm::Units>> {
+        if let Ok(node) = store.get(self.0) {
+            return match &node.resolved_styles.grid_cols {
+                StyleProp::Default => Some(vec![]),
+                StyleProp::Value(prop) => Some(prop.iter().map(|&x| x.into()).collect()),
+                _ => Some(vec![]),
+            };
+        }
         Some(vec![])
     }
 
-    fn row_index(&self, _store: &'_ Self::Data) -> Option<usize> {
+    fn row_index(&self, store: &'_ Self::Data) -> Option<usize> {
+        if let Ok(node) = store.get(self.0) {
+            return match node.resolved_styles.row_index {
+                StyleProp::Default => Some(0),
+                StyleProp::Value(prop) => Some(prop),
+                _ => Some(0),
+            };
+        }
         Some(0)
     }
 
-    fn col_index(&self, _store: &'_ Self::Data) -> Option<usize> {
+    fn col_index(&self, store: &'_ Self::Data) -> Option<usize> {
+        if let Ok(node) = store.get(self.0) {
+            return match node.resolved_styles.col_index {
+                StyleProp::Default => Some(0),
+                StyleProp::Value(prop) => Some(prop),
+                _ => Some(0),
+            };
+        }
         Some(0)
     }
 
-    fn row_span(&self, _store: &'_ Self::Data) -> Option<usize> {
+    fn row_span(&self, store: &'_ Self::Data) -> Option<usize> {
+        if let Ok(node) = store.get(self.0) {
+            return match node.resolved_styles.row_span {
+                StyleProp::Default => Some(1),
+                StyleProp::Value(prop) => Some(prop),
+                _ => Some(1),
+            };
+        }
         Some(1)
     }
 
-    fn col_span(&self, _store: &'_ Self::Data) -> Option<usize> {
+    fn col_span(&self, store: &'_ Self::Data) -> Option<usize> {
+        if let Ok(node) = store.get(self.0) {
+            return match node.resolved_styles.col_span {
+                StyleProp::Default => Some(1),
+                StyleProp::Value(prop) => Some(prop),
+                _ => Some(1),
+            };
+        }
         Some(1)
     }
 

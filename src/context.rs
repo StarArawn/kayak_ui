@@ -234,29 +234,13 @@ impl KayakRootContext {
     /// }
     ///```
     pub fn spawn_widget(&self, commands: &mut Commands, parent_id: Option<Entity>) -> Entity {
-        let mut entity = None;
-        if let Some(parent_entity) = parent_id {
-            let children = self.get_children_ordered(parent_entity);
-            let child = children.get(self.get_and_add_index(parent_entity)).cloned();
-            if let Some(child) = child {
-                log::trace!("Reusing widget entity {:?}!", child.index());
-                entity = Some(commands.get_or_spawn(child).id());
-            }
+        let entity = commands.spawn((DirtyNode, Created)).id();
+        log::trace!("Spawning new widget with entity {:?}!", entity.index());
+        // We need to add it to the ordered tree
+        if let Ok(mut tree) = self.order_tree.try_write() {
+            tree.add(WrappedIndex(entity), parent_id.map(WrappedIndex))
         }
-
-        // If we have no entity spawn it!
-        if entity.is_none() {
-            entity = Some(commands.spawn_empty().id());
-            log::trace!(
-                "Spawning new widget with entity {:?}!",
-                entity.unwrap().index()
-            );
-            // We need to add it to the ordered tree
-            if let Ok(mut tree) = self.order_tree.try_write() {
-                tree.add(WrappedIndex(entity.unwrap()), parent_id.map(WrappedIndex))
-            }
-        }
-        entity.unwrap()
+        entity
     }
 
     /// Returns a new widget entity.

@@ -73,6 +73,15 @@ impl<'w, 's, Props: PartialEq + Component, State: PartialEq + Component>
         current_entity: Entity,
         previous_entity: Entity,
     ) -> bool {
+        if let Ok(_) = self.created_query.get(current_entity) {
+            log::trace!(
+                "Entity was created! {}-{}",
+                self.widget_names.get(current_entity).unwrap().0,
+                current_entity.index()
+            );
+            return true;
+        }
+        
         if !self.mounted_query.is_empty() {
             log::trace!(
                 "Entity was mounted! {}-{}",

@@ -7,7 +7,11 @@ use bevy::{
 use morphorm::Hierarchy;
 
 use crate::{
-    context_entities::ContextEntities, layout::LayoutCache, node::WrappedIndex, prelude::Tree,
+    context::Created,
+    context_entities::ContextEntities,
+    layout::LayoutCache,
+    node::{DirtyNode, WrappedIndex},
+    prelude::Tree,
     widget_state::WidgetState,
 };
 
@@ -204,6 +208,19 @@ impl KayakWidgetContext {
             }
         }
         entity.unwrap()
+    }
+
+    /// Returns a new widget entity.
+    /// This will create a new entity no matter what.
+    pub fn force_spawn_widget(&self, commands: &mut Commands, parent_id: Option<Entity>) -> Entity {
+        let entity = commands.spawn((DirtyNode, Created)).id();
+        log::info!("Spawning new widget with entity {:?}!", entity.index());
+
+        // We need to add it to the ordered tree
+        if let Ok(mut tree) = self.order_tree.try_write() {
+            tree.add(WrappedIndex(entity), parent_id.map(WrappedIndex))
+        }
+        entity
     }
 
     /// Removes all matching children from the tree.

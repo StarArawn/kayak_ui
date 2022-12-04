@@ -11,7 +11,7 @@ pub enum Child {
 
 impl Child {
     pub fn custom_parse(input: ParseStream, index: usize) -> Result<Self> {
-        match Widget::custom_parse(input, true, index) {
+        match Widget::custom_parse(input, true, false, index) {
             Ok(widget) => Ok(Self::Widget((widget, index))),
             Err(_) => {
                 let block = input.parse::<syn::Block>()?;

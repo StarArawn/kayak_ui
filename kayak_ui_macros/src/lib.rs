@@ -2,7 +2,7 @@ use proc_macro::TokenStream;
 use proc_macro_error::proc_macro_error;
 use quote::quote;
 use syn::parse_macro_input;
-use widget::{ConstructedWidget, Widget};
+use widget::{ConstructedWidget, ForcedConstructedWidget, ForcedWidget, Widget};
 
 pub(crate) mod attribute;
 pub(crate) mod child;
@@ -33,12 +33,33 @@ pub fn rsx(input: TokenStream) -> TokenStream {
     TokenStream::from(result)
 }
 
+#[proc_macro]
+#[proc_macro_error]
+pub fn force_spawn_rsx(input: TokenStream) -> TokenStream {
+    let el = parse_macro_input!(input as ForcedWidget);
+    let widget = el.widget;
+    let result = quote! { #widget };
+    TokenStream::from(result)
+}
+
 /// A proc macro that turns RSX syntax into structure constructors and calls the
 /// context to create the widgets.
 #[proc_macro]
 #[proc_macro_error]
 pub fn constructor(input: TokenStream) -> TokenStream {
     let el = parse_macro_input!(input as ConstructedWidget);
+    let widget = el.widget;
+    let result = quote! {
+        let widget_entity = #widget;
+        children.add(widget_entity);
+    };
+    TokenStream::from(result)
+}
+
+#[proc_macro]
+#[proc_macro_error]
+pub fn force_spawn_constructor(input: TokenStream) -> TokenStream {
+    let el = parse_macro_input!(input as ForcedConstructedWidget);
     let widget = el.widget;
     let result = quote! {
         let widget_entity = #widget;

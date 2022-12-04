@@ -81,7 +81,7 @@ impl<'w, 's, Props: PartialEq + Component, State: PartialEq + Component>
             );
             return true;
         }
-        
+
         if !self.mounted_query.is_empty() {
             log::trace!(
                 "Entity was mounted! {}-{}",

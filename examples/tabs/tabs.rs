@@ -85,7 +85,7 @@ fn startup(
                 </TabContextProviderBundle>
             </WindowBundle>
         </KayakAppBundle>
-    }
+    };
 
     commands.spawn(UICameraBundle::new(widget_context));
 }

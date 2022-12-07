@@ -138,7 +138,7 @@ pub fn button_render(
                         }}
                     />
                 </ElementBundle>
-            }
+            };
         }
     }
 

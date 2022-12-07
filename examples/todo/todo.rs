@@ -97,7 +97,7 @@ fn startup(
                 </ScrollContextProviderBundle>
             </WindowBundle>
         </KayakAppBundle>
-    }
+    };
 
     commands.spawn(UICameraBundle::new(widget_context));
 }

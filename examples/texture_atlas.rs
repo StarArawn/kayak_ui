@@ -66,7 +66,7 @@ fn startup(
                 styles={atlas_styles}
             />
         </KayakAppBundle>
-    }
+    };
 
     commands.spawn(UICameraBundle::new(widget_context));
 }

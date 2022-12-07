@@ -74,7 +74,7 @@ fn current_count_render(
                     )}
                 />
             </ElementBundle>
-        }
+        };
     }
 
     true
@@ -127,7 +127,7 @@ fn startup(
                 </WindowBundle>
             </WindowContextProviderBundle>
         </KayakAppBundle>
-    }
+    };
 
     commands.spawn(UICameraBundle::new(widget_context));
 }

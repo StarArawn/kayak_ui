@@ -104,6 +104,6 @@ pub fn render_todo_items(
                 }
             })}
         </ElementBundle>
-    }
+    };
     true
 }

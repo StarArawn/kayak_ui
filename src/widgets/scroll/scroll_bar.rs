@@ -307,7 +307,7 @@ pub fn scroll_bar_render(
                             <BackgroundBundle styles={thumb_style} />
                         </ClipBundle>
                     </BackgroundBundle>
-                }
+                };
             }
         }
     }

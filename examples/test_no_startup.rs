@@ -32,7 +32,7 @@ fn second_sys(
                 }}
             />
         </KayakAppBundle>
-    }
+    };
 
     commands.spawn(UICameraBundle::new(widget_context));
 }

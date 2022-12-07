@@ -78,7 +78,7 @@ fn update_text_box_example(
                     on_change={on_change2}
                 />
             </ElementBundle>
-        }
+        };
     }
     true
 }
@@ -118,7 +118,7 @@ fn startup(
                 <TextBoxExampleBundle />
             </WindowBundle>
         </KayakAppBundle>
-    }
+    };
 
     commands.spawn(UICameraBundle::new(widget_context));
 }

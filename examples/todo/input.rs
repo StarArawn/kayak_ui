@@ -111,6 +111,6 @@ pub fn render_todo_input(
                 on_event={handle_click}
             />
         </ElementBundle>
-    }
+    };
     true
 }

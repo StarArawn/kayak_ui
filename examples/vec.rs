@@ -28,7 +28,7 @@ fn my_widget_1_update(
                     }
                 })}
             </ElementBundle>
-        }
+        };
         return true;
     }
 
@@ -70,7 +70,7 @@ fn startup(
     );
     rsx! {
         <KayakAppBundle><MyWidgetBundle /></KayakAppBundle>
-    }
+    };
 
     commands.spawn(UICameraBundle::new(widget_context));
 }

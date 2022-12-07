@@ -98,7 +98,7 @@ fn my_widget_render(
                     }
                 }}
             </ElementBundle>
-        }
+        };
     }
 
     true
@@ -128,7 +128,7 @@ fn startup(
         <KayakAppBundle>
             <MyWidgetBundle />
         </KayakAppBundle>
-    }
+    };
 
     commands.spawn(UICameraBundle::new(widget_context));
 }

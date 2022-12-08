@@ -303,20 +303,16 @@ fn calculate_plane(
     //     t = geometry_scale as f64 * (-translation_y + (h as f64 - 0.5) * inv_box_scale);
     // }
 
-    let left = loaded_file
-        .offset_x
-        .unwrap_or_default();
-    let top = loaded_file
-        .offset_y
-        .unwrap_or_default();
+    let left = loaded_file.offset_x.unwrap_or_default();
+    let top = loaded_file.offset_y.unwrap_or_default();
 
     (
         Vector2::new(translation_x, translation_y) * geometry_scale as f64,
         Rect {
-            left: left * geometry_scale,        // l as f32,
-            bottom: 0.0, // b as f32,
-            right: 0.0,  // r as f32,
-            top: top * geometry_scale,         //0.0, // t as f32,
+            left: left * geometry_scale, // l as f32,
+            bottom: 0.0,                 // b as f32,
+            right: 0.0,                  // r as f32,
+            top: top * geometry_scale,   //0.0, // t as f32,
         },
     )
 }

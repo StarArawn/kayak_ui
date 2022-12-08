@@ -21,6 +21,8 @@ pub struct KTTF {
     file: String,
     char_range_start: String,
     char_range_end: String,
+    offset_x: Option<f32>,
+    offset_y: Option<f32>,
 }
 
 impl AssetLoader for TTFLoader {
@@ -43,7 +45,7 @@ impl AssetLoader for TTFLoader {
                 u32::from_str_radix(kttf.char_range_start.trim_start_matches("0x"), 16)?;
             let char_range_end =
                 u32::from_str_radix(kttf.char_range_end.trim_start_matches("0x"), 16)?;
-            let font_bytes = load_context.read_asset_bytes(kttf.file).await?;
+            let font_bytes = load_context.read_asset_bytes(kttf.file.clone()).await?;
 
             let mut cache_path = std::path::PathBuf::from(load_context.path());
             let file_name = load_context
@@ -85,6 +87,8 @@ impl AssetLoader for TTFLoader {
                 }
             }
 
+            let loaded_file = &kttf;
+
             for char_u in font_range {
                 let c = char::from_u32(char_u).unwrap();
                 let glyph_id = *char_to_glyph.get(&c).unwrap();
@@ -108,11 +112,17 @@ impl AssetLoader for TTFLoader {
                 // let (left, bottom, right, top) = shape.get_bounds();
 
                 let scale = Vector2::new(1.0, 1.0);
-                let px_range = 2.0;
+                let px_range = 2.5;
                 let range = px_range / scale.x.min(scale.y);
 
-                let (translation, plane) =
-                    calculate_plane(&mut shape, pixel_scale as f32, 1.0, px_range as f32, 1.0);
+                let (translation, plane) = calculate_plane(
+                    loaded_file,
+                    &mut shape,
+                    pixel_scale as f32,
+                    1.0,
+                    px_range as f32,
+                    1.0,
+                );
                 let advance = face.glyph_hor_advance(glyph_id).unwrap_or(0) as f32 / size_x as f32;
                 let c = *glyph_to_char.get(&glyph_id).unwrap();
                 glyphs.push(Glyph {
@@ -208,7 +218,7 @@ impl AssetLoader for TTFLoader {
                 },
                 bevy::render::render_resource::TextureDimension::D2,
                 image_bytes,
-                TextureFormat::Rgba8UnormSrgb,
+                TextureFormat::Rgba8Unorm,
             );
             image.reinterpret_stacked_2d_as_array(char_count);
             let image_handle =
@@ -227,6 +237,7 @@ impl AssetLoader for TTFLoader {
 }
 
 fn calculate_plane(
+    loaded_file: &KTTF,
     shape: &mut Shape,
     geometry_scale: f32,
     scale: f32,
@@ -292,13 +303,20 @@ fn calculate_plane(
     //     t = geometry_scale as f64 * (-translation_y + (h as f64 - 0.5) * inv_box_scale);
     // }
 
+    let left = loaded_file
+        .offset_x
+        .unwrap_or_default();
+    let top = loaded_file
+        .offset_y
+        .unwrap_or_default();
+
     (
         Vector2::new(translation_x, translation_y) * geometry_scale as f64,
         Rect {
-            left: 0.0,                  // l as f32,
-            bottom: 0.0,                // b as f32,
-            right: 0.0,                 // r as f32,
-            top: 24.0 * geometry_scale, // t as f32,
+            left: left * geometry_scale,        // l as f32,
+            bottom: 0.0, // b as f32,
+            right: 0.0,  // r as f32,
+            top: top * geometry_scale,         //0.0, // t as f32,
         },
     )
 }

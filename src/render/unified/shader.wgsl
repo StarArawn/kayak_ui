@@ -70,6 +70,10 @@ fn sample_sdf(coords: vec2<f32>, arr: i32, scale: f32) -> f32 {
     return clamp((median3(sample.rgb) - 0.5) * scale + 0.5, 0., 1.);
 }
 
+fn range_curve(font_size: f32) -> f32 {
+    return (8.528 - 9.428 * font_size + 3.428 * pow(font_size, 2.0)) + 1.0;
+}
+
 @fragment
 fn fragment(in: VertexOutput) -> @location(0) vec4<f32> {
     if quad_type.t == 0 {
@@ -86,7 +90,9 @@ fn fragment(in: VertexOutput) -> @location(0) vec4<f32> {
         return vec4<f32>(in.color.rgb, rect_dist * in.color.a);
     }
     if quad_type.t == 1 {
-        var px_range = 2.5;
+        // var px_range = 4.5;
+        let font_size = min(max(in.size.y, 0.0), 32.0) / 32.0;
+        var px_range = range_curve(font_size);
         var tex_dimensions = textureDimensions(font_texture);
         var msdf_unit = vec2(px_range, px_range) / vec2(f32(tex_dimensions.x), f32(tex_dimensions.y));
         let subpixel_width = fwidth(in.uv.x) / 3.;
@@ -100,13 +106,13 @@ fn fragment(in: VertexOutput) -> @location(0) vec4<f32> {
         return vec4(red * in.color.r, green * in.color.g, blue * in.color.b, alpha);
     }
     if quad_type.t == 2 {
-        var px_range = 2.5;
+        // var px_range = 5.5;
+        let font_size = min(max(in.size.y, 0.0), 32.0) / 32.0;
+        var px_range = range_curve(font_size);
         var tex_dimensions = textureDimensions(font_texture);
         var msdf_unit = vec2(px_range, px_range) / vec2(f32(tex_dimensions.x), f32(tex_dimensions.y));
         let scale = dot(msdf_unit, 0.5 / fwidth(in.uv.xy));
-
         let alpha = sample_sdf(vec2(in.uv.x, 1. - in.uv.y), i32(in.uv.z), scale);
-
         return vec4(in.color.rgb, alpha);
     }
     if quad_type.t == 3 {

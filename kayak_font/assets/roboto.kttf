@@ -1,5 +1,7 @@
 {
     "file": "roboto.ttf",
     "char_range_start": "0x20",
-    "char_range_end": "0x7f"
+    "char_range_end": "0x7f",
+    "offset_x": 0.0,
+    "offset_y": 25.0,
 }

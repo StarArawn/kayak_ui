@@ -13,7 +13,7 @@ pub fn extract_texture_atlas(
     camera_entity: Entity,
     render_primitive: &RenderPrimitive,
     images: &Res<Assets<Image>>,
-    dpi: f32,
+    _dpi: f32,
 ) -> Vec<ExtractQuadBundle> {
     let mut extracted_quads = Vec::new();
 

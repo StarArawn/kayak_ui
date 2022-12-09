@@ -41,7 +41,7 @@ var font_sampler: sampler;
 
 @fragment
 fn fragment(in: VertexOutput) -> @location(0) vec4<f32> {
-    var px_range = 2.5;
+    var px_range = 4.5;
     var tex_dimensions = textureDimensions(font_texture);
     var msdf_unit = vec2<f32>(px_range, px_range) / vec2<f32>(f32(tex_dimensions.x), f32(tex_dimensions.y));
     var x = textureSample(font_texture, font_sampler, vec2<f32>(in.uv.x, in.uv.y), i32(in.uv.z));

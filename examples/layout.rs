@@ -128,7 +128,7 @@ fn startup(
                 </ElementBundle>
             </WindowBundle>
         </KayakAppBundle>
-    }
+    };
 
     commands.spawn(UICameraBundle::new(widget_context));
 }

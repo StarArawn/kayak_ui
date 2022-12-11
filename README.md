@@ -47,13 +47,14 @@ Kayak UI is in the very early stages of development. Important features are miss
 Use bevy `0.9`! Make sure the version of Kayak you are using uses the same version of bevy.
 
 ```rust
-kayak_ui = "0.1"
+kayak_ui = "0.2"
 bevy = "0.9"
 ```
 
 |bevy|kayak_ui|
 |---|---|
 |`main`|`bevy-track`|
+|0.9|0.2|
 |0.9|0.1|
 
 ## Check out the book!

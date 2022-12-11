@@ -17,3 +17,5 @@ msdfgen
 .DS_Store
 
 Cargo.lock
+
+.cargo

@@ -90,17 +90,18 @@ pub struct KayakRootContext {
     pub(crate) order_tree: Arc<RwLock<Tree>>,
     pub(crate) index: Arc<RwLock<HashMap<Entity, usize>>>,
     pub(crate) uninitilized_systems: HashSet<String>,
+    pub camera_entity: Entity,
 }
 
 impl Default for KayakRootContext {
     fn default() -> Self {
-        Self::new()
+        Self::new(Entity::from_raw(0))
     }
 }
 
 impl KayakRootContext {
     /// Creates a new widget context.
-    pub fn new() -> Self {
+    pub fn new(camera_entity: Entity) -> Self {
         Self {
             tree: Arc::new(RwLock::new(Tree::default())),
             layout_cache: Arc::new(RwLock::new(LayoutCache::default())),
@@ -115,6 +116,7 @@ impl KayakRootContext {
             index: Default::default(),
             order_tree: Default::default(),
             uninitilized_systems: Default::default(),
+            camera_entity,
         }
     }
 
@@ -483,7 +485,7 @@ fn update_widgets_sys(world: &mut World) {
         world,
     );
 
-    for (camera_entity, mut context) in context_data.drain(..) {
+    for (entity, mut context) in context_data.drain(..) {
         for system_id in context.uninitilized_systems.drain() {
             if let Some(system) = context.systems.get_mut(&system_id) {
                 system.0.initialize(world);
@@ -516,7 +518,7 @@ fn update_widgets_sys(world: &mut World) {
 
         // dbg!("Updating widgets!");
         update_widgets(
-            camera_entity,
+            context.camera_entity,
             world,
             &context.tree,
             &context.layout_cache,
@@ -564,7 +566,7 @@ fn update_widgets_sys(world: &mut World) {
             indices.clear();
         }
 
-        world.entity_mut(camera_entity).insert(context);
+        world.entity_mut(entity).insert(context);
     }
 }
 
@@ -586,14 +588,14 @@ fn update_widgets(
 ) {
     for entity in widgets.iter() {
         // A small hack to add parents to widgets
-        let mut command_queue = CommandQueue::default();
-        {
-            let mut commands = Commands::new(&mut command_queue, &world);
-            if let Some(mut entity_commands) = commands.get_entity(entity.0) {
-                entity_commands.set_parent(camera_entity);
-            }
-        }
-        command_queue.apply(world);
+        // let mut command_queue = CommandQueue::default();
+        // {
+        //     let mut commands = Commands::new(&mut command_queue, &world);
+        //     if let Some(mut entity_commands) = commands.get_entity(entity.0) {
+        //         entity_commands.set_parent(camera_entity);
+        //     }
+        // }
+        // command_queue.apply(world);
 
         if let Some(entity_ref) = world.get_entity(entity.0) {
             if let Some(widget_type) = entity_ref.get::<WidgetName>() {
@@ -808,6 +810,7 @@ fn update_widget(
         let new_tick = widget_update_system.get_last_change_tick();
         new_ticks.insert(widget_type.clone(), new_tick);
         widget_update_system.set_last_change_tick(old_tick);
+        widget_update_system.apply_buffers(world);
 
         if should_rerender {
             if let Ok(cloned_widget_entities) = cloned_widget_entities.try_read() {
@@ -912,7 +915,7 @@ fn update_widget(
     // Mark node as needing a recalculation of rendering/layout.
     commands.entity(entity.0).insert(DirtyNode);
 
-    for (_index, changed_entity, _parent, changes) in diff.changes.iter() {
+    for (_index, changed_entity, parent, changes) in diff.changes.iter() {
         if changes.iter().any(|change| *change == Change::Deleted) {
             // commands.entity(changed_entity.0).despawn();
             // commands.entity(changed_entity.0).remove::<DirtyNode>();
@@ -921,6 +924,10 @@ fn update_widget(
         if changes.iter().any(|change| *change == Change::Inserted) {
             if let Some(mut entity_commands) = commands.get_entity(changed_entity.0) {
                 entity_commands.insert(Mounted);
+                entity_commands.set_parent(parent.0);
+            }
+            if let Some(mut parent_commands) = commands.get_entity(parent.0) {
+                parent_commands.add_child(changed_entity.0);
             }
         }
     }

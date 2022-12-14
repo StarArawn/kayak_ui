@@ -94,7 +94,7 @@ impl Plugin for BevyKayakUIRenderPlugin {
                 .unwrap();
             graph_2d
                 .add_node_edge(
-                    bevy::core_pipeline::core_2d::graph::node::TONEMAPPING,
+                    bevy::core_pipeline::core_2d::graph::node::END_MAIN_PASS_POST_PROCESSING,
                     draw_ui_graph::node::MAIN_PASS,
                 )
                 .unwrap();
@@ -120,7 +120,7 @@ impl Plugin for BevyKayakUIRenderPlugin {
                 .unwrap();
             graph_3d
                 .add_node_edge(
-                    bevy::core_pipeline::core_3d::graph::node::TONEMAPPING,
+                    bevy::core_pipeline::core_3d::graph::node::END_MAIN_PASS_POST_PROCESSING,
                     draw_ui_graph::node::MAIN_PASS,
                 )
                 .unwrap();

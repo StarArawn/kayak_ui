@@ -225,6 +225,21 @@ impl KayakWidgetContext {
         }
     }
 
+    // Despawns a widget entity and it's decedents. This is done in a safe way by keeping entity id's around.
+    pub fn despawn_safe(&self, commands: &mut Commands, entity: Entity) {
+        if let Ok(mut tree) = self.old_tree.write() {
+            let mut down_iter = tree.down_iter();
+            down_iter.current_node = Some(WrappedIndex(entity));
+            for child in down_iter {
+                commands.entity(child.0).despawn();
+                commands.get_or_spawn(child.0);
+            }
+            commands.entity(entity).despawn();
+            commands.get_or_spawn(entity);
+            tree.remove(WrappedIndex(entity));
+        }
+    }
+
     /// Attempts to get the layout rect for the widget with the given ID
     ///
     /// # Arguments

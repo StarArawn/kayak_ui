@@ -62,6 +62,7 @@ pub mod prelude {
     pub use crate::widgets;
     pub use kayak_font::Alignment;
     pub use kayak_ui_macros::{constructor, rsx};
+    pub use crate::render::draw_ui_graph;
 }
 
 pub use focus_tree::Focusable;

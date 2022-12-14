@@ -2,6 +2,7 @@ use bevy::prelude::{Msaa, Rect, Resource};
 use bevy::render::render_resource::{
     DynamicUniformBuffer, ShaderType, SpecializedRenderPipeline, SpecializedRenderPipelines,
 };
+use bevy::render::view::{ViewTarget, ExtractedView};
 use bevy::utils::FloatOrd;
 use bevy::{
     ecs::system::{
@@ -67,27 +68,10 @@ impl FontRenderingPipeline for UnifiedPipeline {
     }
 }
 
-bitflags::bitflags! {
-    #[repr(transparent)]
-    pub struct UnifiedPipelineKey: u32 {
-        const NONE                        = 0;
-        const MSAA_RESERVED_BITS          = Self::MSAA_MASK_BITS << Self::MSAA_SHIFT_BITS;
-    }
-}
-
-impl UnifiedPipelineKey {
-    const MSAA_MASK_BITS: u32 = 0b111;
-    const MSAA_SHIFT_BITS: u32 = 32 - Self::MSAA_MASK_BITS.count_ones();
-
-    pub fn from_msaa_samples(msaa_samples: u32) -> Self {
-        let msaa_bits =
-            (msaa_samples.trailing_zeros() & Self::MSAA_MASK_BITS) << Self::MSAA_SHIFT_BITS;
-        Self::from_bits(msaa_bits).unwrap()
-    }
-
-    pub fn msaa_samples(&self) -> u32 {
-        1 << ((self.bits >> Self::MSAA_SHIFT_BITS) & Self::MSAA_MASK_BITS)
-    }
+#[derive(Debug, Component, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct UnifiedPipelineKey {
+    pub msaa: u32,
+    pub hdr: bool,
 }
 
 impl FromWorld for UnifiedPipeline {
@@ -242,7 +226,7 @@ impl FromWorld for UnifiedPipeline {
 impl SpecializedRenderPipeline for UnifiedPipeline {
     type Key = UnifiedPipelineKey;
 
-    fn specialize(&self, _key: Self::Key) -> RenderPipelineDescriptor {
+    fn specialize(&self, key: Self::Key) -> RenderPipelineDescriptor {
         let vertex_buffer_layout = VertexBufferLayout {
             array_stride: 60,
             step_mode: VertexStepMode::Vertex,
@@ -282,7 +266,11 @@ impl SpecializedRenderPipeline for UnifiedPipeline {
                 shader_defs: vec![],
                 entry_point: "fragment".into(),
                 targets: vec![Some(ColorTargetState {
-                    format: TextureFormat::bevy_default(),
+                    format: if key.hdr {
+                        ViewTarget::TEXTURE_FORMAT_HDR
+                    } else {
+                        TextureFormat::bevy_default()
+                    },
                     blend: Some(BlendState {
                         color: BlendComponent {
                             src_factor: BlendFactor::SrcAlpha,
@@ -315,7 +303,7 @@ impl SpecializedRenderPipeline for UnifiedPipeline {
             },
             depth_stencil: None,
             multisample: MultisampleState {
-                count: 1,
+                count: key.msaa,
                 mask: !0,
                 alpha_to_coverage_enabled: false,
             },
@@ -534,7 +522,7 @@ pub fn queue_quads(
     mut pipelines: ResMut<SpecializedRenderPipelines<UnifiedPipeline>>,
     mut pipeline_cache: ResMut<PipelineCache>,
     mut extracted_sprites: Query<(Entity, &ExtractedQuad)>,
-    mut views: Query<(Entity, &mut RenderPhase<TransparentUI>)>,
+    mut views: Query<(Entity, &mut RenderPhase<TransparentUI>, &ExtractedView)>,
     mut image_bind_groups: ResMut<ImageBindGroups>,
     unified_pipeline: Res<UnifiedPipeline>,
     gpu_images: Res<RenderAssets<Image>>,
@@ -562,15 +550,9 @@ pub fn queue_quads(
             layout: &quad_pipeline.view_layout,
         }));
 
-        let key = UnifiedPipelineKey::from_msaa_samples(msaa.samples);
-        let spec_pipeline = pipelines.specialize(&mut pipeline_cache, &quad_pipeline, key);
-
         let draw_quad = draw_functions.read().get_id::<DrawUI>().unwrap();
-        for (camera_entity, mut transparent_phase) in views.iter_mut() {
+        for (camera_entity, mut transparent_phase, view) in views.iter_mut() {
             for (entity, quad) in extracted_sprites.iter_mut() {
-                if quad.camera_entity != camera_entity {
-                    continue;
-                }
                 if let Some(image_handle) = quad.image.as_ref() {
                     if let Some(gpu_image) = gpu_images.get(image_handle) {
                         image_bind_groups
@@ -596,6 +578,12 @@ pub fn queue_quads(
                             });
                     }
                 }
+                let key = UnifiedPipelineKey {
+                    msaa: 1,
+                    hdr: view.hdr,
+                };
+                let spec_pipeline = pipelines.specialize(&mut pipeline_cache, &quad_pipeline, key);
+
                 transparent_phase.add(TransparentUI {
                     draw_function: draw_quad,
                     pipeline: spec_pipeline,

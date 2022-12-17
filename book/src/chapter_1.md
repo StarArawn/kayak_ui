@@ -19,7 +19,7 @@ fn startup(
 ) {
     font_mapping.set_default(asset_server.load("roboto.kayak_font"));
 
-    let mut widget_context = KayakRootContext::new();
+    let mut widget_context = KayakRootContext::new(camera_entity);
     let parent_id = None;
 
     // The rsx! macro expects a parent_id, a widget_context from the user.
@@ -37,7 +37,7 @@ fn startup(
         </KayakAppBundle>
     }
     
-    commands.spawn(UICameraBundle::new(widget_context));
+    commands.spawn((widget_context, EventDispatcher::default()));
 }
 
 fn main() {
@@ -63,9 +63,13 @@ fn startup(
     mut font_mapping: ResMut<FontMapping>,
     asset_server: Res<AssetServer>,
 ) {
+    let camera_entity = commands
+        .spawn((Camera2dBundle::default(), CameraUIKayak))
+        .id();
+
     font_mapping.set_default(asset_server.load("roboto.kayak_font"));
     commands.spawn(UICameraBundle::new());
-    let mut widget_context = KayakRootContext::new();
+    let mut widget_context = KayakRootContext::new(camera_entity);
 
     let app_entity = widget_context.spawn_widget(&mut commands, None);
     // Create default app bundle
@@ -95,9 +99,8 @@ fn startup(
     // Add app widget to context.
     widget_context.add_widget(None, app_entity);
 
-    // Add widget context as resource.
-    
- commands.spawn(UICameraBundle::new(widget_context));
+    // Spawn context as an entity.
+    commands.spawn((widget_context, EventDispatcher::default()));
 }
 fn main() {
     App::new()

@@ -38,7 +38,7 @@ pub use camera::*;
 pub const DEFAULT_FONT: &str = "Kayak-Default";
 
 pub mod prelude {
-    pub use crate::camera::UICameraBundle;
+    pub use crate::camera::*;
     pub use crate::children::KChildren;
     pub use crate::clone_component::PreviousWidget;
     pub use crate::context::*;
@@ -53,6 +53,7 @@ pub mod prelude {
     pub use crate::on_change::OnChange;
     pub use crate::on_event::OnEvent;
     pub use crate::on_layout::OnLayout;
+    pub use crate::render::draw_ui_graph;
     pub use crate::render::font::FontMapping;
     pub use crate::styles::*;
     pub use crate::tree::*;
@@ -62,7 +63,6 @@ pub mod prelude {
     pub use crate::widgets;
     pub use kayak_font::Alignment;
     pub use kayak_ui_macros::{constructor, rsx};
-    pub use crate::render::draw_ui_graph;
 }
 
 pub use focus_tree::Focusable;

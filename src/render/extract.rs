@@ -2,12 +2,14 @@ use crate::{
     context::{KayakRootContext, WidgetName},
     node::Node,
     render_primitive::RenderPrimitive,
-    styles::Corner, CameraUIKayak,
+    styles::Corner,
+    CameraUIKayak,
 };
 use bevy::{
     prelude::*,
-    render::{Extract, RenderApp, RenderStage, view::ExtractedView, render_phase::RenderPhase},
-    window::Windows, ui::TransparentUi,
+    render::{render_phase::RenderPhase, view::ExtractedView, Extract, RenderApp, RenderStage},
+    ui::TransparentUi,
+    window::Windows,
 };
 use kayak_font::KayakFont;
 
@@ -26,8 +28,14 @@ impl Plugin for BevyKayakUIExtractPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
         let render_app = app.sub_app_mut(RenderApp);
         render_app.add_system_to_stage(RenderStage::Extract, extract);
-        render_app.add_system_to_stage(RenderStage::Extract, extract_default_ui_camera_view::<Camera2d>);
-        render_app.add_system_to_stage(RenderStage::Extract, extract_default_ui_camera_view::<Camera3d>);
+        render_app.add_system_to_stage(
+            RenderStage::Extract,
+            extract_default_ui_camera_view::<Camera2d>,
+        );
+        render_app.add_system_to_stage(
+            RenderStage::Extract,
+            extract_default_ui_camera_view::<Camera3d>,
+        );
     }
 }
 
@@ -59,7 +67,11 @@ pub fn extract(
             1.0
         };
         let mut new_render_primitives = context.build_render_primitives(&node_query, &widget_names);
-        render_primitives.extend(new_render_primitives.drain(..).map(|r| (context.camera_entity, dpi, r)));
+        render_primitives.extend(
+            new_render_primitives
+                .drain(..)
+                .map(|r| (context.camera_entity, dpi, r)),
+        );
     }
 
     let mut extracted_quads = Vec::new();
@@ -131,15 +143,13 @@ pub fn extract(
 #[derive(Component)]
 pub struct DefaultCameraView(pub Entity);
 
-
 const UI_CAMERA_TRANSFORM_OFFSET: f32 = -0.1;
 
 pub fn extract_default_ui_camera_view<T: Component>(
     mut commands: Commands,
     query: Extract<Query<(Entity, &Camera, &CameraUIKayak), With<T>>>,
 ) {
-    for (entity, camera, camera_ui) in &query {
-
+    for (entity, camera, _camera_ui) in &query {
         if let (Some(logical_size), Some((physical_origin, _)), Some(physical_size)) = (
             camera.logical_viewport_size(),
             camera.physical_viewport_rect(),

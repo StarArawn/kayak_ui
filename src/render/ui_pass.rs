@@ -1,6 +1,4 @@
-use bevy::core_pipeline::clear_color::ClearColorConfig;
 use bevy::ecs::prelude::*;
-use bevy::prelude::ClearColor;
 use bevy::render::render_phase::{DrawFunctionId, PhaseItem};
 use bevy::render::render_resource::CachedRenderPipelineId;
 use bevy::render::{
@@ -79,11 +77,11 @@ impl Node for MainPassUINode {
         let input_view_entity = graph.get_input_entity(Self::IN_VIEW)?;
         // adapted from bevy itself;
         // see: <https://github.com/bevyengine/bevy/commit/09a3d8abe062984479bf0e99fcc1508bb722baf6>
-        let (transparent_phase, target, _camera_ui) = match self.query.get_manual(world, input_view_entity)
-        {
-            Ok(it) => it,
-            _ => return Ok(()),
-        };
+        let (transparent_phase, target, _camera_ui) =
+            match self.query.get_manual(world, input_view_entity) {
+                Ok(it) => it,
+                _ => return Ok(()),
+            };
 
         let view_entity = if let Ok(default_view) = self
             .default_camera_view_query

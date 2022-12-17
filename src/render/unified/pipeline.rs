@@ -1,8 +1,8 @@
-use bevy::prelude::{Msaa, Rect, Resource};
+use bevy::prelude::{Rect, Resource};
 use bevy::render::render_resource::{
     DynamicUniformBuffer, ShaderType, SpecializedRenderPipeline, SpecializedRenderPipelines,
 };
-use bevy::render::view::{ViewTarget, ExtractedView};
+use bevy::render::view::{ExtractedView, ViewTarget};
 use bevy::utils::FloatOrd;
 use bevy::{
     ecs::system::{
@@ -526,7 +526,6 @@ pub fn queue_quads(
     mut image_bind_groups: ResMut<ImageBindGroups>,
     unified_pipeline: Res<UnifiedPipeline>,
     gpu_images: Res<RenderAssets<Image>>,
-    msaa: Res<Msaa>,
 ) {
     if let Some(type_binding) = sprite_meta.types_buffer.binding() {
         sprite_meta.types_bind_group =
@@ -553,6 +552,9 @@ pub fn queue_quads(
         let draw_quad = draw_functions.read().get_id::<DrawUI>().unwrap();
         for (camera_entity, mut transparent_phase, view) in views.iter_mut() {
             for (entity, quad) in extracted_sprites.iter_mut() {
+                if camera_entity != quad.camera_entity {
+                    continue;
+                }
                 if let Some(image_handle) = quad.image.as_ref() {
                     if let Some(gpu_image) = gpu_images.get(image_handle) {
                         image_bind_groups

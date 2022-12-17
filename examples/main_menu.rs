@@ -123,9 +123,13 @@ fn startup(
     asset_server: Res<AssetServer>,
     mut preload_resource: ResMut<PreloadResource>,
 ) {
+    let camera_entity = commands
+        .spawn((Camera2dBundle::default(), CameraUIKayak))
+        .id();
+
     font_mapping.set_default(asset_server.load("lato-light.kttf"));
 
-    let mut widget_context = KayakRootContext::new();
+    let mut widget_context = KayakRootContext::new(camera_entity);
     widget_context.add_plugin(KayakWidgetsContextPlugin);
     widget_context.add_widget_data::<MenuButton, ButtonState>();
     widget_context.add_widget_system(
@@ -218,7 +222,7 @@ fn startup(
         </KayakAppBundle>
     };
 
-    commands.spawn(UICameraBundle::new(widget_context));
+    commands.spawn((widget_context, EventDispatcher::default()));
 }
 
 fn main() {

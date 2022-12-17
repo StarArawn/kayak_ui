@@ -56,7 +56,22 @@ fn startup(
 
     let image_handle = images.add(image);
 
-    let mut widget_context = KayakRootContext::new();
+    let camera_entity = commands
+        .spawn(Camera2dBundle {
+            camera: Camera {
+                priority: -1,
+                target: RenderTarget::Image(image_handle.clone()),
+                ..Camera::default()
+            },
+            camera_2d: Camera2d {
+                clear_color: bevy::core_pipeline::clear_color::ClearColorConfig::Default,
+            },
+            ..Default::default()
+        })
+        .insert(CameraUIKayak)
+        .id();
+
+    let mut widget_context = KayakRootContext::new(camera_entity);
     widget_context.add_plugin(KayakWidgetsContextPlugin);
     let parent_id = None;
     rsx! {
@@ -81,18 +96,7 @@ fn startup(
             />
         </KayakAppBundle>
     };
-
-    commands.spawn(UICameraBundle {
-        camera: Camera {
-            priority: -1,
-            target: RenderTarget::Image(image_handle.clone()),
-            ..Camera::default()
-        },
-        camera_ui: CameraUIKayak {
-            clear_color: bevy::core_pipeline::clear_color::ClearColorConfig::Default,
-        },
-        ..UICameraBundle::new(widget_context)
-    });
+    commands.spawn((widget_context, EventDispatcher::default()));
 
     // Setup 3D scene
     // Light
@@ -127,14 +131,17 @@ fn startup(
         .insert(MainPassCube);
 
     // The main pass camera.
-    commands.spawn(Camera3dBundle {
-        transform: Transform::from_translation(Vec3::new(0.0, 0.0, 15.0))
-            .looking_at(Vec3::default(), Vec3::Y),
-        ..default()
-    });
+    let camera_entity = commands
+        .spawn(Camera3dBundle {
+            transform: Transform::from_translation(Vec3::new(0.0, 0.0, 15.0))
+                .looking_at(Vec3::default(), Vec3::Y),
+            ..default()
+        })
+        .insert(CameraUIKayak)
+        .id();
 
     // Spawn another UI in 2D space!
-    let mut widget_context = KayakRootContext::new();
+    let mut widget_context = KayakRootContext::new(camera_entity);
     widget_context.add_plugin(KayakWidgetsContextPlugin);
     let parent_id = None;
     rsx! {
@@ -148,7 +155,7 @@ fn startup(
             />
         </KayakAppBundle>
     };
-    commands.spawn((UICameraBundle::new(widget_context), MainUI));
+    commands.spawn((widget_context, EventDispatcher::default(), MainUI));
 }
 
 /// Rotates the outer cube (main pass)

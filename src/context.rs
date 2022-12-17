@@ -64,7 +64,7 @@ type WidgetSystems = HashMap<
 ///     }).id();
 ///     // Stores the kayak app widget in the widget context's tree.
 ///     widget_context.add_widget(None, app_entity);
-///     commands.spawn(UICameraBundle::new(widget_context));
+///     commands.spawn((widget_context, EventDispatcher::default()));
 /// }
 ///
 /// fn main() {

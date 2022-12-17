@@ -73,13 +73,13 @@ fn startup(
     mut font_mapping: ResMut<FontMapping>,
     asset_server: Res<AssetServer>,
 ) {
-    // Camera 2D forces a clear pass in bevy.
-    // We do this because our scene is not rendering anything else.
-    commands.spawn(Camera2dBundle::default());
+    let camera_entity = commands
+        .spawn((Camera2dBundle::default(), CameraUIKayak))
+        .id();
 
     font_mapping.set_default(asset_server.load("roboto.kayak_font"));
 
-    let mut widget_context = KayakRootContext::new();
+    let mut widget_context = KayakRootContext::new(camera_entity);
     widget_context.add_plugin(KayakWidgetsContextPlugin);
     let parent_id = None;
     widget_context.add_widget_data::<MyWidgetProps, EmptyState>();
@@ -92,7 +92,7 @@ fn startup(
         <KayakAppBundle><MyWidgetBundle props={MyWidgetProps { foo: 0 }} /></KayakAppBundle>
     };
 
-    commands.spawn(UICameraBundle::new(widget_context));
+    commands.spawn((widget_context, EventDispatcher::default()));
 }
 
 fn update_resource(keyboard_input: Res<Input<KeyCode>>, mut my_resource: ResMut<MyResource>) {

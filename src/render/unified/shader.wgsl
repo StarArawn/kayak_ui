@@ -71,7 +71,7 @@ fn sample_sdf(coords: vec2<f32>, arr: i32, scale: f32) -> f32 {
 }
 
 fn range_curve(font_size: f32) -> f32 {
-    return (8.528 - 9.428 * font_size + 3.428 * pow(font_size, 2.0)) + 1.0;
+    return (5.128 - 6.428 * font_size + 3.428 * pow(font_size, 2.0)) + 1.0;
 }
 
 @fragment

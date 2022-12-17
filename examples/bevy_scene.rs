@@ -115,7 +115,6 @@ fn on_color_change(
 
 /// A system that sets up the world
 fn world_setup(mut commands: Commands, active_color: Res<ActiveColor>) {
-    commands.spawn((Camera2dBundle::default(), WorldCamera));
     commands
         .spawn(SpriteBundle {
             sprite: Sprite {
@@ -172,9 +171,15 @@ fn startup(
     mut font_mapping: ResMut<FontMapping>,
     asset_server: Res<AssetServer>,
 ) {
+    // The UI Camera and the world camera are the same.
+    // CameraUIKayak is used to tell kayak which camera should render UI.
+    let camera_entity = commands
+        .spawn((Camera2dBundle::default(), CameraUIKayak, WorldCamera))
+        .id();
+
     font_mapping.set_default(asset_server.load("roboto.kayak_font"));
 
-    let mut widget_context = KayakRootContext::new();
+    let mut widget_context = KayakRootContext::new(camera_entity);
     widget_context.add_plugin(KayakWidgetsContextPlugin);
 
     let handle_change_color = OnEvent::new(
@@ -255,7 +260,7 @@ fn startup(
         </KayakAppBundle>
     };
 
-    commands.spawn((UICameraBundle::new(widget_context), GameUI));
+    commands.spawn((widget_context, EventDispatcher::default(), GameUI));
 }
 
 fn main() {

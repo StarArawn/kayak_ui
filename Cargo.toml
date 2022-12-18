@@ -7,6 +7,7 @@ resolver = "2"
 authors = ["John Mitchell"]
 homepage = "https://github.com/StarArawn/kayak_ui"
 repository = "https://github.com/StarArawn/kayak_ui"
+license = "MIT OR Apache-2.0"
 license-file = "LICENSE"
 exclude = ["assets/*", "screenshots/*", "book"]
 

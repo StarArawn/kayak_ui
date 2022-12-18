@@ -55,12 +55,11 @@ widget1 - entity 2
     - widget2 entity 3
     - widget3 entity 4
 ```
-When widget 1 renders it's children will have random entity id's if you use bevy's default spawning commands, but by using `spawn_widget` you can guarantee somewhat consistent entities. There are a couple of a caveats to this though. If a widget is despawned due to being removed from the tree it's entity id is no longer guaranteed. This means that entities that are removed from the tree will lose access to their context and state. It's important to remember that!
+When widget 1 renders, its children will have random entity id's if you use bevy's default spawning commands, but by using `spawn_widget` you can guarantee somewhat consistent entities. There are a couple of a caveats to this though. If a widget is despawned due to being removed from the tree, its entity id is no longer guaranteed. This means that entities that are removed from the tree will lose access to their context and state. It's important to remember that!
 
 ### Relationships
 
-Widgets, by the nature of them being stored as a tree, contain certain relationships. The most common one is the *
-parent-child* relationship. A widget may contain zero or more children.
+Widgets, by the nature of them being stored as a tree, contain certain relationships. The most common one is the *parent-child* relationship. A widget may contain zero or more children.
 
 <p align="center">
   <img alt="Diagram showing the parent-child relationship" src="img/parent-child.svg" />

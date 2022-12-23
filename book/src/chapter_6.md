@@ -1,4 +1,4 @@
-# Chapter 5 - Fonts
+# Chapter 6 - Fonts
 Kayak UI uses SDF(signed distance fields) for rendering fonts. More specifically it uses multi-channel signed distance fields. Reasons for why we use MSDF:
 - High Quality font rendering.
 - Fast rendering!

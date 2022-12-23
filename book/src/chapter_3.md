@@ -1,4 +1,4 @@
-# Chapter 2 - Creating custom widgets!
+# Chapter 3 - Creating custom widgets!
 Kayak UI allows users to create custom widgets.
 
 Widgets are structured in a few different ways:

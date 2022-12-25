@@ -8,11 +8,14 @@ Widgets are structured in a few different ways:
 
 I think it's best if we showcase a simple example:
 ```rust
+use bevy::prelude::*;
+use kayak_ui::prelude::{widgets::*, *};
+
 // At a bare minimum the widget props component must include these derives. 
 // This is because we need to diff the previous values of these.
 // Default is used to make creating widgets a little easier.
 // And component is required since this is a bevy component!
-[#derive(Component, Clone, PartialEq, Default)]
+#[derive(Component, Clone, PartialEq, Default)]
 pub struct MyButtonProps {
 
 }
@@ -64,10 +67,10 @@ pub fn my_button_render(
     mut commands: Commands,
     // In this case we really only care about our buttons children! Let's query for them.
     mut query: Query<&KChildren>,
-) {
+) -> bool {
     // Grab our children for our button widget:
     if let Ok(children) = query.get(entity) {
-
+        let parent_id = Some(entity);
         let background_styles = KStyle {
             // Lets use red for our button background!
             background_color: StyleProp::Value(Color::RED),
@@ -82,7 +85,7 @@ pub fn my_button_render(
                 // We pass the children to the background bundle!
                 children={children.clone()}
             />
-        }
+        };
     }
 
     // The boolean returned here tells kayak UI to update the tree. You can avoid tree updates by

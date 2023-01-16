@@ -20,6 +20,7 @@ fn startup(
     font_mapping.set_default(asset_server.load("roboto.kayak_font"));
 
     let mut widget_context = KayakRootContext::new();
+    widget_context.add_plugin(KayakWidgetsContextPlugin);
     let parent_id = None;
 
     // The rsx! macro expects a parent_id, a widget_context from the user.
@@ -35,7 +36,7 @@ fn startup(
                 }}
             />
         </KayakAppBundle>
-    }
+    };
     
     commands.spawn(UICameraBundle::new(widget_context));
 }

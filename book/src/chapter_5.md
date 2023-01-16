@@ -1,4 +1,4 @@
-# Chapter 4 - Context
+# Chapter 5 - Context
 Context in Kayak UI allows users to pass data through the widget tree without having to pass data between each widget at every level in the tree.
 
 Typically in Kayak the data is passed top-down or parent to child via "props", but this can be cumbersome when dealing with complex widget trees. Context provides a way to share values from a parent widget down to children without the need to explicitly pass that data through every level of the tree.

@@ -1,4 +1,4 @@
-# Chapter 3 - State
+# Chapter 4 - State
 State is data that is directly associated with a particular widget. State persists during re-renders, but will be destroyed when an widget is despawned.
 
 State can be created in Kayak easily, here is an example:

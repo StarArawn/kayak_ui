@@ -1,4 +1,4 @@
-use std::time::Instant;
+use instant::Instant;
 
 use bevy::prelude::*;
 use kayak_font::{KayakFont, TextProperties};

@@ -12,7 +12,7 @@ I think it's best if we showcase a simple example:
 // This is because we need to diff the previous values of these.
 // Default is used to make creating widgets a little easier.
 // And component is required since this is a bevy component!
-[#derive(Component, Clone, PartialEq, Default)]
+#[derive(Component, Clone, PartialEq, Default)]
 pub struct MyButtonProps {
 
 }
@@ -76,13 +76,15 @@ pub fn my_button_render(
             ..Default::default()
         };
 
+        let parent_id = Some(entity);
+
         rsx! {
             <BackgroundBundle
                 styles={background_styles}
                 // We pass the children to the background bundle!
                 children={children.clone()}
             />
-        }
+        };
     }
 
     // The boolean returned here tells kayak UI to update the tree. You can avoid tree updates by
@@ -99,10 +101,10 @@ fn startup(...) {
 
     // We need to register the prop and state types.
     // State is empty so you can use the `EmptyState` component!
-    context.add_widget_data::<MyButtonProps, EmptyState>();
+    widget_context.add_widget_data::<MyButtonProps, EmptyState>();
 
     // Next we need to add the systems
-    context.add_widget_system(
+    widget_context.add_widget_system(
         // We are registering these systems with a specific WidgetName.
         MyButtonProps::default().get_name(),
         // widget_update auto diffs props and state.

@@ -1,5 +1,5 @@
 use bevy::{
-    prelude::{CoreStage, Plugin},
+    prelude::{CoreSet, IntoSystemConfig, Plugin},
     render::{camera::CameraProjectionPlugin, extract_component::ExtractComponentPlugin},
 };
 
@@ -13,9 +13,9 @@ pub struct KayakUICameraPlugin;
 
 impl Plugin for KayakUICameraPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
-        app.add_system_to_stage(
-            CoreStage::PostUpdate,
-            bevy::render::camera::camera_system::<UIOrthographicProjection>,
+        app.add_system(
+            bevy::render::camera::camera_system::<UIOrthographicProjection>
+                .in_base_set(CoreSet::PostUpdate),
         )
         .add_plugin(CameraProjectionPlugin::<UIOrthographicProjection>::default())
         .add_plugin(ExtractComponentPlugin::<CameraUIKayak>::default());

@@ -104,7 +104,7 @@ fn update_theme_button(
                             move |In((event_dispatcher_context, _, event, _entity)): In<(
                                 EventDispatcherContext,
                                 WidgetState,
-                                Event,
+                                KEvent,
                                 Entity,
                             )>,
                             query: Query<&ThemeButton>,

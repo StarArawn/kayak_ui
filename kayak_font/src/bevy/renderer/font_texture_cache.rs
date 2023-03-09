@@ -126,6 +126,7 @@ impl FontTextureCache {
             mip_level_count: 1,
             sample_count: 1,
             dimension: TextureDimension::D2,
+            view_formats: &[format],
             format,
             usage: TextureUsages::TEXTURE_BINDING | TextureUsages::COPY_DST,
         };
@@ -163,6 +164,7 @@ impl FontTextureCache {
             texture,
             sampler,
             texture_view,
+            mip_level_count: 1,
             size: Vec2 {
                 x: size.0 as f32,
                 y: size.1 as f32,
@@ -184,6 +186,7 @@ impl FontTextureCache {
             mip_level_count: 1,
             sample_count: 1,
             dimension: TextureDimension::D2,
+            view_formats: &[TextureFormat::Rgba8Unorm],
             format: TextureFormat::Rgba8Unorm,
             usage: TextureUsages::TEXTURE_BINDING | TextureUsages::COPY_DST,
         };
@@ -208,6 +211,7 @@ impl FontTextureCache {
             texture,
             sampler,
             texture_view,
+            mip_level_count: 1,
             size: Vec2 { x: 1.0, y: 1.0 },
             texture_format: TextureFormat::Rgba8Unorm,
         };

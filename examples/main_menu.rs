@@ -49,7 +49,7 @@ fn menu_button_render(
         move |In((event_dispatcher_context, _, mut event, _entity)): In<(
             EventDispatcherContext,
             WidgetState,
-            Event,
+            KEvent,
             Entity,
         )>,
               mut query: Query<&mut ButtonState>| {
@@ -151,7 +151,7 @@ fn startup(
         move |In((event_dispatcher_context, _, event, _entity)): In<(
             EventDispatcherContext,
             WidgetState,
-            Event,
+            KEvent,
             Entity,
         )>,
               mut exit: EventWriter<AppExit>| {

@@ -4,7 +4,7 @@ use crate::{
     children::KChildren,
     context::WidgetName,
     cursor::ScrollUnit,
-    event::{Event, EventType},
+    event::{EventType, KEvent},
     event_dispatcher::EventDispatcherContext,
     layout::{GeometryChanged, LayoutEvent},
     on_event::OnEvent,
@@ -185,7 +185,7 @@ pub fn scroll_box_render(
                     move |In((event_dispatcher_context, _, mut event, _entity)): In<(
                         EventDispatcherContext,
                         WidgetState,
-                        Event,
+                        KEvent,
                         Entity,
                     )>,
                           mut query: Query<&mut ScrollContext>| {

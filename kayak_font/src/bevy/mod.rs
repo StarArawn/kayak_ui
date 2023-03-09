@@ -11,8 +11,8 @@ mod loader;
 mod renderer;
 
 mod plugin {
-    use bevy::prelude::{AddAsset, Plugin};
-    use bevy::render::{RenderApp, RenderStage};
+    use bevy::prelude::{AddAsset, IntoSystemAppConfig, IntoSystemConfig, Plugin};
+    use bevy::render::{ExtractSchedule, RenderApp, RenderSet};
 
     use crate::bevy::font_texture::init_font_texture;
     use crate::KayakFont;
@@ -32,8 +32,8 @@ mod plugin {
             render_app
                 .init_resource::<FontTextureCache>()
                 .init_resource::<ExtractedFonts>()
-                .add_system_to_stage(RenderStage::Extract, extract_fonts)
-                .add_system_to_stage(RenderStage::Prepare, prepare_fonts);
+                .add_system(extract_fonts.in_schedule(ExtractSchedule))
+                .add_system(prepare_fonts.in_set(RenderSet::Prepare));
         }
     }
 }

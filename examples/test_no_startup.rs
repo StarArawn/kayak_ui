@@ -1,15 +1,15 @@
 use bevy::prelude::*;
 use kayak_ui::prelude::{widgets::*, *};
 
-#[derive(Default, Clone, Copy, PartialEq, Hash, Eq, Debug)]
+#[derive(Default, Clone, Copy, PartialEq, Hash, Eq, Debug, States)]
 pub enum GameState {
     #[default]
     First,
     Second,
 }
 
-fn first_sys(mut state: ResMut<State<GameState>>) {
-    state.overwrite_replace(GameState::Second).unwrap();
+fn first_sys(mut state: ResMut<NextState<GameState>>) {
+    state.set(GameState::Second);
 }
 
 fn second_sys(
@@ -42,8 +42,8 @@ fn main() {
         .add_plugins(DefaultPlugins)
         .add_plugin(KayakContextPlugin)
         .add_plugin(KayakWidgets)
-        .add_state(GameState::First)
-        .add_system_set(SystemSet::on_enter(GameState::First).with_system(first_sys))
-        .add_system_set(SystemSet::on_enter(GameState::Second).with_system(second_sys))
-        .run()
+        .add_state::<GameState>()
+        .add_system(first_sys.in_schedule(OnEnter(GameState::First)))
+        .add_system(second_sys.in_schedule(OnEnter(GameState::Second)))
+        .run();
 }

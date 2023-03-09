@@ -6,7 +6,7 @@ use kayak_ui_macros::{constructor, rsx};
 
 use crate::{
     context::WidgetName,
-    event::{Event, EventType},
+    event::{EventType, KEvent},
     event_dispatcher::EventDispatcherContext,
     on_event::OnEvent,
     on_layout::OnLayout,
@@ -185,7 +185,7 @@ pub fn text_box_render(
                 move |In((event_dispatcher_context, _, mut event, _entity)): In<(
                     EventDispatcherContext,
                     WidgetState,
-                    Event,
+                    KEvent,
                     Entity,
                 )>,
                       font_assets: Res<Assets<KayakFont>>,

@@ -1,4 +1,4 @@
-use bevy::prelude::*;
+use bevy::{prelude::*, window::PrimaryWindow};
 use kayak_ui_macros::rsx;
 
 use crate::{
@@ -45,7 +45,7 @@ pub fn app_update(
     In((widget_context, entity, previous_props_entity)): In<(KayakWidgetContext, Entity, Entity)>,
     widget_param: WidgetParam<KayakApp, EmptyState>,
     camera: Query<&Camera, With<CameraUIKayak>>,
-    windows: Res<Windows>,
+    windows: Query<&Window, With<PrimaryWindow>>,
 ) -> bool {
     let mut window_change = false;
 
@@ -60,7 +60,7 @@ pub fn app_update(
                         window_change = true;
                     }
                 } else {
-                    let primary_window = windows.get_primary().unwrap();
+                    let primary_window = windows.single();
                     if app_style.0.width != StyleProp::Value(Units::Pixels(primary_window.width()))
                     {
                         window_change = true;
@@ -84,8 +84,6 @@ pub fn app_render(
     mut commands: Commands,
     mut query: Query<(&KStyle, &mut ComputedStyles, &KChildren)>,
     camera: Query<&Camera, With<CameraUIKayak>>,
-    windows: Res<Windows>,
-    images: Res<Assets<Image>>,
 ) -> bool {
     let (mut width, mut height) = (0.0, 0.0);
 
@@ -94,17 +92,9 @@ pub fn app_render(
             if let Some(size) = camera.logical_viewport_size() {
                 width = size.x;
                 height = size.y;
-            } else if let Some(viewport) = camera
-                .target
-                .get_render_target_info(&windows, &images)
-                .as_ref()
-                .map(|target_info| {
-                    let scale = target_info.scale_factor;
-                    (target_info.physical_size.as_dvec2() / scale).as_vec2()
-                })
-            {
-                width = viewport.x;
-                height = viewport.y;
+            } else if let Some(viewport) = &camera.viewport {
+                width = viewport.physical_size.x as f32;
+                height = viewport.physical_size.y as f32;
             }
         }
     }

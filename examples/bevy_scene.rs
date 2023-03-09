@@ -1,6 +1,7 @@
 use bevy::{
     math::{Vec3Swizzles, Vec4Swizzles},
     prelude::*,
+    window::PrimaryWindow,
 };
 use kayak_ui::prelude::{widgets::*, *};
 
@@ -40,7 +41,7 @@ fn set_active_tile_target(
     cursor: Res<Input<MouseButton>>,
     event_context: Query<&EventDispatcher, With<GameUI>>,
     camera_transform: Query<&GlobalTransform, With<WorldCamera>>,
-    windows: Res<Windows>,
+    window: Query<&Window, With<PrimaryWindow>>,
 ) {
     if !cursor.just_pressed(MouseButton::Left) {
         // Only run this system when the mouse button is clicked
@@ -62,7 +63,7 @@ fn set_active_tile_target(
     // }
     // ```
 
-    let world_pos = cursor_to_world(&windows, camera_transform.single());
+    let world_pos = cursor_to_world(window.single(), camera_transform.single());
     let tile_pos = world_to_tile(world_pos);
     let mut tile = tile.single_mut();
     tile.target = tile_pos;
@@ -83,11 +84,11 @@ fn move_ghost_tile(
     mut tile: Query<&mut Transform, With<GhostTile>>,
     mut cursor_moved: EventReader<CursorMoved>,
     camera_transform: Query<&GlobalTransform, With<WorldCamera>>,
-    windows: Res<Windows>,
+    window: Query<&Window, With<PrimaryWindow>>,
 ) {
     for _ in cursor_moved.iter() {
         if !event_context.single().contains_cursor() {
-            let world_pos = cursor_to_world(&windows, camera_transform.single());
+            let world_pos = cursor_to_world(window.single(), camera_transform.single());
             let tile_pos = world_to_tile(world_pos);
             let mut ghost = tile.single_mut();
             ghost.translation.x = tile_pos.x;
@@ -139,8 +140,7 @@ fn world_setup(mut commands: Commands, active_color: Res<ActiveColor>) {
 }
 
 /// Get the world position of the cursor in 2D space
-fn cursor_to_world(windows: &Windows, camera_transform: &GlobalTransform) -> Vec2 {
-    let window = windows.get_primary().unwrap();
+fn cursor_to_world(window: &Window, camera_transform: &GlobalTransform) -> Vec2 {
     let size = Vec2::new(window.width(), window.height());
 
     let mut pos = window.cursor_position().unwrap_or_default();
@@ -181,7 +181,7 @@ fn startup(
         move |In((event_dispatcher_context, _, event, _)): In<(
             EventDispatcherContext,
             WidgetState,
-            Event,
+            KEvent,
             Entity,
         )>,
               mut active_color: ResMut<ActiveColor>| {

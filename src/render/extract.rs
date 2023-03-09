@@ -5,9 +5,12 @@ use crate::{
     styles::Corner,
 };
 use bevy::{
-    prelude::{Assets, Camera, Color, Commands, Entity, Image, Plugin, Query, Rect, Res, Vec2},
-    render::{Extract, RenderApp, RenderStage},
-    window::Windows,
+    prelude::{
+        Assets, Camera, Color, Commands, Entity, Image, IntoSystemAppConfig, Plugin, Query, Rect,
+        Res, Vec2, With,
+    },
+    render::{Extract, ExtractSchedule, RenderApp},
+    window::{PrimaryWindow, Window, WindowRef},
 };
 use kayak_font::KayakFont;
 
@@ -25,7 +28,7 @@ pub struct BevyKayakUIExtractPlugin;
 impl Plugin for BevyKayakUIExtractPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
         let render_app = app.sub_app_mut(RenderApp);
-        render_app.add_system_to_stage(RenderStage::Extract, extract);
+        render_app.add_system(extract.in_schedule(ExtractSchedule));
     }
 }
 
@@ -37,18 +40,28 @@ pub fn extract(
     node_query: Extract<Query<&Node>>,
     widget_names: Extract<Query<&WidgetName>>,
     images: Extract<Res<Assets<Image>>>,
-    windows: Extract<Res<Windows>>,
+    primary_window: Extract<Query<&Window, With<PrimaryWindow>>>,
+    windows: Extract<Query<&Window>>,
 ) {
     let mut render_primitives = Vec::new();
     for (entity, context, camera) in context_query.iter() {
         let dpi = match &camera.target {
-            bevy::render::camera::RenderTarget::Window(window_id) => {
-                if let Some(window) = windows.get(*window_id) {
-                    window.scale_factor() as f32
-                } else {
-                    1.0
+            bevy::render::camera::RenderTarget::Window(window_ref) => match window_ref {
+                WindowRef::Primary => {
+                    if let Ok(window) = primary_window.get_single() {
+                        window.scale_factor() as f32
+                    } else {
+                        1.0
+                    }
                 }
-            }
+                WindowRef::Entity(window_entity) => {
+                    if let Ok(window) = windows.get(*window_entity) {
+                        window.scale_factor() as f32
+                    } else {
+                        1.0
+                    }
+                }
+            },
             _ => 1.0,
         };
         let mut new_render_primitives = context.build_render_primitives(&node_query, &widget_names);

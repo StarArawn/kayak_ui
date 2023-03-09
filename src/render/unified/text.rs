@@ -1,10 +1,10 @@
 use bevy::{
-    prelude::{Plugin, Res, ResMut},
+    prelude::{IntoSystemConfig, Plugin, Res, ResMut},
     render::{
         render_asset::RenderAssets,
         renderer::{RenderDevice, RenderQueue},
         texture::Image,
-        RenderApp, RenderStage,
+        RenderApp, RenderSet,
     },
 };
 use kayak_font::bevy::{FontTextureCache, KayakFontPlugin};
@@ -19,7 +19,7 @@ impl Plugin for TextRendererPlugin {
         app.add_plugin(KayakFontPlugin);
 
         let render_app = app.sub_app_mut(RenderApp);
-        render_app.add_system_to_stage(RenderStage::Queue, create_and_update_font_cache_texture);
+        render_app.add_system(create_and_update_font_cache_texture.in_set(RenderSet::Queue));
     }
 }
 fn create_and_update_font_cache_texture(

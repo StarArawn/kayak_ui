@@ -5,6 +5,7 @@ use bevy::{
         ButtonState,
     },
     prelude::*,
+    window::PrimaryWindow,
 };
 
 use crate::{
@@ -14,13 +15,11 @@ use crate::{
 };
 
 pub(crate) fn process_events(world: &mut World) {
-    let window_size = if let Some(windows) = world.get_resource::<Windows>() {
-        if let Some(window) = windows.get_primary() {
-            Vec2::new(window.width(), window.height())
-        } else {
-            log::warn!("Couldn't find primiary window!");
-            return;
-        }
+    let window_size = if let Ok(window) = world
+        .query_filtered::<&Window, With<PrimaryWindow>>()
+        .get_single(&world)
+    {
+        Vec2::new(window.width(), window.height())
     } else {
         log::warn!("Couldn't find primiary window!");
         return;
@@ -133,7 +132,7 @@ pub(crate) fn query_world<T: bevy::ecs::system::SystemParam + 'static, F, R>(
     world: &mut World,
 ) -> R
 where
-    F: FnOnce(<T::Fetch as bevy::ecs::system::SystemParamFetch<'_, '_>>::Item) -> R,
+    F: FnOnce(<T as bevy::ecs::system::SystemParam>::Item<'_, '_>) -> R,
 {
     let mut system_state = bevy::ecs::system::SystemState::<T>::new(world);
     let r = {

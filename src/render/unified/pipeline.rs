@@ -185,6 +185,7 @@ impl FromWorld for UnifiedPipeline {
             mip_level_count: 1,
             sample_count: 1,
             dimension: TextureDimension::D2,
+            view_formats: &[TextureFormat::Rgba8UnormSrgb],
             format: TextureFormat::Rgba8UnormSrgb,
             usage: TextureUsages::TEXTURE_BINDING | TextureUsages::COPY_DST,
         };
@@ -209,6 +210,7 @@ impl FromWorld for UnifiedPipeline {
             texture,
             sampler,
             texture_view,
+            mip_level_count: 1,
             size: Vec2::new(1.0, 1.0),
             texture_format: TextureFormat::Rgba8UnormSrgb,
         };
@@ -298,12 +300,12 @@ impl SpecializedRenderPipeline for UnifiedPipeline {
                     write_mask: ColorWrites::ALL,
                 })],
             }),
-            layout: Some(vec![
+            layout: vec![
                 self.view_layout.clone(),
                 self.font_image_layout.clone(),
                 self.types_layout.clone(),
                 self.image_layout.clone(),
-            ]),
+            ],
             primitive: PrimitiveState {
                 front_face: FrontFace::Ccw,
                 cull_mode: None,
@@ -320,6 +322,7 @@ impl SpecializedRenderPipeline for UnifiedPipeline {
                 alpha_to_coverage_enabled: false,
             },
             label: Some("unified_pipeline".into()),
+            push_constant_ranges: vec![],
         }
     }
 }
@@ -562,7 +565,7 @@ pub fn queue_quads(
             layout: &quad_pipeline.view_layout,
         }));
 
-        let key = UnifiedPipelineKey::from_msaa_samples(msaa.samples);
+        let key = UnifiedPipelineKey::from_msaa_samples(msaa.samples());
         let spec_pipeline = pipelines.specialize(&mut pipeline_cache, &quad_pipeline, key);
 
         let draw_quad = draw_functions.read().get_id::<DrawUI>().unwrap();

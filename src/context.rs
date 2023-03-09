@@ -4,6 +4,7 @@ use bevy::{
     ecs::{event::ManualEventReader, system::CommandQueue},
     prelude::*,
     utils::{HashMap, HashSet},
+    window::PrimaryWindow,
 };
 use morphorm::Hierarchy;
 
@@ -18,7 +19,7 @@ use crate::{
     input::query_world,
     layout::{LayoutCache, Rect},
     layout_dispatcher::LayoutEventDispatcher,
-    node::{DirtyNode, WrappedIndex},
+    node::{DirtyNode, Node, WrappedIndex},
     prelude::KayakWidgetContext,
     render_primitive::RenderPrimitive,
     styles::{
@@ -990,9 +991,13 @@ impl Plugin for KayakContextPlugin {
             .add_plugin(crate::camera::KayakUICameraPlugin)
             .add_plugin(crate::render::BevyKayakUIRenderPlugin)
             .register_type::<Node>()
-            .add_system_to_stage(CoreStage::Update, crate::input::process_events)
-            .add_system_to_stage(CoreStage::PostUpdate, update_widgets_sys.at_start())
-            .add_system_to_stage(CoreStage::PostUpdate, calculate_ui.at_end())
+            .add_system(crate::input::process_events.in_base_set(CoreSet::Update))
+            .add_system(update_widgets_sys.in_base_set(CoreSet::PostUpdate))
+            .add_system(
+                calculate_ui
+                    .after(update_widgets_sys)
+                    .in_base_set(CoreSet::PostUpdate),
+            )
             .add_system(crate::window_size::update_window_size);
 
         // Register reflection types.
@@ -1061,10 +1066,11 @@ fn calculate_ui(world: &mut World) {
                 }
             }
 
-            if let Some(ref mut windows) = world.get_resource_mut::<Windows>() {
-                if let Some(window) = windows.get_primary_mut() {
-                    window.set_cursor_icon(context.current_cursor);
-                }
+            if let Ok(mut window) = world
+                .query_filtered::<&mut Window, With<PrimaryWindow>>()
+                .get_single_mut(world)
+            {
+                window.cursor.icon = context.current_cursor;
             }
         }
 

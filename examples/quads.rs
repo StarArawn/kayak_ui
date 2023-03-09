@@ -39,7 +39,7 @@ fn my_quad_update(
             move |In((event_dispatcher_context, _, mut event, entity)): In<(
                 EventDispatcherContext,
                 WidgetState,
-                Event,
+                KEvent,
                 Entity,
             )>,
                   mut query: Query<(&mut KStyle, &MyQuad)>| {

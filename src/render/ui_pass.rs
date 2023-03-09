@@ -5,7 +5,7 @@ use bevy::render::render_phase::{DrawFunctionId, PhaseItem};
 use bevy::render::render_resource::CachedRenderPipelineId;
 use bevy::render::{
     render_graph::{Node, NodeRunError, RenderGraphContext, SlotInfo, SlotType},
-    render_phase::{DrawFunctions, RenderPhase, TrackedRenderPass},
+    render_phase::{DrawFunctions, RenderPhase},
     render_resource::{LoadOp, Operations, RenderPassDescriptor},
     renderer::RenderContext,
     view::{ExtractedView, ViewTarget},
@@ -32,6 +32,10 @@ impl PhaseItem for TransparentUI {
     #[inline]
     fn draw_function(&self) -> DrawFunctionId {
         self.draw_function
+    }
+
+    fn entity(&self) -> Entity {
+        self.entity
     }
 }
 
@@ -100,11 +104,8 @@ impl Node for MainPassUINode {
                 .get_resource::<DrawFunctions<TransparentUI>>()
                 .unwrap();
 
-            let render_pass = render_context
-                .command_encoder
-                .begin_render_pass(&pass_descriptor);
+            let mut tracked_pass = render_context.begin_tracked_render_pass(pass_descriptor);
             let mut draw_functions = draw_functions.write();
-            let mut tracked_pass = TrackedRenderPass::new(render_pass);
             for item in transparent_phase.items.iter() {
                 let draw_function = draw_functions.get_mut(item.draw_function).unwrap();
                 draw_function.draw(world, &mut tracked_pass, view_entity, item);

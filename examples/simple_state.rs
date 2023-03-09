@@ -57,7 +57,7 @@ fn current_count_render(
                         ..Default::default()
                     }}
                     on_event={OnEvent::new(
-                        move |In((event_dispatcher_context, _, mut event, _entity)): In<(EventDispatcherContext, WidgetState, Event, Entity)>,
+                        move |In((event_dispatcher_context, _, mut event, _entity)): In<(EventDispatcherContext, WidgetState, KEvent, Entity)>,
                             mut query: Query<&mut CurrentCountState>| {
                             match event.event_type {
                                 EventType::Click(..) => {

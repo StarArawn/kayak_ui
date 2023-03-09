@@ -48,7 +48,7 @@ fn my_widget_render(
                         text: "Show Window".into(),
                     }}
                     on_event={OnEvent::new(
-                        move |In((event_dispatcher_context, _, mut event, _entity)): In<(EventDispatcherContext, WidgetState, Event, Entity)>,
+                        move |In((event_dispatcher_context, _, mut event, _entity)): In<(EventDispatcherContext, WidgetState, KEvent, Entity)>,
                             mut query: Query<&mut MyWidgetState>| {
                             event.prevent_default();
                             event.stop_propagation();
@@ -78,7 +78,7 @@ fn my_widget_render(
                             <KButtonBundle
                                 button={KButton { text: "Hide Window".into(), ..Default::default() }}
                                 on_event={OnEvent::new(
-                                    move |In((event_dispatcher_context, _, mut event, _entity)): In<(EventDispatcherContext, WidgetState, Event, Entity)>,
+                                    move |In((event_dispatcher_context, _, mut event, _entity)): In<(EventDispatcherContext, WidgetState, KEvent, Entity)>,
                                         mut query: Query<&mut MyWidgetState>| {
                                         match event.event_type {
                                             EventType::Click(..) => {

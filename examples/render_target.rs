@@ -41,6 +41,7 @@ fn startup(
             label: None,
             size,
             dimension: TextureDimension::D2,
+            view_formats: &[TextureFormat::Bgra8UnormSrgb],
             format: TextureFormat::Bgra8UnormSrgb,
             mip_level_count: 1,
             sample_count: 1,
@@ -84,7 +85,7 @@ fn startup(
 
     commands.spawn(UICameraBundle {
         camera: Camera {
-            priority: -1,
+            order: -1,
             target: RenderTarget::Image(image_handle.clone()),
             ..Camera::default()
         },

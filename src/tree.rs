@@ -709,32 +709,36 @@ impl<'a> Iterator for DownwardIterator<'a> {
                 // Descend!
                 self.current_node = Some(first_child);
                 return Some(first_child);
-            } else if let Some(next_sibling) = self.tree.get_next_sibling(current_index) {
-                // Continue from the next sibling
-                self.current_node = Some(next_sibling);
-                return Some(next_sibling);
+            } else if self.current_node != self.starting_node {
+                // if the starting node has at least 1 child, continue checking downwards,
+                // otherwise do not check siblings
+                if let Some(next_sibling) = self.tree.get_next_sibling(current_index) {
+                    // Continue from the next sibling
+                    self.current_node = Some(next_sibling);
+                    return Some(next_sibling);
+                } else {
+                    let mut current_parent = self.tree.get_parent(current_index);
+                    while current_parent.is_some() {
+                        if current_parent == self.starting_node {
+                            // Parent is starting node so no need to continue -> end iteration
+                            return None;
+                        }
+                        if let Some(current_parent) = current_parent {
+                            if let Some(next_parent_sibling) =
+                                self.tree.get_next_sibling(current_parent)
+                            {
+                                // Continue from the sibling of the parent
+                                self.current_node = Some(next_parent_sibling);
+                                return Some(next_parent_sibling);
+                            }
+                        }
+                        // Go back up the tree to find the next available node
+                        current_parent = self.tree.get_parent(current_parent.unwrap());
+                    }
+                }
             } else if self.current_node == self.starting_node {
                 // We've somehow made our way back up to the starting node -> end iteration
                 return None;
-            } else {
-                let mut current_parent = self.tree.get_parent(current_index);
-                while current_parent.is_some() {
-                    if current_parent == self.starting_node {
-                        // Parent is starting node so no need to continue -> end iteration
-                        return None;
-                    }
-                    if let Some(current_parent) = current_parent {
-                        if let Some(next_parent_sibling) =
-                            self.tree.get_next_sibling(current_parent)
-                        {
-                            // Continue from the sibling of the parent
-                            self.current_node = Some(next_parent_sibling);
-                            return Some(next_parent_sibling);
-                        }
-                    }
-                    // Go back up the tree to find the next available node
-                    current_parent = self.tree.get_parent(current_parent.unwrap());
-                }
             }
         }
 

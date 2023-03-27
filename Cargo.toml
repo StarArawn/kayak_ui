@@ -17,7 +17,7 @@ members = ["kayak_ui_macros", "kayak_font"]
 
 [dependencies]
 bevy = { version = "0.10", default-features = false, features = ["bevy_render", "bevy_asset", "bevy_winit", "bevy_core_pipeline"] }
-bytemuck = "1.12"
+bytemuck = { version = "1.12", features = ["derive"] }
 dashmap = "5.4"
 kayak_font = { path = "./kayak_font", version = "0.2" }
 morphorm = "0.3"

@@ -6,11 +6,15 @@ fn startup(
     mut font_mapping: ResMut<FontMapping>,
     asset_server: Res<AssetServer>,
 ) {
+    let camera_entity = commands
+        .spawn((Camera2dBundle::default(), CameraUIKayak))
+        .id();
+
     font_mapping.set_default(asset_server.load("lato-light.kttf"));
 
     let image = asset_server.load("panel.png");
 
-    let mut widget_context = KayakRootContext::new();
+    let mut widget_context = KayakRootContext::new(camera_entity);
     widget_context.add_plugin(KayakWidgetsContextPlugin);
     let parent_id = None;
 
@@ -56,7 +60,7 @@ Lorem ipsum dolor sit amet, consectetur adipiscing elit. Cras sed tellus neque. 
         </KayakAppBundle>
     };
 
-    commands.spawn(UICameraBundle::new(widget_context));
+    commands.spawn((widget_context, EventDispatcher::default()));
 }
 
 fn main() {

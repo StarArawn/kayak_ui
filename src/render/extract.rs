@@ -3,13 +3,19 @@ use crate::{
     node::Node,
     render_primitive::RenderPrimitive,
     styles::Corner,
+    CameraUIKayak,
 };
 use bevy::{
     prelude::{
-        Assets, Camera, Color, Commands, Entity, Image, IntoSystemAppConfig, Plugin, Query, Rect,
-        Res, Vec2, With,
+        Assets, Camera, Camera2d, Camera3d, Color, Commands, Component, Entity, GlobalTransform,
+        Image, IntoSystemAppConfig, IntoSystemAppConfigs, Mat4, Plugin, Query, Rect, Res, UVec4,
+        Vec2, With,
     },
-    render::{Extract, ExtractSchedule, RenderApp},
+    render::{
+        render_phase::RenderPhase,
+        view::{ColorGrading, ExtractedView},
+        Extract, ExtractSchedule, RenderApp,
+    },
     window::{PrimaryWindow, Window, WindowRef},
 };
 use kayak_font::KayakFont;
@@ -17,6 +23,7 @@ use kayak_font::KayakFont;
 use super::{
     font::{self, FontMapping},
     image, nine_patch, texture_atlas,
+    ui_pass::TransparentUI,
     unified::pipeline::{ExtractQuadBundle, ExtractedQuad, UIQuadType},
 };
 
@@ -29,43 +36,52 @@ impl Plugin for BevyKayakUIExtractPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
         let render_app = app.sub_app_mut(RenderApp);
         render_app.add_system(extract.in_schedule(ExtractSchedule));
+        render_app.add_systems(
+            (
+                extract_default_ui_camera_view::<Camera2d>,
+                extract_default_ui_camera_view::<Camera3d>,
+            )
+                .in_schedule(ExtractSchedule),
+        );
     }
 }
 
 pub fn extract(
     mut commands: Commands,
-    context_query: Extract<Query<(Entity, &KayakRootContext, &Camera)>>,
+    context_query: Extract<Query<(Entity, &KayakRootContext)>>,
     fonts: Extract<Res<Assets<KayakFont>>>,
     font_mapping: Extract<Res<FontMapping>>,
     node_query: Extract<Query<&Node>>,
     widget_names: Extract<Query<&WidgetName>>,
     images: Extract<Res<Assets<Image>>>,
     primary_window: Extract<Query<&Window, With<PrimaryWindow>>>,
-    windows: Extract<Query<&Window>>,
+    cameras: Extract<Query<&Camera>>,
 ) {
     let mut render_primitives = Vec::new();
-    for (entity, context, camera) in context_query.iter() {
-        let dpi = match &camera.target {
-            bevy::render::camera::RenderTarget::Window(window_ref) => match window_ref {
-                WindowRef::Primary => {
-                    if let Ok(window) = primary_window.get_single() {
-                        window.scale_factor() as f32
-                    } else {
-                        1.0
+    for (_entity, context) in context_query.iter() {
+        let dpi = if let Ok(camera) = cameras.get(context.camera_entity) {
+            match &camera.target {
+                bevy::render::camera::RenderTarget::Window(window_ref) => match window_ref {
+                    WindowRef::Primary => {
+                        if let Ok(window) = primary_window.get_single() {
+                            window.scale_factor() as f32
+                        } else {
+                            1.0
+                        }
                     }
-                }
-                WindowRef::Entity(window_entity) => {
-                    if let Ok(window) = windows.get(*window_entity) {
-                        window.scale_factor() as f32
-                    } else {
-                        1.0
-                    }
-                }
-            },
-            _ => 1.0,
+                    _ => 1.0,
+                },
+                _ => 1.0,
+            }
+        } else {
+            1.0
         };
         let mut new_render_primitives = context.build_render_primitives(&node_query, &widget_names);
-        render_primitives.extend(new_render_primitives.drain(..).map(|r| (entity, dpi, r)));
+        render_primitives.extend(
+            new_render_primitives
+                .drain(..)
+                .map(|r| (context.camera_entity, dpi, r)),
+        );
     }
 
     let mut extracted_quads = Vec::new();
@@ -132,4 +148,49 @@ pub fn extract(
 
     // dbg!(&extracted_quads);
     commands.spawn_batch(extracted_quads);
+}
+
+#[derive(Component)]
+pub struct DefaultCameraView(pub Entity);
+
+const UI_CAMERA_TRANSFORM_OFFSET: f32 = -0.1;
+
+pub fn extract_default_ui_camera_view<T: Component>(
+    mut commands: Commands,
+    query: Extract<Query<(Entity, &Camera, &CameraUIKayak), With<T>>>,
+) {
+    for (entity, camera, _camera_ui) in &query {
+        if let (Some(logical_size), Some((physical_origin, _)), Some(physical_size)) = (
+            camera.logical_viewport_size(),
+            camera.physical_viewport_rect(),
+            camera.physical_viewport_size(),
+        ) {
+            // use a projection matrix with the origin in the top left instead of the bottom left that comes with OrthographicProjection
+            let projection_matrix =
+                Mat4::orthographic_rh(0.0, logical_size.x, logical_size.y, 0.0, 0.0, 1000.0);
+            let default_camera_view = commands
+                .spawn(ExtractedView {
+                    projection: projection_matrix,
+                    transform: GlobalTransform::from_xyz(
+                        0.0,
+                        0.0,
+                        1000.0 + UI_CAMERA_TRANSFORM_OFFSET,
+                    ),
+                    hdr: camera.hdr,
+                    viewport: UVec4::new(
+                        physical_origin.x,
+                        physical_origin.y,
+                        physical_size.x,
+                        physical_size.y,
+                    ),
+                    view_projection: None,
+                    color_grading: ColorGrading::default(),
+                })
+                .id();
+            commands.get_or_spawn(entity).insert((
+                DefaultCameraView(default_camera_view),
+                RenderPhase::<TransparentUI>::default(),
+            ));
+        }
+    }
 }

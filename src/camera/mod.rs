@@ -1,23 +1,24 @@
 use bevy::{
-    prelude::{CoreSet, IntoSystemConfig, Plugin},
-    render::{camera::CameraProjectionPlugin, extract_component::ExtractComponentPlugin},
+    ecs::query::QueryItem,
+    prelude::*,
+    render::extract_component::{ExtractComponent, ExtractComponentPlugin},
 };
 
-mod camera;
-mod ortho;
+#[derive(Component, Default, Debug, Clone, Copy)]
+pub struct CameraUIKayak;
+impl ExtractComponent for CameraUIKayak {
+    type Query = &'static Self;
+    type Filter = With<Camera>;
+    type Out = CameraUIKayak;
 
-pub use camera::{CameraUIKayak, UICameraBundle};
-pub(crate) use ortho::UIOrthographicProjection;
+    fn extract_component(item: QueryItem<Self::Query>) -> Option<Self::Out> {
+        Some(item.clone())
+    }
+}
 
 pub struct KayakUICameraPlugin;
-
 impl Plugin for KayakUICameraPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
-        app.add_system(
-            bevy::render::camera::camera_system::<UIOrthographicProjection>
-                .in_base_set(CoreSet::PostUpdate),
-        )
-        .add_plugin(CameraProjectionPlugin::<UIOrthographicProjection>::default())
-        .add_plugin(ExtractComponentPlugin::<CameraUIKayak>::default());
+        app.add_plugin(ExtractComponentPlugin::<CameraUIKayak>::default());
     }
 }

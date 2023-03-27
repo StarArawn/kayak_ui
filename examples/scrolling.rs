@@ -6,6 +6,10 @@ fn startup(
     mut font_mapping: ResMut<FontMapping>,
     asset_server: Res<AssetServer>,
 ) {
+    let camera_entity = commands
+        .spawn((Camera2dBundle::default(), CameraUIKayak))
+        .id();
+
     let font_asset = asset_server.load("roboto.kayak_font");
     font_mapping.set_default(font_asset.clone());
 
@@ -14,11 +18,7 @@ fn startup(
     // will be ignored if this setting is used.
     font_mapping.force_subpixel(&font_asset);
 
-    // Camera 2D forces a clear pass in bevy.
-    // We do this because our scene is not rendering anything else.
-    commands.spawn(Camera2dBundle::default());
-
-    let mut widget_context = KayakRootContext::new();
+    let mut widget_context = KayakRootContext::new(camera_entity);
     widget_context.add_plugin(KayakWidgetsContextPlugin);
     let parent_id = None;
 
@@ -60,7 +60,7 @@ Lorem ipsum dolor sit amet, consectetur adipiscing elit. Cras sed tellus neque. 
         </KayakAppBundle>
     };
 
-    commands.spawn(UICameraBundle::new(widget_context));
+    commands.spawn((widget_context, EventDispatcher::default()));
 }
 
 fn main() {

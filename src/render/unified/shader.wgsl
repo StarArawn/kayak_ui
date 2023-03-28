@@ -53,7 +53,7 @@ var image_texture: texture_2d<f32>;
 @group(3) @binding(1)
 var image_sampler: sampler;
 
-let RADIUS: f32 = 0.1;
+const RADIUS: f32 = 0.1;
 
 // Where P is the position in pixel space, B is the size of the box adn R is the radius of the current corner.
 fn sdRoundBox(p: vec2<f32>, b: vec2<f32>, r: f32) -> f32 {
@@ -71,7 +71,7 @@ fn sample_sdf(coords: vec2<f32>, arr: i32, scale: f32) -> f32 {
 }
 
 fn range_curve(font_size: f32) -> f32 {
-    return (8.528 - 9.428 * font_size + 3.428 * pow(font_size, 2.0)) + 1.0;
+    return (5.128 - 6.428 * font_size + 3.428 * pow(font_size, 2.0)) + 1.0;
 }
 
 @fragment

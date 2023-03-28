@@ -3,7 +3,7 @@ use kayak_ui_macros::rsx;
 
 use crate::{
     context::WidgetName,
-    event::{Event, EventType},
+    event::{EventType, KEvent},
     event_dispatcher::EventDispatcherContext,
     on_event::OnEvent,
     prelude::{KChildren, KayakWidgetContext},
@@ -206,7 +206,7 @@ pub fn scroll_bar_render(
                     move |In((mut event_dispatcher_context, _, mut event, _entity)): In<(
                         EventDispatcherContext,
                         WidgetState,
-                        Event,
+                        KEvent,
                         Entity,
                     )>,
                           mut query: Query<&mut ScrollContext>| {

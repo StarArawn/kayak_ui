@@ -52,7 +52,7 @@ pub fn render_todo_input(
         move |In((event_dispatcher_context, _, event, _)): In<(
             EventDispatcherContext,
             WidgetState,
-            Event,
+            KEvent,
             Entity,
         )>,
               mut todo_list: ResMut<TodoList>| {

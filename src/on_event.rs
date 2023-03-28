@@ -2,7 +2,7 @@ use bevy::prelude::{Component, Entity, In, IntoSystem, System, World};
 use std::fmt::{Debug, Formatter};
 use std::sync::{Arc, RwLock};
 
-use crate::event::Event;
+use crate::event::KEvent;
 use crate::event_dispatcher::EventDispatcherContext;
 use crate::widget_state::WidgetState;
 
@@ -17,8 +17,8 @@ pub struct OnEvent {
     system: Arc<
         RwLock<
             dyn System<
-                In = (EventDispatcherContext, WidgetState, Event, Entity),
-                Out = (EventDispatcherContext, Event),
+                In = (EventDispatcherContext, WidgetState, KEvent, Entity),
+                Out = (EventDispatcherContext, KEvent),
             >,
         >,
     >,
@@ -42,8 +42,8 @@ impl OnEvent {
     /// 2. The event
     pub fn new<Params>(
         system: impl IntoSystem<
-            (EventDispatcherContext, WidgetState, Event, Entity),
-            (EventDispatcherContext, Event),
+            (EventDispatcherContext, WidgetState, KEvent, Entity),
+            (EventDispatcherContext, KEvent),
             Params,
         >,
     ) -> OnEvent {
@@ -61,9 +61,9 @@ impl OnEvent {
         mut event_dispatcher_context: EventDispatcherContext,
         widget_state: WidgetState,
         entity: Entity,
-        mut event: Event,
+        mut event: KEvent,
         world: &mut World,
-    ) -> (EventDispatcherContext, Event) {
+    ) -> (EventDispatcherContext, KEvent) {
         if let Ok(mut system) = self.system.try_write() {
             if !self.has_initialized {
                 system.initialize(world);

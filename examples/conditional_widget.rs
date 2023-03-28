@@ -48,7 +48,7 @@ fn my_widget_render(
                         text: "Show Window".into(),
                     }}
                     on_event={OnEvent::new(
-                        move |In((event_dispatcher_context, _, mut event, _entity)): In<(EventDispatcherContext, WidgetState, Event, Entity)>,
+                        move |In((event_dispatcher_context, _, mut event, _entity)): In<(EventDispatcherContext, WidgetState, KEvent, Entity)>,
                             mut query: Query<&mut MyWidgetState>| {
                             event.prevent_default();
                             event.stop_propagation();
@@ -78,7 +78,7 @@ fn my_widget_render(
                             <KButtonBundle
                                 button={KButton { text: "Hide Window".into(), ..Default::default() }}
                                 on_event={OnEvent::new(
-                                    move |In((event_dispatcher_context, _, mut event, _entity)): In<(EventDispatcherContext, WidgetState, Event, Entity)>,
+                                    move |In((event_dispatcher_context, _, mut event, _entity)): In<(EventDispatcherContext, WidgetState, KEvent, Entity)>,
                                         mut query: Query<&mut MyWidgetState>| {
                                         match event.event_type {
                                             EventType::Click(..) => {
@@ -109,13 +109,13 @@ fn startup(
     mut font_mapping: ResMut<FontMapping>,
     asset_server: Res<AssetServer>,
 ) {
+    let camera_entity = commands
+        .spawn((Camera2dBundle::default(), CameraUIKayak))
+        .id();
+
     font_mapping.set_default(asset_server.load("lato-light.kttf"));
 
-    // Camera 2D forces a clear pass in bevy.
-    // We do this because our scene is not rendering anything else.
-    commands.spawn(Camera2dBundle::default());
-
-    let mut widget_context = KayakRootContext::new();
+    let mut widget_context = KayakRootContext::new(camera_entity);
     widget_context.add_plugin(KayakWidgetsContextPlugin);
     let parent_id = None;
     widget_context.add_widget_data::<MyWidget, MyWidgetState>();
@@ -130,7 +130,7 @@ fn startup(
         </KayakAppBundle>
     };
 
-    commands.spawn(UICameraBundle::new(widget_context));
+    commands.spawn((widget_context, EventDispatcher::default()));
 }
 
 fn main() {

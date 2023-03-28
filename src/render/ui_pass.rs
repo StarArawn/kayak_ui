@@ -1,11 +1,9 @@
-use bevy::core_pipeline::clear_color::ClearColorConfig;
 use bevy::ecs::prelude::*;
-use bevy::prelude::ClearColor;
 use bevy::render::render_phase::{DrawFunctionId, PhaseItem};
 use bevy::render::render_resource::CachedRenderPipelineId;
 use bevy::render::{
     render_graph::{Node, NodeRunError, RenderGraphContext, SlotInfo, SlotType},
-    render_phase::{DrawFunctions, RenderPhase, TrackedRenderPass},
+    render_phase::{DrawFunctions, RenderPhase},
     render_resource::{LoadOp, Operations, RenderPassDescriptor},
     renderer::RenderContext,
     view::{ExtractedView, ViewTarget},
@@ -13,6 +11,8 @@ use bevy::render::{
 use bevy::utils::FloatOrd;
 
 use crate::CameraUIKayak;
+
+use super::extract::DefaultCameraView;
 
 pub struct TransparentUI {
     pub sort_key: FloatOrd,
@@ -33,6 +33,10 @@ impl PhaseItem for TransparentUI {
     fn draw_function(&self) -> DrawFunctionId {
         self.draw_function
     }
+
+    fn entity(&self) -> Entity {
+        self.entity
+    }
 }
 
 pub struct MainPassUINode {
@@ -44,6 +48,7 @@ pub struct MainPassUINode {
         ),
         With<ExtractedView>,
     >,
+    default_camera_view_query: QueryState<&'static DefaultCameraView>,
 }
 
 impl MainPassUINode {
@@ -52,6 +57,7 @@ impl MainPassUINode {
     pub fn new(world: &mut World) -> Self {
         Self {
             query: world.query_filtered(),
+            default_camera_view_query: world.query(),
         }
     }
 }
@@ -63,6 +69,7 @@ impl Node for MainPassUINode {
 
     fn update(&mut self, world: &mut World) {
         self.query.update_archetypes(world);
+        self.default_camera_view_query.update_archetypes(world);
     }
 
     fn run(
@@ -71,26 +78,29 @@ impl Node for MainPassUINode {
         render_context: &mut RenderContext,
         world: &World,
     ) -> Result<(), NodeRunError> {
-        let view_entity = graph.get_input_entity(Self::IN_VIEW)?;
+        let input_view_entity = graph.get_input_entity(Self::IN_VIEW)?;
         // adapted from bevy itself;
         // see: <https://github.com/bevyengine/bevy/commit/09a3d8abe062984479bf0e99fcc1508bb722baf6>
-        let (transparent_phase, target, camera_ui) = match self.query.get_manual(world, view_entity)
+        let (transparent_phase, target, _camera_ui) =
+            match self.query.get_manual(world, input_view_entity) {
+                Ok(it) => it,
+                _ => return Ok(()),
+            };
+
+        let view_entity = if let Ok(default_view) = self
+            .default_camera_view_query
+            .get_manual(world, input_view_entity)
         {
-            Ok(it) => it,
-            _ => return Ok(()),
+            default_view.0
+        } else {
+            input_view_entity
         };
         // let clear_color = world.get_resource::<ClearColor>().unwrap();
         {
             let pass_descriptor = RenderPassDescriptor {
                 label: Some("main_transparent_pass_UI"),
                 color_attachments: &[Some(target.get_unsampled_color_attachment(Operations {
-                    load: match camera_ui.clear_color {
-                        ClearColorConfig::Default => {
-                            LoadOp::Clear(world.resource::<ClearColor>().0.into())
-                        }
-                        ClearColorConfig::Custom(color) => LoadOp::Clear(color.into()),
-                        ClearColorConfig::None => LoadOp::Load,
-                    },
+                    load: LoadOp::Load,
                     store: true,
                 }))],
                 depth_stencil_attachment: None,
@@ -100,11 +110,8 @@ impl Node for MainPassUINode {
                 .get_resource::<DrawFunctions<TransparentUI>>()
                 .unwrap();
 
-            let render_pass = render_context
-                .command_encoder
-                .begin_render_pass(&pass_descriptor);
+            let mut tracked_pass = render_context.begin_tracked_render_pass(pass_descriptor);
             let mut draw_functions = draw_functions.write();
-            let mut tracked_pass = TrackedRenderPass::new(render_pass);
             for item in transparent_phase.items.iter() {
                 let draw_function = draw_functions.get_mut(item.draw_function).unwrap();
                 draw_function.draw(world, &mut tracked_pass, view_entity, item);

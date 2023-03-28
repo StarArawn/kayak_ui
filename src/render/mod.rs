@@ -1,9 +1,9 @@
 use bevy::{
-    prelude::{App, Camera, Commands, Entity, Plugin, Query, With},
+    prelude::{App, Camera, Commands, Entity, IntoSystemAppConfig, Plugin, Query, With},
     render::{
         render_graph::{RenderGraph, RunGraphOnViewNode, SlotInfo, SlotType},
         render_phase::{DrawFunctions, RenderPhase},
-        Extract, RenderApp, RenderStage,
+        Extract, ExtractSchedule, RenderApp,
     },
 };
 
@@ -43,7 +43,7 @@ impl Plugin for BevyKayakUIRenderPlugin {
         let render_app = app.sub_app_mut(RenderApp);
         render_app
             .init_resource::<DrawFunctions<TransparentUI>>()
-            .add_system_to_stage(RenderStage::Extract, extract_core_pipeline_camera_phases);
+            .add_system(extract_core_pipeline_camera_phases.in_schedule(ExtractSchedule));
         // .add_system_to_stage(RenderStage::PhaseSort, sort_phase_system::<TransparentUI>);
 
         // let pass_node_ui = MainPassUINode::new(&mut render_app.world);
@@ -78,32 +78,24 @@ impl Plugin for BevyKayakUIRenderPlugin {
                 draw_ui_graph::node::MAIN_PASS,
                 RunGraphOnViewNode::new(draw_ui_graph::NAME),
             );
-            graph_2d
-                .add_node_edge(
-                    bevy::core_pipeline::core_2d::graph::node::MAIN_PASS,
-                    draw_ui_graph::node::MAIN_PASS,
-                )
-                .unwrap();
-            graph_2d
-                .add_slot_edge(
-                    graph_2d.input_node().unwrap().id,
-                    bevy::core_pipeline::core_2d::graph::input::VIEW_ENTITY,
-                    draw_ui_graph::node::MAIN_PASS,
-                    RunGraphOnViewNode::IN_VIEW,
-                )
-                .unwrap();
-            graph_2d
-                .add_node_edge(
-                    bevy::core_pipeline::core_2d::graph::node::TONEMAPPING,
-                    draw_ui_graph::node::MAIN_PASS,
-                )
-                .unwrap();
-            graph_2d
-                .add_node_edge(
-                    draw_ui_graph::node::MAIN_PASS,
-                    bevy::core_pipeline::core_2d::graph::node::UPSCALING,
-                )
-                .unwrap();
+            graph_2d.add_node_edge(
+                bevy::core_pipeline::core_2d::graph::node::MAIN_PASS,
+                draw_ui_graph::node::MAIN_PASS,
+            );
+            graph_2d.add_slot_edge(
+                graph_2d.input_node().id,
+                bevy::core_pipeline::core_2d::graph::input::VIEW_ENTITY,
+                draw_ui_graph::node::MAIN_PASS,
+                RunGraphOnViewNode::IN_VIEW,
+            );
+            graph_2d.add_node_edge(
+                bevy::core_pipeline::core_2d::graph::node::TONEMAPPING,
+                draw_ui_graph::node::MAIN_PASS,
+            );
+            graph_2d.add_node_edge(
+                draw_ui_graph::node::MAIN_PASS,
+                bevy::core_pipeline::core_2d::graph::node::UPSCALING,
+            );
         }
 
         if let Some(graph_3d) = graph.get_sub_graph_mut(bevy::core_pipeline::core_3d::graph::NAME) {
@@ -112,32 +104,24 @@ impl Plugin for BevyKayakUIRenderPlugin {
                 draw_ui_graph::node::MAIN_PASS,
                 RunGraphOnViewNode::new(draw_ui_graph::NAME),
             );
-            graph_3d
-                .add_node_edge(
-                    bevy::core_pipeline::core_3d::graph::node::MAIN_PASS,
-                    draw_ui_graph::node::MAIN_PASS,
-                )
-                .unwrap();
-            graph_3d
-                .add_node_edge(
-                    bevy::core_pipeline::core_3d::graph::node::TONEMAPPING,
-                    draw_ui_graph::node::MAIN_PASS,
-                )
-                .unwrap();
-            graph_3d
-                .add_node_edge(
-                    draw_ui_graph::node::MAIN_PASS,
-                    bevy::core_pipeline::core_3d::graph::node::UPSCALING,
-                )
-                .unwrap();
-            graph_3d
-                .add_slot_edge(
-                    graph_3d.input_node().unwrap().id,
-                    bevy::core_pipeline::core_3d::graph::input::VIEW_ENTITY,
-                    draw_ui_graph::node::MAIN_PASS,
-                    RunGraphOnViewNode::IN_VIEW,
-                )
-                .unwrap();
+            graph_3d.add_node_edge(
+                bevy::core_pipeline::core_3d::graph::node::MAIN_PASS,
+                draw_ui_graph::node::MAIN_PASS,
+            );
+            graph_3d.add_node_edge(
+                bevy::core_pipeline::core_3d::graph::node::TONEMAPPING,
+                draw_ui_graph::node::MAIN_PASS,
+            );
+            graph_3d.add_node_edge(
+                draw_ui_graph::node::MAIN_PASS,
+                bevy::core_pipeline::core_3d::graph::node::UPSCALING,
+            );
+            graph_3d.add_slot_edge(
+                graph_3d.input_node().id,
+                bevy::core_pipeline::core_3d::graph::input::VIEW_ENTITY,
+                draw_ui_graph::node::MAIN_PASS,
+                RunGraphOnViewNode::IN_VIEW,
+            );
         }
 
         app.add_plugin(font::TextRendererPlugin)
@@ -154,14 +138,12 @@ fn get_ui_graph(render_app: &mut App) -> RenderGraph {
         draw_ui_graph::input::VIEW_ENTITY,
         SlotType::Entity,
     )]);
-    ui_graph
-        .add_slot_edge(
-            input_node_id,
-            draw_ui_graph::input::VIEW_ENTITY,
-            draw_ui_graph::node::MAIN_PASS,
-            MainPassUINode::IN_VIEW,
-        )
-        .unwrap();
+    ui_graph.add_slot_edge(
+        input_node_id,
+        draw_ui_graph::input::VIEW_ENTITY,
+        draw_ui_graph::node::MAIN_PASS,
+        MainPassUINode::IN_VIEW,
+    );
     ui_graph
 }
 

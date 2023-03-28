@@ -7,7 +7,6 @@ resolver = "2"
 authors = ["John Mitchell"]
 homepage = "https://github.com/StarArawn/kayak_ui"
 repository = "https://github.com/StarArawn/kayak_ui"
-license = "MIT OR Apache-2.0"
 license-file = "LICENSE"
 exclude = ["assets/*", "screenshots/*", "book"]
 
@@ -17,7 +16,7 @@ members = ["kayak_ui_macros", "kayak_font"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-bevy = { version = "0.9", default-features = false, features = ["bevy_ui"] }
+bevy = { version = "0.10", default-features = false, features = ["bevy_render", "bevy_asset", "bevy_winit", "bevy_core_pipeline", "bevy_ui"] }
 bytemuck = "1.12"
 dashmap = "5.4"
 kayak_font = { path = "./kayak_font", version = "0.2" }
@@ -32,7 +31,8 @@ instant = "0.1"
 
 [dev-dependencies]
 fastrand = "1.8"
-bevy-inspector-egui = "0.14"
+bevy-inspector-egui = "0.18"
+bevy = { version = "0.10", default-features = true }
 
 [[example]]
 name = "tabs"

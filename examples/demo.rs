@@ -21,7 +21,11 @@ fn my_widget_1_render(
 impl Widget for MyWidget {}
 
 fn startup(mut commands: Commands) {
-    let mut context = KayakRootContext::new();
+    let camera_entity = commands
+        .spawn((Camera2dBundle::default(), CameraUIKayak))
+        .id();
+
+    let mut context = KayakRootContext::new(camera_entity);
     context.add_plugin(KayakWidgetsContextPlugin);
     context.add_widget_system(
         MyWidget::default().get_name(),
@@ -47,7 +51,7 @@ fn startup(mut commands: Commands) {
     });
     context.add_widget(None, app_entity);
 
-    commands.spawn(UICameraBundle::new(context));
+    commands.spawn((context, EventDispatcher::default()));
 }
 
 // Note this example shows prop changing not state changing which is quite different.

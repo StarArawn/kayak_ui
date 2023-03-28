@@ -1,9 +1,8 @@
 use bevy::{
     core_pipeline::clear_color::ClearColorConfig,
-    ecs::query::QueryItem,
-    prelude::{Bundle, Component, GlobalTransform, Transform, With},
+    prelude::{Bundle, Component, GlobalTransform, Transform, Vec2},
     render::{
-        camera::{Camera, CameraProjection, CameraRenderGraph, WindowOrigin},
+        camera::{Camera, CameraProjection, CameraRenderGraph},
         extract_component::ExtractComponent,
         primitives::Frustum,
         view::VisibleEntities,
@@ -15,18 +14,9 @@ use crate::{context::KayakRootContext, event_dispatcher::EventDispatcher};
 use super::ortho::UIOrthographicProjection;
 
 /// Kayak UI's default UI camera.
-#[derive(Component, Clone, Default)]
+#[derive(Component, ExtractComponent, Clone, Default)]
 pub struct CameraUIKayak {
     pub clear_color: ClearColorConfig,
-}
-
-impl ExtractComponent for CameraUIKayak {
-    type Query = &'static Self;
-    type Filter = With<Camera>;
-
-    fn extract_component(item: QueryItem<Self::Query>) -> Self {
-        item.clone()
-    }
 }
 
 /// Kayak UI's default UI camera bundle.
@@ -60,7 +50,7 @@ impl UICameraBundle {
 
         let orthographic_projection = UIOrthographicProjection {
             far,
-            window_origin: WindowOrigin::BottomLeft,
+            window_origin: Vec2::new(0.0, 0.0),
             ..Default::default()
         };
 
@@ -68,15 +58,10 @@ impl UICameraBundle {
 
         let view_projection =
             orthographic_projection.get_projection_matrix() * transform.compute_matrix().inverse();
-        let frustum = Frustum::from_view_projection(
-            &view_projection,
-            &transform.translation,
-            &transform.back(),
-            orthographic_projection.far(),
-        );
+        let frustum = Frustum::from_view_projection(&view_projection);
         UICameraBundle {
             camera: Camera {
-                priority: isize::MAX - 1,
+                order: isize::MAX - 1,
                 ..Default::default()
             },
             camera_render_graph: CameraRenderGraph::new(bevy::core_pipeline::core_2d::graph::NAME),

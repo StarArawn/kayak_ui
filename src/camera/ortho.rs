@@ -1,9 +1,9 @@
 use bevy::ecs::reflect::ReflectComponent;
-use bevy::prelude::Component;
+use bevy::prelude::{Component, Vec2};
 use bevy::{
     math::Mat4,
     reflect::Reflect,
-    render::camera::{CameraProjection, ScalingMode, WindowOrigin},
+    render::camera::{CameraProjection, ScalingMode},
 };
 
 /// Kayak UI's default orthographic projection matrix
@@ -19,7 +19,7 @@ pub struct UIOrthographicProjection {
     pub top: f32,
     pub near: f32,
     pub far: f32,
-    pub window_origin: WindowOrigin,
+    pub window_origin: Vec2,
     pub scaling_mode: ScalingMode,
     pub scale: f32,
 }
@@ -39,8 +39,11 @@ impl CameraProjection for UIOrthographicProjection {
     }
 
     fn update(&mut self, width: f32, height: f32) {
-        match (&self.scaling_mode, &self.window_origin) {
-            (ScalingMode::WindowSize, WindowOrigin::BottomLeft) => {
+        match &self.scaling_mode {
+            ScalingMode::WindowSize(scale) => {
+                if *scale != 1.0 || self.window_origin != Vec2::ZERO {
+                    return;
+                }
                 self.left = 0.0;
                 self.right = width;
                 self.top = 0.0;
@@ -64,8 +67,8 @@ impl Default for UIOrthographicProjection {
             top: 1.0,
             near: 0.0,
             far: 1000.0,
-            window_origin: WindowOrigin::Center,
-            scaling_mode: ScalingMode::WindowSize,
+            window_origin: Vec2::new(0.5, 0.5),
+            scaling_mode: ScalingMode::WindowSize(1.0),
             scale: 1.0,
         }
     }

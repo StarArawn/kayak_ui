@@ -67,7 +67,7 @@ impl LayoutEventDispatcher {
         // We should be able to just get layout from WidgetManager here
         // since the layouts will be calculated by this point
         if let Some(mut entity) = world.get_entity_mut(index.0) {
-            if let Some(mut on_layout) = entity.remove::<OnLayout>() {
+            if let Some(mut on_layout) = entity.take::<OnLayout>() {
                 if let Some(rect) = layout_cache.rect.get(&index) {
                     // dbg!(format!("Processing event for: {:?}", entity.id()));
                     let layout_event = LayoutEvent::new(*rect, flags, index.0);

@@ -8,7 +8,7 @@ use crate::{
 
 /// An event type sent to widgets
 #[derive(Clone)]
-pub struct Event {
+pub struct KEvent {
     /// The node targeted by this event
     pub target: Entity,
     /// The current target of this event
@@ -23,7 +23,7 @@ pub struct Event {
     pub(crate) on_change_systems: Vec<OnChange>,
 }
 
-impl PartialEq for Event {
+impl PartialEq for KEvent {
     fn eq(&self, other: &Self) -> bool {
         self.target == other.target
             && self.current_target == other.current_target
@@ -33,7 +33,7 @@ impl PartialEq for Event {
     }
 }
 
-impl Default for Event {
+impl Default for KEvent {
     fn default() -> Self {
         Self {
             target: Entity::from_raw(0),
@@ -46,7 +46,7 @@ impl Default for Event {
     }
 }
 
-impl Event {
+impl KEvent {
     /// Create a new event
     ///
     /// This is the preferred method for creating an event as it automatically sets up

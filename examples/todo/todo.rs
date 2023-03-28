@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use bevy_inspector_egui::WorldInspectorPlugin;
+use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use kayak_ui::prelude::{widgets::*, *};
 
 mod input;
@@ -53,13 +53,13 @@ fn startup(
     mut font_mapping: ResMut<FontMapping>,
     asset_server: Res<AssetServer>,
 ) {
+    let camera_entity = commands
+        .spawn((Camera2dBundle::default(), CameraUIKayak))
+        .id();
+
     font_mapping.set_default(asset_server.load("roboto.kayak_font"));
 
-    // Camera 2D forces a clear pass in bevy.
-    // We do this because our scene is not rendering anything else.
-    commands.spawn(Camera2dBundle::default());
-
-    let mut widget_context = KayakRootContext::new();
+    let mut widget_context = KayakRootContext::new(camera_entity);
     widget_context.add_plugin(KayakWidgetsContextPlugin);
     widget_context.add_widget_data::<TodoItemsProps, EmptyState>();
     widget_context.add_widget_data::<TodoInputProps, EmptyState>();
@@ -99,17 +99,17 @@ fn startup(
         </KayakAppBundle>
     };
 
-    commands.spawn(UICameraBundle::new(widget_context));
+    commands.spawn((widget_context, EventDispatcher::default()));
 }
 
 fn main() {
     App::new()
         .insert_resource(ClearColor(Color::rgb(0.0, 0.0, 0.0)))
         .add_plugins(DefaultPlugins)
-        .add_plugin(WorldInspectorPlugin::new())
+        .add_plugin(WorldInspectorPlugin::default())
         .add_plugin(KayakContextPlugin)
         .add_plugin(KayakWidgets)
-        .insert_non_send_resource(TodoList::new())
+        .insert_resource(TodoList::new())
         .add_startup_system(startup)
         .run()
 }

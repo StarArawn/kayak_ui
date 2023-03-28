@@ -1,12 +1,15 @@
 use bevy::{
-    prelude::{Assets, Commands, HandleUntyped, Plugin, Res, Resource},
+    prelude::{
+        Assets, Commands, HandleUntyped, IntoSystemAppConfig, IntoSystemConfig, Plugin, Query, Res,
+        Resource, With,
+    },
     reflect::TypeUuid,
     render::{
         render_phase::DrawFunctions,
         render_resource::{Shader, SpecializedRenderPipelines},
-        Extract, RenderApp, RenderStage,
+        Extract, ExtractSchedule, RenderApp, RenderSet,
     },
-    window::Windows,
+    window::{PrimaryWindow, Window},
 };
 
 use crate::{
@@ -41,9 +44,9 @@ impl Plugin for UnifiedRenderPlugin {
             .init_resource::<UnifiedPipeline>()
             .init_resource::<SpecializedRenderPipelines<UnifiedPipeline>>()
             .init_resource::<QuadMeta>()
-            .add_system_to_stage(RenderStage::Extract, extract_baseline)
-            .add_system_to_stage(RenderStage::Prepare, pipeline::prepare_quads)
-            .add_system_to_stage(RenderStage::Queue, pipeline::queue_quads);
+            .add_system(extract_baseline.in_schedule(ExtractSchedule))
+            .add_system(pipeline::prepare_quads.in_set(RenderSet::Prepare))
+            .add_system(pipeline::queue_quads.in_set(RenderSet::Queue));
 
         let draw_quad = DrawUI::new(&mut render_app.world);
 
@@ -61,10 +64,10 @@ pub struct Dpi(f32);
 
 pub fn extract_baseline(
     mut commands: Commands,
-    windows: Extract<Res<Windows>>,
+    windows: Extract<Query<&Window, With<PrimaryWindow>>>,
     window_size: Extract<Res<WindowSize>>,
 ) {
-    let dpi = if let Some(window) = windows.get_primary() {
+    let dpi = if let Ok(window) = windows.get_single() {
         window.scale_factor() as f32
     } else {
         1.0

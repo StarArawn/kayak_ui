@@ -6,7 +6,7 @@ use bevy::{
 use crate::{
     context::KayakRootContext,
     cursor::{CursorEvent, PointerEvents, ScrollEvent, ScrollUnit},
-    event::{Event, EventType},
+    event::{EventType, KEvent},
     focus_tree::FocusTree,
     input_event::{InputEvent, InputEventCategory},
     keyboard_event::{KeyboardEvent, KeyboardModifiers},
@@ -185,21 +185,21 @@ impl EventDispatcher {
         self.dispatch_events(events, context, world);
     }
 
-    /// Dispatch an [Event](crate::Event)
+    /// Dispatch an [KEvent](crate::KEvent)
     #[allow(dead_code)]
     pub fn dispatch_event(
         &mut self,
-        event: Event,
+        event: KEvent,
         context: &mut KayakRootContext,
         world: &mut World,
     ) {
         self.dispatch_events(vec![event], context, world);
     }
 
-    /// Dispatch a set of [Events](crate::Event)
+    /// Dispatch a set of [KEvents](crate::KEvent)
     pub fn dispatch_events(
         &mut self,
-        events: Vec<Event>,
+        events: Vec<KEvent>,
         context: &mut KayakRootContext,
         world: &mut World,
     ) {
@@ -211,7 +211,7 @@ impl EventDispatcher {
                 // Create a copy of the event, specific for this node
                 // This is to make sure unauthorized changes to the event are not propagated
                 // (e.g., changing the event type, removing the target, etc.)
-                let mut node_event = Event {
+                let mut node_event = KEvent {
                     current_target: index.0,
                     ..event.clone()
                 };
@@ -221,7 +221,7 @@ impl EventDispatcher {
 
                 // --- Call Event --- //
                 if let Some(mut entity) = world.get_entity_mut(index.0) {
-                    if let Some(mut on_event) = entity.remove::<OnEvent>() {
+                    if let Some(mut on_event) = entity.take::<OnEvent>() {
                         let mut event_dispatcher_context = EventDispatcherContext {
                             cursor_capture: self.cursor_capture,
                         };
@@ -304,14 +304,14 @@ impl EventDispatcher {
         self.previous_events = next_events;
     }
 
-    /// Generates a stream of [Events](crate::Event) from a set of [InputEvents](crate::InputEvent)
+    /// Generates a stream of [KEvents](crate::KEvent) from a set of [InputEvents](crate::InputEvent)
     fn build_event_stream(
         &mut self,
         input_events: &[InputEvent],
         context: &mut KayakRootContext,
         world: &mut World,
-    ) -> Vec<Event> {
-        let mut event_stream = Vec::<Event>::new();
+    ) -> Vec<KEvent> {
+        let mut event_stream = Vec::<KEvent>::new();
         let mut states: HashMap<EventType, EventState> = HashMap::new();
 
         if let Ok(node_tree) = context.tree.try_read() {
@@ -451,7 +451,7 @@ impl EventDispatcher {
                 // These events are ones that require a specific target and need the tree to be evaluated before selecting the best match
                 for (event_type, state) in states {
                     if let Some(node) = state.best_match {
-                        event_stream.push(Event::new(node.0, event_type));
+                        event_stream.push(KEvent::new(node.0, event_type));
 
                         match event_type {
                             EventType::Focus => {
@@ -459,7 +459,7 @@ impl EventDispatcher {
                                 if let Some(current_focus) = focus_tree.current() {
                                     if current_focus != node {
                                         event_stream
-                                            .push(Event::new(current_focus.0, EventType::Blur));
+                                            .push(KEvent::new(current_focus.0, EventType::Blur));
                                     }
                                 }
                                 focus_tree.focus(node);
@@ -476,7 +476,7 @@ impl EventDispatcher {
                 if !had_focus_event && input_events.contains(&InputEvent::MouseLeftPress) {
                     // A mouse press didn't contain a focus event -> blur
                     if let Some(current_focus) = focus_tree.current() {
-                        event_stream.push(Event::new(current_focus.0, EventType::Blur));
+                        event_stream.push(KEvent::new(current_focus.0, EventType::Blur));
                         focus_tree.blur();
                     }
                 }
@@ -513,7 +513,7 @@ impl EventDispatcher {
     /// * `widget_manager`: The widget manager
     /// * `ignore_layout`: Whether to ignore layout (useful for handling captured events)
     ///
-    /// returns: Vec<Event>
+    /// returns: Vec<KEvent>
     fn process_pointer_events(
         &mut self,
         input_event: &InputEvent,
@@ -522,8 +522,8 @@ impl EventDispatcher {
         world: &mut World,
         context: &KayakRootContext,
         ignore_layout: bool,
-    ) -> Vec<Event> {
-        let mut event_stream = Vec::<Event>::new();
+    ) -> Vec<KEvent> {
+        let mut event_stream = Vec::<KEvent>::new();
         let (node, depth) = tree_node;
 
         // let widget_name = world.entity(node.0).get::<WidgetName>();
@@ -539,7 +539,7 @@ impl EventDispatcher {
                         if was_contained {
                             // Mouse out should fire even when
                             event_stream
-                                .push(Event::new(node.0, EventType::MouseOut(cursor_event)));
+                                .push(KEvent::new(node.0, EventType::MouseOut(cursor_event)));
                             // Self::update_state(
                             //     states,
                             //     (node, depth),
@@ -688,12 +688,12 @@ impl EventDispatcher {
         input_event: &InputEvent,
         _states: &mut HashMap<EventType, EventState>,
         focus_tree: &FocusTree,
-    ) -> Vec<Event> {
+    ) -> Vec<KEvent> {
         let mut event_stream = Vec::new();
         if let Some(current_focus) = focus_tree.current() {
             match input_event {
                 InputEvent::CharEvent { c } => {
-                    event_stream.push(Event::new(current_focus.0, EventType::CharInput { c: *c }))
+                    event_stream.push(KEvent::new(current_focus.0, EventType::CharInput { c: *c }))
                 }
                 InputEvent::Keyboard { key, is_pressed } => {
                     // === Modifers === //
@@ -715,12 +715,12 @@ impl EventDispatcher {
 
                     // === Event === //
                     if *is_pressed {
-                        event_stream.push(Event::new(
+                        event_stream.push(KEvent::new(
                             current_focus.0,
                             EventType::KeyDown(KeyboardEvent::new(*key, self.keyboard_modifiers)),
                         ))
                     } else {
-                        event_stream.push(Event::new(
+                        event_stream.push(KEvent::new(
                             current_focus.0,
                             EventType::KeyUp(KeyboardEvent::new(*key, self.keyboard_modifiers)),
                         ))
@@ -789,7 +789,12 @@ impl EventDispatcher {
     }
 
     /// Executes default actions for events
-    fn execute_default(&mut self, event: Event, context: &mut KayakRootContext, world: &mut World) {
+    fn execute_default(
+        &mut self,
+        event: KEvent,
+        context: &mut KayakRootContext,
+        world: &mut World,
+    ) {
         match event.event_type {
             EventType::KeyDown(evt) => match evt.key() {
                 KeyCode::Tab => {
@@ -808,10 +813,10 @@ impl EventDispatcher {
                         };
 
                     if let Some(index) = index {
-                        let mut events = vec![Event::new(index.0, EventType::Focus)];
+                        let mut events = vec![KEvent::new(index.0, EventType::Focus)];
                         if let Some(current_focus) = current_focus {
                             if current_focus != index {
-                                events.push(Event::new(current_focus.0, EventType::Blur));
+                                events.push(KEvent::new(current_focus.0, EventType::Blur));
                             }
                         }
                         if let Ok(mut focus_tree) = context.focus_tree.try_write() {

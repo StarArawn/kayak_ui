@@ -1,6 +1,7 @@
 use bevy::{
     math::{Vec3Swizzles, Vec4Swizzles},
     prelude::*,
+    window::PrimaryWindow,
 };
 use kayak_ui::prelude::{widgets::*, *};
 
@@ -40,7 +41,7 @@ fn set_active_tile_target(
     cursor: Res<Input<MouseButton>>,
     event_context: Query<&EventDispatcher, With<GameUI>>,
     camera_transform: Query<&GlobalTransform, With<WorldCamera>>,
-    windows: Res<Windows>,
+    window: Query<&Window, With<PrimaryWindow>>,
 ) {
     if !cursor.just_pressed(MouseButton::Left) {
         // Only run this system when the mouse button is clicked
@@ -62,7 +63,7 @@ fn set_active_tile_target(
     // }
     // ```
 
-    let world_pos = cursor_to_world(&windows, camera_transform.single());
+    let world_pos = cursor_to_world(window.single(), camera_transform.single());
     let tile_pos = world_to_tile(world_pos);
     let mut tile = tile.single_mut();
     tile.target = tile_pos;
@@ -83,11 +84,11 @@ fn move_ghost_tile(
     mut tile: Query<&mut Transform, With<GhostTile>>,
     mut cursor_moved: EventReader<CursorMoved>,
     camera_transform: Query<&GlobalTransform, With<WorldCamera>>,
-    windows: Res<Windows>,
+    window: Query<&Window, With<PrimaryWindow>>,
 ) {
     for _ in cursor_moved.iter() {
         if !event_context.single().contains_cursor() {
-            let world_pos = cursor_to_world(&windows, camera_transform.single());
+            let world_pos = cursor_to_world(window.single(), camera_transform.single());
             let tile_pos = world_to_tile(world_pos);
             let mut ghost = tile.single_mut();
             ghost.translation.x = tile_pos.x;
@@ -115,7 +116,6 @@ fn on_color_change(
 
 /// A system that sets up the world
 fn world_setup(mut commands: Commands, active_color: Res<ActiveColor>) {
-    commands.spawn((Camera2dBundle::default(), WorldCamera));
     commands
         .spawn(SpriteBundle {
             sprite: Sprite {
@@ -139,8 +139,7 @@ fn world_setup(mut commands: Commands, active_color: Res<ActiveColor>) {
 }
 
 /// Get the world position of the cursor in 2D space
-fn cursor_to_world(windows: &Windows, camera_transform: &GlobalTransform) -> Vec2 {
-    let window = windows.get_primary().unwrap();
+fn cursor_to_world(window: &Window, camera_transform: &GlobalTransform) -> Vec2 {
     let size = Vec2::new(window.width(), window.height());
 
     let mut pos = window.cursor_position().unwrap_or_default();
@@ -172,16 +171,22 @@ fn startup(
     mut font_mapping: ResMut<FontMapping>,
     asset_server: Res<AssetServer>,
 ) {
+    // The UI Camera and the world camera are the same.
+    // CameraUIKayak is used to tell kayak which camera should render UI.
+    let camera_entity = commands
+        .spawn((Camera2dBundle::default(), CameraUIKayak, WorldCamera))
+        .id();
+
     font_mapping.set_default(asset_server.load("roboto.kayak_font"));
 
-    let mut widget_context = KayakRootContext::new();
+    let mut widget_context = KayakRootContext::new(camera_entity);
     widget_context.add_plugin(KayakWidgetsContextPlugin);
 
     let handle_change_color = OnEvent::new(
         move |In((event_dispatcher_context, _, event, _)): In<(
             EventDispatcherContext,
             WidgetState,
-            Event,
+            KEvent,
             Entity,
         )>,
               mut active_color: ResMut<ActiveColor>| {
@@ -255,7 +260,7 @@ fn startup(
         </KayakAppBundle>
     };
 
-    commands.spawn((UICameraBundle::new(widget_context), GameUI));
+    commands.spawn((widget_context, EventDispatcher::default(), GameUI));
 }
 
 fn main() {

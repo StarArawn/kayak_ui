@@ -7,7 +7,6 @@ resolver = "2"
 authors = ["John Mitchell"]
 homepage = "https://github.com/StarArawn/kayak_ui"
 repository = "https://github.com/StarArawn/kayak_ui"
-license = "MIT OR Apache-2.0"
 license-file = "../LICENSE"
 exclude = ["assets/*"]
 
@@ -28,8 +27,8 @@ image = "0.24"
 # Provides UAX #14 line break segmentation
 xi-unicode = "0.3"
 
-bevy = { version = "0.9", optional = true, default-features = false, features = ["bevy_asset", "bevy_render", "bevy_core_pipeline"] }
+bevy = { version = "0.10", optional = true, default-features = false, features = ["bevy_asset", "bevy_render", "bevy_core_pipeline"] }
 
 [dev-dependencies]
-bevy = { version = "0.9" }
+bevy = { version = "0.10" }
 bytemuck = "1.12.0"

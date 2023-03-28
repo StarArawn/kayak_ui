@@ -1,7 +1,7 @@
 use bevy::prelude::{Bundle, Color, Commands, Component, Entity, In, Query};
 use kayak_ui::{
     prelude::{
-        rsx, widgets::KButtonBundle, Corner, Event, EventDispatcherContext, EventType, KStyle,
+        rsx, widgets::KButtonBundle, Corner, EventDispatcherContext, EventType, KEvent, KStyle,
         KayakWidgetContext, OnEvent, StyleProp, Units, Widget, WidgetName, WidgetState,
     },
     widgets::KButton,
@@ -57,7 +57,7 @@ pub fn tab_button_render(
                 move |In((event_dispatcher_context, _, event, _entity)): In<(
                     EventDispatcherContext,
                     WidgetState,
-                    Event,
+                    KEvent,
                     Entity,
                 )>,
                       mut query: Query<&mut TabContext>| {

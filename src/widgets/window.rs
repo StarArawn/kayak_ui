@@ -7,7 +7,7 @@ use kayak_ui_macros::rsx;
 use crate::{
     children::KChildren,
     context::WidgetName,
-    event::{Event, EventType},
+    event::{EventType, KEvent},
     event_dispatcher::EventDispatcherContext,
     on_event::OnEvent,
     prelude::KayakWidgetContext,
@@ -132,7 +132,7 @@ pub fn window_render(
                 move |In((event_dispatcher_context, _, mut event, _entity)): In<(
                     EventDispatcherContext,
                     WidgetState,
-                    Event,
+                    KEvent,
                     Entity,
                 )>,
                       mut query: Query<&mut KWindowState>,
@@ -226,7 +226,7 @@ pub fn window_render(
                                     move |In((mut event_dispatcher_context, _, mut event, entity)): In<(
                                         EventDispatcherContext,
                                         WidgetState,
-                                        Event,
+                                        KEvent,
                                         Entity,
                                     )>,
                                         mut query: Query<&mut KWindowState>| {

@@ -1,14 +1,23 @@
 use bevy::prelude::*;
-use kayak_ui::prelude::{widgets::*, *};
+use kayak_ui::{
+    prelude::{widgets::*, *},
+    CameraUIKayak,
+};
 
 fn startup(
     mut commands: Commands,
     mut font_mapping: ResMut<FontMapping>,
     asset_server: Res<AssetServer>,
 ) {
-    font_mapping.set_default(asset_server.load("roboto.kayak_font"));
+    let camera_entity = commands
+        .spawn(Camera2dBundle::default())
+        .insert(CameraUIKayak)
+        .id();
 
-    let mut widget_context = KayakRootContext::new();
+    font_mapping.set_default(asset_server.load("roboto.kayak_font"));
+    // font_mapping.force_subpixel(&asset_server.load("roboto.kayak_font"));
+
+    let mut widget_context = KayakRootContext::new(camera_entity);
     widget_context.add_plugin(KayakWidgetsContextPlugin);
     let parent_id = None;
     rsx! {
@@ -23,7 +32,7 @@ fn startup(
         </KayakAppBundle>
     };
 
-    commands.spawn(UICameraBundle::new(widget_context));
+    commands.spawn((widget_context, EventDispatcher::default()));
 }
 
 fn main() {

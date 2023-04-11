@@ -645,6 +645,14 @@ impl Tree {
     /// returns: ()
     pub fn dump_at(&self, start_index: WrappedIndex) {
         self.dump_at_internal(start_index, 0);
+
+        // let mut depth = 0;
+        // for child in self.down_iter_at(start_index, true) {
+        //     let indent = "  ".repeat(depth);
+        //     let raw_parts = child.0.index();
+        //     println!("{} [{}]", indent, raw_parts);
+        //     depth += 1;
+        // }
     }
 
     fn dump_at_internal(&self, start_index: WrappedIndex, depth: usize) {

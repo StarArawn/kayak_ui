@@ -10,7 +10,7 @@ fn startup(
         .spawn((Camera2dBundle::default(), CameraUIKayak))
         .id();
 
-    font_mapping.set_default(asset_server.load("lato-light.kttf"));
+    font_mapping.set_default(asset_server.load("roboto.kttf"));
 
     let image = asset_server.load("panel.png");
 

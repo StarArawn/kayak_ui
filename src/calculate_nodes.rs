@@ -28,7 +28,9 @@ pub fn calculate_nodes(
     context.current_z = 0.0;
 
     let initial_styles = KStyle::initial();
-    let default_styles = KStyle::new_default();
+    let default_styles = KStyle {
+        ..KStyle::new_default()
+    };
 
     if let Ok(tree) = context.tree.clone().try_read() {
         if tree.root_node.is_none() {
@@ -41,10 +43,10 @@ pub fn calculate_nodes(
                 continue;
             }
 
-            let styles = all_styles_query
-                .get(dirty_entity.0)
-                .map(|cs| &cs.0)
-                .unwrap_or(&default_styles);
+            let styles = all_styles_query.get(dirty_entity.0).map(|cs| &cs.0);
+
+            let styles = styles.unwrap_or(&default_styles);
+
             // Get the parent styles. Will be one of the following:
             // 1. Already-resolved node styles (best)
             // 2. Unresolved widget prop styles

@@ -72,7 +72,7 @@ pub(crate) struct LayoutCache {
     /// If a node does not have any flags set, then they should be removed from the map.
     pub(crate) geometry_changed: HashMap<WrappedIndex, GeometryChanged>,
 
-    visible: HashMap<WrappedIndex, bool>,
+    pub(crate) visible: HashMap<WrappedIndex, bool>,
 }
 
 impl LayoutCache {

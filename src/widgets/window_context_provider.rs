@@ -71,7 +71,13 @@ pub fn window_context_render(
     children_query: Query<&KChildren>,
 ) -> bool {
     if let Ok(children) = children_query.get(window_context_entity) {
-        let context_entity = commands.spawn(WindowContext::default()).id();
+        let context_entity = if let Some(context_entity) =
+            widget_context.get_context_entity::<WindowContext>(window_context_entity)
+        {
+            context_entity
+        } else {
+            commands.spawn(WindowContext::default()).id()
+        };
         widget_context
             .set_context_entity::<WindowContext>(Some(window_context_entity), context_entity);
         children.process(&widget_context, Some(window_context_entity));

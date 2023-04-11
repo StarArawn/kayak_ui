@@ -144,6 +144,17 @@ impl Widget {
             }
         });
 
+        let entity_key = attrs.attributes.iter().find_map(|attribute| {
+            let key = attribute.ident();
+            let value = attribute.value_tokens();
+            let key_name = quote! { #key }.to_string();
+            if key_name == "key" {
+                Some(value)
+            } else {
+                None
+            }
+        });
+
         let prop_ident = format_ident!("internal_rsx_props");
         let entity_id = if let Some(entity_name_id) = entity_name_id {
             let entity_name_id = format_ident!("{}", entity_name_id.to_string().replace('"', ""));
@@ -151,6 +162,13 @@ impl Widget {
         } else {
             quote! { widget_entity }
         };
+
+        let entity_key = if let Some(entity_key) = entity_key {
+            quote! { Some(#entity_key) }
+        } else {
+            quote! { None }
+        };
+
         let assigned_attrs = attrs.assign_attributes(&prop_ident);
 
         // If this widget contains children, add it (should result in error if widget does not accept children)
@@ -199,7 +217,7 @@ impl Widget {
         }
 
         let props = quote! {
-            let #entity_id = widget_context.spawn_widget(&mut commands, parent_org);
+            let #entity_id = widget_context.spawn_widget(&mut commands, #entity_key, parent_org);
             let mut #prop_ident = #name {
                 #assigned_attrs
                 ..Default::default()

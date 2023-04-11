@@ -246,6 +246,8 @@ impl EventDispatcher {
                             context.order_tree.clone(),
                             context.index.clone(),
                             None,
+                            context.unique_ids.clone(),
+                            context.unique_ids_parents.clone(),
                         );
                         node_event.run_on_change(world, widget_context);
                     }

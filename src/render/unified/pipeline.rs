@@ -41,7 +41,6 @@ use kayak_font::{
 use super::{Dpi, UNIFIED_SHADER_HANDLE};
 use crate::prelude::Corner;
 use crate::render::ui_pass::TransparentUI;
-use crate::WindowSize;
 
 #[derive(Resource)]
 pub struct UnifiedPipeline {
@@ -641,7 +640,7 @@ impl Draw<TransparentUI> for DrawUI {
             pipelines,
             font_texture_cache,
             image_bind_groups,
-            dpi,
+            _dpi,
             views,
             quads,
             extracted_views,

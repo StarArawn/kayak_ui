@@ -175,7 +175,7 @@ fn startup(
         .spawn((Camera2dBundle::default(), CameraUIKayak))
         .id();
 
-    font_mapping.set_default(asset_server.load("roboto.kttf"));
+    font_mapping.set_default(asset_server.load("fonts/roboto.kttf"));
 
     let mut widget_context = KayakRootContext::new(camera_entity);
     widget_context.add_plugin(KayakWidgetsContextPlugin);

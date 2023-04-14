@@ -611,10 +611,11 @@ pub struct DrawUI {
         SRes<PipelineCache>,
         SRes<FontTextureCache>,
         SRes<ImageBindGroups>,
-        SRes<WindowSize>,
+        // TODO: Figure out how to get a per view DPI value.
         SRes<Dpi>,
         SQuery<Read<ViewUniformOffset>>,
         SQuery<Read<ExtractedQuad>>,
+        SQuery<Read<ExtractedView>>,
     )>,
 }
 
@@ -640,18 +641,19 @@ impl Draw<TransparentUI> for DrawUI {
             pipelines,
             font_texture_cache,
             image_bind_groups,
-            window_size,
             dpi,
             views,
             quads,
+            extracted_views,
         ) = self.params.get(world);
 
         let view_uniform = views.get(view).unwrap();
+        let extracted_view = extracted_views.get(view).unwrap();
         let quad_meta = quad_meta.into_inner();
         let extracted_quad = quads.get(item.entity).unwrap();
 
         if extracted_quad.quad_type == UIQuadType::Clip {
-            let window_size = (window_size.0 * dpi.0, window_size.1 * dpi.0);
+            let window_size = (extracted_view.viewport.z as f32, extracted_view.viewport.w as f32);
             let x = extracted_quad.rect.min.x as u32;
             let y = extracted_quad.rect.min.y as u32;
             let mut width = extracted_quad.rect.width() as u32;
@@ -661,10 +663,10 @@ impl Draw<TransparentUI> for DrawUI {
             if width == 0 || height == 0 || x > window_size.0 as u32 || y > window_size.1 as u32 {
                 return;
             }
-            if x + width > window_size.0 as u32 {
+            if x + width >= window_size.0 as u32 {
                 width = window_size.0 as u32 - x;
             }
-            if y + height > window_size.1 as u32 {
+            if y + height >= window_size.1 as u32 {
                 height = window_size.1 as u32 - y;
             }
             pass.set_scissor_rect(x, y, width, height);

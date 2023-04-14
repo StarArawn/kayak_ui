@@ -1184,7 +1184,7 @@ fn calculate_ui(world: &mut World) {
         let mut layout_system = IntoSystem::into_system(calculate_layout);
         layout_system.initialize(world);
 
-        for _ in 0..3 {
+        for _ in 0..2 {
             context = node_system.run(context, world);
             node_system.apply_buffers(world);
 

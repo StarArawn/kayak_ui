@@ -710,8 +710,6 @@ impl Draw<TransparentUI> for DrawUI {
         let quad_meta = quad_meta.into_inner();
         let batch = quad_batches.get(item.entity).unwrap();
 
-        // dbg!((batch.quad_type, batch.type_id));
-
         if item.quad_type == UIQuadType::Clip {
             let window_size = (
                 extracted_view.viewport.z as f32,
@@ -721,6 +719,7 @@ impl Draw<TransparentUI> for DrawUI {
             let y = item.rect.min.y as u32;
             let mut width = item.rect.width() as u32;
             let mut height = item.rect.height() as u32;
+
             width = width.min(window_size.0 as u32);
             height = height.min(window_size.1 as u32);
             if width == 0 || height == 0 || x > window_size.0 as u32 || y > window_size.1 as u32 {

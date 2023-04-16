@@ -18,8 +18,8 @@ pub struct KayakApp;
 impl Widget for KayakApp {}
 
 /// Kayak's default root widget
-/// This widget provides a width/height that matches the screen size in bevy
-/// It will auto update if bevy's window changes as well.
+/// This widget provides a width/height that matches the camera's width and height.
+/// It will auto update if bevy's camera changes.
 #[derive(Bundle)]
 pub struct KayakAppBundle {
     pub app: KayakApp,

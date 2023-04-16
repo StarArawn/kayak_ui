@@ -15,13 +15,14 @@ use crate::{
 };
 
 pub(crate) fn process_events(world: &mut World) {
+    // TODO: Rewrite an process events per window.
     let window_size = if let Ok(window) = world
         .query_filtered::<&Window, With<PrimaryWindow>>()
         .get_single(&world)
     {
         Vec2::new(window.width(), window.height())
     } else {
-        log::warn!("Couldn't find primiary window!");
+        log::warn!("Couldn't find primary window!");
         return;
     };
 

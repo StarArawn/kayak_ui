@@ -81,6 +81,16 @@ impl<'w, 's, Props: PartialEq + Component, State: PartialEq + Component>
             return true;
         }
 
+        // Compare the widget names. Sometimes our widget entity changes with the same ID but differing components.
+        if let (Ok(name), Ok(old_name)) = (
+            self.widget_names.get(current_entity),
+            self.widget_names.get(previous_entity),
+        ) {
+            if name != old_name {
+                return true;
+            }
+        }
+
         // Compare styles
         if let (Ok(style), Ok(old_style)) = (
             self.style_query.get(current_entity),

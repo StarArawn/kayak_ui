@@ -60,7 +60,7 @@ fn startup(
     let camera_entity = commands
         .spawn(Camera2dBundle {
             camera: Camera {
-                priority: -1,
+                order: -1,
                 target: RenderTarget::Image(image_handle.clone()),
                 ..Camera::default()
             },

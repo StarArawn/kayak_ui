@@ -107,7 +107,7 @@ fn fragment(in: VertexOutput) -> @location(0) vec4<f32> {
     }
     if quad_type.t == 2 {
         // var px_range = 5.5;
-        let font_size = min(max(in.size.y, 0.0), 32.0) / 32.0;
+        let font_size = min(max(in.size.y, 0.0), 32.0) / (in.size.y * 2.0);
         var px_range = range_curve(font_size);
         var tex_dimensions = textureDimensions(font_texture);
         var msdf_unit = vec2(px_range, px_range) / vec2(f32(tex_dimensions.x), f32(tex_dimensions.y));

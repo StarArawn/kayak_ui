@@ -45,4 +45,12 @@ impl WidgetState {
 
         None
     }
+
+    pub fn remove(&self, widget_entity: Entity) -> Option<Entity> {
+        if let Ok(mut mapping) = self.mapping.try_write() {
+            return mapping.remove(&widget_entity);
+        }
+
+        None
+    }
 }

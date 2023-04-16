@@ -20,7 +20,7 @@ use crate::{
     WindowSize,
 };
 
-use self::pipeline::ImageBindGroups;
+use self::pipeline::{ExtractedQuads, ImageBindGroups};
 
 pub mod pipeline;
 pub mod text;
@@ -40,6 +40,7 @@ impl Plugin for UnifiedRenderPlugin {
 
         let render_app = app.sub_app_mut(RenderApp);
         render_app
+            .init_resource::<ExtractedQuads>()
             .init_resource::<ImageBindGroups>()
             .init_resource::<UnifiedPipeline>()
             .init_resource::<SpecializedRenderPipelines<UnifiedPipeline>>()

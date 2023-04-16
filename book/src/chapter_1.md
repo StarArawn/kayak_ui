@@ -10,45 +10,50 @@ Once you've added Kayak UI to your bevy project you can now start to use it! In 
 Hello World Example:
 ```rust
 use bevy::prelude::*;
-use kayak_ui::prelude::{widgets::*, *};
+use kayak_ui::{
+    prelude::{widgets::*, *},
+    CameraUIKayak,
+};
 
 fn startup(
     mut commands: Commands,
     mut font_mapping: ResMut<FontMapping>,
     asset_server: Res<AssetServer>,
 ) {
-    font_mapping.set_default(asset_server.load("roboto.kayak_font"));
+    let camera_entity = commands
+        .spawn(Camera2dBundle::default())
+        .insert(CameraUIKayak)
+        .id();
 
-    let mut widget_context = KayakRootContext::new();
+    font_mapping.set_default(asset_server.load("roboto.kttf"));
+
+    let mut widget_context = KayakRootContext::new(camera_entity);
     widget_context.add_plugin(KayakWidgetsContextPlugin);
     let parent_id = None;
-
-    // The rsx! macro expects a parent_id, a widget_context from the user.
-    // It also expects `Commands` from bevy.
-    // This can be a little weird at first. 
-    // See the rsx! docs for more info!
     rsx! {
         <KayakAppBundle>
             <TextWidgetBundle
                 text={TextProps {
                     content: "Hello World".into(),
+                    size: 20.0,
                     ..Default::default()
                 }}
             />
         </KayakAppBundle>
     };
-    
-    commands.spawn(UICameraBundle::new(widget_context));
+
+    commands.spawn((widget_context, EventDispatcher::default()));
 }
 
 fn main() {
     App::new()
-        .add_plugins(DefaultPlugins.set(ImagePlugin::default_nearest()))
+        .add_plugins(DefaultPlugins)
         .add_plugin(KayakContextPlugin)
         .add_plugin(KayakWidgets)
         .add_startup_system(startup)
         .run()
 }
+
 ```
 
 ## Wait where is the ECS?
@@ -64,11 +69,16 @@ fn startup(
     mut font_mapping: ResMut<FontMapping>,
     asset_server: Res<AssetServer>,
 ) {
-    font_mapping.set_default(asset_server.load("roboto.kayak_font"));
-    commands.spawn(UICameraBundle::new());
-    let mut widget_context = KayakRootContext::new();
+    let camera_entity = commands
+        .spawn(Camera2dBundle::default())
+        .insert(CameraUIKayak)
+        .id();
 
-    let app_entity = widget_context.spawn_widget(&mut commands, None);
+    font_mapping.set_default(asset_server.load("roboto.kttf"));
+    let mut widget_context = KayakRootContext::new(camera_entity);
+    widget_context.add_plugin(KayakWidgetsContextPlugin);
+
+    let app_entity = widget_context.spawn_widget(&mut commands, None, None);
     // Create default app bundle
     let mut app_bundle = KayakAppBundle {
         ..Default::default()
@@ -78,7 +88,7 @@ fn startup(
     let mut children = KChildren::new();
 
     // Create the text child
-    let text_entity = widget_context.spawn_widget(&mut commands, Some(app_entity));
+    let text_entity = widget_context.spawn_widget(&mut commands, None, None);
     commands.entity(text_entity).insert(TextWidgetBundle {
         text: TextProps {
             content: "Hello World".into(),
@@ -97,8 +107,8 @@ fn startup(
     widget_context.add_widget(None, app_entity);
 
     // Add widget context as resource.
-    
- commands.spawn(UICameraBundle::new(widget_context));
+
+    commands.spawn((widget_context, EventDispatcher::default()));
 }
 fn main() {
     App::new()
@@ -108,5 +118,4 @@ fn main() {
         .add_startup_system(startup)
         .run()
 }
-
 ```

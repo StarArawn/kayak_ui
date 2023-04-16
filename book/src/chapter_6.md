@@ -17,7 +17,7 @@ The char range is a defined as u32 char values. 0x20 through 0x7f represents mos
 
 Fonts are also stored as an atlased image and a json file which tells Kayak about the font glyphs. These fonts are generated using `msdf-atlas-gen`. Check out `roboto.kayak_font` and `roboto.png` in the `assets` folder. The cached file name will be located next to the kttf file and have the file format of: `{font_name}.kttf-cached.png`.
 
-## Generating new fonts.
+### Generating Legacy `*.kayak_font`. WARNING! Does not work in wasm.
 In order to create a new font you need to use the `msdf-atlas-gen` tool. This can be found at:
 [https://github.com/Chlumsky/msdf-atlas-gen](https://github.com/Chlumsky/msdf-atlas-gen)
 

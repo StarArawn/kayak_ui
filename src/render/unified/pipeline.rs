@@ -652,7 +652,10 @@ impl Draw<TransparentUI> for DrawUI {
         let extracted_quad = quads.get(item.entity).unwrap();
 
         if extracted_quad.quad_type == UIQuadType::Clip {
-            let window_size = (extracted_view.viewport.z as f32, extracted_view.viewport.w as f32);
+            let window_size = (
+                extracted_view.viewport.z as f32,
+                extracted_view.viewport.w as f32,
+            );
             let x = extracted_quad.rect.min.x as u32;
             let y = extracted_quad.rect.min.y as u32;
             let mut width = extracted_quad.rect.width() as u32;

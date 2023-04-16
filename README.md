@@ -35,6 +35,7 @@ Kayak UI is in the very early stages of development. Important features are miss
 - Custom UI node to ensure UI renders on top of 3D and 2D entities.
 - Fully integrated into bevy to capture input events, use bevy assets(images, etc).
 - Dpi Scaling
+- Batched Rendering
 
 ## Missing features
 - More default widgets.
@@ -44,16 +45,17 @@ Kayak UI is in the very early stages of development. Important features are miss
 <img src="images/screen1.png" alt="Kayak UI" width="600" />
 
 ## Usage
-Use bevy `0.9`! Make sure the version of Kayak you are using uses the same version of bevy.
+Use bevy `0.10`! Make sure the version of Kayak you are using uses the same version of bevy.
 
 ```rust
 kayak_ui = "0.2"
-bevy = "0.9"
+bevy = "0.10"
 ```
 
 |bevy|kayak_ui|
 |---|---|
 |`main`|`bevy-track`|
+|0.10|0.3|
 |0.9|0.2|
 |0.9|0.1|
 

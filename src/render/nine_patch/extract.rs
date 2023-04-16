@@ -1,5 +1,5 @@
 use crate::{
-    render::unified::pipeline::{ExtractQuadBundle, ExtractedQuad, UIQuadType},
+    render::unified::pipeline::{ExtractedQuad, UIQuadType},
     render_primitive::RenderPrimitive,
     styles::Corner,
 };

@@ -24,7 +24,7 @@ use super::{
     font::{self, FontMapping},
     image, nine_patch, texture_atlas,
     ui_pass::TransparentUI,
-    unified::pipeline::{ExtractQuadBundle, ExtractedQuad, ExtractedQuads, UIQuadType},
+    unified::pipeline::{ExtractedQuad, ExtractedQuads, UIQuadType},
 };
 
 // mod nine_patch;

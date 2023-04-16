@@ -1,7 +1,7 @@
 use std::ops::Range;
 
 use bevy::ecs::prelude::*;
-use bevy::render::render_phase::{DrawFunctionId, PhaseItem, BatchedPhaseItem};
+use bevy::render::render_phase::{BatchedPhaseItem, DrawFunctionId, PhaseItem};
 use bevy::render::render_resource::CachedRenderPipelineId;
 use bevy::render::{
     render_graph::{Node, NodeRunError, RenderGraphContext, SlotInfo, SlotType},
@@ -25,7 +25,7 @@ pub struct TransparentUI {
     pub quad_type: UIQuadType,
     pub rect: bevy::math::Rect,
     pub type_index: u32,
-    pub batch_range: Option<Range<u32>>,  
+    pub batch_range: Option<Range<u32>>,
 }
 
 impl PhaseItem for TransparentUI {

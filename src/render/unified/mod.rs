@@ -46,7 +46,6 @@ impl Plugin for UnifiedRenderPlugin {
             .init_resource::<SpecializedRenderPipelines<UnifiedPipeline>>()
             .init_resource::<QuadMeta>()
             .add_system(extract_baseline.in_schedule(ExtractSchedule))
-            .add_system(pipeline::prepare_quads.in_set(RenderSet::Prepare))
             .add_system(pipeline::queue_quads.in_set(RenderSet::Queue));
 
         let draw_quad = DrawUI::new(&mut render_app.world);

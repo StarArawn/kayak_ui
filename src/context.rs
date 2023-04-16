@@ -1,4 +1,4 @@
-use std::{sync::{Arc, RwLock}, thread::current};
+use std::sync::{Arc, RwLock};
 
 use bevy::{
     ecs::{event::ManualEventReader, system::CommandQueue},
@@ -378,7 +378,7 @@ impl KayakRootContext {
             return vec![];
         }
 
-        let (mut render_primitives, _) = if let Ok(mut layout_cache) = self.layout_cache.try_write() {
+        let (render_primitives, _) = if let Ok(mut layout_cache) = self.layout_cache.try_write() {
             recurse_node_tree_to_build_primitives(
                 &node_tree,
                 &mut layout_cache,
@@ -388,13 +388,13 @@ impl KayakRootContext {
                 0.0,
                 0.0,
                 RenderPrimitive::Empty,
-                0
+                0,
             )
         } else {
             (vec![], 0.0)
         };
         // render_primitives.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap());
-        
+
         // render_primitives.iter().enumerate().for_each(|(index, p)| {
         //     log::info!("Name: {:?}, Z: {:?}", p.to_string(), p.get_layout().z_index);
         // });
@@ -403,7 +403,6 @@ impl KayakRootContext {
         //     .iter()
         //     .map(|a| (a.1.to_string(), a.0))
         //     .collect::<Vec<_>>());
-
 
         render_primitives.into_iter().collect()
     }
@@ -417,7 +416,7 @@ fn recurse_node_tree_to_build_primitives(
     nodes: &Query<&crate::node::Node>,
     widget_names: &Query<&WidgetName>,
     current_node: WrappedIndex,
-    parent_global_z: f32,
+    _parent_global_z: f32,
     mut current_global_z: f32,
     mut prev_clip: RenderPrimitive,
     depth: usize,
@@ -482,13 +481,12 @@ fn recurse_node_tree_to_build_primitives(
             }
             _ => {}
         }
-        
+
         let _indent = "  ".repeat(depth);
         if !matches!(render_primitive, RenderPrimitive::Empty) {
             // println!("{} [{}, current_global_z: {}, z: {}, x: {}, y: {}, width: {}, height: {}]", _indent, render_primitive.to_string(), current_global_z, layout.z_index, layout.posx, layout.posy, layout.width, layout.height);
             render_primitives.push(render_primitive.clone());
         }
-
 
         let new_prev_clip = if matches!(render_primitive, RenderPrimitive::Clip { .. }) {
             render_primitive.clone()
@@ -528,11 +526,9 @@ fn recurse_node_tree_to_build_primitives(
                                 current_global_z += UI_Z_STEP * children_p.len() as f32;
                                 layout.z_index = current_global_z;
                                 // println!("{}   [previous_clip, z: {}, x: {}, y: {}, width: {}, height: {}", _indent, layout.z_index, layout.posx, layout.posy, layout.width, layout.height);
-                                children_p.push(RenderPrimitive::Clip {
-                                    layout
-                                });
+                                children_p.push(RenderPrimitive::Clip { layout });
                             }
-                            _ => {},
+                            _ => {}
                         }
                     }
                 }

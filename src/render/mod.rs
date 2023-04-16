@@ -1,8 +1,10 @@
 use bevy::{
-    prelude::{App, Camera, Commands, Entity, IntoSystemAppConfig, Plugin, Query, With, IntoSystemConfig},
+    prelude::{
+        App, Camera, Commands, Entity, IntoSystemAppConfig, IntoSystemConfig, Plugin, Query, With,
+    },
     render::{
         render_graph::{RenderGraph, RunGraphOnViewNode, SlotInfo, SlotType},
-        render_phase::{DrawFunctions, RenderPhase, batch_phase_system, sort_phase_system},
+        render_phase::{batch_phase_system, sort_phase_system, DrawFunctions, RenderPhase},
         Extract, ExtractSchedule, RenderApp, RenderSet,
     },
 };

@@ -1,20 +1,18 @@
-use std::cmp::Ordering;
-
 use bevy::asset::HandleId;
-use bevy::prelude::{Rect, Resource, Commands};
+use bevy::prelude::{Commands, Rect, Resource};
 use bevy::render::render_phase::BatchedPhaseItem;
 use bevy::render::render_resource::{
     DynamicUniformBuffer, ShaderType, SpecializedRenderPipeline, SpecializedRenderPipelines,
 };
 use bevy::render::view::{ExtractedView, ViewTarget};
-use bevy::utils::{FloatOrd, Uuid};
+use bevy::utils::FloatOrd;
 use bevy::{
     ecs::system::{
         lifetimeless::{Read, SQuery, SRes},
         SystemState,
     },
     math::{Mat4, Quat, Vec2, Vec3, Vec4},
-    prelude::{Bundle, Component, Entity, FromWorld, Handle, Query, Res, ResMut, World},
+    prelude::{Component, Entity, FromWorld, Handle, Query, Res, ResMut, World},
     render::{
         color::Color,
         render_asset::RenderAssets,
@@ -318,11 +316,6 @@ impl SpecializedRenderPipeline for UnifiedPipeline {
     }
 }
 
-#[derive(Debug, Bundle)]
-pub struct ExtractQuadBundle {
-    pub extracted_quad: ExtractedQuad,
-}
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd)]
 pub enum UIQuadType {
     Quad,
@@ -408,15 +401,6 @@ pub struct ImageBindGroups {
     values: HashMap<Handle<Image>, BindGroup>,
 }
 
-pub fn prepare_quads(
-    _render_device: Res<RenderDevice>,
-    _render_queue: Res<RenderQueue>,
-    mut _sprite_meta: ResMut<QuadMeta>,
-    mut _extracted_quads: ResMut<ExtractedQuads>,
-) {
-    
-}
-
 pub fn queue_quads(
     mut commands: Commands,
     draw_functions: Res<DrawFunctions<TransparentUI>>,
@@ -433,7 +417,6 @@ pub fn queue_quads(
     unified_pipeline: Res<UnifiedPipeline>,
     gpu_images: Res<RenderAssets<Image>>,
 ) {
-
     let extracted_sprite_len = extracted_quads.quads.len();
     // don't create buffers when there are no quads
     if extracted_sprite_len == 0 {
@@ -482,15 +465,15 @@ pub fn queue_quads(
     let extracted_quads = &mut extracted_quads.quads;
     extracted_quads.sort_unstable_by(|a, b| a.z_index.partial_cmp(&b.z_index).unwrap());
     //match a.z_index.partial_cmp(&b.z_index) {
-        // Some(Ordering::Equal) | None => match a.quad_type.partial_cmp(&b.quad_type) {
-            // Some(Ordering::Equal) | None =>  
-            //     match a.image.cmp(&b.image) {
-            //         Ordering::Equal => a.font_handle.cmp(&b.font_handle), 
-            //         other => other,
-            //     },
-            // Some(other) => other,
-        // }
-        // Some(other) => other,
+    // Some(Ordering::Equal) | None => match a.quad_type.partial_cmp(&b.quad_type) {
+    // Some(Ordering::Equal) | None =>
+    //     match a.image.cmp(&b.image) {
+    //         Ordering::Equal => a.font_handle.cmp(&b.font_handle),
+    //         other => other,
+    //     },
+    // Some(other) => other,
+    // }
+    // Some(other) => other,
     //});
 
     if let Some(type_binding) = sprite_meta.types_buffer.binding() {
@@ -574,7 +557,9 @@ pub fn queue_quads(
                                             },
                                             BindGroupEntry {
                                                 binding: 1,
-                                                resource: BindingResource::Sampler(&gpu_image.sampler),
+                                                resource: BindingResource::Sampler(
+                                                    &gpu_image.sampler,
+                                                ),
                                             },
                                         ],
                                         label: Some("ui_image_bind_group"),
@@ -666,13 +651,12 @@ pub fn queue_quads(
                     quad_type: quad.quad_type,
                     type_index: quad.type_index,
                     rect: sprite_rect,
-                    batch_range: Some(item_start..item_end)
+                    batch_range: Some(item_start..item_end),
                 });
             }
         }
     }
 
-    
     sprite_meta
         .vertices
         .write_buffer(&render_device, &render_queue);
@@ -725,9 +709,9 @@ impl Draw<TransparentUI> for DrawUI {
         let extracted_view = extracted_views.get(view).unwrap();
         let quad_meta = quad_meta.into_inner();
         let batch = quad_batches.get(item.entity).unwrap();
-        
+
         // dbg!((batch.quad_type, batch.type_id));
-        
+
         if item.quad_type == UIQuadType::Clip {
             let window_size = (
                 extracted_view.viewport.z as f32,
@@ -770,8 +754,9 @@ impl Draw<TransparentUI> for DrawUI {
 
             let unified_pipeline = unified_pipeline.into_inner();
             if let Some(font_handle) = batch.font_handle_id.as_ref() {
-                if let Some(image_bindings) =
-                    font_texture_cache.into_inner().get_binding(&Handle::weak(*font_handle))
+                if let Some(image_bindings) = font_texture_cache
+                    .into_inner()
+                    .get_binding(&Handle::weak(*font_handle))
                 {
                     pass.set_bind_group(1, image_bindings, &[]);
                 } else {
@@ -782,7 +767,11 @@ impl Draw<TransparentUI> for DrawUI {
             }
 
             if let Some(image_handle) = batch.image_handle_id.as_ref() {
-                if let Some(bind_group) = image_bind_groups.into_inner().values.get(&Handle::weak(*image_handle)) {
+                if let Some(bind_group) = image_bind_groups
+                    .into_inner()
+                    .values
+                    .get(&Handle::weak(*image_handle))
+                {
                     pass.set_bind_group(3, bind_group, &[]);
                 } else {
                     pass.set_bind_group(3, &unified_pipeline.default_image.1, &[]);
@@ -791,10 +780,7 @@ impl Draw<TransparentUI> for DrawUI {
                 pass.set_bind_group(3, &unified_pipeline.default_image.1, &[]);
             }
 
-            pass.draw(
-                item.batch_range().as_ref().unwrap().clone(),
-                0..1,
-            );
+            pass.draw(item.batch_range().as_ref().unwrap().clone(), 0..1);
         }
     }
 }

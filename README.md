@@ -48,7 +48,7 @@ Kayak UI is in the very early stages of development. Important features are miss
 Use bevy `0.10`! Make sure the version of Kayak you are using uses the same version of bevy.
 
 ```rust
-kayak_ui = "0.2"
+kayak_ui = "0.3"
 bevy = "0.10"
 ```
 

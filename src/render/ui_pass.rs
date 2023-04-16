@@ -1,5 +1,7 @@
+use std::ops::Range;
+
 use bevy::ecs::prelude::*;
-use bevy::render::render_phase::{DrawFunctionId, PhaseItem};
+use bevy::render::render_phase::{BatchedPhaseItem, DrawFunctionId, PhaseItem};
 use bevy::render::render_resource::CachedRenderPipelineId;
 use bevy::render::{
     render_graph::{Node, NodeRunError, RenderGraphContext, SlotInfo, SlotType},
@@ -13,12 +15,17 @@ use bevy::utils::FloatOrd;
 use crate::CameraUIKayak;
 
 use super::extract::DefaultCameraView;
+use super::unified::pipeline::UIQuadType;
 
 pub struct TransparentUI {
     pub sort_key: FloatOrd,
     pub entity: Entity,
     pub pipeline: CachedRenderPipelineId,
     pub draw_function: DrawFunctionId,
+    pub quad_type: UIQuadType,
+    pub rect: bevy::math::Rect,
+    pub type_index: u32,
+    pub batch_range: Option<Range<u32>>,
 }
 
 impl PhaseItem for TransparentUI {
@@ -36,6 +43,16 @@ impl PhaseItem for TransparentUI {
 
     fn entity(&self) -> Entity {
         self.entity
+    }
+}
+
+impl BatchedPhaseItem for TransparentUI {
+    fn batch_range(&self) -> &Option<Range<u32>> {
+        &self.batch_range
+    }
+
+    fn batch_range_mut(&mut self) -> &mut Option<Range<u32>> {
+        &mut self.batch_range
     }
 }
 

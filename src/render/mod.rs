@@ -1,9 +1,11 @@
 use bevy::{
-    prelude::{App, Camera, Commands, Entity, IntoSystemAppConfig, Plugin, Query, With},
+    prelude::{
+        App, Camera, Commands, Entity, IntoSystemAppConfig, IntoSystemConfig, Plugin, Query, With,
+    },
     render::{
         render_graph::{RenderGraph, RunGraphOnViewNode, SlotInfo, SlotType},
-        render_phase::{DrawFunctions, RenderPhase},
-        Extract, ExtractSchedule, RenderApp,
+        render_phase::{batch_phase_system, sort_phase_system, DrawFunctions, RenderPhase},
+        Extract, ExtractSchedule, RenderApp, RenderSet,
     },
 };
 
@@ -43,8 +45,12 @@ impl Plugin for BevyKayakUIRenderPlugin {
         let render_app = app.sub_app_mut(RenderApp);
         render_app
             .init_resource::<DrawFunctions<TransparentUI>>()
-            .add_system(extract_core_pipeline_camera_phases.in_schedule(ExtractSchedule));
-        // .add_system_to_stage(RenderStage::PhaseSort, sort_phase_system::<TransparentUI>);
+            .add_system(extract_core_pipeline_camera_phases.in_schedule(ExtractSchedule))
+            .add_system(
+                batch_phase_system::<TransparentUI>
+                    .after(sort_phase_system::<TransparentUI>)
+                    .in_set(RenderSet::PhaseSort),
+            );
 
         // let pass_node_ui = MainPassUINode::new(&mut render_app.world);
         // let mut graph = render_app.world.get_resource_mut::<RenderGraph>().unwrap();

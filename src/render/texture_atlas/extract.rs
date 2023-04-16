@@ -1,5 +1,5 @@
 use crate::{
-    render::unified::pipeline::{ExtractQuadBundle, ExtractedQuad, UIQuadType},
+    render::unified::pipeline::{ExtractedQuad, UIQuadType},
     render_primitive::RenderPrimitive,
     styles::Corner,
 };
@@ -14,7 +14,7 @@ pub fn extract_texture_atlas(
     render_primitive: &RenderPrimitive,
     images: &Res<Assets<Image>>,
     _dpi: f32,
-) -> Vec<ExtractQuadBundle> {
+) -> Vec<ExtractedQuad> {
     let mut extracted_quads = Vec::new();
 
     let (size, position, layout, handle) = match render_primitive {
@@ -42,31 +42,28 @@ pub fn extract_texture_atlas(
         })
         .unwrap();
 
-    let quad = ExtractQuadBundle {
-        extracted_quad: ExtractedQuad {
-            camera_entity,
-            rect: Rect {
-                min: Vec2::new(layout.posx, layout.posy),
-                max: Vec2::new(layout.posx + layout.width, layout.posy + layout.height),
-            },
-            uv_min: Some(Vec2::new(
-                position.x / image_size.x,
-                1.0 - ((position.y + size.y) / image_size.y),
-            )),
-            uv_max: Some(Vec2::new(
-                (position.x + size.x) / image_size.x,
-                1.0 - (position.y / image_size.y),
-            )),
-            color: Color::WHITE,
-            vertex_index: 0,
-            char_id: 0,
-            z_index: layout.z_index,
-            font_handle: None,
-            quad_type: UIQuadType::Image,
-            type_index: 0,
-            border_radius: Corner::default(),
-            image: Some(handle.clone_weak()),
+    let quad = ExtractedQuad {
+        camera_entity,
+        rect: Rect {
+            min: Vec2::new(layout.posx, layout.posy),
+            max: Vec2::new(layout.posx + layout.width, layout.posy + layout.height),
         },
+        uv_min: Some(Vec2::new(
+            position.x / image_size.x,
+            1.0 - ((position.y + size.y) / image_size.y),
+        )),
+        uv_max: Some(Vec2::new(
+            (position.x + size.x) / image_size.x,
+            1.0 - (position.y / image_size.y),
+        )),
+        color: Color::WHITE,
+        char_id: 0,
+        z_index: layout.z_index,
+        font_handle: None,
+        quad_type: UIQuadType::Image,
+        type_index: 0,
+        border_radius: Corner::default(),
+        image: Some(handle.clone_weak()),
     };
     extracted_quads.push(quad);
 

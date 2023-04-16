@@ -1,4 +1,7 @@
-use bevy::prelude::*;
+use bevy::{
+    diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin},
+    prelude::*,
+};
 use kayak_ui::prelude::{widgets::*, KStyle, *};
 
 fn startup(

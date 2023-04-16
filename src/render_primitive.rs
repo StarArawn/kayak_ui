@@ -62,6 +62,18 @@ impl RenderPrimitive {
         }
     }
 
+    pub fn get_layout(&self) -> Rect {
+        match self {
+            RenderPrimitive::Clip { layout, .. } => *layout,
+            RenderPrimitive::Quad { layout, .. } => *layout,
+            RenderPrimitive::Text { layout, .. } => *layout,
+            RenderPrimitive::Image { layout, .. } => *layout,
+            RenderPrimitive::NinePatch { layout, .. } => *layout,
+            RenderPrimitive::TextureAtlas { layout, .. } => *layout,
+            _ => Rect::default(),
+        }
+    }
+
     pub fn to_string(&self) -> String {
         match self {
             RenderPrimitive::Clip { .. } => "Clip".into(),

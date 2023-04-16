@@ -8,8 +8,8 @@ use crate::{
 use bevy::{
     prelude::{
         Assets, Camera, Camera2d, Camera3d, Color, Commands, Component, Entity, GlobalTransform,
-        Image, IntoSystemAppConfig, IntoSystemAppConfigs, Mat4, Plugin, Query, Rect, Res, UVec4,
-        Vec2, With,
+        Image, IntoSystemAppConfig, IntoSystemAppConfigs, Mat4, Plugin, Query, Rect, Res, ResMut,
+        UVec4, Vec2, With,
     },
     render::{
         render_phase::RenderPhase,
@@ -24,7 +24,7 @@ use super::{
     font::{self, FontMapping},
     image, nine_patch, texture_atlas,
     ui_pass::TransparentUI,
-    unified::pipeline::{ExtractQuadBundle, ExtractedQuad, UIQuadType},
+    unified::pipeline::{ExtractedQuad, ExtractedQuads, UIQuadType},
 };
 
 // mod nine_patch;
@@ -47,7 +47,6 @@ impl Plugin for BevyKayakUIExtractPlugin {
 }
 
 pub fn extract(
-    mut commands: Commands,
     context_query: Extract<Query<(Entity, &KayakRootContext)>>,
     fonts: Extract<Res<Assets<KayakFont>>>,
     font_mapping: Extract<Res<FontMapping>>,
@@ -56,7 +55,9 @@ pub fn extract(
     images: Extract<Res<Assets<Image>>>,
     primary_window: Extract<Query<&Window, With<PrimaryWindow>>>,
     cameras: Extract<Query<&Camera>>,
+    mut extracted_quads: ResMut<ExtractedQuads>,
 ) {
+    extracted_quads.quads.clear();
     let mut render_primitives = Vec::new();
     for (_entity, context) in context_query.iter() {
         let dpi = if let Ok(camera) = cameras.get(context.camera_entity) {
@@ -84,7 +85,6 @@ pub fn extract(
         );
     }
 
-    let mut extracted_quads = Vec::new();
     for (camera_entity, dpi, render_primitive) in render_primitives {
         match render_primitive {
             RenderPrimitive::Text { .. } => {
@@ -95,20 +95,20 @@ pub fn extract(
                     &font_mapping,
                     dpi,
                 );
-                extracted_quads.extend(text_quads);
+                extracted_quads.quads.extend(text_quads);
             }
             RenderPrimitive::Image { .. } => {
                 let image_quads = image::extract_images(camera_entity, &render_primitive, dpi);
-                extracted_quads.extend(image_quads);
+                extracted_quads.quads.extend(image_quads);
             }
             RenderPrimitive::Quad { .. } => {
                 let quad_quads = super::quad::extract_quads(camera_entity, &render_primitive, 1.0);
-                extracted_quads.extend(quad_quads);
+                extracted_quads.quads.extend(quad_quads);
             }
             RenderPrimitive::NinePatch { .. } => {
                 let nine_patch_quads =
                     nine_patch::extract_nine_patch(camera_entity, &render_primitive, &images, dpi);
-                extracted_quads.extend(nine_patch_quads);
+                extracted_quads.quads.extend(nine_patch_quads);
             }
             RenderPrimitive::TextureAtlas { .. } => {
                 let texture_atlas_quads = texture_atlas::extract_texture_atlas(
@@ -117,37 +117,31 @@ pub fn extract(
                     &images,
                     dpi,
                 );
-                extracted_quads.extend(texture_atlas_quads);
+                extracted_quads.quads.extend(texture_atlas_quads);
             }
             RenderPrimitive::Clip { layout } => {
-                extracted_quads.push(ExtractQuadBundle {
-                    extracted_quad: ExtractedQuad {
-                        camera_entity,
-                        rect: Rect {
-                            min: Vec2::new(layout.posx, layout.posy) * dpi,
-                            max: Vec2::new(layout.posx + layout.width, layout.posy + layout.height)
-                                * dpi,
-                        },
-                        color: Color::default(),
-                        vertex_index: 0,
-                        char_id: 0,
-                        z_index: layout.z_index,
-                        font_handle: None,
-                        quad_type: UIQuadType::Clip,
-                        type_index: 0,
-                        border_radius: Corner::default(),
-                        image: None,
-                        uv_min: None,
-                        uv_max: None,
+                extracted_quads.quads.push(ExtractedQuad {
+                    camera_entity,
+                    rect: Rect {
+                        min: Vec2::new(layout.posx, layout.posy) * dpi,
+                        max: Vec2::new(layout.posx + layout.width, layout.posy + layout.height)
+                            * dpi,
                     },
+                    color: Color::default(),
+                    char_id: 0,
+                    z_index: layout.z_index,
+                    font_handle: None,
+                    quad_type: UIQuadType::Clip,
+                    type_index: 0,
+                    border_radius: Corner::default(),
+                    image: None,
+                    uv_min: None,
+                    uv_max: None,
                 });
             }
             _ => {}
         }
     }
-
-    // dbg!(&extracted_quads);
-    commands.spawn_batch(extracted_quads);
 }
 
 #[derive(Component)]

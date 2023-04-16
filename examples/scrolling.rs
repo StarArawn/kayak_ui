@@ -1,4 +1,7 @@
-use bevy::prelude::*;
+use bevy::{
+    diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin},
+    prelude::*,
+};
 use kayak_ui::prelude::{widgets::*, *};
 
 fn startup(
@@ -67,6 +70,8 @@ fn main() {
     App::new()
         .insert_resource(ClearColor(Color::rgb(0.0, 0.0, 0.0)))
         .add_plugins(DefaultPlugins.set(ImagePlugin::default_nearest()))
+        .add_plugin(LogDiagnosticsPlugin::default())
+        .add_plugin(FrameTimeDiagnosticsPlugin::default())
         .add_plugin(KayakContextPlugin)
         .add_plugin(KayakWidgets)
         .add_startup_system(startup)

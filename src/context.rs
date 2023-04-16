@@ -378,7 +378,7 @@ impl KayakRootContext {
             return vec![];
         }
 
-        let render_primitives = if let Ok(mut layout_cache) = self.layout_cache.try_write() {
+        let (render_primitives, _) = if let Ok(mut layout_cache) = self.layout_cache.try_write() {
             recurse_node_tree_to_build_primitives(
                 &node_tree,
                 &mut layout_cache,
@@ -386,15 +386,17 @@ impl KayakRootContext {
                 widget_names,
                 node_tree.root_node.unwrap(),
                 0.0,
+                0.0,
                 RenderPrimitive::Empty,
+                0,
             )
         } else {
-            vec![]
+            (vec![], 0.0)
         };
         // render_primitives.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap());
 
         // render_primitives.iter().enumerate().for_each(|(index, p)| {
-        //     log::info!("Name: {:?}, Z: {:?}", p.to_string(), index);
+        //     log::info!("Name: {:?}, Z: {:?}", p.to_string(), p.get_layout().z_index);
         // });
 
         // dbg!(&render_primitives
@@ -406,32 +408,38 @@ impl KayakRootContext {
     }
 }
 
+pub const UI_Z_STEP: f32 = 0.001;
+
 fn recurse_node_tree_to_build_primitives(
     node_tree: &Tree,
     layout_cache: &mut LayoutCache,
     nodes: &Query<&crate::node::Node>,
     widget_names: &Query<&WidgetName>,
     current_node: WrappedIndex,
-    main_z_index: f32,
+    _parent_global_z: f32,
+    mut current_global_z: f32,
     mut prev_clip: RenderPrimitive,
-) -> Vec<RenderPrimitive> {
+    depth: usize,
+) -> (Vec<RenderPrimitive>, f32) {
     let mut render_primitives = Vec::new();
     if let Ok(node) = nodes.get(current_node.0) {
+        current_global_z += UI_Z_STEP + if node.z <= 0.0 { 0.0 } else { node.z };
         let mut render_primitive = node.primitive.clone();
-        let mut new_z_index = main_z_index;
+        // let mut new_z_index = main_z_index;
+        let new_z = current_global_z; // - parent_global_z;
 
         let layout = if let Some(layout) = layout_cache.rect.get_mut(&current_node) {
             log::trace!(
                 "z_index is {} and node.z is {} for: {}-{}",
-                new_z_index,
+                new_z,
                 node.z,
                 widget_names.get(current_node.0).unwrap().0,
                 current_node.0.index(),
             );
+            layout.z_index = new_z;
 
-            new_z_index += if node.z <= 0.0 { 0.0 } else { node.z };
+            // new_z_index += if node.z <= 0.0 { 0.0 } else { node.z };
 
-            layout.z_index = new_z_index;
             render_primitive.set_layout(*layout);
             *layout
         } else {
@@ -474,7 +482,11 @@ fn recurse_node_tree_to_build_primitives(
             _ => {}
         }
 
-        render_primitives.push(render_primitive.clone());
+        let _indent = "  ".repeat(depth);
+        if !matches!(render_primitive, RenderPrimitive::Empty) {
+            // println!("{} [{}, current_global_z: {}, z: {}, x: {}, y: {}, width: {}, height: {}]", _indent, render_primitive.to_string(), current_global_z, layout.z_index, layout.posx, layout.posy, layout.width, layout.height);
+            render_primitives.push(render_primitive.clone());
+        }
 
         let new_prev_clip = if matches!(render_primitive, RenderPrimitive::Clip { .. }) {
             render_primitive.clone()
@@ -484,33 +496,51 @@ fn recurse_node_tree_to_build_primitives(
 
         prev_clip = new_prev_clip.clone();
         if node_tree.children.contains_key(&current_node) {
-            let z = 1.0f32;
+            let current_parent_global_z = current_global_z;
+            // let mut z = 1.0f32;
             let mut children_primitives = Vec::new();
-            for child in node_tree.children.get(&current_node).unwrap() {
+            let children = node_tree.children.get(&current_node).unwrap();
+            // let children_count = children.len();
+            for child in children {
                 // main_z_index += 1.0;
-                let mut children_p = recurse_node_tree_to_build_primitives(
+                // let new_z = main_z_index + if node.z < 0.0 { 0.0 } else { node.z } + (z / children_count as f32);
+                let (mut children_p, _new_global_z) = recurse_node_tree_to_build_primitives(
                     node_tree,
                     layout_cache,
                     nodes,
                     widget_names,
                     *child,
-                    main_z_index + if node.z < 0.0 { 0.0 } else { node.z } + z,
+                    current_parent_global_z,
+                    current_global_z,
                     new_prev_clip.clone(),
+                    depth + 1,
                 );
+                // current_global_z = new_global_z;
+                // z += 1.0;
 
-                // Between each child node we need to reset the clip.
-                if matches!(prev_clip, RenderPrimitive::Clip { .. }) {
-                    children_p.push(prev_clip.clone());
+                if children_p.len() > 0 {
+                    // Between each child node we need to reset the clip.
+                    if matches!(prev_clip, RenderPrimitive::Clip { .. }) {
+                        match prev_clip {
+                            RenderPrimitive::Clip { mut layout } => {
+                                current_global_z += UI_Z_STEP * children_p.len() as f32;
+                                layout.z_index = current_global_z;
+                                // println!("{}   [previous_clip, z: {}, x: {}, y: {}, width: {}, height: {}", _indent, layout.z_index, layout.posx, layout.posy, layout.width, layout.height);
+                                children_p.push(RenderPrimitive::Clip { layout });
+                            }
+                            _ => {}
+                        }
+                    }
                 }
 
-                if let Ok(node) = nodes.get(child.0) {
-                    let zz = if node.z < 0.0 { z } else { z + node.z };
+                if let Ok(_node) = nodes.get(child.0) {
+                    let zz = 0.0; //if node.z < 0.0 { z } else { z + node.z };
                     children_primitives.push((zz, children_p));
                 }
             }
 
             // Sort and add
-            children_primitives.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap());
+            // children_primitives.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap());
             for cp in children_primitives.drain(..) {
                 render_primitives.extend(cp.1);
             }
@@ -545,7 +575,7 @@ fn recurse_node_tree_to_build_primitives(
         );
     }
 
-    render_primitives
+    (render_primitives, current_global_z)
 }
 
 fn update_widgets_sys(world: &mut World) {

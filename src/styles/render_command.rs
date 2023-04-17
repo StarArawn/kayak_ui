@@ -2,6 +2,7 @@ use bevy::{
     prelude::{Handle, Image, Vec2},
     reflect::{FromReflect, Reflect},
 };
+use bevy_svg::prelude::Svg;
 use kayak_font::Alignment;
 
 use super::Edge;
@@ -30,6 +31,9 @@ pub enum RenderCommand {
     NinePatch {
         border: Edge<f32>,
         handle: Handle<Image>,
+    },
+    Svg {
+        handle: Handle<Svg>,
     },
 }
 

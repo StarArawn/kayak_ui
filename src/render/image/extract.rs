@@ -44,5 +44,6 @@ pub fn extract_images(
         image: Some(handle.clone_weak()),
         uv_max: None,
         uv_min: None,
+        ..Default::default()
     }]
 }

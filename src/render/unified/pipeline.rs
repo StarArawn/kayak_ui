@@ -1,5 +1,6 @@
 use bevy::asset::HandleId;
-use bevy::prelude::{Commands, Rect, Resource};
+use bevy::prelude::{Commands, Mesh, Rect, Resource, Vec3};
+use bevy::render::mesh::VertexAttributeValues;
 use bevy::render::render_phase::BatchedPhaseItem;
 use bevy::render::render_resource::{
     DynamicUniformBuffer, ShaderType, SpecializedRenderPipeline, SpecializedRenderPipelines,
@@ -11,7 +12,7 @@ use bevy::{
         lifetimeless::{Read, SQuery, SRes},
         SystemState,
     },
-    math::{Mat4, Quat, Vec2, Vec3, Vec4},
+    math::{Mat4, Quat, Vec2, Vec4},
     prelude::{Component, Entity, FromWorld, Handle, Query, Res, ResMut, World},
     render::{
         color::Color,
@@ -34,6 +35,7 @@ use bevy::{
     },
     utils::HashMap,
 };
+use bevy_svg::prelude::Svg;
 use bytemuck::{Pod, Zeroable};
 use kayak_font::{
     bevy::{FontRenderingPipeline, FontTextureCache},
@@ -42,6 +44,7 @@ use kayak_font::{
 
 use super::{Dpi, UNIFIED_SHADER_HANDLE};
 use crate::prelude::Corner;
+use crate::render::svg::RenderSvgs;
 use crate::render::ui_pass::TransparentUI;
 
 #[derive(Resource)]
@@ -54,13 +57,22 @@ pub struct UnifiedPipeline {
     default_image: (GpuImage, BindGroup),
 }
 
-const QUAD_VERTEX_POSITIONS: &[Vec3] = &[
-    Vec3::from_array([0.0, 1.0, 0.0]),
-    Vec3::from_array([1.0, 0.0, 0.0]),
-    Vec3::from_array([0.0, 0.0, 0.0]),
-    Vec3::from_array([0.0, 1.0, 0.0]),
-    Vec3::from_array([1.0, 1.0, 0.0]),
-    Vec3::from_array([1.0, 0.0, 0.0]),
+// const QUAD_VERTEX_POSITIONS: &[Vec3] = &[
+//     Vec3::from_array([0.0, 1.0, 0.0]),
+//     Vec3::from_array([1.0, 0.0, 0.0]),
+//     Vec3::from_array([0.0, 0.0, 0.0]),
+//     Vec3::from_array([0.0, 1.0, 0.0]),
+//     Vec3::from_array([1.0, 1.0, 0.0]),
+//     Vec3::from_array([1.0, 0.0, 0.0]),
+// ];
+
+const QUAD_INDICES: [usize; 6] = [0, 2, 3, 0, 1, 2];
+
+const QUAD_VERTEX_POSITIONS: [Vec2; 4] = [
+    Vec2::new(0.0, 0.0),
+    Vec2::new(1.0, 0.0),
+    Vec2::new(1.0, 1.0),
+    Vec2::new(0.0, 1.0),
 ];
 
 impl FontRenderingPipeline for UnifiedPipeline {
@@ -340,6 +352,27 @@ pub struct ExtractedQuad {
     pub image: Option<Handle<Image>>,
     pub uv_min: Option<Vec2>,
     pub uv_max: Option<Vec2>,
+    pub svg_handle: Option<Handle<Svg>>,
+}
+
+impl Default for ExtractedQuad {
+    fn default() -> Self {
+        Self {
+            camera_entity: Entity::from_raw(0),
+            rect: Default::default(),
+            color: Default::default(),
+            char_id: Default::default(),
+            z_index: Default::default(),
+            font_handle: Default::default(),
+            quad_type: UIQuadType::Quad,
+            type_index: Default::default(),
+            border_radius: Default::default(),
+            image: Default::default(),
+            uv_min: Default::default(),
+            uv_max: Default::default(),
+            svg_handle: Default::default(),
+        }
+    }
 }
 
 #[repr(C)]
@@ -416,6 +449,7 @@ pub fn queue_quads(
     mut image_bind_groups: ResMut<ImageBindGroups>,
     unified_pipeline: Res<UnifiedPipeline>,
     gpu_images: Res<RenderAssets<Image>>,
+    render_svgs: Res<RenderSvgs>,
 ) {
     let extracted_sprite_len = extracted_quads.quads.len();
     // don't create buffers when there are no quads
@@ -576,71 +610,134 @@ pub fn queue_quads(
                     current_batch_entity = commands.spawn(current_batch).id();
                     // dbg!((current_batch_entity, current_batch, quad.rect));
                 }
+
                 let sprite_rect = quad.rect;
-                let color = quad.color.as_linear_rgba_f32();
-
-                let uv_min = quad.uv_min.unwrap_or(Vec2::ZERO);
-                let uv_max = quad.uv_max.unwrap_or(Vec2::ONE);
-
-                let bottom_left = Vec4::new(
-                    uv_min.x,
-                    uv_min.y,
-                    quad.char_id as f32,
-                    quad.border_radius.bottom_left,
-                );
-                let top_left = Vec4::new(
-                    uv_min.x,
-                    uv_max.y,
-                    quad.char_id as f32,
-                    quad.border_radius.top_left,
-                );
-                let top_right = Vec4::new(
-                    uv_max.x,
-                    uv_max.y,
-                    quad.char_id as f32,
-                    quad.border_radius.top_right,
-                );
-                let bottom_right = Vec4::new(
-                    uv_max.x,
-                    uv_min.y,
-                    quad.char_id as f32,
-                    quad.border_radius.bottom_right,
-                );
-
-                let uvs: [[f32; 4]; 6] = [
-                    bottom_left.into(),
-                    top_right.into(),
-                    top_left.into(),
-                    bottom_left.into(),
-                    bottom_right.into(),
-                    top_right.into(),
-                ];
-
                 let item_start = index;
                 let mut item_end = index;
 
-                if !matches!(quad.quad_type, UIQuadType::Clip) {
-                    for (index, vertex_position) in QUAD_VERTEX_POSITIONS.iter().enumerate() {
-                        let world = Mat4::from_scale_rotation_translation(
-                            sprite_rect.size().extend(1.0),
-                            Quat::default(),
-                            sprite_rect.min.extend(0.0),
-                        );
-                        let final_position = (world * (*vertex_position).extend(1.0)).truncate();
-                        sprite_meta.vertices.push(QuadVertex {
-                            position: final_position.into(),
-                            color,
-                            uv: uvs[index],
-                            pos_size: [
-                                sprite_rect.min.x,
-                                sprite_rect.min.y,
-                                sprite_rect.size().x,
-                                sprite_rect.size().y,
-                            ],
-                        });
+                if let Some(svg_handle) = quad.svg_handle.as_ref() {
+                    if let Some((svg, mesh)) = render_svgs.get(svg_handle) {
+                        let new_height = (svg.size.y / svg.size.x) * sprite_rect.size().x;
+                        let svg_scale_x = sprite_rect.size().x / svg.size.x;
+                        let svg_scale_y = new_height / svg.size.y;
+                        let positions = mesh
+                            .attribute(Mesh::ATTRIBUTE_POSITION)
+                            .unwrap()
+                            .as_float3()
+                            .unwrap();
+                        let colors = match mesh.attribute(Mesh::ATTRIBUTE_COLOR).unwrap() {
+                            VertexAttributeValues::Float32x4(d) => Some(d),
+                            _ => None,
+                        }
+                        .unwrap();
+                        let indices = mesh.indices().unwrap();
+
+                        for index in indices.iter() {
+                            let position = positions[index];
+                            let color = colors[index];
+                            let world = Mat4::from_scale_rotation_translation(
+                                Vec3::new(svg_scale_x, svg_scale_y, 1.0), //sprite_rect.size().extend(1.0),
+                                Quat::default(),
+                                sprite_rect.min.extend(0.0),
+                            );
+                            let final_position = (world
+                                * Vec4::new(
+                                    position[0] - 34.5,
+                                    -position[1] - 95.0,
+                                    position[2],
+                                    1.0,
+                                ))
+                            .truncate();
+                            sprite_meta.vertices.push(QuadVertex {
+                                position: final_position.into(),
+                                color,
+                                uv: [0.0; 4],
+                                pos_size: [
+                                    sprite_rect.min.x,
+                                    sprite_rect.min.y,
+                                    sprite_rect.size().x,
+                                    sprite_rect.size().y,
+                                ],
+                            });
+                        }
+                        index += indices.len() as u32;
+                        item_end = index;
                     }
-                    index += QUAD_VERTEX_POSITIONS.len() as u32;
-                    item_end = index;
+                } else {
+                    let color = quad.color.as_linear_rgba_f32();
+
+                    let uv_min = quad.uv_min.unwrap_or(Vec2::ZERO);
+                    let uv_max = quad.uv_max.unwrap_or(Vec2::ONE);
+
+                    let bottom_left = Vec4::new(
+                        uv_min.x,
+                        uv_min.y,
+                        quad.char_id as f32,
+                        quad.border_radius.bottom_left,
+                    );
+                    let top_left = Vec4::new(
+                        uv_min.x,
+                        uv_max.y,
+                        quad.char_id as f32,
+                        quad.border_radius.top_left,
+                    );
+                    let top_right = Vec4::new(
+                        uv_max.x,
+                        uv_max.y,
+                        quad.char_id as f32,
+                        quad.border_radius.top_right,
+                    );
+                    let bottom_right = Vec4::new(
+                        uv_max.x,
+                        uv_min.y,
+                        quad.char_id as f32,
+                        quad.border_radius.bottom_right,
+                    );
+
+                    let uvs: [[f32; 4]; 6] = [
+                        top_left.into(),
+                        bottom_right.into(),
+                        bottom_left.into(),
+                        top_left.into(),
+                        top_right.into(),
+                        bottom_right.into(),
+                    ];
+
+                    const QUAD_INDICES: [usize; 6] = [0, 2, 3, 0, 1, 2];
+
+                    const QUAD_VERTEX_POSITIONS: [Vec2; 4] = [
+                        Vec2::new(0.0, 0.0),
+                        Vec2::new(1.0, 0.0),
+                        Vec2::new(1.0, 1.0),
+                        Vec2::new(0.0, 1.0),
+                    ];
+
+                    if !matches!(quad.quad_type, UIQuadType::Clip) {
+                        for (index, vertex_index) in QUAD_INDICES.iter().enumerate() {
+                            let vertex_position = QUAD_VERTEX_POSITIONS[*vertex_index];
+                            let world = Mat4::from_scale_rotation_translation(
+                                sprite_rect.size().extend(1.0),
+                                Quat::default(),
+                                sprite_rect.min.extend(0.0),
+                            );
+                            let final_position =
+                                (world * vertex_position.extend(0.0).extend(1.0)).truncate();
+                            sprite_meta.vertices.push(QuadVertex {
+                                position: final_position.into(),
+                                color,
+                                uv: uvs[index],
+                                pos_size: [
+                                    sprite_rect.min.x,
+                                    sprite_rect.min.y,
+                                    sprite_rect.size().x,
+                                    sprite_rect.size().y,
+                                ],
+                            });
+                        }
+
+                        index += QUAD_INDICES.len() as u32;
+                        item_end = index;
+                    }
                 }
 
                 transparent_phase.add(TransparentUI {

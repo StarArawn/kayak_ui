@@ -21,6 +21,7 @@ pub(crate) mod font;
 pub(crate) mod image;
 pub(crate) mod nine_patch;
 pub(crate) mod quad;
+pub(crate) mod svg;
 pub(crate) mod texture_atlas;
 mod ui_pass;
 pub mod unified;

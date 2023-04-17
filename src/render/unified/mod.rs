@@ -1,7 +1,7 @@
 use bevy::{
     prelude::{
-        Assets, Commands, HandleUntyped, IntoSystemAppConfig, IntoSystemConfig, Plugin, Query, Res,
-        Resource, With,
+        AddAsset, Assets, Commands, HandleUntyped, IntoSystemAppConfig, IntoSystemConfig, Plugin,
+        Query, Res, Resource, With,
     },
     reflect::TypeUuid,
     render::{
@@ -11,6 +11,7 @@ use bevy::{
     },
     window::{PrimaryWindow, Window},
 };
+use bevy_svg::prelude::Svg;
 
 use crate::{
     render::{
@@ -22,6 +23,8 @@ use crate::{
 
 use self::pipeline::{ExtractedQuads, ImageBindGroups};
 
+use super::svg::RenderSvgs;
+
 pub mod pipeline;
 pub mod text;
 
@@ -32,7 +35,7 @@ pub struct UnifiedRenderPlugin;
 
 impl Plugin for UnifiedRenderPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
-        app.add_plugin(text::TextRendererPlugin);
+        app.add_asset::<Svg>().add_plugin(text::TextRendererPlugin);
 
         let mut shaders = app.world.get_resource_mut::<Assets<Shader>>().unwrap();
         let unified_shader = Shader::from_wgsl(include_str!("shader.wgsl"));
@@ -45,6 +48,8 @@ impl Plugin for UnifiedRenderPlugin {
             .init_resource::<UnifiedPipeline>()
             .init_resource::<SpecializedRenderPipelines<UnifiedPipeline>>()
             .init_resource::<QuadMeta>()
+            .init_resource::<RenderSvgs>()
+            .add_system(super::svg::extract_svg_asset.in_schedule(ExtractSchedule))
             .add_system(extract_baseline.in_schedule(ExtractSchedule))
             .add_system(pipeline::queue_quads.in_set(RenderSet::Queue));
 

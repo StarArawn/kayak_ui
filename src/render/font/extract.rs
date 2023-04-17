@@ -72,6 +72,7 @@ pub fn extract_texts(
             image: None,
             uv_max: None,
             uv_min: None,
+            ..Default::default()
         });
     }
 

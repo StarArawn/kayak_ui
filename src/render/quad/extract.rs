@@ -59,6 +59,7 @@ pub fn extract_quads(
             image: None,
             uv_max: None,
             uv_min: None,
+            ..Default::default()
         },
         ExtractedQuad {
             camera_entity,
@@ -84,6 +85,7 @@ pub fn extract_quads(
             image: None,
             uv_max: None,
             uv_min: None,
+            ..Default::default()
         },
     ]
 }

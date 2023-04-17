@@ -64,6 +64,7 @@ pub fn extract_texture_atlas(
         type_index: 0,
         border_radius: Corner::default(),
         image: Some(handle.clone_weak()),
+        ..Default::default()
     };
     extracted_quads.push(quad);
 

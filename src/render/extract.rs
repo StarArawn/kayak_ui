@@ -110,6 +110,13 @@ pub fn extract(
                     nine_patch::extract_nine_patch(camera_entity, &render_primitive, &images, dpi);
                 extracted_quads.quads.extend(nine_patch_quads);
             }
+            RenderPrimitive::Svg { .. } => {
+                extracted_quads.quads.push(super::svg::extract_svg(
+                    camera_entity,
+                    &render_primitive,
+                    dpi,
+                ));
+            }
             RenderPrimitive::TextureAtlas { .. } => {
                 let texture_atlas_quads = texture_atlas::extract_texture_atlas(
                     camera_entity,
@@ -137,6 +144,7 @@ pub fn extract(
                     image: None,
                     uv_min: None,
                     uv_max: None,
+                    ..Default::default()
                 });
             }
             _ => {}

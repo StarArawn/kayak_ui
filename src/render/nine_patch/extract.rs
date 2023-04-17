@@ -58,6 +58,7 @@ pub fn extract_nine_patch(
         image: Some(handle.clone_weak()),
         uv_max: None,
         uv_min: None,
+        ..Default::default()
     };
 
     let top_uv_min_y = (image_size.y - border.top) / image_size.y;

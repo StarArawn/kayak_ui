@@ -6,6 +6,7 @@ use bevy::{
     prelude::{Color, Handle, Image, Vec2},
     reflect::Reflect,
 };
+use bevy_svg::prelude::Svg;
 use kayak_font::{TextLayout, TextProperties};
 
 #[derive(Debug, Reflect, Clone, PartialEq)]
@@ -47,6 +48,10 @@ pub enum RenderPrimitive {
         layout: Rect,
         handle: Handle<Image>,
     },
+    Svg {
+        handle: Handle<Svg>,
+        layout: Rect,
+    },
 }
 
 impl RenderPrimitive {
@@ -58,6 +63,7 @@ impl RenderPrimitive {
             RenderPrimitive::Image { layout, .. } => *layout = new_layout,
             RenderPrimitive::NinePatch { layout, .. } => *layout = new_layout,
             RenderPrimitive::TextureAtlas { layout, .. } => *layout = new_layout,
+            RenderPrimitive::Svg { layout, .. } => *layout = new_layout,
             _ => (),
         }
     }
@@ -70,6 +76,7 @@ impl RenderPrimitive {
             RenderPrimitive::Image { layout, .. } => *layout,
             RenderPrimitive::NinePatch { layout, .. } => *layout,
             RenderPrimitive::TextureAtlas { layout, .. } => *layout,
+            RenderPrimitive::Svg { layout, .. } => *layout,
             _ => Rect::default(),
         }
     }
@@ -82,6 +89,7 @@ impl RenderPrimitive {
             RenderPrimitive::Image { .. } => "Image".into(),
             RenderPrimitive::NinePatch { .. } => "NinePatch".into(),
             RenderPrimitive::TextureAtlas { .. } => "TextureAtlas".into(),
+            RenderPrimitive::Svg { .. } => "Svg".into(),
             RenderPrimitive::Empty { .. } => "Empty".into(),
         }
     }
@@ -159,6 +167,10 @@ impl From<&KStyle> for RenderPrimitive {
                 border,
                 layout: Rect::default(),
                 handle,
+            },
+            RenderCommand::Svg { handle } => Self::Svg {
+                handle,
+                layout: Rect::default(),
             },
         }
     }

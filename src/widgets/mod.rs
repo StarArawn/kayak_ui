@@ -30,6 +30,7 @@ mod element;
 mod image;
 mod nine_patch;
 mod scroll;
+mod svg;
 mod text;
 mod text_box;
 mod texture_atlas;
@@ -51,6 +52,7 @@ pub use scroll::{
         ScrollContext, ScrollContextProvider, ScrollContextProviderBundle, ScrollMode,
     },
 };
+pub use svg::{KSvg, KSvgBundle};
 pub use text::{TextProps, TextWidgetBundle};
 pub use text_box::{TextBoxBundle, TextBoxProps, TextBoxState};
 pub use texture_atlas::{TextureAtlasBundle, TextureAtlasProps};
@@ -70,6 +72,7 @@ use scroll::{
     scroll_bar::scroll_bar_render, scroll_box::scroll_box_render,
     scroll_content::scroll_content_render, scroll_context::scroll_context_render,
 };
+use svg::svg_render;
 use text::text_render;
 use text_box::text_box_render;
 use texture_atlas::texture_atlas_render;
@@ -105,6 +108,7 @@ impl KayakUIPlugin for KayakWidgetsContextPlugin {
         context.add_widget_data::<KImage, EmptyState>();
         context.add_widget_data::<TextureAtlasProps, EmptyState>();
         context.add_widget_data::<NinePatch, EmptyState>();
+        context.add_widget_data::<KSvg, EmptyState>();
         context.add_widget_data::<Element, EmptyState>();
         context.add_widget_data::<ScrollBarProps, EmptyState>();
         context.add_widget_data::<ScrollContentProps, EmptyState>();
@@ -157,6 +161,11 @@ impl KayakUIPlugin for KayakWidgetsContextPlugin {
             NinePatch::default().get_name(),
             widget_update::<NinePatch, EmptyState>,
             nine_patch_render,
+        );
+        context.add_widget_system(
+            KSvg::default().get_name(),
+            widget_update::<KSvg, EmptyState>,
+            svg_render,
         );
         context.add_widget_system(
             Element::default().get_name(),

@@ -64,6 +64,7 @@ pub mod prelude {
     pub mod kayak_font {
         pub use kayak_font::*;
     }
+    pub use ::kayak_font::Alignment;
     pub use kayak_ui_macros::{constructor, rsx};
 }
 

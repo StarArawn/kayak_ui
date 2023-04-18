@@ -57,7 +57,9 @@ pub use svg::{KSvg, KSvgBundle};
 pub use text::{TextProps, TextWidgetBundle};
 pub use text_box::{TextBoxBundle, TextBoxProps, TextBoxState};
 pub use texture_atlas::{TextureAtlasBundle, TextureAtlasProps};
-pub use transition::{create_transition, EaseFunction, Transition, TransitionBundle, TransitionState, TransitionProps};
+pub use transition::{
+    create_transition, EaseFunction, Transition, TransitionBundle, TransitionProps, TransitionState,
+};
 pub use window::{KWindow, KWindowState, WindowBundle};
 pub use window_context_provider::{
     WindowContext, WindowContextProvider, WindowContextProviderBundle,

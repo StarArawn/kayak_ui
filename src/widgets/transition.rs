@@ -37,9 +37,7 @@ impl Transition {
     ///
     /// - transition: The transition props used to create the transition.
     ///
-    pub fn new(
-        transition: &TransitionProps
-    ) -> Transition {
+    pub fn new(transition: &TransitionProps) -> Transition {
         Self {
             easing: transition.easing,
             start: Instant::now(),
@@ -151,7 +149,7 @@ pub fn update_transitions(
 }
 
 /// The transition props that represent an animation.
-/// 
+///
 /// Note: Styles that can't be interpolated will default to `style_a`.
 #[derive(Component, Clone, PartialEq)]
 pub struct TransitionProps {
@@ -215,8 +213,12 @@ pub fn render(
     mut transition_state_query: Query<&mut TransitionState>,
 ) -> bool {
     if let Ok((transition, children)) = query.get_mut(entity) {
-        let transition_entity =
-            create_transition(&widget_context, &mut commands, entity, &Transition::new(transition));
+        let transition_entity = create_transition(
+            &widget_context,
+            &mut commands,
+            entity,
+            &Transition::new(transition),
+        );
         if let Ok(mut transition_state) = transition_state_query.get_mut(transition_entity) {
             transition_state.transition.looping = transition.looping;
             transition_state.transition.easing = transition.easing;

@@ -22,7 +22,9 @@ impl WidgetState {
         widget_entity: Entity,
         initial_state: State,
     ) -> Entity {
-        if let (Ok(mut mapping), Ok(mut reverse_mapping)) = (self.mapping.try_write(), self.reverse_mapping.try_write()) {
+        if let (Ok(mut mapping), Ok(mut reverse_mapping)) =
+            (self.mapping.try_write(), self.reverse_mapping.try_write())
+        {
             if mapping.contains_key(&widget_entity) {
                 *mapping.get(&widget_entity).unwrap()
             } else {
@@ -59,7 +61,9 @@ impl WidgetState {
     }
 
     pub fn remove(&self, widget_entity: Entity) -> Option<Entity> {
-        if let (Ok(mut mapping), Ok(mut reverse_mapping)) = (self.mapping.try_write(), self.reverse_mapping.try_write()) {
+        if let (Ok(mut mapping), Ok(mut reverse_mapping)) =
+            (self.mapping.try_write(), self.reverse_mapping.try_write())
+        {
             let state_entity = mapping.remove(&widget_entity);
             if let Some(state_entity) = state_entity {
                 reverse_mapping.remove(&state_entity);

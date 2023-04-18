@@ -529,10 +529,26 @@ impl KStyle {
         new_styles.offset = if let StyleProp::Value(edge_a) = self.offset {
             if let StyleProp::Value(edge_b) = b.offset {
                 StyleProp::Value(Edge::new(
-                    get_value(lerp_units(&StyleProp::Value(edge_a.top), &StyleProp::Value(edge_b.top), x)),
-                    get_value(lerp_units(&StyleProp::Value(edge_a.right), &StyleProp::Value(edge_b.right), x)),
-                    get_value(lerp_units(&StyleProp::Value(edge_a.bottom), &StyleProp::Value(edge_b.bottom), x)),
-                    get_value(lerp_units(&StyleProp::Value(edge_a.left), &StyleProp::Value(edge_b.left), x)),
+                    get_value(lerp_units(
+                        &StyleProp::Value(edge_a.top),
+                        &StyleProp::Value(edge_b.top),
+                        x,
+                    )),
+                    get_value(lerp_units(
+                        &StyleProp::Value(edge_a.right),
+                        &StyleProp::Value(edge_b.right),
+                        x,
+                    )),
+                    get_value(lerp_units(
+                        &StyleProp::Value(edge_a.bottom),
+                        &StyleProp::Value(edge_b.bottom),
+                        x,
+                    )),
+                    get_value(lerp_units(
+                        &StyleProp::Value(edge_a.left),
+                        &StyleProp::Value(edge_b.left),
+                        x,
+                    )),
                 ))
             } else {
                 StyleProp::Value(edge_a)
@@ -544,10 +560,26 @@ impl KStyle {
         new_styles.padding = if let StyleProp::Value(edge_a) = self.padding {
             if let StyleProp::Value(edge_b) = b.padding {
                 StyleProp::Value(Edge::new(
-                    get_value(lerp_units(&StyleProp::Value(edge_a.top), &StyleProp::Value(edge_b.top), x)),
-                    get_value(lerp_units(&StyleProp::Value(edge_a.right), &StyleProp::Value(edge_b.right), x)),
-                    get_value(lerp_units(&StyleProp::Value(edge_a.bottom), &StyleProp::Value(edge_b.bottom), x)),
-                    get_value(lerp_units(&StyleProp::Value(edge_a.left), &StyleProp::Value(edge_b.left), x)),
+                    get_value(lerp_units(
+                        &StyleProp::Value(edge_a.top),
+                        &StyleProp::Value(edge_b.top),
+                        x,
+                    )),
+                    get_value(lerp_units(
+                        &StyleProp::Value(edge_a.right),
+                        &StyleProp::Value(edge_b.right),
+                        x,
+                    )),
+                    get_value(lerp_units(
+                        &StyleProp::Value(edge_a.bottom),
+                        &StyleProp::Value(edge_b.bottom),
+                        x,
+                    )),
+                    get_value(lerp_units(
+                        &StyleProp::Value(edge_a.left),
+                        &StyleProp::Value(edge_b.left),
+                        x,
+                    )),
                 ))
             } else {
                 StyleProp::Value(edge_a)
@@ -571,7 +603,9 @@ impl KStyle {
 fn get_value<T: Default + Clone + FromReflect>(a: StyleProp<T>) -> T {
     match a {
         StyleProp::Value(v) => v,
-        _ => { panic!("Unexpected lack of value!"); }
+        _ => {
+            panic!("Unexpected lack of value!");
+        }
     }
 }
 
@@ -590,23 +624,19 @@ fn lerp_f32(prop_a: &StyleProp<f32>, prop_b: &StyleProp<f32>, x: f32) -> StylePr
 fn lerp_units(prop_a: &StyleProp<Units>, prop_b: &StyleProp<Units>, x: f32) -> StyleProp<Units> {
     if let StyleProp::Value(unit_a) = prop_a {
         if let StyleProp::Value(unit_b) = prop_b {
-            StyleProp::Value(
-                match (unit_a, unit_b) {
-                    (Units::Pixels(a), Units::Pixels(b)) => {
-                        Units::Pixels(lerp(*a, *b, x))
-                    }
-                    (Units::Percentage(a), Units::Percentage(b)) => {
-                        Units::Pixels(lerp(*a, *b, x))
-                    }
-                    (Units::Stretch(a), Units::Stretch(b)) => {
-                        Units::Pixels(lerp(*a, *b, x))
-                    }
-                    _ => {
-                        bevy::prelude::warn!("Cannot lerp between non-matching units! Unit_A: {:?}, Unit_B: {:?}", unit_a, unit_b);
-                        *unit_a
-                    }
+            StyleProp::Value(match (unit_a, unit_b) {
+                (Units::Pixels(a), Units::Pixels(b)) => Units::Pixels(lerp(*a, *b, x)),
+                (Units::Percentage(a), Units::Percentage(b)) => Units::Pixels(lerp(*a, *b, x)),
+                (Units::Stretch(a), Units::Stretch(b)) => Units::Pixels(lerp(*a, *b, x)),
+                _ => {
+                    bevy::prelude::warn!(
+                        "Cannot lerp between non-matching units! Unit_A: {:?}, Unit_B: {:?}",
+                        unit_a,
+                        unit_b
+                    );
+                    *unit_a
                 }
-            )
+            })
         } else {
             StyleProp::Value(*unit_a)
         }
@@ -643,9 +673,9 @@ fn lerp_lch(a: Color, b: Color, x: f32) -> Color {
     .as_rgba();
 }
 
-
-fn rgb_to_hsv(from : &Color) -> Vec3 { // xyz <-> hsv
-    let r = from.r(); 
+fn rgb_to_hsv(from: &Color) -> Vec3 {
+    // xyz <-> hsv
+    let r = from.r();
     let g = from.g();
     let b = from.b();
 
@@ -661,8 +691,7 @@ fn rgb_to_hsv(from : &Color) -> Vec3 { // xyz <-> hsv
     // calc Saturation
     if max != 0.0 {
         res.y = delta / max;
-    }
-    else {
+    } else {
         res.x = -1.0;
         res.y = 0.0;
 
@@ -670,14 +699,15 @@ fn rgb_to_hsv(from : &Color) -> Vec3 { // xyz <-> hsv
     }
 
     // calc Hue
-    if r == max { // between Yellow & Magenta
+    if r == max {
+        // between Yellow & Magenta
         res.x = (g - b) / delta;
-    }
-    else if g == max { // cyan to yellow
+    } else if g == max {
+        // cyan to yellow
         res.x = 2.0 + (b - r) / delta;
-    }
-    else { // b == max // Megnta to cyan
-        res.x = 4.0 + (r-g) / delta;
+    } else {
+        // b == max // Megnta to cyan
+        res.x = 4.0 + (r - g) / delta;
     }
 
     res.x = res.x * 60.0; // Convert to degrees
@@ -688,55 +718,50 @@ fn rgb_to_hsv(from : &Color) -> Vec3 { // xyz <-> hsv
     res
 }
 
-fn hsv_to_rgb(from : &Vec3) -> Color {
+fn hsv_to_rgb(from: &Vec3) -> Color {
     let h = from.x;
     let s = from.y;
     let v = from.z;
 
     // Calc base values
     let c = s * v;
-    let x = c * (1.0 - (((h / 60.0)% 2.0) - 1.0).abs());
+    let x = c * (1.0 - (((h / 60.0) % 2.0) - 1.0).abs());
     let m = v - c;
 
-    let mut res = Vec4::new(0.0,0.0,0.0,1.0);
+    let mut res = Vec4::new(0.0, 0.0, 0.0, 1.0);
 
     if h >= 0.0 && h < 60.0 {
         res.x = c;
         res.y = x;
         res.z = 0.0;
-    }
-    else if h >= 60.0 && h < 120.0 {
+    } else if h >= 60.0 && h < 120.0 {
         res.x = x;
         res.y = c;
         res.z = 0.0;
-    }
-    else if h >= 120.0 && h < 180.0 {
+    } else if h >= 120.0 && h < 180.0 {
         res.x = 0.0;
         res.y = c;
         res.z = x;
-    }
-    else if h >= 180.0 && h < 240.0 {
+    } else if h >= 180.0 && h < 240.0 {
         res.x = 0.0;
         res.y = x;
         res.z = c;
-    }
-    else if h >= 240.0 && h < 300.0 {
+    } else if h >= 240.0 && h < 300.0 {
         res.x = x;
         res.y = 0.0;
         res.z = c;
-    }
-    else {
+    } else {
         res.x = c;
         res.y = 0.0;
         res.z = x;
     }
 
-    res = res + Vec4::new(m,m,m,0.0);
+    res = res + Vec4::new(m, m, m, 0.0);
 
     Color::from(res)
 }
 
-fn hsv_lerp(from : &Color, to : &Color, amount : f32) -> Color {
+fn hsv_lerp(from: &Color, to: &Color, amount: f32) -> Color {
     let from = rgb_to_hsv(from);
     let to = rgb_to_hsv(to);
     let mut res = from.lerp(to, amount);
@@ -746,7 +771,6 @@ fn hsv_lerp(from : &Color, to : &Color, amount : f32) -> Color {
     }
     hsv_to_rgb(&res)
 }
-
 
 fn lerp(a: f32, b: f32, x: f32) -> f32 {
     a * (1.0 - x) + b * x

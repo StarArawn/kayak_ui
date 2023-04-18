@@ -15,7 +15,12 @@ fn my_quad_update(
     mut query: Query<&MyQuad>,
 ) -> bool {
     if let Ok(quad) = query.get_mut(entity) {
-        create_transition(&widget_context, &mut commands, entity, &Transition::new(&quad.transition));
+        create_transition(
+            &widget_context,
+            &mut commands,
+            entity,
+            &Transition::new(&quad.transition),
+        );
     }
 
     true

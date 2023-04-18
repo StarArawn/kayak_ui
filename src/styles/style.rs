@@ -6,6 +6,9 @@ pub use super::units::{KPositionType, LayoutType, Units};
 use bevy::prelude::Color;
 use bevy::prelude::Component;
 use bevy::prelude::ReflectComponent;
+use bevy::prelude::Vec2;
+use bevy::prelude::Vec3;
+use bevy::prelude::Vec4;
 use bevy::reflect::FromReflect;
 use bevy::reflect::Reflect;
 use bevy::window::CursorIcon;
@@ -448,6 +451,329 @@ impl KStyle {
             col_span: StyleProp::Default,
         }
     }
+
+    pub fn lerp(&self, b: &Self, x: f32) -> Self {
+        let mut new_styles = self.clone(); // Default to A styles.
+
+        new_styles.background_color = if let StyleProp::Value(color_a) = self.background_color {
+            if let StyleProp::Value(color_b) = b.background_color {
+                StyleProp::Value(hsv_lerp(&color_a, &color_b, x))
+            } else {
+                StyleProp::Value(color_a)
+            }
+        } else {
+            self.background_color.clone()
+        };
+
+        new_styles.border = if let StyleProp::Value(border_a) = self.border {
+            if let StyleProp::Value(border_b) = b.border {
+                StyleProp::Value(Edge::new(
+                    lerp(border_a.top, border_b.top, x),
+                    lerp(border_a.right, border_b.right, x),
+                    lerp(border_a.bottom, border_b.bottom, x),
+                    lerp(border_a.left, border_b.left, x),
+                ))
+            } else {
+                StyleProp::Value(border_a)
+            }
+        } else {
+            self.border.clone()
+        };
+
+        new_styles.border_color = if let StyleProp::Value(color_a) = self.border_color {
+            if let StyleProp::Value(color_b) = b.border_color {
+                StyleProp::Value(lerp_lch(color_a, color_b, x))
+            } else {
+                StyleProp::Value(color_a)
+            }
+        } else {
+            self.border_color.clone()
+        };
+
+        new_styles.border_radius = if let StyleProp::Value(border_a) = self.border_radius {
+            if let StyleProp::Value(border_b) = b.border_radius {
+                StyleProp::Value(Corner::new(
+                    lerp(border_a.top_left, border_b.top_left, x),
+                    lerp(border_a.top_right, border_b.top_right, x),
+                    lerp(border_a.bottom_left, border_b.bottom_left, x),
+                    lerp(border_a.bottom_right, border_b.bottom_right, x),
+                ))
+            } else {
+                StyleProp::Value(border_a)
+            }
+        } else {
+            self.border_radius.clone()
+        };
+
+        new_styles.bottom = lerp_units(&self.bottom, &b.bottom, x);
+
+        new_styles.color = if let StyleProp::Value(color_a) = self.color {
+            if let StyleProp::Value(color_b) = b.color {
+                StyleProp::Value(hsv_lerp(&color_a, &color_b, x))
+            } else {
+                StyleProp::Value(color_a)
+            }
+        } else {
+            self.color.clone()
+        };
+
+        new_styles.font_size = lerp_f32(&new_styles.font_size, &b.font_size, x);
+        new_styles.height = lerp_units(&self.height, &b.height, x);
+        new_styles.line_height = lerp_f32(&new_styles.line_height, &b.line_height, x);
+        new_styles.left = lerp_units(&self.left, &b.left, x);
+        new_styles.max_height = lerp_units(&self.max_height, &b.max_height, x);
+        new_styles.max_width = lerp_units(&self.max_width, &b.max_width, x);
+        new_styles.min_height = lerp_units(&self.min_height, &b.min_height, x);
+        new_styles.min_width = lerp_units(&self.min_width, &b.min_width, x);
+
+        new_styles.offset = if let StyleProp::Value(edge_a) = self.offset {
+            if let StyleProp::Value(edge_b) = b.offset {
+                StyleProp::Value(Edge::new(
+                    get_value(lerp_units(
+                        &StyleProp::Value(edge_a.top),
+                        &StyleProp::Value(edge_b.top),
+                        x,
+                    )),
+                    get_value(lerp_units(
+                        &StyleProp::Value(edge_a.right),
+                        &StyleProp::Value(edge_b.right),
+                        x,
+                    )),
+                    get_value(lerp_units(
+                        &StyleProp::Value(edge_a.bottom),
+                        &StyleProp::Value(edge_b.bottom),
+                        x,
+                    )),
+                    get_value(lerp_units(
+                        &StyleProp::Value(edge_a.left),
+                        &StyleProp::Value(edge_b.left),
+                        x,
+                    )),
+                ))
+            } else {
+                StyleProp::Value(edge_a)
+            }
+        } else {
+            self.offset.clone()
+        };
+
+        new_styles.padding = if let StyleProp::Value(edge_a) = self.padding {
+            if let StyleProp::Value(edge_b) = b.padding {
+                StyleProp::Value(Edge::new(
+                    get_value(lerp_units(
+                        &StyleProp::Value(edge_a.top),
+                        &StyleProp::Value(edge_b.top),
+                        x,
+                    )),
+                    get_value(lerp_units(
+                        &StyleProp::Value(edge_a.right),
+                        &StyleProp::Value(edge_b.right),
+                        x,
+                    )),
+                    get_value(lerp_units(
+                        &StyleProp::Value(edge_a.bottom),
+                        &StyleProp::Value(edge_b.bottom),
+                        x,
+                    )),
+                    get_value(lerp_units(
+                        &StyleProp::Value(edge_a.left),
+                        &StyleProp::Value(edge_b.left),
+                        x,
+                    )),
+                ))
+            } else {
+                StyleProp::Value(edge_a)
+            }
+        } else {
+            self.padding.clone()
+        };
+
+        new_styles.padding_bottom = lerp_units(&self.padding_bottom, &b.padding_bottom, x);
+        new_styles.padding_left = lerp_units(&self.padding_left, &b.padding_left, x);
+        new_styles.padding_right = lerp_units(&self.padding_right, &b.padding_right, x);
+        new_styles.padding_top = lerp_units(&self.padding_top, &b.padding_top, x);
+        new_styles.right = lerp_units(&self.right, &b.right, x);
+        new_styles.top = lerp_units(&self.top, &b.top, x);
+        new_styles.width = lerp_units(&self.width, &b.width, x);
+
+        new_styles
+    }
+}
+
+fn get_value<T: Default + Clone + FromReflect>(a: StyleProp<T>) -> T {
+    match a {
+        StyleProp::Value(v) => v,
+        _ => {
+            panic!("Unexpected lack of value!");
+        }
+    }
+}
+
+fn lerp_f32(prop_a: &StyleProp<f32>, prop_b: &StyleProp<f32>, x: f32) -> StyleProp<f32> {
+    if let StyleProp::Value(f_a) = prop_a {
+        if let StyleProp::Value(f_b) = prop_b {
+            StyleProp::Value(lerp(*f_a, *f_b, x))
+        } else {
+            StyleProp::Value(*f_a)
+        }
+    } else {
+        prop_a.clone()
+    }
+}
+
+fn lerp_units(prop_a: &StyleProp<Units>, prop_b: &StyleProp<Units>, x: f32) -> StyleProp<Units> {
+    if let StyleProp::Value(unit_a) = prop_a {
+        if let StyleProp::Value(unit_b) = prop_b {
+            StyleProp::Value(match (unit_a, unit_b) {
+                (Units::Pixels(a), Units::Pixels(b)) => Units::Pixels(lerp(*a, *b, x)),
+                (Units::Percentage(a), Units::Percentage(b)) => Units::Pixels(lerp(*a, *b, x)),
+                (Units::Stretch(a), Units::Stretch(b)) => Units::Pixels(lerp(*a, *b, x)),
+                _ => {
+                    bevy::prelude::warn!(
+                        "Cannot lerp between non-matching units! Unit_A: {:?}, Unit_B: {:?}",
+                        unit_a,
+                        unit_b
+                    );
+                    *unit_a
+                }
+            })
+        } else {
+            StyleProp::Value(*unit_a)
+        }
+    } else {
+        prop_a.clone()
+    }
+}
+
+fn lerp_ang(a: f32, b: f32, x: f32) -> f32 {
+    let ang = ((((a - b) % std::f32::consts::TAU) + std::f32::consts::PI * 3.)
+        % std::f32::consts::TAU)
+        - std::f32::consts::PI;
+    return ang * x + b;
+}
+
+/// Linear interpolation between two colors in Lch space
+fn lerp_lch(a: Color, b: Color, x: f32) -> Color {
+    let [a_r, a_g, a_b, a_a] = a.as_lcha_f32();
+    let [b_r, b_g, b_b, b_a] = b.as_lcha_f32();
+
+    let hue = lerp_ang(a_b, b_b, x);
+    let a_xy = Vec2::new(a_r, a_g);
+    let b_xy = Vec2::new(b_r, b_g);
+    let xy = b_xy.lerp(a_xy, x);
+
+    let alpha = lerp(a_a, b_a, x);
+
+    return Color::Lcha {
+        lightness: xy.x,
+        chroma: xy.y,
+        hue,
+        alpha,
+    }
+    .as_rgba();
+}
+
+fn rgb_to_hsv(from: &Color) -> Vec3 {
+    // xyz <-> hsv
+    let r = from.r();
+    let g = from.g();
+    let b = from.b();
+
+    let mut res = Vec3::ZERO;
+
+    let min = r.min(g).min(b);
+    let max = r.max(g).max(b);
+
+    // Value
+    res.z = max;
+
+    let delta = max - min;
+    // calc Saturation
+    if max != 0.0 {
+        res.y = delta / max;
+    } else {
+        res.x = -1.0;
+        res.y = 0.0;
+
+        return res;
+    }
+
+    // calc Hue
+    if r == max {
+        // between Yellow & Magenta
+        res.x = (g - b) / delta;
+    } else if g == max {
+        // cyan to yellow
+        res.x = 2.0 + (b - r) / delta;
+    } else {
+        // b == max // Megnta to cyan
+        res.x = 4.0 + (r - g) / delta;
+    }
+
+    res.x = res.x * 60.0; // Convert to degrees
+    if res.x < 0.0 {
+        res.x += 360.0; // Unwrap angle in case of negative
+    }
+
+    res
+}
+
+fn hsv_to_rgb(from: &Vec3) -> Color {
+    let h = from.x;
+    let s = from.y;
+    let v = from.z;
+
+    // Calc base values
+    let c = s * v;
+    let x = c * (1.0 - (((h / 60.0) % 2.0) - 1.0).abs());
+    let m = v - c;
+
+    let mut res = Vec4::new(0.0, 0.0, 0.0, 1.0);
+
+    if h >= 0.0 && h < 60.0 {
+        res.x = c;
+        res.y = x;
+        res.z = 0.0;
+    } else if h >= 60.0 && h < 120.0 {
+        res.x = x;
+        res.y = c;
+        res.z = 0.0;
+    } else if h >= 120.0 && h < 180.0 {
+        res.x = 0.0;
+        res.y = c;
+        res.z = x;
+    } else if h >= 180.0 && h < 240.0 {
+        res.x = 0.0;
+        res.y = x;
+        res.z = c;
+    } else if h >= 240.0 && h < 300.0 {
+        res.x = x;
+        res.y = 0.0;
+        res.z = c;
+    } else {
+        res.x = c;
+        res.y = 0.0;
+        res.z = x;
+    }
+
+    res = res + Vec4::new(m, m, m, 0.0);
+
+    Color::from(res)
+}
+
+fn hsv_lerp(from: &Color, to: &Color, amount: f32) -> Color {
+    let from = rgb_to_hsv(from);
+    let to = rgb_to_hsv(to);
+    let mut res = from.lerp(to, amount);
+
+    if from.x < 0.0 {
+        res.x = to.x;
+    }
+    hsv_to_rgb(&res)
+}
+
+fn lerp(a: f32, b: f32, x: f32) -> f32 {
+    a * (1.0 - x) + b * x
 }
 
 impl Add for KStyle {

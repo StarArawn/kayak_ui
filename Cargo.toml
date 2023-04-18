@@ -29,6 +29,7 @@ reorder = "2.1"
 resources = "1.1"
 instant = "0.1"
 bevy_svg = { version = "0.10", default-features = false }
+interpolation = { version = "0.2" }
 
 [dev-dependencies]
 fastrand = "1.8"

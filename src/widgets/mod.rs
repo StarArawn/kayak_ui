@@ -34,6 +34,7 @@ mod svg;
 mod text;
 mod text_box;
 mod texture_atlas;
+mod transition;
 mod window;
 mod window_context_provider;
 
@@ -56,6 +57,7 @@ pub use svg::{KSvg, KSvgBundle};
 pub use text::{TextProps, TextWidgetBundle};
 pub use text_box::{TextBoxBundle, TextBoxProps, TextBoxState};
 pub use texture_atlas::{TextureAtlasBundle, TextureAtlasProps};
+pub use transition::{create_transition, EaseFunction, Transition, TransitionBundle, TransitionState, TransitionProps};
 pub use window::{KWindow, KWindowState, WindowBundle};
 pub use window_context_provider::{
     WindowContext, WindowContextProvider, WindowContextProviderBundle,
@@ -90,7 +92,8 @@ pub struct KayakWidgets;
 
 impl Plugin for KayakWidgets {
     fn build(&self, app: &mut bevy::prelude::App) {
-        app.add_system(text_box::cursor_animation_system);
+        app.add_system(transition::update_transitions)
+            .add_system(text_box::cursor_animation_system);
     }
 }
 
@@ -115,6 +118,7 @@ impl KayakUIPlugin for KayakWidgetsContextPlugin {
         context.add_widget_data::<ScrollBoxProps, EmptyState>();
         context.add_widget_data::<ScrollContextProvider, EmptyState>();
         context.add_widget_data::<TextBoxProps, TextBoxState>();
+        context.add_widget_data::<TransitionProps, TransitionState>();
 
         context.add_widget_system(KayakApp::default().get_name(), app_update, app_render);
         context.add_widget_system(
@@ -196,6 +200,11 @@ impl KayakUIPlugin for KayakWidgetsContextPlugin {
             TextBoxProps::default().get_name(),
             widget_update::<TextBoxProps, TextBoxState>,
             text_box_render,
+        );
+        context.add_widget_system(
+            TransitionProps::default().get_name(),
+            widget_update::<TransitionProps, TransitionState>,
+            transition::render,
         );
     }
 }

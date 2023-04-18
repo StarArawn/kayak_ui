@@ -64,7 +64,7 @@ pub fn my_button_render(
     mut commands: Commands,
     // In this case we really only care about our buttons children! Let's query for them.
     mut query: Query<&KChildren>,
-) {
+) -> bool {
     // Grab our children for our button widget:
     if let Ok(children) = query.get(entity) {
 

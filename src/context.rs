@@ -876,7 +876,7 @@ fn update_widget(
 ) -> (Tree, bool) {
     // Check if we should update this widget
     let should_rerender = {
-        // TODO: Move the spawning to when we create the widget.  
+        // TODO: Move the spawning to when we create the widget.
         let old_props_entity =
             if let Ok(mut cloned_widget_entities) = cloned_widget_entities.try_write() {
                 let old_parent_entity = if let Ok(tree) = tree.try_read() {
@@ -885,7 +885,9 @@ fn update_widget(
                     } else {
                         None
                     }
-                } else { None };
+                } else {
+                    None
+                };
                 if let Some(entity) = cloned_widget_entities.get(&entity.0).copied() {
                     if let Some(possible_entity) = world.get_entity(entity) {
                         let target = possible_entity.id();

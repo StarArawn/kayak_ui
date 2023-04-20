@@ -1,4 +1,4 @@
-use bevy::prelude::{Bundle, Commands, Component, Entity, In, Query, Vec2, BuildChildren};
+use bevy::prelude::{BuildChildren, Bundle, Commands, Component, Entity, In, Query, Vec2};
 
 use crate::{
     children::KChildren,
@@ -173,7 +173,10 @@ pub fn scroll_context_render(
     )>,
 ) -> bool {
     if let Ok((context_provider, children, styles, mut computed_styles)) = query.get_mut(entity) {
-        let context_entity = commands.spawn(context_provider.initial_value).set_parent(entity).id();
+        let context_entity = commands
+            .spawn(context_provider.initial_value)
+            .set_parent(entity)
+            .id();
         widget_context.set_context_entity::<ScrollContext>(Some(entity), context_entity);
         *computed_styles = styles.clone().into();
         children.process(&widget_context, Some(entity));

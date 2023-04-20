@@ -76,7 +76,10 @@ pub fn window_context_render(
         {
             context_entity
         } else {
-            commands.spawn(WindowContext::default()).id()
+            commands
+                .spawn(WindowContext::default())
+                .set_parent(window_context_entity)
+                .id()
         };
         widget_context
             .set_context_entity::<WindowContext>(Some(window_context_entity), context_entity);

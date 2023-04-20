@@ -865,20 +865,34 @@ fn update_widget(
 ) -> (Tree, bool) {
     // Check if we should update this widget
     let should_rerender = {
+        // TODO: Move the spawning to when we create the widget.  
         let old_props_entity =
             if let Ok(mut cloned_widget_entities) = cloned_widget_entities.try_write() {
-                if let Some(entity) = cloned_widget_entities.get(&entity.0).cloned() {
+                let old_parent_entity = if let Ok(tree) = tree.try_read() {
+                    if let Some(parent_entity) = tree.get_parent(entity) {
+                        cloned_widget_entities.get(&parent_entity.0).copied()
+                    } else {
+                        None
+                    }
+                } else { None };
+                if let Some(entity) = cloned_widget_entities.get(&entity.0).copied() {
                     if let Some(possible_entity) = world.get_entity(entity) {
                         let target = possible_entity.id();
                         cloned_widget_entities.insert(entity, target);
                         target
                     } else {
                         let target = world.spawn_empty().insert(PreviousWidget).id();
+                        if let Some(parent_id) = old_parent_entity {
+                            world.entity_mut(parent_id).add_child(target);
+                        }
                         cloned_widget_entities.insert(entity, target);
                         target
                     }
                 } else {
                     let target = world.spawn_empty().insert(PreviousWidget).id();
+                    if let Some(parent_id) = old_parent_entity {
+                        world.entity_mut(parent_id).add_child(target);
+                    }
                     cloned_widget_entities.insert(entity.0, target);
                     target
                 }

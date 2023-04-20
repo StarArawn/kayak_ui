@@ -50,8 +50,11 @@ impl KChildren {
     }
 
     /// Processes all widgets and adds them to the tree.
-    pub fn process(&self, widget_context: &KayakWidgetContext, parent_id: Option<Entity>) {
+    pub fn process(&self, widget_context: &KayakWidgetContext, commands: &mut Commands, parent_id: Option<Entity>) {
         for child in self.inner.iter() {
+            if let Some(parent_id) = parent_id {
+                commands.entity(*child).set_parent(parent_id);
+            }
             widget_context.add_widget(parent_id, *child);
         }
     }

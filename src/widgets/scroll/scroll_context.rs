@@ -176,7 +176,7 @@ pub fn scroll_context_render(
         let context_entity = commands.spawn(context_provider.initial_value).id();
         widget_context.set_context_entity::<ScrollContext>(Some(entity), context_entity);
         *computed_styles = styles.clone().into();
-        children.process(&widget_context, Some(entity));
+        children.process(&widget_context, &mut commands, Some(entity));
     }
 
     true

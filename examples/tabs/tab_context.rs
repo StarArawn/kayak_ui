@@ -52,7 +52,7 @@ pub fn tab_context_render(
             widget_context.set_context_entity::<TabContext>(Some(entity), context_entity);
         }
 
-        children.process(&widget_context, Some(entity));
+        children.process(&widget_context, &mut commands, Some(entity));
     }
     true
 }

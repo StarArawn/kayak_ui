@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use instant::Instant;
+use instant::{Instant};
 use interpolation::Ease;
 
 pub use interpolation::EaseFunction;
@@ -14,22 +14,23 @@ use crate::{
 
 #[derive(Component, Clone, PartialEq)]
 pub struct Transition {
+    pub playing: bool,
     /// The easing function that dictates the interpolation factor.
-    easing: EaseFunction,
+    pub easing: EaseFunction,
     /// Indicates the direction of the animation
-    reversing: bool,
+    pub reversing: bool,
     /// The start time of the animation.
     start: Instant,
     /// The time in milliseconds until the animation completed.
-    timeout: f32,
+    pub timeout: f32,
     /// Does the animation loop?
     ///
     /// TODO: Change from boolean to enum that allows disabling the reversing animation.
-    looping: bool,
+    pub looping: bool,
     /// The starting styles of the widget.
-    style_a: KStyle,
+    pub style_a: KStyle,
     /// The ending styles of the widget.
-    style_b: KStyle,
+    pub style_b: KStyle,
 }
 
 impl Transition {
@@ -39,6 +40,7 @@ impl Transition {
     ///
     pub fn new(transition: &TransitionProps) -> Transition {
         Self {
+            playing: transition.autoplay,
             easing: transition.easing,
             start: Instant::now(),
             reversing: transition.reversing,
@@ -51,13 +53,14 @@ impl Transition {
 
     pub(crate) fn update(&mut self) -> KStyle {
         let elapsed_time = self.start.elapsed().as_secs_f32() * 1000.0; // as Milliseconds
-        if elapsed_time < self.timeout {
-            let mut x = Ease::calc(elapsed_time / self.timeout, self.easing);
+        // dbg!(elapsed_time, self.timeout, self.reversing, self.playing);
+        if (elapsed_time < self.timeout) && self.playing {
+            let mut x = Ease::calc((elapsed_time / self.timeout).clamp(0.0, 1.0), self.easing);
             if self.reversing {
                 x = 1.0 - x;
             }
             self.style_a.lerp(&self.style_b, x)
-        } else if self.looping {
+        } else if self.looping && self.playing {
             // Restart animation
             self.start = Instant::now();
             self.reversing = !self.reversing;
@@ -67,8 +70,13 @@ impl Transition {
                 self.style_a.clone()
             }
         } else {
-            // End of animation just return B.
-            self.style_b.clone()
+            // End of animation
+            self.playing = false;
+            if self.reversing {
+                self.style_a.clone()
+            } else {
+                self.style_b.clone()
+            }
         }
     }
 
@@ -82,18 +90,21 @@ impl Transition {
     pub fn start(&mut self) {
         self.reversing = false;
         self.start = Instant::now();
+        self.playing = true;
     }
 
     /// Starts the animation in reverse.
     pub fn start_reverse(&mut self) {
         self.reversing = true;
         self.start = Instant::now();
+        self.playing = true;
     }
 }
 
 impl Default for Transition {
     fn default() -> Self {
         Self {
+            playing: false,
             easing: EaseFunction::CubicIn,
             start: Instant::now(),
             reversing: false,
@@ -167,6 +178,8 @@ pub struct TransitionProps {
     pub style_a: KStyle,
     /// The ending styles of the widget.
     pub style_b: KStyle,
+    // Should the animation start playing instantly.
+    pub autoplay: bool,
 }
 
 impl Default for TransitionProps {
@@ -178,6 +191,7 @@ impl Default for TransitionProps {
             looping: true,
             style_a: Default::default(),
             style_b: Default::default(),
+            autoplay: true,
         }
     }
 }
@@ -226,7 +240,7 @@ pub fn render(
             transition_state.transition.style_b = transition.style_b.clone();
             transition_state.transition.timeout = transition.timeout;
         }
-        children.process(&widget_context, Some(entity));
+        children.process(&widget_context, &mut commands, Some(entity));
     }
     true
 }

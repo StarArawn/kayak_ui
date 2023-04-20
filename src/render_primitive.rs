@@ -1,6 +1,6 @@
 use crate::{
     layout::Rect,
-    styles::{Corner, Edge, KStyle, RenderCommand},
+    styles::{Corner, Edge, KStyle, RenderCommand, StyleProp},
 };
 use bevy::{
     prelude::{Color, Handle, Image, Vec2},
@@ -50,6 +50,7 @@ pub enum RenderPrimitive {
     },
     Svg {
         handle: Handle<Svg>,
+        background_color: Option<Color>,
         layout: Rect,
     },
 }
@@ -169,6 +170,10 @@ impl From<&KStyle> for RenderPrimitive {
                 handle,
             },
             RenderCommand::Svg { handle } => Self::Svg {
+                background_color: match style.background_color {
+                    StyleProp::Value(color) => Some(color),
+                    _ => None,
+                },
                 handle,
                 layout: Rect::default(),
             },

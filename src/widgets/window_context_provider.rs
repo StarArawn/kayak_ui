@@ -80,7 +80,7 @@ pub fn window_context_render(
         };
         widget_context
             .set_context_entity::<WindowContext>(Some(window_context_entity), context_entity);
-        children.process(&widget_context, Some(window_context_entity));
+        children.process(&widget_context, &mut commands, Some(window_context_entity));
     }
 
     true

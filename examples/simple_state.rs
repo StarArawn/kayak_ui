@@ -1,4 +1,3 @@
-use bevy::log::LogPlugin;
 use bevy::prelude::*;
 use kayak_ui::prelude::{widgets::*, *};
 

@@ -126,7 +126,10 @@ pub fn extract(
                 );
                 extracted_quads.quads.extend(texture_atlas_quads);
             }
-            RenderPrimitive::Clip { layout } => {
+            RenderPrimitive::Clip {
+                layout,
+                opacity_layer,
+            } => {
                 extracted_quads.quads.push(ExtractedQuad {
                     camera_entity,
                     rect: Rect {
@@ -144,6 +147,35 @@ pub fn extract(
                     image: None,
                     uv_min: None,
                     uv_max: None,
+                    opacity_layer,
+                    ..Default::default()
+                });
+            }
+            RenderPrimitive::OpacityLayer { index, z } => {
+                extracted_quads.quads.push(ExtractedQuad {
+                    camera_entity,
+                    z_index: z,
+                    quad_type: UIQuadType::OpacityLayer,
+                    opacity_layer: index,
+                    ..Default::default()
+                });
+            }
+            RenderPrimitive::DrawOpacityLayer {
+                opacity,
+                index,
+                z,
+                layout,
+            } => {
+                extracted_quads.quads.push(ExtractedQuad {
+                    camera_entity,
+                    z_index: z,
+                    color: Color::rgba(1.0, 1.0, 1.0, opacity),
+                    opacity_layer: index,
+                    quad_type: UIQuadType::DrawOpacityLayer,
+                    rect: Rect {
+                        min: Vec2::new(layout.posx, layout.posy),
+                        max: Vec2::new(layout.posx + layout.width, layout.posy + layout.height),
+                    },
                     ..Default::default()
                 });
             }

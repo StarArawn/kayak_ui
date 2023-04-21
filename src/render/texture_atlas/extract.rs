@@ -17,13 +17,14 @@ pub fn extract_texture_atlas(
 ) -> Vec<ExtractedQuad> {
     let mut extracted_quads = Vec::new();
 
-    let (size, position, layout, handle) = match render_primitive {
+    let (size, position, layout, handle, opacity_layer) = match render_primitive {
         RenderPrimitive::TextureAtlas {
             size,
             position,
             layout,
             handle,
-        } => (size, position, layout, handle),
+            opacity_layer,
+        } => (size, position, layout, handle, *opacity_layer),
         _ => panic!(""),
     };
 
@@ -64,6 +65,7 @@ pub fn extract_texture_atlas(
         type_index: 0,
         border_radius: Corner::default(),
         image: Some(handle.clone_weak()),
+        opacity_layer,
         ..Default::default()
     };
     extracted_quads.push(quad);

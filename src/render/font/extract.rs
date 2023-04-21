@@ -20,19 +20,28 @@ pub fn extract_texts(
     _dpi: f32,
 ) -> Vec<ExtractedQuad> {
     let mut extracted_texts = Vec::new();
-    let (background_color, text_layout, layout, font, properties, subpixel) = match render_primitive
-    {
-        RenderPrimitive::Text {
-            color,
-            text_layout,
-            layout,
-            font,
-            properties,
-            subpixel,
-            ..
-        } => (color, text_layout, layout, font, *properties, subpixel),
-        _ => panic!(""),
-    };
+    let (background_color, text_layout, layout, font, properties, subpixel, opacity_layer) =
+        match render_primitive {
+            RenderPrimitive::Text {
+                color,
+                text_layout,
+                layout,
+                font,
+                properties,
+                subpixel,
+                opacity_layer,
+                ..
+            } => (
+                color,
+                text_layout,
+                layout,
+                font,
+                *properties,
+                subpixel,
+                *opacity_layer,
+            ),
+            _ => panic!(""),
+        };
 
     let font_handle = font_mapping.get_handle(font.clone()).unwrap();
     let font = match fonts.get(&font_handle) {
@@ -72,6 +81,7 @@ pub fn extract_texts(
             image: None,
             uv_max: None,
             uv_min: None,
+            opacity_layer,
             ..Default::default()
         });
     }

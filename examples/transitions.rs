@@ -81,7 +81,7 @@ fn startup(
             // Move a quad back and forth.
             <TransitionBundle
                 transition={TransitionProps {
-                    easing: EaseFunction::QuadraticInOut,
+                    easing: TransitionEasing::QuadraticInOut,
                     timeout: 500.0,
                     looping: true,
                     style_a: KStyle {
@@ -104,7 +104,7 @@ fn startup(
             // Example of two transitions. One element that moves, and the other that changes the color of the quad!
             <TransitionBundle
                 transition={TransitionProps {
-                    easing: EaseFunction::CubicInOut,
+                    easing: TransitionEasing::CubicInOut,
                     timeout: 5000.0,
                     looping: true,
                     style_a: KStyle {
@@ -122,7 +122,7 @@ fn startup(
                 <MyQuadBundle
                     my_quad={MyQuad {
                         transition: TransitionProps {
-                            easing: EaseFunction::CircularInOut,
+                            easing: TransitionEasing::CircularInOut,
                             timeout: 5000.0,
                             looping: true,
                             style_a: KStyle {
@@ -143,7 +143,7 @@ fn startup(
             // Transitions work with clipping as well!
             <TransitionBundle
                 transition={TransitionProps {
-                    easing: EaseFunction::CubicInOut,
+                    easing: TransitionEasing::CubicInOut,
                     timeout: 1000.0,
                     looping: true,
                     style_a: KStyle {

@@ -401,6 +401,11 @@ define_styles! {
         ///
         /// Specified in the child widget.
         pub col_span: StyleProp<usize>,
+        /// The opacity of the widget and it's children
+        ///
+        /// This is also known as grouped opacity
+        /// WARNING! This splits the widget and it's children into a new render pass. So use it sparingly!!!
+        pub opacity: StyleProp<f32>,
     }
 }
 
@@ -449,6 +454,7 @@ impl KStyle {
             col_index: StyleProp::Default,
             row_span: StyleProp::Default,
             col_span: StyleProp::Default,
+            opacity: StyleProp::Value(1.0),
         }
     }
 
@@ -595,6 +601,7 @@ impl KStyle {
         new_styles.right = lerp_units(&self.right, &b.right, x);
         new_styles.top = lerp_units(&self.top, &b.top, x);
         new_styles.width = lerp_units(&self.width, &b.width, x);
+        new_styles.opacity = lerp_f32(&self.opacity, &b.opacity, x);
 
         new_styles
     }
@@ -626,8 +633,8 @@ fn lerp_units(prop_a: &StyleProp<Units>, prop_b: &StyleProp<Units>, x: f32) -> S
         if let StyleProp::Value(unit_b) = prop_b {
             StyleProp::Value(match (unit_a, unit_b) {
                 (Units::Pixels(a), Units::Pixels(b)) => Units::Pixels(lerp(*a, *b, x)),
-                (Units::Percentage(a), Units::Percentage(b)) => Units::Pixels(lerp(*a, *b, x)),
-                (Units::Stretch(a), Units::Stretch(b)) => Units::Pixels(lerp(*a, *b, x)),
+                (Units::Percentage(a), Units::Percentage(b)) => Units::Percentage(lerp(*a, *b, x)),
+                (Units::Stretch(a), Units::Stretch(b)) => Units::Stretch(lerp(*a, *b, x)),
                 _ => {
                     bevy::prelude::warn!(
                         "Cannot lerp between non-matching units! Unit_A: {:?}, Unit_B: {:?}",
@@ -762,6 +769,8 @@ fn hsv_to_rgb(from: &Vec3) -> Color {
 }
 
 fn hsv_lerp(from: &Color, to: &Color, amount: f32) -> Color {
+    let from_a = from.a();
+    let to_a = to.a();
     let from = rgb_to_hsv(from);
     let to = rgb_to_hsv(to);
     let mut res = from.lerp(to, amount);
@@ -769,10 +778,12 @@ fn hsv_lerp(from: &Color, to: &Color, amount: f32) -> Color {
     if from.x < 0.0 {
         res.x = to.x;
     }
-    hsv_to_rgb(&res)
+    let mut color = hsv_to_rgb(&res);
+    color.set_a(lerp(from_a, to_a, amount).clamp(0.0, 1.0));
+    color
 }
 
-fn lerp(a: f32, b: f32, x: f32) -> f32 {
+pub(crate) fn lerp(a: f32, b: f32, x: f32) -> f32 {
     a * (1.0 - x) + b * x
 }
 

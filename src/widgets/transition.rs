@@ -1,8 +1,7 @@
 use bevy::prelude::*;
 use instant::Instant;
 use interpolation::Ease;
-
-pub use interpolation::EaseFunction;
+use interpolation::EaseFunction;
 
 use crate::{
     children::KChildren,
@@ -12,11 +11,84 @@ use crate::{
     widget::Widget,
 };
 
+#[derive(Copy, Clone, PartialEq)]
+pub enum TransitionEasing {
+    Linear,
+    QuadraticIn,
+    QuadraticOut,
+    QuadraticInOut,
+    CubicIn,
+    CubicOut,
+    CubicInOut,
+    QuarticIn,
+    QuarticOut,
+    QuarticInOut,
+    QuinticIn,
+    QuinticOut,
+    QuinticInOut,
+    SineIn,
+    SineOut,
+    SineInOut,
+    CircularIn,
+    CircularOut,
+    CircularInOut,
+    ExponentialIn,
+    ExponentialOut,
+    ExponentialInOut,
+    ElasticIn,
+    ElasticOut,
+    ElasticInOut,
+    BackIn,
+    BackOut,
+    BackInOut,
+    BounceIn,
+    BounceOut,
+    BounceInOut,
+}
+
+impl TransitionEasing {
+    fn try_into_easing_function(&self) -> Option<EaseFunction> {
+        match self {
+            TransitionEasing::QuadraticIn => Some(EaseFunction::QuadraticIn),
+            TransitionEasing::QuadraticOut => Some(EaseFunction::QuadraticOut),
+            TransitionEasing::QuadraticInOut => Some(EaseFunction::QuadraticInOut),
+            TransitionEasing::CubicIn => Some(EaseFunction::CubicIn),
+            TransitionEasing::CubicOut => Some(EaseFunction::CubicOut),
+            TransitionEasing::CubicInOut => Some(EaseFunction::CubicInOut),
+            TransitionEasing::QuarticIn => Some(EaseFunction::QuarticIn),
+            TransitionEasing::QuarticOut => Some(EaseFunction::QuarticOut),
+            TransitionEasing::QuarticInOut => Some(EaseFunction::QuarticInOut),
+            TransitionEasing::QuinticIn => Some(EaseFunction::QuinticIn),
+            TransitionEasing::QuinticOut => Some(EaseFunction::QuinticOut),
+            TransitionEasing::QuinticInOut => Some(EaseFunction::QuinticInOut),
+            TransitionEasing::SineIn => Some(EaseFunction::SineIn),
+            TransitionEasing::SineOut => Some(EaseFunction::SineOut),
+            TransitionEasing::SineInOut => Some(EaseFunction::SineInOut),
+            TransitionEasing::CircularIn => Some(EaseFunction::CircularIn),
+            TransitionEasing::CircularOut => Some(EaseFunction::CircularOut),
+            TransitionEasing::CircularInOut => Some(EaseFunction::CircularInOut),
+            TransitionEasing::ExponentialIn => Some(EaseFunction::ExponentialIn),
+            TransitionEasing::ExponentialOut => Some(EaseFunction::ExponentialOut),
+            TransitionEasing::ExponentialInOut => Some(EaseFunction::ExponentialInOut),
+            TransitionEasing::ElasticIn => Some(EaseFunction::ElasticIn),
+            TransitionEasing::ElasticOut => Some(EaseFunction::ElasticOut),
+            TransitionEasing::ElasticInOut => Some(EaseFunction::ElasticInOut),
+            TransitionEasing::BackIn => Some(EaseFunction::BackIn),
+            TransitionEasing::BackOut => Some(EaseFunction::BackOut),
+            TransitionEasing::BackInOut => Some(EaseFunction::BackInOut),
+            TransitionEasing::BounceIn => Some(EaseFunction::BounceIn),
+            TransitionEasing::BounceOut => Some(EaseFunction::BounceOut),
+            TransitionEasing::BounceInOut => Some(EaseFunction::BounceInOut),
+            _ => None,
+        }
+    }
+}
+
 #[derive(Component, Clone, PartialEq)]
 pub struct Transition {
     pub playing: bool,
     /// The easing function that dictates the interpolation factor.
-    pub easing: EaseFunction,
+    pub easing: TransitionEasing,
     /// Indicates the direction of the animation
     pub reversing: bool,
     /// The start time of the animation.
@@ -55,7 +127,11 @@ impl Transition {
         let elapsed_time = self.start.elapsed().as_secs_f32() * 1000.0; // as Milliseconds
                                                                         // dbg!(elapsed_time, self.timeout, self.reversing, self.playing);
         if (elapsed_time < self.timeout) && self.playing {
-            let mut x = Ease::calc((elapsed_time / self.timeout).clamp(0.0, 1.0), self.easing);
+            let mut x = if let Some(easing) = self.easing.try_into_easing_function() {
+                Ease::calc((elapsed_time / self.timeout).clamp(0.0, 1.0), easing)
+            } else {
+                (elapsed_time / self.timeout).clamp(0.0, 1.0)
+            };
             if self.reversing {
                 x = 1.0 - x;
             }
@@ -81,9 +157,8 @@ impl Transition {
     }
 
     /// Is the animation currently playing?
-    pub fn is_running(&self) -> bool {
-        let elapsed_time = self.start.elapsed().as_secs_f32() * 1000.0; // as Milliseconds
-        elapsed_time < self.timeout
+    pub fn is_playing(&self) -> bool {
+        self.playing
     }
 
     /// Starts the animation.
@@ -105,7 +180,7 @@ impl Default for Transition {
     fn default() -> Self {
         Self {
             playing: false,
-            easing: EaseFunction::CubicIn,
+            easing: TransitionEasing::Linear,
             start: Instant::now(),
             reversing: false,
             timeout: 0.0,
@@ -165,7 +240,7 @@ pub fn update_transitions(
 #[derive(Component, Clone, PartialEq)]
 pub struct TransitionProps {
     /// The easing function that dictates the interpolation factor.
-    pub easing: EaseFunction,
+    pub easing: TransitionEasing,
     /// Indicates the direction of the animation
     pub reversing: bool,
     /// The time in milliseconds until the animation completed.
@@ -185,7 +260,7 @@ pub struct TransitionProps {
 impl Default for TransitionProps {
     fn default() -> Self {
         Self {
-            easing: EaseFunction::CubicInOut,
+            easing: TransitionEasing::Linear,
             reversing: false,
             timeout: 300.0,
             looping: true,

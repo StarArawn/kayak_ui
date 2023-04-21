@@ -21,9 +21,9 @@ use crate::{
     WindowSize,
 };
 
-use self::pipeline::{ExtractedQuads, ImageBindGroups};
+use self::pipeline::{DrawOpacityUI, ExtractedQuads, ImageBindGroups};
 
-use super::svg::RenderSvgs;
+use super::{svg::RenderSvgs, ui_pass::TransparentOpacityUI};
 
 pub mod pipeline;
 pub mod text;
@@ -58,6 +58,14 @@ impl Plugin for UnifiedRenderPlugin {
         render_app
             .world
             .get_resource::<DrawFunctions<TransparentUI>>()
+            .unwrap()
+            .write()
+            .add(draw_quad);
+
+        let draw_quad = DrawOpacityUI::new(&mut render_app.world);
+        render_app
+            .world
+            .get_resource::<DrawFunctions<TransparentOpacityUI>>()
             .unwrap()
             .write()
             .add(draw_quad);

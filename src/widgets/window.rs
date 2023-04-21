@@ -102,6 +102,7 @@ pub fn window_render(
 
         *computed_styles = KStyle::default()
             .with_style(KStyle {
+                position_type: StyleProp::Value(KPositionType::SelfDirected),
                 z_index: if let Some(z_index) = z_index {
                     StyleProp::Value(z_index as i32 * 1000)
                 } else {

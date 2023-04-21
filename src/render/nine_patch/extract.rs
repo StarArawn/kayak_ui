@@ -17,12 +17,13 @@ pub fn extract_nine_patch(
 ) -> Vec<ExtractedQuad> {
     let mut extracted_quads = Vec::new();
 
-    let (layout, handle, border) = match render_primitive {
+    let (layout, handle, border, opacity_layer) = match render_primitive {
         RenderPrimitive::NinePatch {
             layout,
             handle,
             border,
-        } => (layout, handle, border),
+            opacity_layer,
+        } => (layout, handle, border, *opacity_layer),
         _ => panic!(""),
     };
 
@@ -58,6 +59,7 @@ pub fn extract_nine_patch(
         image: Some(handle.clone_weak()),
         uv_max: None,
         uv_min: None,
+        opacity_layer,
         ..Default::default()
     };
 

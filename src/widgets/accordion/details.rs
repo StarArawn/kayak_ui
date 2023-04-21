@@ -1,5 +1,4 @@
 use bevy::prelude::*;
-use interpolation::EaseFunction;
 use kayak_ui_macros::rsx;
 
 use crate::{
@@ -9,8 +8,8 @@ use crate::{
     styles::{ComputedStyles, KStyle, LayoutType, Units},
     widget::Widget,
     widgets::{
-        create_transition, BackgroundBundle, ClipBundle, Transition, TransitionProps,
-        TransitionState,
+        create_transition, BackgroundBundle, ClipBundle, Transition, TransitionEasing,
+        TransitionProps, TransitionState,
     },
 };
 
@@ -67,7 +66,7 @@ pub fn render(
                 }
 
                 let transition_props = TransitionProps {
-                    easing: EaseFunction::QuadraticInOut,
+                    easing: TransitionEasing::QuadraticInOut,
                     reversing: !context.is_open(accordion.index),
                     timeout: 500.0,
                     looping: false,
@@ -94,6 +93,8 @@ pub fn render(
                     transition_state.transition.style_b.height =
                         Units::Pixels(children_height).into();
                     if transition_state.transition.reversing != transition_props.reversing {
+                        transition_state.transition.style_b.height =
+                            Units::Pixels(children_height).into();
                         if transition_props.reversing {
                             transition_state.transition.start_reverse()
                         } else {

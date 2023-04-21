@@ -14,6 +14,7 @@ pub enum RenderPrimitive {
     Empty,
     Clip {
         layout: Rect,
+        opacity_layer: u32,
     },
     Quad {
         layout: Rect,
@@ -21,6 +22,7 @@ pub enum RenderPrimitive {
         border_color: Color,
         border: Edge<f32>,
         border_radius: Corner<f32>,
+        opacity_layer: u32,
     },
     Text {
         color: Color,
@@ -31,26 +33,41 @@ pub enum RenderPrimitive {
         properties: TextProperties,
         word_wrap: bool,
         subpixel: bool,
+        opacity_layer: u32,
     },
     Image {
         border_radius: Corner<f32>,
         layout: Rect,
         handle: Handle<Image>,
+        opacity_layer: u32,
     },
     TextureAtlas {
         size: Vec2,
         position: Vec2,
         layout: Rect,
         handle: Handle<Image>,
+        opacity_layer: u32,
     },
     NinePatch {
         border: Edge<f32>,
         layout: Rect,
         handle: Handle<Image>,
+        opacity_layer: u32,
     },
     Svg {
         handle: Handle<Svg>,
         background_color: Option<Color>,
+        layout: Rect,
+        opacity_layer: u32,
+    },
+    OpacityLayer {
+        index: u32,
+        z: f32,
+    },
+    DrawOpacityLayer {
+        opacity: f32,
+        index: u32,
+        z: f32,
         layout: Rect,
     },
 }
@@ -65,6 +82,7 @@ impl RenderPrimitive {
             RenderPrimitive::NinePatch { layout, .. } => *layout = new_layout,
             RenderPrimitive::TextureAtlas { layout, .. } => *layout = new_layout,
             RenderPrimitive::Svg { layout, .. } => *layout = new_layout,
+            RenderPrimitive::DrawOpacityLayer { layout, .. } => *layout = new_layout,
             _ => (),
         }
     }
@@ -78,7 +96,38 @@ impl RenderPrimitive {
             RenderPrimitive::NinePatch { layout, .. } => *layout,
             RenderPrimitive::TextureAtlas { layout, .. } => *layout,
             RenderPrimitive::Svg { layout, .. } => *layout,
+            RenderPrimitive::DrawOpacityLayer { layout, .. } => *layout,
             _ => Rect::default(),
+        }
+    }
+
+    pub fn get_opacity_layer(&self) -> u32 {
+        match self {
+            RenderPrimitive::Clip { opacity_layer, .. } => *opacity_layer,
+            RenderPrimitive::Quad { opacity_layer, .. } => *opacity_layer,
+            RenderPrimitive::Text { opacity_layer, .. } => *opacity_layer,
+            RenderPrimitive::Image { opacity_layer, .. } => *opacity_layer,
+            RenderPrimitive::NinePatch { opacity_layer, .. } => *opacity_layer,
+            RenderPrimitive::TextureAtlas { opacity_layer, .. } => *opacity_layer,
+            RenderPrimitive::Svg { opacity_layer, .. } => *opacity_layer,
+            RenderPrimitive::OpacityLayer { index, .. } => *index,
+            RenderPrimitive::DrawOpacityLayer { index, .. } => *index,
+            _ => 0,
+        }
+    }
+
+    pub fn set_opacity_layer(&mut self, layer: u32) {
+        match self {
+            RenderPrimitive::Clip { opacity_layer, .. } => *opacity_layer = layer,
+            RenderPrimitive::Quad { opacity_layer, .. } => *opacity_layer = layer,
+            RenderPrimitive::Text { opacity_layer, .. } => *opacity_layer = layer,
+            RenderPrimitive::Image { opacity_layer, .. } => *opacity_layer = layer,
+            RenderPrimitive::NinePatch { opacity_layer, .. } => *opacity_layer = layer,
+            RenderPrimitive::TextureAtlas { opacity_layer, .. } => *opacity_layer = layer,
+            RenderPrimitive::Svg { opacity_layer, .. } => *opacity_layer = layer,
+            RenderPrimitive::OpacityLayer { index, .. } => *index = layer,
+            RenderPrimitive::DrawOpacityLayer { index, .. } => *index = layer,
+            _ => (),
         }
     }
 
@@ -92,6 +141,8 @@ impl RenderPrimitive {
             RenderPrimitive::TextureAtlas { .. } => "TextureAtlas".into(),
             RenderPrimitive::Svg { .. } => "Svg".into(),
             RenderPrimitive::Empty { .. } => "Empty".into(),
+            RenderPrimitive::OpacityLayer { .. } => "OpacityLayer".into(),
+            RenderPrimitive::DrawOpacityLayer { .. } => "DrawOpacityLayer".into(),
         }
     }
 }
@@ -121,6 +172,7 @@ impl From<&KStyle> for RenderPrimitive {
             RenderCommand::Layout => Self::Empty,
             RenderCommand::Clip => Self::Clip {
                 layout: Rect::default(),
+                opacity_layer: 0,
             },
             RenderCommand::Quad => Self::Quad {
                 background_color,
@@ -128,6 +180,7 @@ impl From<&KStyle> for RenderPrimitive {
                 border_radius: style.border_radius.resolve(),
                 border: style.border.resolve(),
                 layout: Rect::default(),
+                opacity_layer: 0,
             },
             RenderCommand::Text {
                 content,
@@ -148,11 +201,13 @@ impl From<&KStyle> for RenderPrimitive {
                 },
                 word_wrap,
                 subpixel,
+                opacity_layer: 0,
             },
             RenderCommand::Image { handle } => Self::Image {
                 border_radius: style.border_radius.resolve(),
                 layout: Rect::default(),
                 handle,
+                opacity_layer: 0,
             },
             RenderCommand::TextureAtlas {
                 handle,
@@ -163,11 +218,13 @@ impl From<&KStyle> for RenderPrimitive {
                 layout: Rect::default(),
                 size,
                 position,
+                opacity_layer: 0,
             },
             RenderCommand::NinePatch { handle, border } => Self::NinePatch {
                 border,
                 layout: Rect::default(),
                 handle,
+                opacity_layer: 0,
             },
             RenderCommand::Svg { handle } => Self::Svg {
                 background_color: match style.background_color {
@@ -176,6 +233,7 @@ impl From<&KStyle> for RenderPrimitive {
                 },
                 handle,
                 layout: Rect::default(),
+                opacity_layer: 0,
             },
         }
     }

@@ -22,11 +22,13 @@
 
 use bevy::prelude::*;
 
+mod accordion;
 mod app;
 mod background;
 mod button;
 mod clip;
 mod element;
+mod icons;
 mod image;
 mod nine_patch;
 mod scroll;
@@ -38,11 +40,13 @@ mod transition;
 mod window;
 mod window_context_provider;
 
+pub use accordion::*;
 pub use app::{KayakApp, KayakAppBundle};
 pub use background::{Background, BackgroundBundle};
 pub use button::{ButtonState, KButton, KButtonBundle};
 pub use clip::{Clip, ClipBundle};
 pub use element::{Element, ElementBundle};
+pub use icons::*;
 pub use image::{KImage, KImageBundle};
 pub use nine_patch::{NinePatch, NinePatchBundle};
 pub use scroll::{
@@ -53,7 +57,7 @@ pub use scroll::{
         ScrollContext, ScrollContextProvider, ScrollContextProviderBundle, ScrollMode,
     },
 };
-pub use svg::{KSvg, KSvgBundle};
+pub use svg::{KSvg, KSvgBundle, Svg};
 pub use text::{TextProps, TextWidgetBundle};
 pub use text_box::{TextBoxBundle, TextBoxProps, TextBoxState};
 pub use texture_atlas::{TextureAtlasBundle, TextureAtlasProps};
@@ -94,6 +98,7 @@ pub struct KayakWidgets;
 
 impl Plugin for KayakWidgets {
     fn build(&self, app: &mut bevy::prelude::App) {
+        app.add_plugin(icons::IconsPlugin);
         app.add_system(transition::update_transitions)
             .add_system(text_box::cursor_animation_system);
     }
@@ -103,6 +108,7 @@ pub struct KayakWidgetsContextPlugin;
 
 impl KayakUIPlugin for KayakWidgetsContextPlugin {
     fn build(&self, context: &mut KayakRootContext) {
+        context.add_plugin(AccordionPlugin);
         context.add_widget_data::<KayakApp, EmptyState>();
         context.add_widget_data::<KButton, ButtonState>();
         context.add_widget_data::<TextProps, EmptyState>();

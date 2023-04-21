@@ -1,4 +1,4 @@
-use bevy::prelude::{Bundle, Component, Entity, In, Query, With};
+use bevy::prelude::{Bundle, Commands, Component, Entity, In, Query, With};
 
 use crate::{
     children::KChildren,
@@ -43,6 +43,7 @@ impl Default for ScrollContentBundle {
 
 pub fn scroll_content_render(
     In((widget_context, entity)): In<(KayakWidgetContext, Entity)>,
+    mut commands: Commands,
     mut query: Query<
         (&KStyle, &mut ComputedStyles, &KChildren, &mut OnLayout),
         With<ScrollContentProps>,
@@ -89,7 +90,7 @@ pub fn scroll_content_render(
                     .with_style(styles)
                     .into();
 
-                children.process(&widget_context, Some(entity));
+                children.process(&widget_context, &mut commands, Some(entity));
             }
         }
     }

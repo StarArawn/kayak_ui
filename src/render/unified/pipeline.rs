@@ -352,7 +352,7 @@ pub struct ExtractedQuad {
     pub image: Option<Handle<Image>>,
     pub uv_min: Option<Vec2>,
     pub uv_max: Option<Vec2>,
-    pub svg_handle: Option<Handle<Svg>>,
+    pub svg_handle: (Option<Handle<Svg>>, Option<Color>),
 }
 
 impl Default for ExtractedQuad {
@@ -498,6 +498,8 @@ pub fn queue_quads(
     // NOTE: This can be done independent of views by reasonably assuming that all 2D views look along the negative-z axis in world space
     let extracted_quads = &mut extracted_quads.quads;
     extracted_quads.sort_unstable_by(|a, b| a.z_index.partial_cmp(&b.z_index).unwrap());
+    // dbg!(extracted_quads.iter().filter(|e| e.quad_type == UIQuadType::Clip).map(|e| e.rect.height()).collect::<Vec<_>>());
+
     //match a.z_index.partial_cmp(&b.z_index) {
     // Some(Ordering::Equal) | None => match a.quad_type.partial_cmp(&b.quad_type) {
     // Some(Ordering::Equal) | None =>
@@ -544,6 +546,8 @@ pub fn queue_quads(
         // Vertex buffer indices
         let mut index = 0;
 
+        let mut previous_clip_rect = Rect::default();
+
         let draw_quad = draw_functions.read().get_id::<DrawUI>().unwrap();
         for (camera_entity, mut transparent_phase, view) in views.iter_mut() {
             let key = UnifiedPipelineKey {
@@ -554,6 +558,14 @@ pub fn queue_quads(
 
             for quad in extracted_quads.iter_mut() {
                 if camera_entity != quad.camera_entity {
+                    continue;
+                }
+
+                if quad.quad_type == UIQuadType::Clip {
+                    previous_clip_rect = quad.rect;
+                }
+
+                if previous_clip_rect.width() < 1.0 || previous_clip_rect.height() < 1.0 {
                     continue;
                 }
 
@@ -571,7 +583,7 @@ pub fn queue_quads(
                     font_handle_id: quad.font_handle.clone().map(HandleId::from),
                     quad_type: quad.quad_type,
                     type_id: quad.type_index,
-                    z_index: 0.0, //quad.z_index,
+                    z_index: 0.0, // z_index: quad.z_index,
                 };
 
                 if new_batch != current_batch || matches!(quad.quad_type, UIQuadType::Clip) {
@@ -615,11 +627,14 @@ pub fn queue_quads(
                 let item_start = index;
                 let mut item_end = index;
 
-                if let Some(svg_handle) = quad.svg_handle.as_ref() {
+                if let (Some(svg_handle), color) =
+                    (quad.svg_handle.0.as_ref(), quad.svg_handle.1.as_ref())
+                {
                     if let Some((svg, mesh)) = render_svgs.get(svg_handle) {
-                        let new_height = (svg.size.y / svg.size.x) * sprite_rect.size().x;
-                        let svg_scale_x = sprite_rect.size().x / svg.size.x;
-                        let svg_scale_y = new_height / svg.size.y;
+                        let new_height =
+                            (svg.view_box.h as f32 / svg.view_box.w as f32) * sprite_rect.size().x;
+                        let svg_scale_x = sprite_rect.size().x / svg.view_box.w as f32;
+                        let svg_scale_y = new_height / svg.view_box.h as f32;
                         let positions = mesh
                             .attribute(Mesh::ATTRIBUTE_POSITION)
                             .unwrap()
@@ -634,7 +649,11 @@ pub fn queue_quads(
 
                         for index in indices.iter() {
                             let position = positions[index];
-                            let color = colors[index];
+                            let color = if let Some(color) = color {
+                                [color.r(), color.g(), color.b(), color.a()]
+                            } else {
+                                colors[index]
+                            };
                             let world = Mat4::from_scale_rotation_translation(
                                 Vec3::new(svg_scale_x, svg_scale_y, 1.0), //sprite_rect.size().extend(1.0),
                                 Quat::default(),
@@ -642,12 +661,13 @@ pub fn queue_quads(
                             );
                             let final_position = (world
                                 * Vec4::new(
-                                    position[0] - 34.5,
-                                    -position[1] - 95.0,
+                                    position[0],  // - 34.5,
+                                    -position[1], // - 95.0,
                                     position[2],
                                     1.0,
                                 ))
                             .truncate();
+
                             sprite_meta.vertices.push(QuadVertex {
                                 position: final_position.into(),
                                 color,

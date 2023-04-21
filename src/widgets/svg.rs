@@ -1,13 +1,12 @@
-use bevy::prelude::{Bundle, Component, Entity, Handle, In, Query};
-use bevy_svg::prelude::Svg;
-
 use crate::{
     context::WidgetName,
     prelude::KayakWidgetContext,
     styles::{ComputedStyles, KStyle, RenderCommand},
     widget::Widget,
 };
+use bevy::prelude::{Bundle, Component, Entity, Handle, In, Query};
 
+pub use bevy_svg::prelude::Svg;
 /// Renders a svg asset within the GUI
 /// The rendered svg respects some of the styles.
 #[derive(Component, PartialEq, Eq, Clone, Default)]

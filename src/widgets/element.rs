@@ -42,7 +42,7 @@ impl Default for ElementBundle {
 
 pub fn element_render(
     In((widget_context, entity)): In<(KayakWidgetContext, Entity)>,
-    _: Commands,
+    mut commands: Commands,
     mut query: Query<(&KStyle, &mut ComputedStyles, &KChildren)>,
 ) -> bool {
     if let Ok((style, mut computed_styles, children)) = query.get_mut(entity) {
@@ -53,7 +53,7 @@ pub fn element_render(
                 ..Default::default()
             })
             .into();
-        children.process(&widget_context, Some(entity));
+        children.process(&widget_context, &mut commands, Some(entity));
     }
     true
 }

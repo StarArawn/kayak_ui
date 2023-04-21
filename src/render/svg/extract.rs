@@ -7,8 +7,12 @@ pub fn extract_svg(
     render_primitive: &RenderPrimitive,
     _dpi: f32,
 ) -> ExtractedQuad {
-    let (handle, layout) = match render_primitive {
-        RenderPrimitive::Svg { handle, layout } => (handle.clone_weak(), *layout),
+    let (handle, layout, background_color) = match render_primitive {
+        RenderPrimitive::Svg {
+            handle,
+            layout,
+            background_color,
+        } => (handle.clone_weak(), *layout, *background_color),
         _ => panic!(""),
     };
 
@@ -19,7 +23,7 @@ pub fn extract_svg(
             max: Vec2::new(layout.posx + layout.width, layout.posy + layout.height),
         },
         z_index: layout.z_index,
-        svg_handle: Some(handle),
+        svg_handle: (Some(handle), background_color),
         ..Default::default()
     }
 }

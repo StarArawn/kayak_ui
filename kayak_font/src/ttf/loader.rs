@@ -91,7 +91,11 @@ impl AssetLoader for TTFLoader {
 
             for char_u in font_range {
                 let c = char::from_u32(char_u).unwrap();
-                let glyph_id = *char_to_glyph.get(&c).unwrap();
+                let glyph_id = char_to_glyph.get(&c);
+                if glyph_id.is_none() {
+                    continue;
+                }
+                let glyph_id = *glyph_id.unwrap();
                 let mut output = FloatRGBBmp::new(size_x, size_y);
                 let mut builder = ShapeBuilder::default();
                 let pixel_scale = size_x as f64 / face.units_per_em() as f64;

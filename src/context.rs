@@ -482,6 +482,20 @@ fn recurse_node_tree_to_build_primitives(
             _ => {}
         }
 
+        if let RenderPrimitive::Clip { layout } = &mut render_primitive {
+            if let RenderPrimitive::Clip {
+                layout: prev_layout,
+            } = &prev_clip
+            {
+                let y1 = layout.posy + layout.height;
+                let y2 = prev_layout.posy + prev_layout.height;
+                layout.height = y1.min(y2) - layout.posy;
+                if prev_layout.posy > layout.posy {
+                    layout.posy = prev_layout.posy;
+                }
+            }
+        }
+
         let _indent = "  ".repeat(depth);
         if !matches!(render_primitive, RenderPrimitive::Empty) {
             // println!("{} [{}, current_global_z: {}, z: {}, x: {}, y: {}, width: {}, height: {}]", _indent, render_primitive.to_string(), current_global_z, layout.z_index, layout.posx, layout.posy, layout.width, layout.height);
@@ -523,7 +537,7 @@ fn recurse_node_tree_to_build_primitives(
                     if matches!(prev_clip, RenderPrimitive::Clip { .. }) {
                         match prev_clip {
                             RenderPrimitive::Clip { mut layout } => {
-                                current_global_z += UI_Z_STEP * children_p.len() as f32;
+                                current_global_z += (UI_Z_STEP * 2.0) * children_p.len() as f32;
                                 layout.z_index = current_global_z;
                                 // println!("{}   [previous_clip, z: {}, x: {}, y: {}, width: {}, height: {}", _indent, layout.z_index, layout.posx, layout.posy, layout.width, layout.height);
                                 children_p.push(RenderPrimitive::Clip { layout });

@@ -73,7 +73,7 @@ impl Default for NinePatchBundle {
 
 pub fn nine_patch_render(
     In((widget_context, entity)): In<(KayakWidgetContext, Entity)>,
-    _: Commands,
+    mut commands: Commands,
     mut query: Query<(&KStyle, &mut ComputedStyles, &NinePatch, &KChildren)>,
 ) -> bool {
     if let Ok((style, mut computed_styles, nine_patch, children)) = query.get_mut(entity) {
@@ -88,7 +88,7 @@ pub fn nine_patch_render(
             })
             .with_style(style)
             .into();
-        children.process(&widget_context, Some(entity));
+        children.process(&widget_context, &mut commands, Some(entity));
     }
 
     true

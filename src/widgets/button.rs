@@ -62,17 +62,8 @@ pub fn button_render(
     if let Ok((button, styles, mut computed_styles)) = query.get_mut(entity) {
         let hover_color = Color::rgba(0.592, 0.627, 0.749, 1.0); //Color::rgba(0.549, 0.666, 0.933, 1.0);
 
-        let font_size = if let StyleProp::Value(font_size) = styles.font_size {
-            font_size
-        } else {
-            16.
-        };
-
-        let height = if let StyleProp::Value(height) = styles.height {
-            height
-        } else {
-            Units::Pixels(28.0)
-        };
+        let font_size = styles.font_size.resolve_or(16.);
+        let height = styles.height.resolve_or(Units::Pixels(28.));
 
         let state_entity =
             widget_context.use_state(&mut commands, entity, ButtonState { hovering: false });

@@ -1,3 +1,4 @@
+use bevy::log::LogPlugin;
 use bevy::prelude::*;
 use kayak_ui::prelude::{widgets::*, *};
 
@@ -57,8 +58,8 @@ fn current_count_render(
                         ..Default::default()
                     }}
                     styles={KStyle {
-                        font_size: StyleProp::Value(48.),
-                        height: StyleProp::Value(Units::Pixels(64.)),
+                        font_size: (48.).into(),
+                        height: Units::Pixels(64.).into(),
                         ..default()
                     }}
                     on_event={OnEvent::new(

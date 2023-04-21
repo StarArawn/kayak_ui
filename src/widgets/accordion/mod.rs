@@ -1,15 +1,15 @@
 use crate::{
-    widget::{EmptyState, Widget, widget_update, widget_update_with_context},
+    widget::{widget_update, widget_update_with_context, EmptyState, Widget},
     KayakUIPlugin,
 };
 
-mod summary;
 mod context;
 mod details;
+mod summary;
 
-pub use context::{AccordionContextProvider, AccordionContext, AccordionContextBundle};
-pub use summary::{AccordionSummary, AccordionSummaryBundle};
 pub use self::details::{AccordionDetails, AccordionDetailsBundle};
+pub use context::{AccordionContext, AccordionContextBundle, AccordionContextProvider};
+pub use summary::{AccordionSummary, AccordionSummaryBundle};
 
 use super::TransitionState;
 

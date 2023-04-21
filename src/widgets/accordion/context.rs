@@ -1,6 +1,12 @@
 use bevy::{prelude::*, utils::HashMap};
 
-use crate::{widget::Widget, children::KChildren, prelude::KayakWidgetContext, context::WidgetName, styles::{ComputedStyles, KStyle, RenderCommand, Units}};
+use crate::{
+    children::KChildren,
+    context::WidgetName,
+    prelude::KayakWidgetContext,
+    styles::{ComputedStyles, KStyle, RenderCommand, Units},
+    widget::Widget,
+};
 
 #[derive(Component, Default, Debug, Clone, PartialEq, Eq)]
 pub struct AccordionContext {
@@ -15,7 +21,12 @@ impl AccordionContext {
 
     pub fn toggle_current(&mut self, index: usize) {
         if self.allow_one {
-            self.accordions.iter_mut().filter(|(e, _)| **e != index).for_each(|(_, v)| { *v = false; });
+            self.accordions
+                .iter_mut()
+                .filter(|(e, _)| **e != index)
+                .for_each(|(_, v)| {
+                    *v = false;
+                });
         }
         if let Some(open) = self.accordions.get_mut(&index) {
             *open = !*open;
@@ -28,10 +39,10 @@ impl AccordionContext {
 #[derive(Component, Default, Debug, Clone, PartialEq, Eq)]
 pub struct AccordionContextProvider {
     pub allow_only_one: bool,
-    pub default_open: Option<usize>, 
+    pub default_open: Option<usize>,
 }
 
-impl Widget for AccordionContextProvider { }
+impl Widget for AccordionContextProvider {}
 
 #[derive(Bundle, Debug, Clone, PartialEq)]
 pub struct AccordionContextBundle {
@@ -75,8 +86,7 @@ pub fn render(
             }
             commands.spawn(accordion_context).id()
         };
-        widget_context
-            .set_context_entity::<AccordionContext>(Some(widget_entity), context_entity);
+        widget_context.set_context_entity::<AccordionContext>(Some(widget_entity), context_entity);
         children.process(&widget_context, &mut commands, Some(widget_entity));
     }
 

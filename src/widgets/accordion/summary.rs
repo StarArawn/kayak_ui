@@ -8,12 +8,15 @@ use crate::{
     event_dispatcher::EventDispatcherContext,
     on_event::OnEvent,
     prelude::KayakWidgetContext,
-    styles::{ComputedStyles, Corner, Edge, KCursorIcon, KStyle, LayoutType, RenderCommand, Units, StyleProp},
+    styles::{
+        ComputedStyles, Corner, Edge, KCursorIcon, KStyle, LayoutType, RenderCommand, StyleProp,
+        Units,
+    },
     widget::Widget,
     widget_state::WidgetState,
     widgets::{
-        BackgroundBundle, ElementBundle, KSvg, KSvgBundle, Svg,
-        EXPAND_LESS_HANDLE, EXPAND_MORE_HANDLE,
+        BackgroundBundle, ElementBundle, KSvg, KSvgBundle, Svg, EXPAND_LESS_HANDLE,
+        EXPAND_MORE_HANDLE,
     },
 };
 

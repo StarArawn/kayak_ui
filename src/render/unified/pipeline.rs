@@ -583,8 +583,7 @@ pub fn queue_quads(
                     font_handle_id: quad.font_handle.clone().map(HandleId::from),
                     quad_type: quad.quad_type,
                     type_id: quad.type_index,
-                    z_index: 0.0
-                    // z_index: quad.z_index,
+                    z_index: 0.0, // z_index: quad.z_index,
                 };
 
                 if new_batch != current_batch || matches!(quad.quad_type, UIQuadType::Clip) {
@@ -628,9 +627,12 @@ pub fn queue_quads(
                 let item_start = index;
                 let mut item_end = index;
 
-                if let (Some(svg_handle), color) = (quad.svg_handle.0.as_ref(), quad.svg_handle.1.as_ref()) {
+                if let (Some(svg_handle), color) =
+                    (quad.svg_handle.0.as_ref(), quad.svg_handle.1.as_ref())
+                {
                     if let Some((svg, mesh)) = render_svgs.get(svg_handle) {
-                        let new_height = (svg.view_box.h as f32 / svg.view_box.w as f32) * sprite_rect.size().x;
+                        let new_height =
+                            (svg.view_box.h as f32 / svg.view_box.w as f32) * sprite_rect.size().x;
                         let svg_scale_x = sprite_rect.size().x / svg.view_box.w as f32;
                         let svg_scale_y = new_height / svg.view_box.h as f32;
                         let positions = mesh
@@ -647,7 +649,11 @@ pub fn queue_quads(
 
                         for index in indices.iter() {
                             let position = positions[index];
-                            let color = if let Some(color) = color { [color.r(), color.g(), color.b(), color.a()] } else { colors[index] };
+                            let color = if let Some(color) = color {
+                                [color.r(), color.g(), color.b(), color.a()]
+                            } else {
+                                colors[index]
+                            };
                             let world = Mat4::from_scale_rotation_translation(
                                 Vec3::new(svg_scale_x, svg_scale_y, 1.0), //sprite_rect.size().extend(1.0),
                                 Quat::default(),

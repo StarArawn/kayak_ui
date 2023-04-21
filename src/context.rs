@@ -483,7 +483,10 @@ fn recurse_node_tree_to_build_primitives(
         }
 
         if let RenderPrimitive::Clip { layout } = &mut render_primitive {
-            if let RenderPrimitive::Clip { layout: prev_layout } = &prev_clip {
+            if let RenderPrimitive::Clip {
+                layout: prev_layout,
+            } = &prev_clip
+            {
                 let y1 = layout.posy + layout.height;
                 let y2 = prev_layout.posy + prev_layout.height;
                 layout.height = y1.min(y2) - layout.posy;

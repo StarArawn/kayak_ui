@@ -22,11 +22,13 @@
 
 use bevy::prelude::*;
 
+mod accordion;
 mod app;
 mod background;
 mod button;
 mod clip;
 mod element;
+mod icons;
 mod image;
 mod nine_patch;
 mod scroll;
@@ -37,16 +39,14 @@ mod texture_atlas;
 mod transition;
 mod window;
 mod window_context_provider;
-mod accordion;
-mod icons;
 
-pub use icons::*;
 pub use accordion::*;
 pub use app::{KayakApp, KayakAppBundle};
 pub use background::{Background, BackgroundBundle};
 pub use button::{ButtonState, KButton, KButtonBundle};
 pub use clip::{Clip, ClipBundle};
 pub use element::{Element, ElementBundle};
+pub use icons::*;
 pub use image::{KImage, KImageBundle};
 pub use nine_patch::{NinePatch, NinePatchBundle};
 pub use scroll::{

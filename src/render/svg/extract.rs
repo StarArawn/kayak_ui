@@ -8,7 +8,11 @@ pub fn extract_svg(
     _dpi: f32,
 ) -> ExtractedQuad {
     let (handle, layout, background_color) = match render_primitive {
-        RenderPrimitive::Svg { handle, layout, background_color } => (handle.clone_weak(), *layout, *background_color),
+        RenderPrimitive::Svg {
+            handle,
+            layout,
+            background_color,
+        } => (handle.clone_weak(), *layout, *background_color),
         _ => panic!(""),
     };
 

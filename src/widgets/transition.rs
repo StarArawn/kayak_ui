@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use instant::{Instant};
+use instant::Instant;
 use interpolation::Ease;
 
 pub use interpolation::EaseFunction;
@@ -53,7 +53,7 @@ impl Transition {
 
     pub(crate) fn update(&mut self) -> KStyle {
         let elapsed_time = self.start.elapsed().as_secs_f32() * 1000.0; // as Milliseconds
-        // dbg!(elapsed_time, self.timeout, self.reversing, self.playing);
+                                                                        // dbg!(elapsed_time, self.timeout, self.reversing, self.playing);
         if (elapsed_time < self.timeout) && self.playing {
             let mut x = Ease::calc((elapsed_time / self.timeout).clamp(0.0, 1.0), self.easing);
             if self.reversing {

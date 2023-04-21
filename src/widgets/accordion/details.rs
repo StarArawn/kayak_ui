@@ -6,9 +6,12 @@ use crate::{
     children::KChildren,
     context::WidgetName,
     prelude::KayakWidgetContext,
-    styles::{KStyle, LayoutType, Units, ComputedStyles},
+    styles::{ComputedStyles, KStyle, LayoutType, Units},
     widget::Widget,
-    widgets::{BackgroundBundle, ClipBundle, TransitionProps, TransitionState, create_transition, Transition},
+    widgets::{
+        create_transition, BackgroundBundle, ClipBundle, Transition, TransitionProps,
+        TransitionState,
+    },
 };
 
 use super::AccordionContext;
@@ -86,8 +89,10 @@ pub fn render(
                     &Transition::new(&transition_props),
                 );
 
-                if let Ok(mut transition_state) = transition_state_query.get_mut(transition_entity) {
-                    transition_state.transition.style_b.height = Units::Pixels(children_height).into();
+                if let Ok(mut transition_state) = transition_state_query.get_mut(transition_entity)
+                {
+                    transition_state.transition.style_b.height =
+                        Units::Pixels(children_height).into();
                     if transition_state.transition.reversing != transition_props.reversing {
                         if transition_props.reversing {
                             transition_state.transition.start_reverse()

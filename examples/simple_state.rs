@@ -56,6 +56,11 @@ fn current_count_render(
                         text: "Click me!".into(),
                         ..Default::default()
                     }}
+                    styles={KStyle {
+                        font_size: StyleProp::Value(48.),
+                        height: StyleProp::Value(Units::Pixels(64.)),
+                        ..default()
+                    }}
                     on_event={OnEvent::new(
                         move |In((event_dispatcher_context, _, mut event, _entity)): In<(EventDispatcherContext, WidgetState, KEvent, Entity)>,
                             mut query: Query<&mut CurrentCountState>| {

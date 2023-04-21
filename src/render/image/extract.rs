@@ -14,12 +14,13 @@ pub fn extract_images(
     render_command: &RenderPrimitive,
     _dpi: f32,
 ) -> Vec<ExtractedQuad> {
-    let (border_radius, layout, handle) = match render_command {
+    let (border_radius, layout, handle, opacity_layer) = match render_command {
         RenderPrimitive::Image {
             border_radius,
             layout,
             handle,
-        } => (*border_radius, layout, handle),
+            opacity_layer,
+        } => (*border_radius, layout, handle, *opacity_layer),
         _ => panic!(""),
     };
 
@@ -44,6 +45,7 @@ pub fn extract_images(
         image: Some(handle.clone_weak()),
         uv_max: None,
         uv_min: None,
+        opacity_layer,
         ..Default::default()
     }]
 }

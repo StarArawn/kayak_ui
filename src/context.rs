@@ -19,7 +19,7 @@ use crate::{
     input::query_world,
     layout::{LayoutCache, Rect},
     layout_dispatcher::LayoutEventDispatcher,
-    node::{DirtyNode, Node, WrappedIndex},
+    node::{DirtyNode, WrappedIndex},
     prelude::KayakWidgetContext,
     render_primitive::RenderPrimitive,
     styles::{
@@ -28,7 +28,7 @@ use crate::{
     },
     tree::{Change, Tree},
     widget_state::WidgetState,
-    Focusable, KayakUIPlugin, WindowSize,
+    Focusable, KayakUIPlugin, WindowSize, render::MAX_OPACITY_LAYERS,
 };
 
 /// A tag component representing when a widget has been mounted(added to the tree).
@@ -378,7 +378,7 @@ impl KayakRootContext {
             return vec![];
         }
 
-        let (render_primitives, _) = if let Ok(mut layout_cache) = self.layout_cache.try_write() {
+        let (render_primitives, _, _) = if let Ok(mut layout_cache) = self.layout_cache.try_write() {
             recurse_node_tree_to_build_primitives(
                 &node_tree,
                 &mut layout_cache,
@@ -389,9 +389,11 @@ impl KayakRootContext {
                 0.0,
                 RenderPrimitive::Empty,
                 0,
+                0,
+                0
             )
         } else {
-            (vec![], 0.0)
+            (vec![], 0.0, 0)
         };
         // render_primitives.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap());
 
@@ -420,11 +422,21 @@ fn recurse_node_tree_to_build_primitives(
     mut current_global_z: f32,
     mut prev_clip: RenderPrimitive,
     depth: usize,
-) -> (Vec<RenderPrimitive>, f32) {
+    mut current_opacity_layer: u32,
+    mut total_opacity_layers: u32,
+) -> (Vec<RenderPrimitive>, f32, u32) {
     let mut render_primitives = Vec::new();
+    let mut opacity = None;
     if let Ok(node) = nodes.get(current_node.0) {
+        // Skip rendering completely transparent objects.
+        if node.opacity < 0.001 {
+            return (render_primitives, current_global_z, total_opacity_layers);
+        }
         current_global_z += UI_Z_STEP + if node.z <= 0.0 { 0.0 } else { node.z };
         let mut render_primitive = node.primitive.clone();
+        // Set opacity layer on render primitive
+        render_primitive.set_opacity_layer(current_opacity_layer);
+
         // let mut new_z_index = main_z_index;
         let new_z = current_global_z; // - parent_global_z;
 
@@ -463,7 +475,7 @@ fn recurse_node_tree_to_build_primitives(
                     layout,
                 );
             }
-            RenderPrimitive::Clip { layout } => {
+            RenderPrimitive::Clip { layout, .. } => {
                 log::trace!(
                     "Clip node: {}-{} is equal to: {:?}",
                     widget_names.get(current_node.0).unwrap().0,
@@ -482,8 +494,12 @@ fn recurse_node_tree_to_build_primitives(
             _ => {}
         }
 
-        if let RenderPrimitive::Clip { layout } = &mut render_primitive {
-            if let RenderPrimitive::Clip { layout: prev_layout } = &prev_clip {
+        if let RenderPrimitive::Clip { layout, .. } = &mut render_primitive {
+            if let RenderPrimitive::Clip {
+                layout: prev_layout,
+                ..
+            } = &prev_clip
+            {
                 let y1 = layout.posy + layout.height;
                 let y2 = prev_layout.posy + prev_layout.height;
                 layout.height = y1.min(y2) - layout.posy;
@@ -491,6 +507,30 @@ fn recurse_node_tree_to_build_primitives(
                     layout.posy = prev_layout.posy;
                 }
             }
+        }
+
+        // Only spawn an opacity layer if we have an opacity greater than zero or less than one.
+        if node.opacity < 1.0 {
+            // If we've hit max opacity layer capacity skip rendering.
+            if total_opacity_layers + 1 >= MAX_OPACITY_LAYERS {
+                return (vec![], current_global_z, total_opacity_layers);
+            }
+
+            // Add in an opacity layer
+            total_opacity_layers += 1;
+            let opacity_layer = RenderPrimitive::OpacityLayer {
+                index: total_opacity_layers,
+                z: render_primitive.get_layout().z_index,
+            };
+            opacity = Some((
+                node.opacity,
+                total_opacity_layers,
+            ));
+
+            current_opacity_layer = total_opacity_layers;
+
+            render_primitives.push(opacity_layer);
+
         }
 
         let _indent = "  ".repeat(depth);
@@ -512,10 +552,11 @@ fn recurse_node_tree_to_build_primitives(
             let mut children_primitives = Vec::new();
             let children = node_tree.children.get(&current_node).unwrap();
             // let children_count = children.len();
+            // let original_opacity_layers = opacity_layers;
             for child in children {
                 // main_z_index += 1.0;
                 // let new_z = main_z_index + if node.z < 0.0 { 0.0 } else { node.z } + (z / children_count as f32);
-                let (mut children_p, _new_global_z) = recurse_node_tree_to_build_primitives(
+                let (mut children_p, _new_global_z, new_total_opacity_layers) = recurse_node_tree_to_build_primitives(
                     node_tree,
                     layout_cache,
                     nodes,
@@ -525,7 +566,10 @@ fn recurse_node_tree_to_build_primitives(
                     current_global_z,
                     new_prev_clip.clone(),
                     depth + 1,
+                    current_opacity_layer,
+                    total_opacity_layers
                 );
+                total_opacity_layers = new_total_opacity_layers;
                 // current_global_z = new_global_z;
                 // z += 1.0;
 
@@ -533,11 +577,17 @@ fn recurse_node_tree_to_build_primitives(
                     // Between each child node we need to reset the clip.
                     if matches!(prev_clip, RenderPrimitive::Clip { .. }) {
                         match prev_clip {
-                            RenderPrimitive::Clip { mut layout } => {
+                            RenderPrimitive::Clip {
+                                mut layout,
+                                opacity_layer,
+                            } => {
                                 current_global_z += (UI_Z_STEP * 2.0) * children_p.len() as f32;
                                 layout.z_index = current_global_z;
                                 // println!("{}   [previous_clip, z: {}, x: {}, y: {}, width: {}, height: {}", _indent, layout.z_index, layout.posx, layout.posy, layout.width, layout.height);
-                                children_p.push(RenderPrimitive::Clip { layout });
+                                children_p.push(RenderPrimitive::Clip {
+                                    layout,
+                                    opacity_layer,
+                                });
                             }
                             _ => {}
                         }
@@ -549,6 +599,8 @@ fn recurse_node_tree_to_build_primitives(
                     children_primitives.push((zz, children_p));
                 }
             }
+
+            // opacity_layers = original_opacity_layers;
 
             // Sort and add
             // children_primitives.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap());
@@ -586,10 +638,27 @@ fn recurse_node_tree_to_build_primitives(
         );
     }
 
-    (render_primitives, current_global_z)
+    // When an opacity layer has been added all of its children are drawn to the same render target.
+    // After we need to draw the render target for that opacity layer to the screen.
+    if let Some((opacity, opacity_layer)) = opacity {
+        let root_node_layout = layout_cache.rect.get(&node_tree.root_node.unwrap()).unwrap();
+        current_global_z += UI_Z_STEP * 2.0;
+        let primitive = RenderPrimitive::DrawOpacityLayer {
+            opacity,
+            index: opacity_layer,
+            z: current_global_z,
+            layout: *root_node_layout,
+        };
+        render_primitives.push(primitive);
+    }
+
+    // dbg!(&render_primitives);
+
+    (render_primitives, current_global_z, total_opacity_layers)
 }
 
-fn update_widgets_sys(world: &mut World) {
+/// Updates the widgets
+pub fn update_widgets_sys(world: &mut World) {
     let mut context_data = Vec::new();
 
     query_world::<Query<(Entity, &mut KayakRootContext)>, _, _>(
@@ -1185,7 +1254,6 @@ impl Plugin for KayakContextPlugin {
             >::default()))
             .add_plugin(crate::camera::KayakUICameraPlugin)
             .add_plugin(crate::render::BevyKayakUIRenderPlugin)
-            .register_type::<Node>()
             .add_system(crate::input::process_events.in_base_set(CoreSet::Update))
             .add_system(update_widgets_sys.in_base_set(CoreSet::PostUpdate))
             .add_system(
@@ -1197,7 +1265,8 @@ impl Plugin for KayakContextPlugin {
 
         // Register reflection types.
         // A bit annoying..
-        app.register_type::<ComputedStyles>()
+        app //.register_type::<Node>()
+            .register_type::<ComputedStyles>()
             .register_type::<KStyle>()
             .register_type::<KChildren>()
             .register_type::<WidgetName>()

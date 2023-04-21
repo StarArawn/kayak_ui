@@ -22,6 +22,7 @@ pub fn calculate_nodes(
     query: Query<Entity, With<DirtyNode>>,
     all_styles_query: Query<&ComputedStyles>,
     node_query: Query<(Entity, &Node)>,
+    // widget_names: Query<&WidgetName>,
 ) -> KayakRootContext {
     let mut new_nodes = HashMap::<Entity, (Node, bool)>::default();
 
@@ -29,6 +30,7 @@ pub fn calculate_nodes(
 
     let initial_styles = KStyle::initial();
     let default_styles = KStyle {
+        opacity: StyleProp::Value(1.0),
         ..KStyle::new_default()
     };
 
@@ -37,7 +39,10 @@ pub fn calculate_nodes(
             return context;
         }
 
-        for dirty_entity in query.iter() {
+        let mut dirty_entities = query.iter().collect::<Vec<_>>();
+        dirty_entities.sort_by(|a, b| a.index().partial_cmp(&b.index()).unwrap());
+
+        for dirty_entity in dirty_entities {
             let dirty_entity = WrappedIndex(dirty_entity);
             if !tree.contains(dirty_entity) {
                 continue;
@@ -88,6 +93,38 @@ pub fn calculate_nodes(
             // Fill in all `inherited` values for any `inherit` property
             styles.inherit(&parent_styles);
 
+            // Lock opacity so the max opacity for a child is the opacity of the parent.
+            // if let StyleProp::Value(opacity) = &mut styles.opacity {
+            //     if let StyleProp::Value(parent_opacity) = &parent_styles.opacity {
+            //         *opacity = opacity.min(*parent_opacity);
+            //     }
+            // } else {
+            //     styles.opacity = parent_styles.opacity.clone();
+            // }
+
+            // if let StyleProp::Value(opacity) = &mut styles.opacity {
+            //     if let StyleProp::Value(background_color) = &mut styles.background_color {
+            //         // Apply opacity to background_color
+            //         background_color.set_a(opacity.min(background_color.a()));
+            //     } else {
+            //         styles.background_color = Color::rgba(1.0, 1.0, 1.0, *opacity).into();
+            //     }
+
+            //     if let StyleProp::Value(color) = &mut styles.color {
+            //         // Apply opacity to color
+            //         color.set_a(opacity.min(color.a()));
+            //     } else {
+            //         styles.color = Color::rgba(1.0, 1.0, 1.0, *opacity).into();
+            //     }
+
+            //     if let StyleProp::Value(border_color) = &mut styles.border_color {
+            //         // Apply opacity to border_color
+            //         border_color.set_a(opacity.min(border_color.a()));
+            //     } else {
+            //         styles.border_color = Color::rgba(1.0, 1.0, 1.0, *opacity).into();
+            //     }
+            // }
+
             // let mut current_z = {
             //     if parent_z > -1.0 {
             //         parent_z + 1.0
@@ -126,14 +163,22 @@ pub fn calculate_nodes(
                 .cloned()
                 .unwrap_or_default();
 
+            // If a parent updates the children need to as well.
+            // for child in children.iter() {
+            //     commands.entity(child.0).insert(DirtyNode);
+            // }
+
             let width = styles.width.resolve().value_or(0.0, 0.0);
             let height = styles.height.resolve().value_or(0.0, 0.0);
 
-            let mut node = NodeBuilder::empty()
+            let opacity = styles.opacity.resolve_or(1.0);
+
+            let mut node: Node = NodeBuilder::empty()
                 .with_id(dirty_entity)
                 .with_styles(styles, Some(raw_styles))
                 .with_children(children)
                 .with_primitive(primitive)
+                .with_opacity(opacity)
                 .build();
 
             if dirty_entity == tree.root_node.unwrap() {

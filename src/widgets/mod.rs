@@ -39,6 +39,7 @@ mod window;
 mod window_context_provider;
 mod accordion;
 mod icons;
+mod modal;
 
 pub use icons::*;
 pub use accordion::*;
@@ -62,12 +63,13 @@ pub use text::{TextProps, TextWidgetBundle};
 pub use text_box::{TextBoxBundle, TextBoxProps, TextBoxState};
 pub use texture_atlas::{TextureAtlasBundle, TextureAtlasProps};
 pub use transition::{
-    create_transition, EaseFunction, Transition, TransitionBundle, TransitionProps, TransitionState,
+    create_transition, TransitionEasing, Transition, TransitionBundle, TransitionProps, TransitionState,
 };
 pub use window::{KWindow, KWindowState, WindowBundle};
 pub use window_context_provider::{
     WindowContext, WindowContextProvider, WindowContextProviderBundle,
 };
+pub use modal::{Modal, ModalBundle};
 
 use app::{app_render, app_update};
 use background::background_render;
@@ -87,7 +89,7 @@ use texture_atlas::texture_atlas_render;
 use window::window_render;
 
 use crate::{
-    context::KayakRootContext,
+    context::{KayakRootContext, update_widgets_sys},
     widget::{widget_update, widget_update_with_context, EmptyState, Widget},
     KayakUIPlugin,
 };
@@ -99,7 +101,12 @@ pub struct KayakWidgets;
 impl Plugin for KayakWidgets {
     fn build(&self, app: &mut bevy::prelude::App) {
         app.add_plugin(icons::IconsPlugin);
-        app.add_system(transition::update_transitions)
+        app
+            .add_system(
+                transition::update_transitions
+                    .after(update_widgets_sys)
+                    .in_base_set(CoreSet::PostUpdate)
+            )
             .add_system(text_box::cursor_animation_system);
     }
 }
@@ -127,6 +134,7 @@ impl KayakUIPlugin for KayakWidgetsContextPlugin {
         context.add_widget_data::<ScrollContextProvider, EmptyState>();
         context.add_widget_data::<TextBoxProps, TextBoxState>();
         context.add_widget_data::<TransitionProps, TransitionState>();
+        context.add_widget_data::<Modal, TransitionState>();
 
         context.add_widget_system(KayakApp::default().get_name(), app_update, app_render);
         context.add_widget_system(
@@ -213,6 +221,11 @@ impl KayakUIPlugin for KayakWidgetsContextPlugin {
             TransitionProps::default().get_name(),
             widget_update::<TransitionProps, TransitionState>,
             transition::render,
+        );
+        context.add_widget_system(
+            Modal::default().get_name(),
+            widget_update::<Modal, TransitionState>,
+            modal::render
         );
     }
 }

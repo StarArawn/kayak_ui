@@ -7,8 +7,19 @@ pub fn extract_svg(
     render_primitive: &RenderPrimitive,
     _dpi: f32,
 ) -> ExtractedQuad {
-    let (handle, layout, background_color) = match render_primitive {
-        RenderPrimitive::Svg { handle, layout, background_color } => (handle.clone_weak(), *layout, *background_color),
+    let (handle, layout, background_color, opacity_layer) = match render_primitive {
+        RenderPrimitive::Svg {
+            handle,
+            layout,
+            background_color,
+            opacity_layer,
+            ..
+        } => (
+            handle.clone_weak(),
+            *layout,
+            *background_color,
+            *opacity_layer,
+        ),
         _ => panic!(""),
     };
 
@@ -20,6 +31,7 @@ pub fn extract_svg(
         },
         z_index: layout.z_index,
         svg_handle: (Some(handle), background_color),
+        opacity_layer,
         ..Default::default()
     }
 }

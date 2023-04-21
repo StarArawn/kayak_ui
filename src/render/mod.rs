@@ -1,12 +1,12 @@
 use bevy::{
-    prelude::{
-        App, Camera, Commands, Entity, IntoSystemAppConfig, IntoSystemConfig, Plugin, Query, With,
-    },
+    prelude::*,
     render::{
+        camera::RenderTarget,
         render_graph::{RenderGraph, RunGraphOnViewNode, SlotInfo, SlotType},
         render_phase::{batch_phase_system, sort_phase_system, DrawFunctions, RenderPhase},
-        Extract, ExtractSchedule, RenderApp, RenderSet,
+        Extract, ExtractSchedule, RenderApp, RenderSet, render_asset::{RenderAssets},
     },
+    window::{PrimaryWindow, Window, WindowRef},
 };
 
 use crate::{
@@ -14,17 +14,24 @@ use crate::{
     CameraUIKayak,
 };
 
-use self::{extract::BevyKayakUIExtractPlugin, ui_pass::TransparentUI};
+use self::{
+    extract::BevyKayakUIExtractPlugin,
+    opacity_layer::OpacityLayerManager,
+    ui_pass::{TransparentOpacityUI, TransparentUI},
+};
 
 mod extract;
 pub(crate) mod font;
 pub(crate) mod image;
 pub(crate) mod nine_patch;
+mod opacity_layer;
 pub(crate) mod quad;
 pub(crate) mod svg;
 pub(crate) mod texture_atlas;
 mod ui_pass;
 pub mod unified;
+
+pub use opacity_layer::MAX_OPACITY_LAYERS;
 
 pub mod draw_ui_graph {
     pub const NAME: &str = "kayak_draw_ui";
@@ -43,13 +50,23 @@ pub struct BevyKayakUIRenderPlugin;
 
 impl Plugin for BevyKayakUIRenderPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
+        app.init_resource::<OpacityLayerManager>()
+            .add_system(update_opacity_layer_cameras);
+
         let render_app = app.sub_app_mut(RenderApp);
         render_app
             .init_resource::<DrawFunctions<TransparentUI>>()
+            .init_resource::<DrawFunctions<TransparentOpacityUI>>()
             .add_system(extract_core_pipeline_camera_phases.in_schedule(ExtractSchedule))
+            .add_system(prepare_opacity_layers.in_set(RenderSet::Queue).before(unified::pipeline::queue_quads))
             .add_system(
                 batch_phase_system::<TransparentUI>
                     .after(sort_phase_system::<TransparentUI>)
+                    .in_set(RenderSet::PhaseSort),
+            )
+            .add_system(
+                batch_phase_system::<TransparentOpacityUI>
+                    .after(sort_phase_system::<TransparentOpacityUI>)
                     .in_set(RenderSet::PhaseSort),
             );
 
@@ -154,15 +171,49 @@ fn get_ui_graph(render_app: &mut App) -> RenderGraph {
     ui_graph
 }
 
+pub fn update_opacity_layer_cameras(
+    windows: Query<&Window>,
+    cameras: Query<(Entity, &Camera), With<CameraUIKayak>>,
+    primary_window: Query<Entity, With<PrimaryWindow>>,
+    mut opacity_layers: ResMut<OpacityLayerManager>,
+    mut images: ResMut<Assets<Image>>,
+) {
+    for (camera_entity, camera) in cameras.iter() {
+        match &camera.target {
+            RenderTarget::Window(window_ref) => {
+                let window_entity = match window_ref {
+                    WindowRef::Entity(entity) => *entity,
+                    WindowRef::Primary => primary_window.get_single().unwrap(),
+                };
+                if let Ok(camera_window) = windows.get(window_entity) {
+                    opacity_layers.add_or_update(&camera_entity, camera_window, &mut images);
+                }
+            },
+            _ => {},
+        }
+    }
+}
+
 pub fn extract_core_pipeline_camera_phases(
     mut commands: Commands,
     active_cameras: Extract<Query<(Entity, &Camera), With<CameraUIKayak>>>,
+    opacity_layers: Extract<Res<OpacityLayerManager>>,
 ) {
     for (entity, camera) in &active_cameras {
         if camera.is_active {
             commands
-                .get_or_spawn(entity)
-                .insert(RenderPhase::<TransparentUI>::default());
-        }
+            .get_or_spawn(entity)
+            .insert(RenderPhase::<TransparentOpacityUI>::default())
+            .insert(RenderPhase::<TransparentUI>::default());
+    }
+}
+
+    let opacity_layers = opacity_layers.clone();
+    commands.insert_resource(opacity_layers);
+}
+
+fn prepare_opacity_layers(mut opacity_layers: ResMut<OpacityLayerManager>, mut gpu_images: ResMut<RenderAssets<Image>>) {
+    for (_, layer) in opacity_layers.camera_layers.iter_mut() {
+        layer.set_texture_views(&mut gpu_images);
     }
 }

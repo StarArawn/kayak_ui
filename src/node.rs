@@ -28,6 +28,7 @@ pub struct Node {
     /// The z-index of this node, used for controlling layering
     pub z: f32,
     pub old_z: f32,
+    pub opacity: f32,
 }
 
 impl Default for Node {
@@ -40,6 +41,7 @@ impl Default for Node {
             primitive: RenderPrimitive::Empty,
             z: Default::default(),
             old_z: Default::default(),
+            opacity: 1.0,
         }
     }
 }
@@ -61,6 +63,7 @@ impl NodeBuilder {
                 primitive: RenderPrimitive::Empty,
                 z: 0.0,
                 old_z: 0.0,
+                opacity: 1.0,
             },
         }
     }
@@ -76,6 +79,7 @@ impl NodeBuilder {
                 primitive: RenderPrimitive::Empty,
                 z: 0.0,
                 old_z: 0.0,
+                opacity: 1.0,
             },
         }
     }
@@ -102,6 +106,11 @@ impl NodeBuilder {
     /// Sets the [`RenderPrimitive`] of the node being built
     pub fn with_primitive(mut self, primitive: RenderPrimitive) -> Self {
         self.node.primitive = primitive;
+        self
+    }
+
+    pub fn with_opacity(mut self, opacity: f32) -> Self {
+        self.node.opacity = opacity;
         self
     }
 

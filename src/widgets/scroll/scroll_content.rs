@@ -63,6 +63,8 @@ pub fn scroll_content_render(
                             if let Ok(mut scroll) = query.get_mut(context_entity) {
                                 scroll.content_width = event.layout.width;
                                 scroll.content_height = event.layout.height;
+                                let scroll_y = scroll.scroll_y;
+                                scroll.set_scroll_y(scroll_y);
                             }
                         }
 

@@ -1,3 +1,4 @@
+use bevy::log::LogPlugin;
 use bevy::prelude::*;
 use kayak_ui::prelude::{widgets::*, *};
 
@@ -55,6 +56,11 @@ fn current_count_render(
                     button={KButton {
                         text: "Click me!".into(),
                         ..Default::default()
+                    }}
+                    styles={KStyle {
+                        font_size: (48.).into(),
+                        height: Units::Pixels(64.).into(),
+                        ..default()
                     }}
                     on_event={OnEvent::new(
                         move |In((event_dispatcher_context, _, mut event, _entity)): In<(EventDispatcherContext, WidgetState, KEvent, Entity)>,

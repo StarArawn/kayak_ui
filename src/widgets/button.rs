@@ -61,7 +61,10 @@ pub fn button_render(
 ) -> bool {
     if let Ok((button, styles, mut computed_styles)) = query.get_mut(entity) {
         let hover_color = Color::rgba(0.592, 0.627, 0.749, 1.0); //Color::rgba(0.549, 0.666, 0.933, 1.0);
-                                                                 // let color = Color::rgba(0.254, 0.270, 0.349, 1.0);
+
+        let font_size = styles.font_size.resolve_or(16.);
+        let height = styles.height.resolve_or(Units::Pixels(28.));
+
         let state_entity =
             widget_context.use_state(&mut commands, entity, ButtonState { hovering: false });
 
@@ -81,7 +84,8 @@ pub fn button_render(
                     },
                     border: Edge::all(2.0).into(),
                     border_radius: StyleProp::Value(Corner::all(10.0)),
-                    height: StyleProp::Value(Units::Pixels(28.0)),
+                    font_size: StyleProp::Value(font_size).into(),
+                    height: StyleProp::Value(height),
                     width: Units::Stretch(1.0).into(),
                     cursor: StyleProp::Value(KCursorIcon(CursorIcon::Hand)),
                     ..Default::default()
@@ -128,12 +132,12 @@ pub fn button_render(
                             bottom: Units::Stretch(1.0).into(),
                             left: Units::Stretch(1.0).into(),
                             right: Units::Stretch(1.0).into(),
+                            font_size: StyleProp::Value(font_size),
                             ..Default::default()
                         }}
                         text={TextProps {
                             alignment: Alignment::Start,
                             content: button.text.clone(),
-                            size: 16.0,
                             ..Default::default()
                         }}
                     />

@@ -13,25 +13,25 @@ pub fn extract_quads(
     render_primitive: &RenderPrimitive,
     dpi: f32,
 ) -> Vec<ExtractedQuad> {
-    let (background_color, border_color, layout, border_radius, mut border, opacity_layer) = match render_primitive
-    {
-        RenderPrimitive::Quad {
-            background_color,
-            border_color,
-            layout,
-            border_radius,
-            border,
-            opacity_layer
-        } => (
-            *background_color,
-            *border_color,
-            *layout,
-            *border_radius,
-            *border,
-            *opacity_layer
-        ),
-        _ => panic!(""),
-    };
+    let (background_color, border_color, layout, border_radius, mut border, opacity_layer) =
+        match render_primitive {
+            RenderPrimitive::Quad {
+                background_color,
+                border_color,
+                layout,
+                border_radius,
+                border,
+                opacity_layer,
+            } => (
+                *background_color,
+                *border_color,
+                *layout,
+                *border_radius,
+                *border,
+                *opacity_layer,
+            ),
+            _ => panic!(""),
+        };
 
     border *= dpi;
 

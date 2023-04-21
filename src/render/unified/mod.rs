@@ -1,7 +1,7 @@
 use bevy::{
     prelude::{
-        AddAsset, Assets, Commands, HandleUntyped, IntoSystemAppConfig, Plugin,
-        Query, Res, Resource, With, IntoSystemConfig,
+        AddAsset, Assets, Commands, HandleUntyped, IntoSystemAppConfig, IntoSystemConfig, Plugin,
+        Query, Res, Resource, With,
     },
     reflect::TypeUuid,
     render::{
@@ -21,7 +21,7 @@ use crate::{
     WindowSize,
 };
 
-use self::pipeline::{ExtractedQuads, ImageBindGroups, DrawOpacityUI};
+use self::pipeline::{DrawOpacityUI, ExtractedQuads, ImageBindGroups};
 
 use super::{svg::RenderSvgs, ui_pass::TransparentOpacityUI};
 

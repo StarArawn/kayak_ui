@@ -160,7 +160,12 @@ pub fn extract(
                     ..Default::default()
                 });
             }
-            RenderPrimitive::DrawOpacityLayer { opacity, index, z, layout } => {
+            RenderPrimitive::DrawOpacityLayer {
+                opacity,
+                index,
+                z,
+                layout,
+            } => {
                 extracted_quads.quads.push(ExtractedQuad {
                     camera_entity,
                     z_index: z,

@@ -402,7 +402,7 @@ define_styles! {
         /// Specified in the child widget.
         pub col_span: StyleProp<usize>,
         /// The opacity of the widget and it's children
-        /// 
+        ///
         /// This is also known as grouped opacity
         /// WARNING! This splits the widget and it's children into a new render pass. So use it sparingly!!!
         pub opacity: StyleProp<f32>,

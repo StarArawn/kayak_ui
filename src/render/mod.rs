@@ -2,9 +2,10 @@ use bevy::{
     prelude::*,
     render::{
         camera::RenderTarget,
+        render_asset::RenderAssets,
         render_graph::{RenderGraph, RunGraphOnViewNode, SlotInfo, SlotType},
         render_phase::{batch_phase_system, sort_phase_system, DrawFunctions, RenderPhase},
-        Extract, ExtractSchedule, RenderApp, RenderSet, render_asset::{RenderAssets},
+        Extract, ExtractSchedule, RenderApp, RenderSet,
     },
     window::{PrimaryWindow, Window, WindowRef},
 };
@@ -58,7 +59,11 @@ impl Plugin for BevyKayakUIRenderPlugin {
             .init_resource::<DrawFunctions<TransparentUI>>()
             .init_resource::<DrawFunctions<TransparentOpacityUI>>()
             .add_system(extract_core_pipeline_camera_phases.in_schedule(ExtractSchedule))
-            .add_system(prepare_opacity_layers.in_set(RenderSet::Queue).before(unified::pipeline::queue_quads))
+            .add_system(
+                prepare_opacity_layers
+                    .in_set(RenderSet::Queue)
+                    .before(unified::pipeline::queue_quads),
+            )
             .add_system(
                 batch_phase_system::<TransparentUI>
                     .after(sort_phase_system::<TransparentUI>)
@@ -188,8 +193,8 @@ pub fn update_opacity_layer_cameras(
                 if let Ok(camera_window) = windows.get(window_entity) {
                     opacity_layers.add_or_update(&camera_entity, camera_window, &mut images);
                 }
-            },
-            _ => {},
+            }
+            _ => {}
         }
     }
 }
@@ -202,17 +207,20 @@ pub fn extract_core_pipeline_camera_phases(
     for (entity, camera) in &active_cameras {
         if camera.is_active {
             commands
-            .get_or_spawn(entity)
-            .insert(RenderPhase::<TransparentOpacityUI>::default())
-            .insert(RenderPhase::<TransparentUI>::default());
+                .get_or_spawn(entity)
+                .insert(RenderPhase::<TransparentOpacityUI>::default())
+                .insert(RenderPhase::<TransparentUI>::default());
+        }
     }
-}
 
     let opacity_layers = opacity_layers.clone();
     commands.insert_resource(opacity_layers);
 }
 
-fn prepare_opacity_layers(mut opacity_layers: ResMut<OpacityLayerManager>, mut gpu_images: ResMut<RenderAssets<Image>>) {
+fn prepare_opacity_layers(
+    mut opacity_layers: ResMut<OpacityLayerManager>,
+    mut gpu_images: ResMut<RenderAssets<Image>>,
+) {
     for (_, layer) in opacity_layers.camera_layers.iter_mut() {
         layer.set_texture_views(&mut gpu_images);
     }

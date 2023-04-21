@@ -21,13 +21,13 @@ use bevy::{
         render_resource::{
             BindGroup, BindGroupDescriptor, BindGroupEntry, BindGroupLayout,
             BindGroupLayoutDescriptor, BindGroupLayoutEntry, BindingResource, BindingType,
-            BlendState, BufferBindingType, BufferSize,
-            BufferUsages, BufferVec, ColorTargetState, ColorWrites, Extent3d, FragmentState,
-            FrontFace, MultisampleState, PipelineCache, PolygonMode, PrimitiveState,
-            PrimitiveTopology, RenderPipelineDescriptor, SamplerBindingType, SamplerDescriptor,
-            Shader, ShaderStages, TextureDescriptor, TextureDimension, TextureFormat,
-            TextureSampleType, TextureUsages, TextureViewDescriptor, TextureViewDimension,
-            VertexAttribute, VertexBufferLayout, VertexFormat, VertexState, VertexStepMode,
+            BlendState, BufferBindingType, BufferSize, BufferUsages, BufferVec, ColorTargetState,
+            ColorWrites, Extent3d, FragmentState, FrontFace, MultisampleState, PipelineCache,
+            PolygonMode, PrimitiveState, PrimitiveTopology, RenderPipelineDescriptor,
+            SamplerBindingType, SamplerDescriptor, Shader, ShaderStages, TextureDescriptor,
+            TextureDimension, TextureFormat, TextureSampleType, TextureUsages,
+            TextureViewDescriptor, TextureViewDimension, VertexAttribute, VertexBufferLayout,
+            VertexFormat, VertexState, VertexStepMode,
         },
         renderer::{RenderDevice, RenderQueue},
         texture::{BevyDefault, GpuImage, Image},
@@ -600,7 +600,8 @@ pub fn queue_quads(
                 };
 
                 // Ignore opacity layers
-                if quad.quad_type == UIQuadType::OpacityLayer || quad.quad_type == UIQuadType::None {
+                if quad.quad_type == UIQuadType::OpacityLayer || quad.quad_type == UIQuadType::None
+                {
                     continue;
                 }
 
@@ -654,45 +655,50 @@ pub fn queue_quads(
                         if let Some(layer) = opacity_layers.camera_layers.get(&camera_entity) {
                             let image_handle = layer.get_image_handle(quad.opacity_layer);
                             if let Some(gpu_image) = gpu_images.get(&image_handle) {
-                                let new_image = if let Some(prev_size) = image_bind_groups.previous_sizes.get(&image_handle) {
+                                let new_image = if let Some(prev_size) =
+                                    image_bind_groups.previous_sizes.get(&image_handle)
+                                {
                                     if gpu_image.size != *prev_size {
-                                        image_bind_groups.previous_sizes.insert(image_handle.clone_weak(), gpu_image.size);
+                                        image_bind_groups
+                                            .previous_sizes
+                                            .insert(image_handle.clone_weak(), gpu_image.size);
                                         true
                                     } else {
                                         false
                                     }
                                 } else {
-                                    image_bind_groups.previous_sizes.insert(image_handle.clone_weak(), gpu_image.size);
+                                    image_bind_groups
+                                        .previous_sizes
+                                        .insert(image_handle.clone_weak(), gpu_image.size);
                                     true
                                 };
 
                                 if new_image {
-                                    image_bind_groups
-                                        .values
-                                        .insert(
-                                            image_handle.clone_weak(),
-                                            render_device.create_bind_group(&BindGroupDescriptor {
-                                                entries: &[
-                                                    BindGroupEntry {
-                                                        binding: 0,
-                                                        resource: BindingResource::TextureView(
-                                                            &gpu_image.texture_view,
-                                                        ),
-                                                    },
-                                                    BindGroupEntry {
-                                                        binding: 1,
-                                                        resource: BindingResource::Sampler(
-                                                            &gpu_image.sampler,
-                                                        ),
-                                                    },
-                                                ],
-                                                label: Some("draw_opacity_layer_bind_group"),
-                                                layout: &unified_pipeline.image_layout,
-                                            }),
-                                        );
+                                    image_bind_groups.values.insert(
+                                        image_handle.clone_weak(),
+                                        render_device.create_bind_group(&BindGroupDescriptor {
+                                            entries: &[
+                                                BindGroupEntry {
+                                                    binding: 0,
+                                                    resource: BindingResource::TextureView(
+                                                        &gpu_image.texture_view,
+                                                    ),
+                                                },
+                                                BindGroupEntry {
+                                                    binding: 1,
+                                                    resource: BindingResource::Sampler(
+                                                        &gpu_image.sampler,
+                                                    ),
+                                                },
+                                            ],
+                                            label: Some("draw_opacity_layer_bind_group"),
+                                            layout: &unified_pipeline.image_layout,
+                                        }),
+                                    );
                                 }
 
-                                current_batch.image_handle_id = Some(image_handle).map(HandleId::from);
+                                current_batch.image_handle_id =
+                                    Some(image_handle).map(HandleId::from);
                                 // bevy::prelude::info!("Attaching opacity layer with index: {} with view: {:?}", quad.opacity_layer, gpu_image.texture_view);
                             } else {
                                 continue;

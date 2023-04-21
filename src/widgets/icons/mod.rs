@@ -1,6 +1,9 @@
 use std::path::Path;
 
-use bevy::{prelude::{Plugin, HandleUntyped, Assets, Mesh}, reflect::TypeUuid};
+use bevy::{
+    prelude::{Assets, HandleUntyped, Mesh, Plugin},
+    reflect::TypeUuid,
+};
 use bevy_svg::prelude::Svg;
 
 pub const EXPAND_LESS_HANDLE: HandleUntyped =

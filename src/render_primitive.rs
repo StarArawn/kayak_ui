@@ -3,7 +3,8 @@ use crate::{
     styles::{Corner, Edge, KStyle, RenderCommand, StyleProp},
 };
 use bevy::{
-    prelude::{Color, Handle, Image, Vec2}, reflect::Reflect,
+    prelude::{Color, Handle, Image, Vec2},
+    reflect::Reflect,
 };
 use bevy_svg::prelude::Svg;
 use kayak_font::{TextLayout, TextProperties};
@@ -68,7 +69,7 @@ pub enum RenderPrimitive {
         index: u32,
         z: f32,
         layout: Rect,
-    }
+    },
 }
 
 impl RenderPrimitive {
@@ -140,8 +141,8 @@ impl RenderPrimitive {
             RenderPrimitive::TextureAtlas { .. } => "TextureAtlas".into(),
             RenderPrimitive::Svg { .. } => "Svg".into(),
             RenderPrimitive::Empty { .. } => "Empty".into(),
-            RenderPrimitive::OpacityLayer  { .. } => "OpacityLayer".into(),
-            RenderPrimitive::DrawOpacityLayer  { .. } => "DrawOpacityLayer".into(),
+            RenderPrimitive::OpacityLayer { .. } => "OpacityLayer".into(),
+            RenderPrimitive::DrawOpacityLayer { .. } => "DrawOpacityLayer".into(),
         }
     }
 }

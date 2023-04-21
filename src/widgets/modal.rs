@@ -13,7 +13,7 @@ use crate::{
         Units,
     },
     widget::Widget,
-    widgets::{create_transition, TransitionEasing, TransitionProps, Transition},
+    widgets::{create_transition, Transition, TransitionEasing, TransitionProps},
 };
 
 use super::{

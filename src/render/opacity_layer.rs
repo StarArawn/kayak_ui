@@ -28,7 +28,8 @@ impl OpacityLayerManager {
         if let Some(opacity_camera) = self.camera_layers.get_mut(camera_entity) {
             opacity_camera.update_images(window, images);
         } else {
-            self.camera_layers.insert(*camera_entity, OpacityCamera::new(window, images));
+            self.camera_layers
+                .insert(*camera_entity, OpacityCamera::new(window, images));
         }
     }
 }

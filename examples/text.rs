@@ -7,7 +7,7 @@ pub struct MyWidgetProps {
 }
 
 fn my_widget_1_render(
-    In((_widget_context, entity)): In<(KayakWidgetContext, Entity)>,
+    In(entity): In<Entity>,
     my_resource: Res<MyResource>,
     mut query: Query<(&mut MyWidgetProps, &KStyle, &mut ComputedStyles)>,
 ) -> bool {
@@ -37,7 +37,8 @@ pub fn widget_update_with_resource<
     Props: PartialEq + Component + Clone,
     State: PartialEq + Component + Clone,
 >(
-    In((widget_context, entity, previous_entity)): In<(KayakWidgetContext, Entity, Entity)>,
+    In((entity, previous_entity)): In<(Entity, Entity)>,
+    widget_context: Res<KayakWidgetContext>,
     my_resource: Res<MyResource>,
     widget_param: WidgetParam<Props, State>,
 ) -> bool {

@@ -41,7 +41,8 @@ pub fn widget_update_with_resource<
     Props: PartialEq + Component + Clone,
     State: PartialEq + Component + Clone,
 >(
-    In((widget_context, entity, previous_entity)): In<(KayakWidgetContext, Entity, Entity)>,
+    In((entity, previous_entity)): In<(Entity, Entity)>,
+    widget_context: Res<KayakWidgetContext>,
     todo_list: Res<TodoList>,
     widget_param: WidgetParam<Props, State>,
 ) -> bool {

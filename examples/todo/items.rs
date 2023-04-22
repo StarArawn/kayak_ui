@@ -33,7 +33,8 @@ impl Default for TodoItemsBundle {
 }
 
 pub fn render_todo_items(
-    In((widget_context, entity)): In<(KayakWidgetContext, Entity)>,
+    In(entity): In<Entity>,
+    widget_context: Res<KayakWidgetContext>,
     mut commands: Commands,
     todo_list: Res<TodoList>,
 ) -> bool {

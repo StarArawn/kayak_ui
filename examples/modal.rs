@@ -29,7 +29,8 @@ impl Default for MyWidgetBundle {
 }
 
 fn my_widget_render(
-    In((widget_context, entity)): In<(KayakWidgetContext, Entity)>,
+    In(entity): In<Entity>,
+    widget_context: Res<KayakWidgetContext>,
     mut commands: Commands,
     query: Query<&MyWidgetState>,
 ) -> bool {

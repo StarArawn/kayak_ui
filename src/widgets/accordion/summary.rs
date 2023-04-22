@@ -51,7 +51,8 @@ impl Default for AccordionSummaryBundle {
 }
 
 pub fn render(
-    In((widget_context, accordion_widget)): In<(KayakWidgetContext, Entity)>,
+    In(accordion_widget): In<Entity>,
+    widget_context: Res<KayakWidgetContext>,
     mut commands: Commands,
     mut query: Query<(&AccordionSummary, &KChildren, &KStyle, &mut ComputedStyles)>,
     context_query: Query<&AccordionContext>,

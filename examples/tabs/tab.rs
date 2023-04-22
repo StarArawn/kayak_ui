@@ -1,4 +1,4 @@
-use bevy::prelude::{Bundle, Color, Commands, Component, Entity, In, Query};
+use bevy::prelude::{Bundle, Color, Commands, Component, Entity, In, Query, Res};
 use kayak_ui::prelude::{
     rsx, widgets::BackgroundBundle, ComputedStyles, Edge, KChildren, KStyle, KayakWidgetContext,
     StyleProp, Units, Widget, WidgetName,
@@ -33,7 +33,8 @@ impl Default for TabBundle {
 }
 
 pub fn tab_render(
-    In((widget_context, entity)): In<(KayakWidgetContext, Entity)>,
+    In(entity): In<Entity>,
+    widget_context: Res<KayakWidgetContext>,
     mut commands: Commands,
     mut query: Query<(&KChildren, &Tab, &mut ComputedStyles)>,
     tab_context_query: Query<&TabContext>,

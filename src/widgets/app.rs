@@ -42,7 +42,8 @@ impl Default for KayakAppBundle {
 }
 
 pub fn app_update(
-    In((widget_context, entity, previous_props_entity)): In<(KayakWidgetContext, Entity, Entity)>,
+    In((entity, previous_props_entity)): In<(Entity, Entity)>,
+    widget_context: Res<KayakWidgetContext>,
     widget_param: WidgetParam<KayakApp, EmptyState>,
     camera: Query<&Camera, With<CameraUIKayak>>,
     windows: Query<&Window, With<PrimaryWindow>>,
@@ -80,7 +81,8 @@ pub fn app_update(
 
 /// TODO: USE CAMERA INSTEAD OF WINDOW!!
 pub fn app_render(
-    In((widget_context, entity)): In<(KayakWidgetContext, Entity)>,
+    In(entity): In<Entity>,
+widget_context: Res<KayakWidgetContext>,
     mut commands: Commands,
     mut query: Query<(&KStyle, &mut ComputedStyles, &KChildren)>,
     camera: Query<&Camera, With<CameraUIKayak>>,

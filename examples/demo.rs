@@ -7,7 +7,7 @@ pub struct MyWidget {
 }
 
 fn my_widget_1_render(
-    In((_widget_context, entity)): In<(KayakWidgetContext, Entity)>,
+    In(entity): In<Entity>,
     mut _commands: Commands,
     query: Query<&MyWidget>,
 ) -> bool {

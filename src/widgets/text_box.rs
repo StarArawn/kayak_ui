@@ -99,7 +99,8 @@ impl Default for TextBoxBundle {
 }
 
 pub fn text_box_render(
-    In((widget_context, entity)): In<(KayakWidgetContext, Entity)>,
+    In(entity): In<Entity>,
+    widget_context: Res<KayakWidgetContext>,
     mut commands: Commands,
     mut query: Query<(
         &KStyle,

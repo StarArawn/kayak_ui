@@ -70,7 +70,8 @@ impl Default for ThemeButtonBundle {
 }
 
 fn update_theme_button(
-    In((widget_context, theme_button_entity)): In<(KayakWidgetContext, Entity)>,
+    In(theme_button_entity): In<Entity>,
+    widget_context: Res<KayakWidgetContext>,
     mut commands: Commands,
     query: Query<&ThemeButton>,
     mut context_query: Query<&mut Theme>,
@@ -158,7 +159,8 @@ impl Default for ThemeSelectorBundle {
 }
 
 fn update_theme_selector(
-    In((widget_context, entity)): In<(KayakWidgetContext, Entity)>,
+    In(entity): In<Entity>,
+    widget_context: Res<KayakWidgetContext>,
     mut commands: Commands,
     query: Query<&ThemeSelector>,
 ) -> bool {
@@ -213,7 +215,8 @@ impl Default for ThemeDemoBundle {
 }
 
 fn update_theme_demo(
-    In((widget_context, entity)): In<(KayakWidgetContext, Entity)>,
+    In(entity): In<Entity>,
+    widget_context: Res<KayakWidgetContext>,
     mut commands: Commands,
     mut query_set: Query<&mut ThemeDemo>,
     theme_context: Query<&Theme>,

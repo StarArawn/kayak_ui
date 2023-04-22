@@ -69,7 +69,8 @@ impl Default for AccordionContextBundle {
 }
 
 pub fn render(
-    In((widget_context, widget_entity)): In<(KayakWidgetContext, Entity)>,
+    In(widget_entity): In<Entity>,
+    widget_context: Res<KayakWidgetContext>,
     mut commands: Commands,
     children_query: Query<(&AccordionContextProvider, &KChildren)>,
 ) -> bool {

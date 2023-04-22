@@ -32,7 +32,8 @@ impl Default for MenuButtonBundle {
 }
 
 fn menu_button_render(
-    In((widget_context, entity)): In<(KayakWidgetContext, Entity)>,
+    In(entity): In<Entity>,
+    widget_context: Res<KayakWidgetContext>,
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     menu_button_query: Query<&MenuButton>,

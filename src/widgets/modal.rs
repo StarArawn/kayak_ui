@@ -1,5 +1,5 @@
 use bevy::{
-    prelude::{Bundle, Color, Commands, Component, Entity, In, Query},
+    prelude::{Bundle, Color, Commands, Component, Entity, In, Query, Res},
     window::CursorIcon,
 };
 use kayak_ui_macros::rsx;
@@ -75,7 +75,8 @@ impl Default for ModalBundle {
 }
 
 pub fn render(
-    In((widget_context, modal_entity)): In<(KayakWidgetContext, Entity)>,
+    In(modal_entity): In<Entity>,
+    widget_context: Res<KayakWidgetContext>,
     mut commands: Commands,
     mut query: Query<(&KStyle, &KChildren, &Modal, &mut ComputedStyles)>,
     mut transition_state_query: Query<&mut TransitionState>,

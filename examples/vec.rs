@@ -5,7 +5,8 @@ use kayak_ui::prelude::{widgets::*, *};
 pub struct MyWidgetProps {}
 
 fn my_widget_1_update(
-    In((widget_context, entity)): In<(KayakWidgetContext, Entity)>,
+    In(entity): In<Entity>,
+    widget_context: Res<KayakWidgetContext>,
     mut commands: Commands,
     query: Query<Entity, Or<(With<Mounted>, Changed<MyWidgetProps>)>>,
 ) -> bool {

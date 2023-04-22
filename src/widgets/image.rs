@@ -2,7 +2,6 @@ use bevy::prelude::{Bundle, Component, Entity, Handle, In, Query};
 
 use crate::{
     context::WidgetName,
-    prelude::KayakWidgetContext,
     styles::{ComputedStyles, KStyle, RenderCommand},
     widget::Widget,
 };
@@ -34,7 +33,7 @@ impl Default for KImageBundle {
 }
 
 pub fn image_render(
-    In((_widget_context, entity)): In<(KayakWidgetContext, Entity)>,
+    In(entity): In<Entity>,
     mut query: Query<(&KStyle, &mut ComputedStyles, &KImage)>,
 ) -> bool {
     if let Ok((style, mut computed_styles, image)) = query.get_mut(entity) {

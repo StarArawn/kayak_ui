@@ -37,7 +37,8 @@ impl Default for TodoInputBundle {
 }
 
 pub fn render_todo_input(
-    In((widget_context, entity)): In<(KayakWidgetContext, Entity)>,
+    In(entity): In<Entity>,
+    widget_context: Res<KayakWidgetContext>,
     mut commands: Commands,
     todo_list: Res<TodoList>,
 ) -> bool {

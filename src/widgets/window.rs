@@ -1,5 +1,5 @@
 use bevy::{
-    prelude::{Bundle, Color, Commands, Component, Entity, In, Query, Vec2},
+    prelude::{Bundle, Color, Commands, Component, Entity, In, Query, Vec2, Res},
     window::CursorIcon,
 };
 use kayak_ui_macros::rsx;
@@ -79,7 +79,8 @@ impl Default for WindowBundle {
 }
 
 pub fn window_render(
-    In((widget_context, window_entity)): In<(KayakWidgetContext, Entity)>,
+    In(window_entity): In<Entity>,
+    widget_context: Res<KayakWidgetContext>,
     mut commands: Commands,
     mut query: Query<(&KStyle, &mut ComputedStyles, &KChildren, &KWindow)>,
     state_query: Query<&KWindowState>,

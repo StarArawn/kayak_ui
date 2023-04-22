@@ -1,7 +1,7 @@
 use std::sync::{Arc, RwLock};
 
 use bevy::{
-    prelude::{BuildChildren, Commands, Component, Entity},
+    prelude::{BuildChildren, Commands, Component, Entity, Resource},
     utils::HashMap,
 };
 use morphorm::Hierarchy;
@@ -17,7 +17,7 @@ use crate::{
 /// It has some knowledge about the existing tree and it knows about a subset of the new tree.
 /// It is not possible to create a KayakWidgetContext from scratch. One will be provided
 /// to the render system via it's In parameters.
-#[derive(Clone)]
+#[derive(Resource, Clone)]
 pub struct KayakWidgetContext {
     old_tree: Arc<RwLock<Tree>>,
     new_tree: Arc<RwLock<Tree>>,

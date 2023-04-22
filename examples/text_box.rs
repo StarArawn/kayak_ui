@@ -30,7 +30,8 @@ impl Default for TextBoxExampleBundle {
 }
 
 fn update_text_box_example(
-    In((widget_context, entity)): In<(KayakWidgetContext, Entity)>,
+    In(entity): In<Entity>,
+    widget_context: Res<KayakWidgetContext>,
     mut commands: Commands,
     state_query: Query<&TextBoxExampleState>,
 ) -> bool {

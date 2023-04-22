@@ -1,4 +1,4 @@
-use bevy::prelude::{Bundle, Commands, Component, Entity, In, Query};
+use bevy::prelude::{Bundle, Commands, Component, Entity, In, Query, Res};
 
 use crate::{
     children::KChildren,
@@ -40,7 +40,8 @@ impl Default for ClipBundle {
 }
 
 pub fn clip_render(
-    In((widget_context, entity)): In<(KayakWidgetContext, Entity)>,
+    In(entity): In<Entity>,
+    widget_context: Res<KayakWidgetContext>,
     mut commands: Commands,
     mut query: Query<(&KStyle, &mut ComputedStyles, &KChildren)>,
 ) -> bool {

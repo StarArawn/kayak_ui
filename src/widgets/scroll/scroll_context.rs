@@ -1,4 +1,4 @@
-use bevy::prelude::{BuildChildren, Bundle, Commands, Component, Entity, In, Query, Vec2};
+use bevy::prelude::{BuildChildren, Bundle, Commands, Component, Entity, In, Query, Vec2, Res};
 
 use crate::{
     children::KChildren,
@@ -163,7 +163,8 @@ impl Default for ScrollContextProviderBundle {
 }
 
 pub fn scroll_context_render(
-    In((widget_context, entity)): In<(KayakWidgetContext, Entity)>,
+    In(entity): In<Entity>,
+    widget_context: Res<KayakWidgetContext>,
     mut commands: Commands,
     mut query: Query<(
         &ScrollContextProvider,

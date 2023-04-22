@@ -1,4 +1,4 @@
-use bevy::prelude::{Bundle, Color, Commands, Component, Entity, In, Query};
+use bevy::prelude::{Bundle, Color, Commands, Component, Entity, In, Query, Res};
 use kayak_ui::{
     prelude::{
         rsx, widgets::KButtonBundle, Corner, EventDispatcherContext, EventType, KEvent, KStyle,
@@ -35,7 +35,8 @@ impl Default for TabButtonBundle {
 }
 
 pub fn tab_button_render(
-    In((widget_context, entity)): In<(KayakWidgetContext, Entity)>,
+    In(entity): In<Entity>,
+    widget_context: Res<KayakWidgetContext>,
     mut commands: Commands,
     query: Query<&TabButton>,
     tab_context_query: Query<&mut TabContext>,

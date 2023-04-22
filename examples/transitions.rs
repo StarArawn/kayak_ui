@@ -10,7 +10,8 @@ pub struct MyQuad {
 }
 
 fn my_quad_update(
-    In((widget_context, entity)): In<(KayakWidgetContext, Entity)>,
+    In(entity): In<Entity>,
+    widget_context: Res<KayakWidgetContext>,
     mut commands: Commands,
     mut query: Query<&MyQuad>,
 ) -> bool {

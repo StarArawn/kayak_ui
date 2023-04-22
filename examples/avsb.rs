@@ -31,7 +31,8 @@ impl Default for CurrentCountBundle {
 }
 
 fn current_count_render(
-    In((widget_context, entity)): In<(KayakWidgetContext, Entity)>,
+    In(entity): In<Entity>,
+    widget_context: Res<KayakWidgetContext>,
     mut commands: Commands,
     query: Query<&CurrentCountState>,
 ) -> bool {
@@ -110,7 +111,8 @@ impl Default for AvsBBundle {
 }
 
 fn render(
-    In((widget_context, entity)): In<(KayakWidgetContext, Entity)>,
+    In(entity): In<Entity>,
+    widget_context: Res<KayakWidgetContext>,
     mut commands: Commands,
     query: Query<&AvsBState>,
 ) -> bool {

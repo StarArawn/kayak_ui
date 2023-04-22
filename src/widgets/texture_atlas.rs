@@ -2,7 +2,6 @@ use bevy::prelude::{Bundle, Component, Entity, Handle, Image, In, Query, Vec2};
 
 use crate::{
     context::WidgetName,
-    prelude::KayakWidgetContext,
     styles::{ComputedStyles, KStyle, RenderCommand},
     widget::Widget,
 };
@@ -55,7 +54,7 @@ impl Default for TextureAtlasBundle {
 }
 
 pub fn texture_atlas_render(
-    In((_widget_context, entity)): In<(KayakWidgetContext, Entity)>,
+    In(entity): In<Entity>,
     mut query: Query<(&KStyle, &mut ComputedStyles, &TextureAtlasProps)>,
 ) -> bool {
     if let Ok((styles, mut computed_styles, texture_atlas)) = query.get_mut(entity) {

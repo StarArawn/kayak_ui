@@ -1,5 +1,5 @@
 use bevy::{
-    prelude::{Bundle, Color, Commands, Component, Entity, In, Query},
+    prelude::*,
     window::CursorIcon,
 };
 use kayak_font::Alignment;
@@ -54,7 +54,8 @@ pub struct ButtonState {
 }
 
 pub fn button_render(
-    In((widget_context, entity)): In<(KayakWidgetContext, Entity)>,
+    In(entity): In<Entity>,
+    widget_context: Res<KayakWidgetContext>,
     mut commands: Commands,
     mut query: Query<(&KButton, &KStyle, &mut ComputedStyles)>,
     state_query: Query<&ButtonState>,

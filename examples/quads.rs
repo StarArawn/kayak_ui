@@ -13,7 +13,7 @@ pub struct MyQuad {
 }
 
 fn my_quad_update(
-    In((_widget_context, entity)): In<(KayakWidgetContext, Entity)>,
+    In(entity): In<Entity>,
     mut query: Query<(&MyQuad, &KStyle, &mut ComputedStyles, &mut OnEvent)>,
 ) -> bool {
     if let Ok((quad, style, mut computed_styles, mut on_event)) = query.get_mut(entity) {

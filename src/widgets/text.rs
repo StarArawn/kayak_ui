@@ -89,22 +89,22 @@ pub fn text_render(
                 font: if let Some(ref font) = text.font {
                     StyleProp::Value(font.clone())
                 } else {
-                    StyleProp::default()
+                    StyleProp::Inherit
                 },
                 cursor: if text.show_cursor {
                     StyleProp::Value(KCursorIcon(CursorIcon::Text))
                 } else {
-                    StyleProp::default()
+                    StyleProp::Inherit
                 },
                 font_size: if text.size >= 0.0 {
                     StyleProp::Value(text.size)
                 } else {
-                    StyleProp::default()
+                    StyleProp::Inherit
                 },
                 line_height: if let Some(line_height) = text.line_height {
                     StyleProp::Value(line_height)
                 } else {
-                    StyleProp::default()
+                    StyleProp::Inherit
                 },
                 ..Default::default()
             })

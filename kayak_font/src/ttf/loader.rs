@@ -116,7 +116,7 @@ impl AssetLoader for TTFLoader {
                 // let (left, bottom, right, top) = shape.get_bounds();
 
                 let scale = Vector2::new(1.0, 1.0);
-                let px_range = 2.5;
+                let px_range = 8.0;
                 let range = px_range / scale.x.min(scale.y);
 
                 let (translation, plane) = calculate_plane(
@@ -245,7 +245,7 @@ fn calculate_plane(
     shape: &mut Shape,
     geometry_scale: f32,
     scale: f32,
-    range: f32,
+    _range: f32,
     miter_limit: f32,
 ) -> (Vector2, Rect) {
     let bounds = shape.get_bounds();
@@ -256,7 +256,7 @@ fn calculate_plane(
         top: bounds.3 as f32,
     };
     let scale = scale * geometry_scale;
-    let range = range / geometry_scale;
+    let range = 1.0 / geometry_scale; //range / geometry_scale;
     let (_w, _h, translation_x, translation_y) =
         if bounds.left < bounds.right && bounds.bottom < bounds.top {
             let mut l = bounds.left as f64;

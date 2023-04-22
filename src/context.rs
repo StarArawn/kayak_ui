@@ -992,16 +992,15 @@ fn update_widget(
             ))
             .0;
         let old_tick = widget_update_system.get_last_change_tick();
-        
+
         // Insert context as a bevy resource.
         world.insert_resource(widget_context);
-        let should_rerender =
-            widget_update_system.run((entity.0, old_props_entity), world);
+        let should_rerender = widget_update_system.run((entity.0, old_props_entity), world);
         let new_tick = widget_update_system.get_last_change_tick();
         new_ticks.insert(widget_type.clone(), new_tick);
         widget_update_system.set_last_change_tick(old_tick);
         widget_update_system.apply_buffers(world);
-        
+
         // Extract context
         widget_context = world.remove_resource::<KayakWidgetContext>().unwrap();
 
@@ -1083,8 +1082,7 @@ fn update_widget(
         let widget_render_system = &mut systems.get_mut(&widget_type).unwrap().1;
         let old_tick = widget_render_system.get_last_change_tick();
         world.insert_resource(widget_context.clone());
-        should_update_children =
-            widget_render_system.run(entity.0, world);
+        should_update_children = widget_render_system.run(entity.0, world);
         let new_tick = widget_render_system.get_last_change_tick();
         new_ticks.insert(widget_type.clone(), new_tick);
         widget_render_system.set_last_change_tick(old_tick);

@@ -82,7 +82,7 @@ pub fn app_update(
 /// TODO: USE CAMERA INSTEAD OF WINDOW!!
 pub fn app_render(
     In(entity): In<Entity>,
-widget_context: Res<KayakWidgetContext>,
+    widget_context: Res<KayakWidgetContext>,
     mut commands: Commands,
     mut query: Query<(&KStyle, &mut ComputedStyles, &KChildren)>,
     camera: Query<&Camera, With<CameraUIKayak>>,

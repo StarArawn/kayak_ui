@@ -1,8 +1,8 @@
 use bevy::prelude::{Bundle, Color, Commands, Component, Entity, In, Query, Res};
 use kayak_ui::{
     prelude::{
-        rsx, widgets::KButtonBundle, Corner, EventType, KEvent, KStyle,
-        KayakWidgetContext, OnEvent, StyleProp, Units, Widget, WidgetName
+        rsx, widgets::KButtonBundle, Corner, EventType, KEvent, KStyle, KayakWidgetContext,
+        OnEvent, StyleProp, Units, Widget, WidgetName,
     },
     widgets::KButton,
 };
@@ -56,7 +56,7 @@ pub fn tab_button_render(
             let button_index = tab_button.index;
             let on_event = OnEvent::new(
                 move |In(_entity): In<Entity>,
-                event: Res<KEvent>,
+                      event: Res<KEvent>,
                       mut query: Query<&mut TabContext>| {
                     match event.event_type {
                         EventType::Click(..) => {

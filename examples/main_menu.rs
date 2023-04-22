@@ -48,7 +48,7 @@ fn menu_button_render(
 
     let on_event = OnEvent::new(
         move |In(_entity): In<Entity>,
-        mut event: ResMut<KEvent>,
+              mut event: ResMut<KEvent>,
               mut query: Query<&mut ButtonState>| {
             if let Ok(mut button) = query.get_mut(state_entity) {
                 match event.event_type {
@@ -148,9 +148,7 @@ fn startup(
     ]);
 
     let handle_click_close = OnEvent::new(
-        move |In(_entity): In<Entity>,
-        event: ResMut<KEvent>,
-              mut exit: EventWriter<AppExit>| {
+        move |In(_entity): In<Entity>, event: ResMut<KEvent>, mut exit: EventWriter<AppExit>| {
             match event.event_type {
                 EventType::Click(..) => {
                     exit.send(AppExit);

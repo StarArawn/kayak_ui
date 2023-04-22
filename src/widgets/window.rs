@@ -1,5 +1,5 @@
 use bevy::{
-    prelude::{Bundle, Color, Commands, Component, Entity, In, Query, Vec2, Res, ResMut},
+    prelude::{Bundle, Color, Commands, Component, Entity, In, Query, Res, ResMut, Vec2},
     window::CursorIcon,
 };
 use kayak_ui_macros::rsx;
@@ -130,8 +130,8 @@ pub fn window_render(
             let parent_id = Some(window_entity);
 
             let focus_event = OnEvent::new(
-                    move |In(_entity): In<Entity>,
-                    mut event: ResMut<KEvent>,
+                move |In(_entity): In<Entity>,
+                      mut event: ResMut<KEvent>,
                       mut query: Query<&mut KWindowState>,
                       mut context_query: Query<&mut WindowContext>| {
                     if let Ok(mut window) = query.get_mut(state_entity) {

@@ -1,7 +1,4 @@
-use bevy::{
-    prelude::*,
-    window::CursorIcon,
-};
+use bevy::{prelude::*, window::CursorIcon};
 use kayak_font::Alignment;
 use kayak_ui_macros::rsx;
 
@@ -92,8 +89,8 @@ pub fn button_render(
                 .into();
 
             let on_event = OnEvent::new(
-                    move |In(_entity): In<Entity>,
-                    mut event: ResMut<KEvent>,
+                move |In(_entity): In<Entity>,
+                      mut event: ResMut<KEvent>,
                       mut query: Query<&mut ButtonState>| {
                     if let Ok(mut button) = query.get_mut(state_entity) {
                         match event.event_type {

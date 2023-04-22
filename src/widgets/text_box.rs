@@ -181,8 +181,8 @@ pub fn text_box_render(
             let cloned_on_change = on_change.clone();
 
             *on_event = OnEvent::new(
-                    move |In(_entity): In<Entity>,
-                    mut event: ResMut<KEvent>,
+                move |In(_entity): In<Entity>,
+                      mut event: ResMut<KEvent>,
                       font_assets: Res<Assets<KayakFont>>,
                       font_mapping: Res<FontMapping>,
                       mut state_query: Query<&mut TextBoxState>| {

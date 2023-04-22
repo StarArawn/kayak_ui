@@ -37,7 +37,7 @@ fn my_quad_update(
 
         *on_event = OnEvent::new(
             move |In(_entity): In<Entity>,
-                mut event: ResMut<KEvent>,
+                  mut event: ResMut<KEvent>,
                   mut query: Query<(&mut KStyle, &MyQuad)>| {
                 event.prevent_default();
                 event.stop_propagation();

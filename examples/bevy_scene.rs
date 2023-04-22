@@ -184,7 +184,7 @@ fn startup(
 
     let handle_change_color = OnEvent::new(
         move |In(_entity): In<Entity>,
-        event: Res<KEvent>,
+              event: Res<KEvent>,
               mut active_color: ResMut<ActiveColor>| {
             match event.event_type {
                 EventType::Click(..) => {

@@ -1,4 +1,4 @@
-use bevy::prelude::{Entity, World, Resource};
+use bevy::prelude::{Entity, Resource, World};
 
 use crate::{
     cursor::{CursorEvent, ScrollEvent},

@@ -50,9 +50,7 @@ pub fn render_todo_input(
     );
 
     let handle_click = OnEvent::new(
-            move |In(_entity): In<Entity>,
-            event: Res<KEvent>,
-              mut todo_list: ResMut<TodoList>| {
+        move |In(_entity): In<Entity>, event: Res<KEvent>, mut todo_list: ResMut<TodoList>| {
             match event.event_type {
                 EventType::Click(..) => {
                     if !todo_list.new_item.is_empty() {

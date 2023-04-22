@@ -14,22 +14,12 @@ use crate::widget_state::WidgetState;
 #[derive(Component, Clone)]
 pub struct OnEvent {
     has_initialized: bool,
-    system: Arc<
-        RwLock<
-            dyn System<
-                In = Entity,
-                Out = (),
-            >,
-        >,
-    >,
+    system: Arc<RwLock<dyn System<In = Entity, Out = ()>>>,
 }
 
 impl Default for OnEvent {
     fn default() -> Self {
-        Self::new(
-            |In(_entity)| {
-            },
-        )
+        Self::new(|In(_entity)| {})
     }
 }
 
@@ -39,13 +29,7 @@ impl OnEvent {
     /// The handler should be a closure that takes the following arguments:
     /// 1. The current context
     /// 2. The event
-    pub fn new<Params>(
-        system: impl IntoSystem<
-            Entity,
-            (),
-            Params,
-        >,
-    ) -> OnEvent {
+    pub fn new<Params>(system: impl IntoSystem<Entity, (), Params>) -> OnEvent {
         Self {
             has_initialized: false,
             system: Arc::new(RwLock::new(IntoSystem::into_system(system))),
@@ -73,10 +57,7 @@ impl OnEvent {
             world.insert_resource(widget_state);
             world.insert_resource(event);
 
-            system.run(
-                entity,
-                world,
-            );
+            system.run(entity, world);
 
             event_dispatcher_context = world.remove_resource::<EventDispatcherContext>().unwrap();
             event = world.remove_resource::<KEvent>().unwrap();

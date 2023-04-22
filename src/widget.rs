@@ -1,6 +1,6 @@
 use bevy::{
     ecs::system::SystemParam,
-    prelude::{Changed, Component, Entity, In, Query, With, Res},
+    prelude::{Changed, Component, Entity, In, Query, Res, With},
 };
 
 use crate::{

@@ -1,5 +1,5 @@
 use bevy::{
-    prelude::{Component, Entity, KeyCode, World, Resource},
+    prelude::{Component, Entity, KeyCode, Resource, World},
     utils::{HashMap, HashSet},
 };
 

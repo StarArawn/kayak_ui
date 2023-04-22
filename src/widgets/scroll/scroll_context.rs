@@ -1,4 +1,4 @@
-use bevy::prelude::{BuildChildren, Bundle, Commands, Component, Entity, In, Query, Vec2, Res};
+use bevy::prelude::{BuildChildren, Bundle, Commands, Component, Entity, In, Query, Res, Vec2};
 
 use crate::{
     children::KChildren,

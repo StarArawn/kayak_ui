@@ -1,4 +1,4 @@
-use bevy::prelude::{Bundle, Commands, Component, Entity, In, Query, With, Res};
+use bevy::prelude::{Bundle, Commands, Component, Entity, In, Query, Res, With};
 
 use crate::{
     children::KChildren,

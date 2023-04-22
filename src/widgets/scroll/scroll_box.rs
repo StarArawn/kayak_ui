@@ -1,18 +1,16 @@
-use bevy::prelude::{Bundle, Color, Commands, Component, Entity, In, ParamSet, Query, Res};
+use bevy::prelude::{Bundle, Color, Commands, Component, Entity, In, ParamSet, Query, Res, ResMut};
 
 use crate::{
     children::KChildren,
     context::WidgetName,
     cursor::ScrollUnit,
     event::{EventType, KEvent},
-    event_dispatcher::EventDispatcherContext,
     layout::{GeometryChanged, LayoutEvent},
     on_event::OnEvent,
     on_layout::OnLayout,
     prelude::{constructor, rsx, KayakWidgetContext},
     styles::{ComputedStyles, KPositionType, KStyle, LayoutType, RenderCommand, Units},
     widget::Widget,
-    widget_state::WidgetState,
     widgets::{
         scroll::{
             scroll_bar::{ScrollBarBundle, ScrollBarProps},
@@ -183,12 +181,8 @@ pub fn scroll_box_render(
                 });
 
                 let event_handler = OnEvent::new(
-                    move |In((event_dispatcher_context, _, mut event, _entity)): In<(
-                        EventDispatcherContext,
-                        WidgetState,
-                        KEvent,
-                        Entity,
-                    )>,
+                    move |In(_entity): In<Entity>,
+                          mut event: ResMut<KEvent>,
                           mut query: Query<&mut ScrollContext>| {
                         if let Ok(mut scroll_context) = query.get_mut(context_entity) {
                             match event.event_type {
@@ -218,7 +212,6 @@ pub fn scroll_box_render(
                                 _ => {}
                             }
                         }
-                        (event_dispatcher_context, event)
                     },
                 );
 

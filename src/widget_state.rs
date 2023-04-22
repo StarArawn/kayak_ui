@@ -1,12 +1,12 @@
 use std::sync::{Arc, RwLock};
 
 use bevy::{
-    prelude::{BuildChildren, Commands, Component, Entity},
+    prelude::{BuildChildren, Commands, Component, Entity, Resource},
     utils::HashMap,
 };
 
 /// Stores mappings between widget entities and their corresponding state entities.
-#[derive(Default, Debug, Clone)]
+#[derive(Resource, Default, Debug, Clone)]
 pub struct WidgetState {
     // Widget entity to state entity
     mapping: Arc<RwLock<HashMap<Entity, Entity>>>,

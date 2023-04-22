@@ -8,12 +8,10 @@ use kayak_ui_macros::rsx;
 use crate::{
     context::WidgetName,
     event::{EventType, KEvent},
-    event_dispatcher::EventDispatcherContext,
     on_event::OnEvent,
     prelude::{KChildren, KayakWidgetContext, Units},
     styles::{ComputedStyles, Corner, Edge, KCursorIcon, KStyle, RenderCommand, StyleProp},
     widget::Widget,
-    widget_state::WidgetState,
 };
 
 use super::{ElementBundle, TextProps, TextWidgetBundle};
@@ -94,12 +92,8 @@ pub fn button_render(
                 .into();
 
             let on_event = OnEvent::new(
-                move |In((event_dispatcher_context, _, mut event, _entity)): In<(
-                    EventDispatcherContext,
-                    WidgetState,
-                    KEvent,
-                    Entity,
-                )>,
+                    move |In(_entity): In<Entity>,
+                    mut event: ResMut<KEvent>,
                       mut query: Query<&mut ButtonState>| {
                     if let Ok(mut button) = query.get_mut(state_entity) {
                         match event.event_type {
@@ -113,7 +107,6 @@ pub fn button_render(
                             _ => {}
                         }
                     }
-                    (event_dispatcher_context, event)
                 },
             );
 

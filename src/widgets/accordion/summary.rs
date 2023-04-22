@@ -5,7 +5,6 @@ use crate::{
     children::KChildren,
     context::WidgetName,
     event::{EventType, KEvent},
-    event_dispatcher::EventDispatcherContext,
     on_event::OnEvent,
     prelude::KayakWidgetContext,
     styles::{
@@ -13,7 +12,6 @@ use crate::{
         Units,
     },
     widget::Widget,
-    widget_state::WidgetState,
     widgets::{
         BackgroundBundle, ElementBundle, KSvg, KSvgBundle, Svg, EXPAND_LESS_HANDLE,
         EXPAND_MORE_HANDLE,
@@ -77,12 +75,8 @@ pub fn render(
             if let Ok(context) = context_query.get(context_entity) {
                 let current_index = accordion.index;
                 let on_event = OnEvent::new(
-                    move |In((event_dispatcher_context, _, mut event, _entity)): In<(
-                        EventDispatcherContext,
-                        WidgetState,
-                        KEvent,
-                        Entity,
-                    )>,
+                    move |In(_entity): In<Entity>,
+                          mut event: ResMut<KEvent>,
                           mut query: Query<&mut AccordionContext>| {
                         if let Ok(mut context) = query.get_mut(context_entity) {
                             event.stop_propagation();
@@ -94,8 +88,6 @@ pub fn render(
                                 _ => {}
                             }
                         }
-
-                        (event_dispatcher_context, event)
                     },
                 );
 

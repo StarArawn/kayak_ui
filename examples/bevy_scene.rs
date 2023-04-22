@@ -183,12 +183,8 @@ fn startup(
     widget_context.add_plugin(KayakWidgetsContextPlugin);
 
     let handle_change_color = OnEvent::new(
-        move |In((event_dispatcher_context, _, event, _)): In<(
-            EventDispatcherContext,
-            WidgetState,
-            KEvent,
-            Entity,
-        )>,
+        move |In(_entity): In<Entity>,
+        event: Res<KEvent>,
               mut active_color: ResMut<ActiveColor>| {
             match event.event_type {
                 EventType::Click(..) => {
@@ -196,7 +192,6 @@ fn startup(
                 }
                 _ => {}
             }
-            (event_dispatcher_context, event)
         },
     );
 

@@ -102,12 +102,8 @@ fn update_theme_button(
                     <BackgroundBundle
                         styles={box_style}
                         on_event={OnEvent::new(
-                            move |In((event_dispatcher_context, _, event, _entity)): In<(
-                                EventDispatcherContext,
-                                WidgetState,
-                                KEvent,
-                                Entity,
-                            )>,
+                            move |In(_entity): In<Entity>,
+                            event: ResMut<KEvent>,
                             query: Query<&ThemeButton>,
                             mut context_query: Query<&mut Theme>,
                             | {
@@ -121,7 +117,6 @@ fn update_theme_button(
                                     },
                                     _ => {}
                                 }
-                                (event_dispatcher_context, event)
                             },
                         )}
                     />

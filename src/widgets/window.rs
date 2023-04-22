@@ -1,5 +1,5 @@
 use bevy::{
-    prelude::{Bundle, Color, Commands, Component, Entity, In, Query, Vec2, Res},
+    prelude::{Bundle, Color, Commands, Component, Entity, In, Query, Vec2, Res, ResMut},
     window::CursorIcon,
 };
 use kayak_ui_macros::rsx;
@@ -16,7 +16,6 @@ use crate::{
         Units,
     },
     widget::Widget,
-    widget_state::WidgetState,
     Focusable,
 };
 
@@ -131,12 +130,8 @@ pub fn window_render(
             let parent_id = Some(window_entity);
 
             let focus_event = OnEvent::new(
-                move |In((event_dispatcher_context, _, mut event, _entity)): In<(
-                    EventDispatcherContext,
-                    WidgetState,
-                    KEvent,
-                    Entity,
-                )>,
+                    move |In(_entity): In<Entity>,
+                    mut event: ResMut<KEvent>,
                       mut query: Query<&mut KWindowState>,
                       mut context_query: Query<&mut WindowContext>| {
                     if let Ok(mut window) = query.get_mut(state_entity) {
@@ -160,7 +155,6 @@ pub fn window_render(
                             _ => {}
                         }
                     }
-                    (event_dispatcher_context, event)
                 },
             );
 
@@ -225,12 +219,9 @@ pub fn window_render(
                             commands
                                 .entity(title_bar_entity)
                                 .insert(OnEvent::new(
-                                    move |In((mut event_dispatcher_context, _, mut event, entity)): In<(
-                                        EventDispatcherContext,
-                                        WidgetState,
-                                        KEvent,
-                                        Entity,
-                                    )>,
+                                    move |In(entity): In<Entity>,
+                                    mut event_dispatcher_context: ResMut<EventDispatcherContext>,
+                                    mut event: ResMut<KEvent>,
                                         mut query: Query<&mut KWindowState>| {
                                         if let Ok(mut window) = query.get_mut(state_entity) {
                                             event.prevent_default();
@@ -259,7 +250,6 @@ pub fn window_render(
                                                 _ => {}
                                             }
                                         }
-                                        (event_dispatcher_context, event)
                                     },
                                 ));
                         }

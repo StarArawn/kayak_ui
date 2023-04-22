@@ -47,12 +47,8 @@ fn menu_button_render(
     let button_image_hover = asset_server.load("main_menu/button-hover.png");
 
     let on_event = OnEvent::new(
-        move |In((event_dispatcher_context, _, mut event, _entity)): In<(
-            EventDispatcherContext,
-            WidgetState,
-            KEvent,
-            Entity,
-        )>,
+        move |In(_entity): In<Entity>,
+        mut event: ResMut<KEvent>,
               mut query: Query<&mut ButtonState>| {
             if let Ok(mut button) = query.get_mut(state_entity) {
                 match event.event_type {
@@ -66,7 +62,6 @@ fn menu_button_render(
                     _ => {}
                 }
             }
-            (event_dispatcher_context, event)
         },
     );
 
@@ -153,12 +148,8 @@ fn startup(
     ]);
 
     let handle_click_close = OnEvent::new(
-        move |In((event_dispatcher_context, _, event, _entity)): In<(
-            EventDispatcherContext,
-            WidgetState,
-            KEvent,
-            Entity,
-        )>,
+        move |In(_entity): In<Entity>,
+        event: ResMut<KEvent>,
               mut exit: EventWriter<AppExit>| {
             match event.event_type {
                 EventType::Click(..) => {
@@ -166,7 +157,6 @@ fn startup(
                 }
                 _ => {}
             }
-            (event_dispatcher_context, event)
         },
     );
 

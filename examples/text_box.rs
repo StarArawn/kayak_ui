@@ -30,7 +30,8 @@ impl Default for TextBoxExampleBundle {
 }
 
 fn update_text_box_example(
-    In((widget_context, entity)): In<(KayakWidgetContext, Entity)>,
+    In(entity): In<Entity>,
+    widget_context: Res<KayakWidgetContext>,
     mut commands: Commands,
     state_query: Query<&TextBoxExampleState>,
 ) -> bool {
@@ -45,7 +46,7 @@ fn update_text_box_example(
 
     if let Ok(textbox_state) = state_query.get(state_entity) {
         let on_change = OnChange::new(
-            move |In((_widget_context, _, value)): In<(KayakWidgetContext, Entity, String)>,
+            move |In((_, value)): In<(Entity, String)>,
                   mut state_query: Query<&mut TextBoxExampleState>| {
                 if let Ok(mut state) = state_query.get_mut(state_entity) {
                     state.value1 = value;
@@ -54,7 +55,7 @@ fn update_text_box_example(
         );
 
         let on_change2 = OnChange::new(
-            move |In((_widget_context, _, value)): In<(KayakWidgetContext, Entity, String)>,
+            move |In((_, value)): In<(Entity, String)>,
                   mut state_query: Query<&mut TextBoxExampleState>| {
                 if let Ok(mut state) = state_query.get_mut(state_entity) {
                     state.value2 = value;

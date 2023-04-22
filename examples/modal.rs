@@ -29,7 +29,8 @@ impl Default for MyWidgetBundle {
 }
 
 fn my_widget_render(
-    In((widget_context, entity)): In<(KayakWidgetContext, Entity)>,
+    In(entity): In<Entity>,
+    widget_context: Res<KayakWidgetContext>,
     mut commands: Commands,
     query: Query<&MyWidgetState>,
 ) -> bool {
@@ -48,7 +49,8 @@ fn my_widget_render(
                         text: "Show Modal".into(),
                     }}
                     on_event={OnEvent::new(
-                        move |In((event_dispatcher_context, _, mut event, _entity)): In<(EventDispatcherContext, WidgetState, KEvent, Entity)>,
+                        move |In(_entity): In<Entity>,
+                        mut event: ResMut<KEvent>,
                             mut query: Query<&mut MyWidgetState>| {
                             event.prevent_default();
                             event.stop_propagation();
@@ -60,7 +62,6 @@ fn my_widget_render(
                                 }
                                 _ => {}
                             }
-                            (event_dispatcher_context, event)
                         },
                     )}
                 />
@@ -81,7 +82,8 @@ fn my_widget_render(
                     <KButtonBundle
                         button={KButton { text: "Hide Window".into(), ..Default::default() }}
                         on_event={OnEvent::new(
-                            move |In((event_dispatcher_context, _, mut event, _entity)): In<(EventDispatcherContext, WidgetState, KEvent, Entity)>,
+                            move |In(_entity): In<Entity>,
+                            mut event: ResMut<KEvent>,
                                 mut query: Query<&mut MyWidgetState>| {
                                 match event.event_type {
                                     EventType::Click(..) => {
@@ -93,7 +95,6 @@ fn my_widget_render(
                                     }
                                     _ => {}
                                 }
-                                (event_dispatcher_context, event)
                             },
                         )}
                     />

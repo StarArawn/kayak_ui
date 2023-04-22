@@ -56,8 +56,10 @@ impl Default for MyButtonBundle {
 
 pub fn my_button_render(
     // This is a bevy feature which allows custom parameters to be passed into a system.
-    // In this case Kayak UI gives the system a `KayakWidgetContext` and an `Entity`.
-    In((mut widget_context, entity)): In<(KayakWidgetContext, Entity)>,
+    // In this case Kayak UI gives the system an `Entity`.
+    In(entity): In<Entity>,
+    // This struct allows us to make changes to the widget tree.
+    mut widget_context: ResMut<KayakWidgetContext>,
     // The rest of the parameters are just like those found in a bevy system!
     // In fact you can add whatever you would like here including more queries or lookups
     // to resources within bevy's ECS.

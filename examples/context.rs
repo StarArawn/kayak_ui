@@ -70,7 +70,8 @@ impl Default for ThemeButtonBundle {
 }
 
 fn update_theme_button(
-    In((widget_context, theme_button_entity)): In<(KayakWidgetContext, Entity)>,
+    In(theme_button_entity): In<Entity>,
+    widget_context: Res<KayakWidgetContext>,
     mut commands: Commands,
     query: Query<&ThemeButton>,
     mut context_query: Query<&mut Theme>,
@@ -101,12 +102,8 @@ fn update_theme_button(
                     <BackgroundBundle
                         styles={box_style}
                         on_event={OnEvent::new(
-                            move |In((event_dispatcher_context, _, event, _entity)): In<(
-                                EventDispatcherContext,
-                                WidgetState,
-                                KEvent,
-                                Entity,
-                            )>,
+                            move |In(_entity): In<Entity>,
+                            event: ResMut<KEvent>,
                             query: Query<&ThemeButton>,
                             mut context_query: Query<&mut Theme>,
                             | {
@@ -120,7 +117,6 @@ fn update_theme_button(
                                     },
                                     _ => {}
                                 }
-                                (event_dispatcher_context, event)
                             },
                         )}
                     />
@@ -158,7 +154,8 @@ impl Default for ThemeSelectorBundle {
 }
 
 fn update_theme_selector(
-    In((widget_context, entity)): In<(KayakWidgetContext, Entity)>,
+    In(entity): In<Entity>,
+    widget_context: Res<KayakWidgetContext>,
     mut commands: Commands,
     query: Query<&ThemeSelector>,
 ) -> bool {
@@ -213,7 +210,8 @@ impl Default for ThemeDemoBundle {
 }
 
 fn update_theme_demo(
-    In((widget_context, entity)): In<(KayakWidgetContext, Entity)>,
+    In(entity): In<Entity>,
+    widget_context: Res<KayakWidgetContext>,
     mut commands: Commands,
     mut query_set: Query<&mut ThemeDemo>,
     theme_context: Query<&Theme>,

@@ -14,23 +14,12 @@ use crate::widget_state::WidgetState;
 #[derive(Component, Clone)]
 pub struct OnEvent {
     has_initialized: bool,
-    system: Arc<
-        RwLock<
-            dyn System<
-                In = (EventDispatcherContext, WidgetState, KEvent, Entity),
-                Out = (EventDispatcherContext, KEvent),
-            >,
-        >,
-    >,
+    system: Arc<RwLock<dyn System<In = Entity, Out = ()>>>,
 }
 
 impl Default for OnEvent {
     fn default() -> Self {
-        Self::new(
-            |In((event_dispatcher_context, _widget_state, event, _entity))| {
-                (event_dispatcher_context, event)
-            },
-        )
+        Self::new(|In(_entity)| {})
     }
 }
 
@@ -40,13 +29,7 @@ impl OnEvent {
     /// The handler should be a closure that takes the following arguments:
     /// 1. The current context
     /// 2. The event
-    pub fn new<Params>(
-        system: impl IntoSystem<
-            (EventDispatcherContext, WidgetState, KEvent, Entity),
-            (EventDispatcherContext, KEvent),
-            Params,
-        >,
-    ) -> OnEvent {
+    pub fn new<Params>(system: impl IntoSystem<Entity, (), Params>) -> OnEvent {
         Self {
             has_initialized: false,
             system: Arc::new(RwLock::new(IntoSystem::into_system(system))),
@@ -69,10 +52,16 @@ impl OnEvent {
                 system.initialize(world);
                 self.has_initialized = true;
             }
-            (event_dispatcher_context, event) = system.run(
-                (event_dispatcher_context, widget_state, event, entity),
-                world,
-            );
+            // Insert resources
+            world.insert_resource(event_dispatcher_context);
+            world.insert_resource(widget_state);
+            world.insert_resource(event);
+
+            system.run(entity, world);
+
+            event_dispatcher_context = world.remove_resource::<EventDispatcherContext>().unwrap();
+            event = world.remove_resource::<KEvent>().unwrap();
+
             system.apply_buffers(world);
         }
         (event_dispatcher_context, event)

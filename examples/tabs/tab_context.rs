@@ -1,4 +1,4 @@
-use bevy::prelude::{Bundle, Commands, Component, Entity, In, Query};
+use bevy::prelude::{Bundle, Commands, Component, Entity, In, Query, Res};
 use kayak_ui::prelude::*;
 
 #[derive(Component, Default, PartialEq, Eq, Clone)]
@@ -35,7 +35,8 @@ impl Default for TabContextProviderBundle {
 }
 
 pub fn tab_context_render(
-    In((widget_context, entity)): In<(KayakWidgetContext, Entity)>,
+    In(entity): In<Entity>,
+    widget_context: Res<KayakWidgetContext>,
     mut commands: Commands,
     query: Query<(&KChildren, &TabContextProvider)>,
 ) -> bool {

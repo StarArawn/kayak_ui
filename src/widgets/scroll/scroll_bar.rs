@@ -1,4 +1,4 @@
-use bevy::prelude::{Bundle, Color, Commands, Component, Entity, In, Query};
+use bevy::prelude::{Bundle, Color, Commands, Component, Entity, In, Query, Res, ResMut};
 use kayak_ui_macros::rsx;
 
 use crate::{
@@ -9,7 +9,6 @@ use crate::{
     prelude::{KChildren, KayakWidgetContext},
     styles::{ComputedStyles, Corner, Edge, KPositionType, KStyle, RenderCommand, Units},
     widget::Widget,
-    widget_state::WidgetState,
     widgets::{BackgroundBundle, ClipBundle},
 };
 
@@ -56,7 +55,8 @@ impl Default for ScrollBarBundle {
 }
 
 pub fn scroll_bar_render(
-    In((widget_context, entity)): In<(KayakWidgetContext, Entity)>,
+    In(entity): In<Entity>,
+    widget_context: Res<KayakWidgetContext>,
     mut commands: Commands,
     mut query: Query<(&ScrollBarProps, &KStyle, &mut ComputedStyles)>,
     context_query: Query<&ScrollContext>,
@@ -203,12 +203,9 @@ pub fn scroll_bar_render(
 
                 // === Events === //
                 let on_event = OnEvent::new(
-                    move |In((mut event_dispatcher_context, _, mut event, _entity)): In<(
-                        EventDispatcherContext,
-                        WidgetState,
-                        KEvent,
-                        Entity,
-                    )>,
+                    move |In(_entity): In<Entity>,
+                          mut event_dispatcher_context: ResMut<EventDispatcherContext>,
+                          mut event: ResMut<KEvent>,
                           mut query: Query<&mut ScrollContext>| {
                         if let Ok(mut scroll_context) = query.get_mut(context_entity) {
                             match event.event_type {
@@ -295,8 +292,6 @@ pub fn scroll_bar_render(
                                 _ => {}
                             }
                         }
-
-                        (event_dispatcher_context, event)
                     },
                 );
 

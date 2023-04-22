@@ -7,14 +7,12 @@ use kayak_ui_macros::{constructor, rsx};
 use crate::{
     context::WidgetName,
     event::{EventType, KEvent},
-    event_dispatcher::EventDispatcherContext,
     on_event::OnEvent,
     on_layout::OnLayout,
     prelude::{KChildren, KayakWidgetContext, OnChange},
     render::font::FontMapping,
     styles::{ComputedStyles, Edge, KPositionType, KStyle, RenderCommand, StyleProp, Units},
     widget::Widget,
-    widget_state::WidgetState,
     widgets::{
         text::{TextProps, TextWidgetBundle},
         BackgroundBundle, ClipBundle,
@@ -99,7 +97,8 @@ impl Default for TextBoxBundle {
 }
 
 pub fn text_box_render(
-    In((widget_context, entity)): In<(KayakWidgetContext, Entity)>,
+    In(entity): In<Entity>,
+    widget_context: Res<KayakWidgetContext>,
     mut commands: Commands,
     mut query: Query<(
         &KStyle,
@@ -182,12 +181,8 @@ pub fn text_box_render(
             let cloned_on_change = on_change.clone();
 
             *on_event = OnEvent::new(
-                move |In((event_dispatcher_context, _, mut event, _entity)): In<(
-                    EventDispatcherContext,
-                    WidgetState,
-                    KEvent,
-                    Entity,
-                )>,
+                move |In(_entity): In<Entity>,
+                      mut event: ResMut<KEvent>,
                       font_assets: Res<Assets<KayakFont>>,
                       font_mapping: Res<FontMapping>,
                       mut state_query: Query<&mut TextBoxState>| {
@@ -224,7 +219,7 @@ pub fn text_box_render(
                             if let Ok(mut state) = state_query.get_mut(state_entity) {
                                 let cloned_on_change = cloned_on_change.clone();
                                 if !state.focused {
-                                    return (event_dispatcher_context, event);
+                                    return;
                                 }
                                 let cursor_pos = state.cursor_position;
                                 if is_backspace(c) {
@@ -282,7 +277,6 @@ pub fn text_box_render(
                         }
                         _ => {}
                     }
-                    (event_dispatcher_context, event)
                 },
             );
 

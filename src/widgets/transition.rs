@@ -296,7 +296,8 @@ impl Default for TransitionBundle {
 }
 
 pub fn render(
-    In((widget_context, entity)): In<(KayakWidgetContext, Entity)>,
+    In(entity): In<Entity>,
+    widget_context: Res<KayakWidgetContext>,
     mut commands: Commands,
     mut query: Query<(&TransitionProps, &KChildren)>,
     mut transition_state_query: Query<&mut TransitionState>,

@@ -1,6 +1,5 @@
 use crate::{
     context::WidgetName,
-    prelude::KayakWidgetContext,
     styles::{ComputedStyles, KStyle, RenderCommand},
     widget::Widget,
 };
@@ -34,7 +33,7 @@ impl Default for KSvgBundle {
 }
 
 pub fn svg_render(
-    In((_widget_context, entity)): In<(KayakWidgetContext, Entity)>,
+    In(entity): In<Entity>,
     mut query: Query<(&KStyle, &mut ComputedStyles, &KSvg)>,
 ) -> bool {
     if let Ok((style, mut computed_styles, svg)) = query.get_mut(entity) {

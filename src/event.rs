@@ -1,4 +1,4 @@
-use bevy::prelude::{Entity, World};
+use bevy::prelude::{Entity, Resource, World};
 
 use crate::{
     cursor::{CursorEvent, ScrollEvent},
@@ -7,7 +7,7 @@ use crate::{
 };
 
 /// An event type sent to widgets
-#[derive(Clone)]
+#[derive(Resource, Clone)]
 pub struct KEvent {
     /// The node targeted by this event
     pub target: Entity,

@@ -31,7 +31,8 @@ impl Default for CurrentCountBundle {
 }
 
 fn current_count_render(
-    In((widget_context, entity)): In<(KayakWidgetContext, Entity)>,
+    In(entity): In<Entity>,
+    widget_context: Res<KayakWidgetContext>,
     mut commands: Commands,
     query: Query<&CurrentCountState>,
 ) -> bool {
@@ -62,7 +63,8 @@ fn current_count_render(
                         ..default()
                     }}
                     on_event={OnEvent::new(
-                        move |In((event_dispatcher_context, _, mut event, _entity)): In<(EventDispatcherContext, WidgetState, KEvent, Entity)>,
+                        move |In(_entity): In<Entity>,
+                        mut event: ResMut<KEvent>,
                             mut query: Query<&mut CurrentCountState>| {
                             match event.event_type {
                                 EventType::Click(..) => {
@@ -74,7 +76,6 @@ fn current_count_render(
                                 }
                                 _ => {}
                             }
-                            (event_dispatcher_context, event)
                         },
                     )}
                 />

@@ -33,7 +33,8 @@ impl Default for TodoItemsBundle {
 }
 
 pub fn render_todo_items(
-    In((widget_context, entity)): In<(KayakWidgetContext, Entity)>,
+    In(entity): In<Entity>,
+    widget_context: Res<KayakWidgetContext>,
     mut commands: Commands,
     todo_list: Res<TodoList>,
 ) -> bool {
@@ -47,12 +48,8 @@ pub fn render_todo_items(
         >
             {todo_list.items.iter().enumerate().for_each(|(index, content)| {
                 let handle_click = OnEvent::new(
-                    move |In((event_dispatcher_context, _, event, _)): In<(
-                        EventDispatcherContext,
-                        WidgetState,
-                        KEvent,
-                        Entity,
-                    )>,
+                    move |In(_entity): In<Entity>,
+                          event: Res<KEvent>,
                         mut todo_list: ResMut<TodoList>,| {
                         match event.event_type {
                             EventType::Click(..) => {
@@ -60,7 +57,6 @@ pub fn render_todo_items(
                             },
                             _ => {}
                         }
-                        (event_dispatcher_context, event)
                     },
                 );
                 constructor! {

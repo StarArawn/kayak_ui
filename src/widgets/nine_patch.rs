@@ -1,4 +1,4 @@
-use bevy::prelude::{Bundle, Commands, Component, Entity, Handle, Image, In, Query};
+use bevy::prelude::{Bundle, Commands, Component, Entity, Handle, Image, In, Query, Res};
 
 use crate::{
     children::KChildren,
@@ -72,7 +72,8 @@ impl Default for NinePatchBundle {
 }
 
 pub fn nine_patch_render(
-    In((widget_context, entity)): In<(KayakWidgetContext, Entity)>,
+    In(entity): In<Entity>,
+    widget_context: Res<KayakWidgetContext>,
     mut commands: Commands,
     mut query: Query<(&KStyle, &mut ComputedStyles, &NinePatch, &KChildren)>,
 ) -> bool {

@@ -42,7 +42,8 @@ impl Default for AccordionDetailsBundle {
 }
 
 pub fn render(
-    In((widget_context, accordion_widget)): In<(KayakWidgetContext, Entity)>,
+    In(accordion_widget): In<Entity>,
+    widget_context: Res<KayakWidgetContext>,
     mut commands: Commands,
     mut query: Query<(&AccordionDetails, &KChildren)>,
     context_query: Query<&AccordionContext>,

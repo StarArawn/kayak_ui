@@ -42,8 +42,8 @@ const UPDATE_DEPTH: u32 = 0;
 type WidgetSystems = HashMap<
     String,
     (
-        Box<dyn System<In = (KayakWidgetContext, Entity, Entity), Out = bool>>,
-        Box<dyn System<In = (KayakWidgetContext, Entity), Out = bool>>,
+        Box<dyn System<In = (Entity, Entity), Out = bool>>,
+        Box<dyn System<In = Entity, Out = bool>>,
     ),
 >;
 
@@ -171,8 +171,8 @@ impl KayakRootContext {
     pub fn add_widget_system<Params, Params2>(
         &mut self,
         type_name: impl Into<String>,
-        update: impl IntoSystem<(KayakWidgetContext, Entity, Entity), bool, Params>,
-        render: impl IntoSystem<(KayakWidgetContext, Entity), bool, Params2>,
+        update: impl IntoSystem<(Entity, Entity), bool, Params>,
+        render: impl IntoSystem<Entity, bool, Params2>,
     ) {
         let type_name = type_name.into();
         let update_system = Box::new(IntoSystem::into_system(update));
@@ -935,7 +935,7 @@ fn update_widget(
     world: &mut World,
     entity: WrappedIndex,
     widget_type: String,
-    widget_context: KayakWidgetContext,
+    mut widget_context: KayakWidgetContext,
     previous_children: Vec<Entity>,
     clone_systems: &Arc<RwLock<EntityCloneSystems>>,
     cloned_widget_entities: &Arc<RwLock<HashMap<Entity, Entity>>>,
@@ -992,12 +992,17 @@ fn update_widget(
             ))
             .0;
         let old_tick = widget_update_system.get_last_change_tick();
-        let should_rerender =
-            widget_update_system.run((widget_context.clone(), entity.0, old_props_entity), world);
+
+        // Insert context as a bevy resource.
+        world.insert_resource(widget_context);
+        let should_rerender = widget_update_system.run((entity.0, old_props_entity), world);
         let new_tick = widget_update_system.get_last_change_tick();
         new_ticks.insert(widget_type.clone(), new_tick);
         widget_update_system.set_last_change_tick(old_tick);
         widget_update_system.apply_buffers(world);
+
+        // Extract context
+        widget_context = world.remove_resource::<KayakWidgetContext>().unwrap();
 
         if should_rerender {
             if let Ok(cloned_widget_entities) = cloned_widget_entities.try_read() {
@@ -1076,12 +1081,13 @@ fn update_widget(
         widget_context.remove_children(previous_children);
         let widget_render_system = &mut systems.get_mut(&widget_type).unwrap().1;
         let old_tick = widget_render_system.get_last_change_tick();
-        should_update_children =
-            widget_render_system.run((widget_context.clone(), entity.0), world);
+        world.insert_resource(widget_context.clone());
+        should_update_children = widget_render_system.run(entity.0, world);
         let new_tick = widget_render_system.get_last_change_tick();
         new_ticks.insert(widget_type.clone(), new_tick);
         widget_render_system.set_last_change_tick(old_tick);
         widget_render_system.apply_buffers(world);
+        world.remove_resource::<KayakWidgetContext>();
 
         if let Ok(mut indices) = widget_context.index.try_write() {
             indices.insert(entity.0, 0);

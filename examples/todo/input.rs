@@ -37,25 +37,19 @@ impl Default for TodoInputBundle {
 }
 
 pub fn render_todo_input(
-    In((widget_context, entity)): In<(KayakWidgetContext, Entity)>,
+    In(entity): In<Entity>,
+    widget_context: Res<KayakWidgetContext>,
     mut commands: Commands,
     todo_list: Res<TodoList>,
 ) -> bool {
     let on_change = OnChange::new(
-        move |In((_widget_context, _, value)): In<(KayakWidgetContext, Entity, String)>,
-              mut todo_list: ResMut<TodoList>| {
+        move |In((_, value)): In<(Entity, String)>, mut todo_list: ResMut<TodoList>| {
             todo_list.new_item = value;
         },
     );
 
     let handle_click = OnEvent::new(
-        move |In((event_dispatcher_context, _, event, _)): In<(
-            EventDispatcherContext,
-            WidgetState,
-            KEvent,
-            Entity,
-        )>,
-              mut todo_list: ResMut<TodoList>| {
+        move |In(_entity): In<Entity>, event: Res<KEvent>, mut todo_list: ResMut<TodoList>| {
             match event.event_type {
                 EventType::Click(..) => {
                     if !todo_list.new_item.is_empty() {
@@ -66,7 +60,6 @@ pub fn render_todo_input(
                 }
                 _ => {}
             }
-            (event_dispatcher_context, event)
         },
     );
 

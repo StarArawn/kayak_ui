@@ -1,6 +1,6 @@
 use bevy::{
     ecs::system::SystemParam,
-    prelude::{Changed, Component, Entity, In, Query, With},
+    prelude::{Changed, Component, Entity, In, Query, Res, With},
 };
 
 use crate::{
@@ -20,7 +20,8 @@ pub trait Widget: Send + Sync {
 pub struct EmptyState;
 
 pub fn widget_update<Props: PartialEq + Component + Clone, State: PartialEq + Component + Clone>(
-    In((widget_context, entity, previous_entity)): In<(KayakWidgetContext, Entity, Entity)>,
+    In((entity, previous_entity)): In<(Entity, Entity)>,
+    widget_context: Res<KayakWidgetContext>,
     widget_param: WidgetParam<Props, State>,
 ) -> bool {
     widget_param.has_changed(&widget_context, entity, previous_entity)
@@ -31,7 +32,8 @@ pub fn widget_update_with_context<
     State: PartialEq + Component + Clone,
     Context: PartialEq + Component + Clone + Default,
 >(
-    In((widget_context, entity, previous_entity)): In<(KayakWidgetContext, Entity, Entity)>,
+    In((entity, previous_entity)): In<(Entity, Entity)>,
+    widget_context: Res<KayakWidgetContext>,
     widget_param: WidgetParam<Props, State>,
     context_query: Query<Entity, Changed<Context>>,
 ) -> bool {

@@ -16,7 +16,7 @@ pub trait ChangeValue: Component<Storage = TableStorage> + Default {}
 pub struct OnChange {
     value: Arc<RwLock<String>>,
     has_initialized: Arc<RwLock<bool>>,
-    system: Arc<RwLock<dyn System<In = (KayakWidgetContext, Entity, String), Out = ()>>>,
+    system: Arc<RwLock<dyn System<In = (Entity, String), Out = ()>>>,
 }
 
 impl Default for OnChange {
@@ -30,9 +30,7 @@ impl OnChange {
     ///
     /// The handler should be a closure that takes the following arguments:
     /// 1. The LayoutEvent
-    pub fn new<Params>(
-        system: impl IntoSystem<(KayakWidgetContext, Entity, String), (), Params>,
-    ) -> Self {
+    pub fn new<Params>(system: impl IntoSystem<(Entity, String), (), Params>) -> Self {
         Self {
             value: Default::default(),
             has_initialized: Arc::new(RwLock::new(false)),
@@ -57,7 +55,8 @@ impl OnChange {
                         system.initialize(world);
                         *init = true;
                     }
-                    system.run((widget_context, entity, value.clone()), world);
+                    world.insert_resource(widget_context);
+                    system.run((entity, value.clone()), world);
                     system.apply_buffers(world);
                 }
             }

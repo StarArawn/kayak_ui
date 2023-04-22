@@ -66,7 +66,8 @@ impl Default for WindowContextProviderBundle {
 }
 
 pub fn window_context_render(
-    In((widget_context, window_context_entity)): In<(KayakWidgetContext, Entity)>,
+    In(window_context_entity): In<Entity>,
+    widget_context: Res<KayakWidgetContext>,
     mut commands: Commands,
     children_query: Query<&KChildren>,
 ) -> bool {

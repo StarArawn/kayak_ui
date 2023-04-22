@@ -1,5 +1,5 @@
 use bevy::{
-    prelude::{Component, Entity, KeyCode, World},
+    prelude::{Component, Entity, KeyCode, Resource, World},
     utils::{HashMap, HashSet},
 };
 
@@ -866,6 +866,7 @@ impl EventDispatcher {
     }
 }
 
+#[derive(Resource)]
 pub struct EventDispatcherContext {
     cursor_capture: Option<WrappedIndex>,
 }

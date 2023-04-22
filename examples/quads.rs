@@ -13,7 +13,7 @@ pub struct MyQuad {
 }
 
 fn my_quad_update(
-    In((_widget_context, entity)): In<(KayakWidgetContext, Entity)>,
+    In(entity): In<Entity>,
     mut query: Query<(&MyQuad, &KStyle, &mut ComputedStyles, &mut OnEvent)>,
 ) -> bool {
     if let Ok((quad, style, mut computed_styles, mut on_event)) = query.get_mut(entity) {
@@ -36,12 +36,8 @@ fn my_quad_update(
             .into();
 
         *on_event = OnEvent::new(
-            move |In((event_dispatcher_context, _, mut event, entity)): In<(
-                EventDispatcherContext,
-                WidgetState,
-                KEvent,
-                Entity,
-            )>,
+            move |In(_entity): In<Entity>,
+                  mut event: ResMut<KEvent>,
                   mut query: Query<(&mut KStyle, &MyQuad)>| {
                 event.prevent_default();
                 event.stop_propagation();
@@ -58,7 +54,6 @@ fn my_quad_update(
                     }
                     _ => {}
                 }
-                (event_dispatcher_context, event)
             },
         );
     }

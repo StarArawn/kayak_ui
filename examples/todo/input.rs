@@ -43,8 +43,7 @@ pub fn render_todo_input(
     todo_list: Res<TodoList>,
 ) -> bool {
     let on_change = OnChange::new(
-        move |In((_widget_context, _, value)): In<(KayakWidgetContext, Entity, String)>,
-              mut todo_list: ResMut<TodoList>| {
+        move |In((_, value)): In<(Entity, String)>, mut todo_list: ResMut<TodoList>| {
             todo_list.new_item = value;
         },
     );

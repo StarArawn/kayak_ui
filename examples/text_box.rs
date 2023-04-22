@@ -46,7 +46,7 @@ fn update_text_box_example(
 
     if let Ok(textbox_state) = state_query.get(state_entity) {
         let on_change = OnChange::new(
-            move |In((_widget_context, _, value)): In<(KayakWidgetContext, Entity, String)>,
+            move |In((_, value)): In<(Entity, String)>,
                   mut state_query: Query<&mut TextBoxExampleState>| {
                 if let Ok(mut state) = state_query.get_mut(state_entity) {
                     state.value1 = value;
@@ -55,7 +55,7 @@ fn update_text_box_example(
         );
 
         let on_change2 = OnChange::new(
-            move |In((_widget_context, _, value)): In<(KayakWidgetContext, Entity, String)>,
+            move |In((_, value)): In<(Entity, String)>,
                   mut state_query: Query<&mut TextBoxExampleState>| {
                 if let Ok(mut state) = state_query.get_mut(state_entity) {
                     state.value2 = value;

@@ -1,6 +1,6 @@
 use crate::{
     layout::Rect,
-    styles::{Corner, Edge, KStyle, RenderCommand, StyleProp},
+    styles::{BoxShadow, Corner, Edge, KStyle, RenderCommand, StyleProp},
 };
 use bevy::{
     prelude::{Color, Handle, Image, Vec2},
@@ -23,6 +23,7 @@ pub enum RenderPrimitive {
         border: Edge<f32>,
         border_radius: Corner<f32>,
         opacity_layer: u32,
+        box_shadow: Option<Vec<BoxShadow>>,
     },
     Text {
         color: Color,
@@ -180,6 +181,10 @@ impl From<&KStyle> for RenderPrimitive {
                 border_radius: style.border_radius.resolve(),
                 border: style.border.resolve(),
                 layout: Rect::default(),
+                box_shadow: match style.box_shadow.clone() {
+                    StyleProp::Value(v) => Some(v),
+                    _ => None,
+                },
                 opacity_layer: 0,
             },
             RenderCommand::Text {

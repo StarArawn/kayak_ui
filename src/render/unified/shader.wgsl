@@ -74,9 +74,14 @@ fn range_curve(font_size: f32) -> f32 {
     return (5.128 - 6.428 * font_size + 3.428 * pow(font_size, 2.0)) + 1.0;
 }
 
+fn sigmoid(t: f32) -> f32 {
+    return 1.0 / (1.0 + exp(-t));
+}
+
 @fragment
 fn fragment(in: VertexOutput) -> @location(0) vec4<f32> {
     var output_color = vec4<f32>(0.0);
+    // Quad
     if quad_type.t == 0 {
         var size = in.size;
         var pos = in.pos.xy * 2.0;
@@ -90,6 +95,7 @@ fn fragment(in: VertexOutput) -> @location(0) vec4<f32> {
         rect_dist = 1.0 - smoothstep(0.0, fwidth(rect_dist), rect_dist);
         output_color = vec4<f32>(in.color.rgb, rect_dist * in.color.a);
     }
+    // Subpixel text
     if quad_type.t == 1 {
         var px_range = 8.0;
         var tex_dimensions = textureDimensions(font_texture);
@@ -106,6 +112,7 @@ fn fragment(in: VertexOutput) -> @location(0) vec4<f32> {
         let alpha = clamp(0.4 * (red + green + blue), 0., 1.);
         output_color = vec4(red * in.color.r, green * in.color.g, blue * in.color.b, in.color.a * alpha);
     }
+    // Text
     if quad_type.t == 2 {
         var px_range = 8.0;
         var tex_dimensions = textureDimensions(font_texture);
@@ -115,6 +122,7 @@ fn fragment(in: VertexOutput) -> @location(0) vec4<f32> {
         let alpha = clamp(dist * px_range / length(dxdy) + 0.5, 0.0, 1.0);
         output_color = vec4(in.color.rgb, in.color.a * alpha);
     }
+    // Image
     if quad_type.t == 3 {
         var bs = min(in.border_radius, min(in.size.x, in.size.y));
         var mask = sdRoundBox(
@@ -125,6 +133,20 @@ fn fragment(in: VertexOutput) -> @location(0) vec4<f32> {
         mask = 1.0 - smoothstep(0.0, fwidth(mask), mask);
         var color = textureSample(image_texture, image_sampler, vec2<f32>(in.uv.x, 1.0 - in.uv.y));
         output_color = vec4<f32>(color.rgb * in.color.rgb, color.a * in.color.a * mask);
+    }
+    // Box Shadow
+    if quad_type.t == 4 {
+        var size = in.size - in.uv.x * 6.0;
+        var pos = (in.pos.xy * 2.0) - (in.uv.x * 6.0); //(in.pos.xy - in.uv.x - 7.5) * 2.0;
+        // Lock border to max size. This is similar to how HTML/CSS handles border radius.
+        var bs = min(in.border_radius * 2.0, min(size.x, size.y));
+        var rect_dist = 1.0 - sigmoid(sdRoundBox(
+            (pos - size),
+            size,
+            bs + in.uv.x,
+        ) / in.uv.x);
+        let color = in.color.rgb;// - vec3(rect_dist);
+        output_color = vec4(color, in.color.a * rect_dist * 1.42);
     }
     return vec4(output_color.rgb, output_color.a);
 }

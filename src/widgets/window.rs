@@ -12,8 +12,8 @@ use crate::{
     on_event::OnEvent,
     prelude::KayakWidgetContext,
     styles::{
-        ComputedStyles, Corner, Edge, KCursorIcon, KPositionType, KStyle, RenderCommand, StyleProp,
-        Units,
+        BoxShadow, ComputedStyles, Corner, Edge, KCursorIcon, KPositionType, KStyle, RenderCommand,
+        StyleProp, Units,
     },
     widget::Widget,
     Focusable,
@@ -174,6 +174,12 @@ pub fn window_render(
                         height: StyleProp::Value(Units::Pixels(window.size.y)),
                         min_width: StyleProp::Value(Units::Pixels(window.size.x)),
                         min_height: StyleProp::Value(Units::Pixels(window.size.y)),
+                        box_shadow: vec![BoxShadow {
+                            color: Color::rgba(0.0, 0.0, 0.0, 0.5),
+                            radius: 8.0,
+                            offset: Vec2::new(0.0, 3.0),
+                            ..Default::default()
+                        }].into(),
                         ..Default::default()
                     })}
                     on_event={focus_event}

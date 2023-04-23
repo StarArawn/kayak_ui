@@ -333,6 +333,7 @@ impl SpecializedRenderPipeline for UnifiedPipeline {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd)]
 pub enum UIQuadType {
     Quad,
+    BoxShadow,
     Text,
     TextSubpixel,
     Image,
@@ -496,6 +497,12 @@ pub fn queue_quads(
         _padding_2: 0,
         _padding_3: 0,
     });
+    let box_shadow_type_offset = sprite_meta.types_buffer.push(QuadType {
+        t: 4,
+        _padding_1: 0,
+        _padding_2: 0,
+        _padding_3: 0,
+    });
 
     sprite_meta
         .types_buffer
@@ -593,6 +600,7 @@ pub fn queue_quads(
                     UIQuadType::Text => quad.type_index = text_type_offset,
                     UIQuadType::TextSubpixel => quad.type_index = text_sub_pixel_type_offset,
                     UIQuadType::Image => quad.type_index = image_type_offset,
+                    UIQuadType::BoxShadow => quad.type_index = box_shadow_type_offset,
                     UIQuadType::Clip => quad.type_index = 100000,
                     UIQuadType::None => quad.type_index = 100001,
                     UIQuadType::OpacityLayer => quad.type_index = 100002,

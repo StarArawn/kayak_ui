@@ -3,6 +3,7 @@
 use std::ops::Add;
 
 pub use super::units::{KPositionType, LayoutType, Units};
+use super::BoxShadow;
 use bevy::prelude::Color;
 use bevy::prelude::Component;
 use bevy::prelude::ReflectComponent;
@@ -406,6 +407,9 @@ define_styles! {
         /// This is also known as grouped opacity
         /// WARNING! This splits the widget and it's children into a new render pass. So use it sparingly!!!
         pub opacity: StyleProp<f32>,
+        /// Box shadow
+        /// Currently only applied to quads
+        pub box_shadow: StyleProp<Vec<BoxShadow>>,
     }
 }
 
@@ -455,6 +459,7 @@ impl KStyle {
             row_span: StyleProp::Default,
             col_span: StyleProp::Default,
             opacity: StyleProp::Value(1.0),
+            box_shadow: StyleProp::Default,
         }
     }
 

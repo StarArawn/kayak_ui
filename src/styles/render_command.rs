@@ -3,7 +3,7 @@ use bevy::{
     reflect::{FromReflect, Reflect},
 };
 use bevy_svg::prelude::Svg;
-use kayak_font::Alignment;
+use kayak_font::{Alignment, TextLayout, TextProperties};
 
 use super::Edge;
 
@@ -19,6 +19,8 @@ pub enum RenderCommand {
         alignment: Alignment,
         word_wrap: bool,
         subpixel: bool,
+        text_layout: TextLayout,
+        properties: TextProperties,
     },
     Image {
         handle: Handle<Image>,

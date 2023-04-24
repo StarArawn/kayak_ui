@@ -1,29 +1,17 @@
 use bevy::prelude::*;
+use bevy_svg::prelude::Svg;
 
-use crate::{render::unified::pipeline::ExtractedQuad, render_primitive::RenderPrimitive};
+use crate::render::unified::pipeline::ExtractedQuad;
 
 pub fn extract_svg(
     camera_entity: Entity,
-    render_primitive: &RenderPrimitive,
+    handle: Handle<Svg>,
+    layout: crate::layout::Rect,
+    background_color: Option<Color>,
+    opacity_layer: u32,
     _dpi: f32,
-) -> ExtractedQuad {
-    let (handle, layout, background_color, opacity_layer) = match render_primitive {
-        RenderPrimitive::Svg {
-            handle,
-            layout,
-            background_color,
-            opacity_layer,
-            ..
-        } => (
-            handle.clone_weak(),
-            *layout,
-            *background_color,
-            *opacity_layer,
-        ),
-        _ => panic!(""),
-    };
-
-    ExtractedQuad {
+) -> Vec<ExtractedQuad> {
+    vec![ExtractedQuad {
         camera_entity,
         rect: Rect {
             min: Vec2::new(layout.posx, layout.posy),
@@ -33,5 +21,5 @@ pub fn extract_svg(
         svg_handle: (Some(handle), background_color),
         opacity_layer,
         ..Default::default()
-    }
+    }]
 }

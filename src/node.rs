@@ -3,10 +3,7 @@ use bevy::{
     reflect::FromReflect,
 };
 
-use crate::{
-    render_primitive::RenderPrimitive,
-    styles::{KStyle, StyleProp},
-};
+use crate::styles::{KStyle, StyleProp};
 
 #[derive(Component, Debug, Clone, Copy)]
 pub struct DirtyNode;
@@ -23,8 +20,6 @@ pub struct Node {
     pub resolved_styles: KStyle,
     /// The raw styles for this node, before style resolution
     pub raw_styles: Option<KStyle>,
-    /// The generated [`RenderPrimitive`] of this node
-    pub primitive: RenderPrimitive,
     /// The z-index of this node, used for controlling layering
     pub z: f32,
     pub old_z: f32,
@@ -38,7 +33,6 @@ impl Default for Node {
             id: WrappedIndex(Entity::from_raw(0)),
             resolved_styles: Default::default(),
             raw_styles: Default::default(),
-            primitive: RenderPrimitive::Empty,
             z: Default::default(),
             old_z: Default::default(),
             opacity: 1.0,
@@ -60,7 +54,6 @@ impl NodeBuilder {
                 id: WrappedIndex(Entity::from_raw(0)),
                 resolved_styles: KStyle::default(),
                 raw_styles: None,
-                primitive: RenderPrimitive::Empty,
                 z: 0.0,
                 old_z: 0.0,
                 opacity: 1.0,
@@ -76,7 +69,6 @@ impl NodeBuilder {
                 id,
                 resolved_styles: styles,
                 raw_styles: None,
-                primitive: RenderPrimitive::Empty,
                 z: 0.0,
                 old_z: 0.0,
                 opacity: 1.0,
@@ -100,12 +92,6 @@ impl NodeBuilder {
     pub fn with_styles(mut self, resolved_styles: KStyle, raw_styles: Option<KStyle>) -> Self {
         self.node.resolved_styles = resolved_styles;
         self.node.raw_styles = raw_styles;
-        self
-    }
-
-    /// Sets the [`RenderPrimitive`] of the node being built
-    pub fn with_primitive(mut self, primitive: RenderPrimitive) -> Self {
-        self.node.primitive = primitive;
         self
     }
 

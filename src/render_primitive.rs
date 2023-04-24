@@ -1,245 +1,180 @@
+use bevy::prelude::*;
+use kayak_font::KayakFont;
+
 use crate::{
-    layout::Rect,
-    styles::{BoxShadow, Corner, Edge, KStyle, RenderCommand, StyleProp},
+    render::{
+        font::FontMapping,
+        unified::pipeline::{ExtractedQuad, ExtractedQuads, UIQuadType},
+    },
+    styles::{Corner, KStyle, RenderCommand, StyleProp},
 };
-use bevy::{
-    prelude::{Color, Handle, Image, Vec2},
-    reflect::Reflect,
-};
-use bevy_svg::prelude::Svg;
-use kayak_font::{TextLayout, TextProperties};
 
-#[derive(Debug, Reflect, Clone, PartialEq)]
-pub enum RenderPrimitive {
-    Empty,
-    Clip {
-        layout: Rect,
+pub trait RenderPrimitive {
+    fn extract(
+        &self,
+        commands: &mut Commands,
+        layout: &crate::layout::Rect,
         opacity_layer: u32,
-    },
-    Quad {
-        layout: Rect,
-        background_color: Color,
-        border_color: Color,
-        border: Edge<f32>,
-        border_radius: Corner<f32>,
-        opacity_layer: u32,
-        box_shadow: Option<Vec<BoxShadow>>,
-    },
-    Text {
-        color: Color,
-        content: String,
-        font: String,
-        text_layout: TextLayout,
-        layout: Rect,
-        properties: TextProperties,
-        word_wrap: bool,
-        subpixel: bool,
-        opacity_layer: u32,
-    },
-    Image {
-        border_radius: Corner<f32>,
-        layout: Rect,
-        handle: Handle<Image>,
-        opacity_layer: u32,
-    },
-    TextureAtlas {
-        size: Vec2,
-        position: Vec2,
-        layout: Rect,
-        handle: Handle<Image>,
-        opacity_layer: u32,
-    },
-    NinePatch {
-        border: Edge<f32>,
-        layout: Rect,
-        handle: Handle<Image>,
-        opacity_layer: u32,
-    },
-    Svg {
-        handle: Handle<Svg>,
-        background_color: Option<Color>,
-        layout: Rect,
-        opacity_layer: u32,
-    },
-    OpacityLayer {
-        index: u32,
-        z: f32,
-    },
-    DrawOpacityLayer {
-        opacity: f32,
-        index: u32,
-        z: f32,
-        layout: Rect,
-    },
+        extracted_quads: &mut ExtractedQuads,
+        camera_entity: Entity,
+        fonts: &Assets<KayakFont>,
+        font_mapping: &FontMapping,
+        images: &Assets<Image>,
+        dpi: f32,
+        prev_clip: Option<ExtractedQuad>,
+    ) -> Option<ExtractedQuad>;
 }
 
-impl RenderPrimitive {
-    pub fn set_layout(&mut self, new_layout: Rect) {
-        match self {
-            RenderPrimitive::Clip { layout, .. } => *layout = new_layout,
-            RenderPrimitive::Quad { layout, .. } => *layout = new_layout,
-            RenderPrimitive::Text { layout, .. } => *layout = new_layout,
-            RenderPrimitive::Image { layout, .. } => *layout = new_layout,
-            RenderPrimitive::NinePatch { layout, .. } => *layout = new_layout,
-            RenderPrimitive::TextureAtlas { layout, .. } => *layout = new_layout,
-            RenderPrimitive::Svg { layout, .. } => *layout = new_layout,
-            RenderPrimitive::DrawOpacityLayer { layout, .. } => *layout = new_layout,
-            _ => (),
-        }
-    }
-
-    pub fn get_layout(&self) -> Rect {
-        match self {
-            RenderPrimitive::Clip { layout, .. } => *layout,
-            RenderPrimitive::Quad { layout, .. } => *layout,
-            RenderPrimitive::Text { layout, .. } => *layout,
-            RenderPrimitive::Image { layout, .. } => *layout,
-            RenderPrimitive::NinePatch { layout, .. } => *layout,
-            RenderPrimitive::TextureAtlas { layout, .. } => *layout,
-            RenderPrimitive::Svg { layout, .. } => *layout,
-            RenderPrimitive::DrawOpacityLayer { layout, .. } => *layout,
-            _ => Rect::default(),
-        }
-    }
-
-    pub fn get_opacity_layer(&self) -> u32 {
-        match self {
-            RenderPrimitive::Clip { opacity_layer, .. } => *opacity_layer,
-            RenderPrimitive::Quad { opacity_layer, .. } => *opacity_layer,
-            RenderPrimitive::Text { opacity_layer, .. } => *opacity_layer,
-            RenderPrimitive::Image { opacity_layer, .. } => *opacity_layer,
-            RenderPrimitive::NinePatch { opacity_layer, .. } => *opacity_layer,
-            RenderPrimitive::TextureAtlas { opacity_layer, .. } => *opacity_layer,
-            RenderPrimitive::Svg { opacity_layer, .. } => *opacity_layer,
-            RenderPrimitive::OpacityLayer { index, .. } => *index,
-            RenderPrimitive::DrawOpacityLayer { index, .. } => *index,
-            _ => 0,
-        }
-    }
-
-    pub fn set_opacity_layer(&mut self, layer: u32) {
-        match self {
-            RenderPrimitive::Clip { opacity_layer, .. } => *opacity_layer = layer,
-            RenderPrimitive::Quad { opacity_layer, .. } => *opacity_layer = layer,
-            RenderPrimitive::Text { opacity_layer, .. } => *opacity_layer = layer,
-            RenderPrimitive::Image { opacity_layer, .. } => *opacity_layer = layer,
-            RenderPrimitive::NinePatch { opacity_layer, .. } => *opacity_layer = layer,
-            RenderPrimitive::TextureAtlas { opacity_layer, .. } => *opacity_layer = layer,
-            RenderPrimitive::Svg { opacity_layer, .. } => *opacity_layer = layer,
-            RenderPrimitive::OpacityLayer { index, .. } => *index = layer,
-            RenderPrimitive::DrawOpacityLayer { index, .. } => *index = layer,
-            _ => (),
-        }
-    }
-
-    pub fn to_string(&self) -> String {
-        match self {
-            RenderPrimitive::Clip { .. } => "Clip".into(),
-            RenderPrimitive::Quad { .. } => "Quad".into(),
-            RenderPrimitive::Text { .. } => "Text".into(),
-            RenderPrimitive::Image { .. } => "Image".into(),
-            RenderPrimitive::NinePatch { .. } => "NinePatch".into(),
-            RenderPrimitive::TextureAtlas { .. } => "TextureAtlas".into(),
-            RenderPrimitive::Svg { .. } => "Svg".into(),
-            RenderPrimitive::Empty { .. } => "Empty".into(),
-            RenderPrimitive::OpacityLayer { .. } => "OpacityLayer".into(),
-            RenderPrimitive::DrawOpacityLayer { .. } => "DrawOpacityLayer".into(),
-        }
-    }
-}
-
-impl From<&KStyle> for RenderPrimitive {
-    fn from(style: &KStyle) -> Self {
-        let render_command = style.render_command.resolve();
-
-        let background_color = style
-            .background_color
-            .resolve_or(Color::rgba(1.0, 1.0, 1.0, 0.0));
-
-        let border_color = style
-            .border_color
-            .resolve_or(Color::rgba(1.0, 1.0, 1.0, 0.0));
-
-        let font = style
-            .font
-            .resolve_or_else(|| String::from(crate::DEFAULT_FONT));
-
-        let font_size = style.font_size.resolve_or(14.0);
-
-        let line_height = style.line_height.resolve_or(font_size * 1.2);
-
+impl RenderPrimitive for KStyle {
+    fn extract(
+        &self,
+        _commands: &mut Commands,
+        layout: &crate::layout::Rect,
+        opacity_layer: u32,
+        extracted_quads: &mut ExtractedQuads,
+        camera_entity: Entity,
+        fonts: &Assets<KayakFont>,
+        font_mapping: &FontMapping,
+        images: &Assets<Image>,
+        dpi: f32,
+        prev_clip: Option<ExtractedQuad>,
+    ) -> Option<ExtractedQuad> {
+        let background_color = self.background_color.resolve();
+        let render_command = self.render_command.resolve();
         match render_command {
-            RenderCommand::Empty => Self::Empty,
-            RenderCommand::Layout => Self::Empty,
-            RenderCommand::Clip => Self::Clip {
-                layout: Rect::default(),
-                opacity_layer: 0,
-            },
-            RenderCommand::Quad => Self::Quad {
-                background_color,
-                border_color,
-                border_radius: style.border_radius.resolve(),
-                border: style.border.resolve(),
-                layout: Rect::default(),
-                box_shadow: match style.box_shadow.clone() {
-                    StyleProp::Value(v) => Some(v),
-                    _ => None,
-                },
-                opacity_layer: 0,
-            },
-            RenderCommand::Text {
-                content,
-                alignment,
-                word_wrap,
-                subpixel,
-            } => Self::Text {
-                color: style.color.resolve(),
-                content,
-                font,
-                text_layout: TextLayout::default(),
-                layout: Rect::default(),
-                properties: TextProperties {
-                    font_size,
-                    line_height,
-                    alignment,
+            RenderCommand::Clip => {
+                let mut rect = Rect {
+                    min: Vec2::new(layout.posx, layout.posy) * dpi,
+                    max: Vec2::new(layout.posx + layout.width, layout.posy + layout.height) * dpi,
+                };
+                if let Some(prev_clip) = prev_clip {
+                    let y1 = rect.max.y;
+                    let y2 = prev_clip.rect.max.y;
+                    rect.max.y = y1.min(y2);
+                    if prev_clip.rect.min.y > rect.min.y {
+                        rect.min.y = prev_clip.rect.min.y;
+                    }
+                }
+
+                let clip = ExtractedQuad {
+                    camera_entity,
+                    rect,
+                    color: Color::default(),
+                    char_id: 0,
+                    z_index: layout.z_index,
+                    font_handle: None,
+                    quad_type: UIQuadType::Clip,
+                    type_index: 0,
+                    border_radius: Corner::default(),
+                    image: None,
+                    uv_min: None,
+                    uv_max: None,
+                    opacity_layer,
                     ..Default::default()
-                },
-                word_wrap,
+                };
+                extracted_quads.quads.push(clip.clone());
+                return Some(clip);
+            }
+            RenderCommand::Quad => {
+                let border_color = self.border_color.resolve();
+                let border_radius = self.border_radius.resolve();
+                let border = self.border.resolve();
+                let box_shadow = self.box_shadow.resolve();
+                let quads = crate::render::quad::extract_quads(
+                    camera_entity,
+                    background_color,
+                    border_color,
+                    *layout,
+                    border_radius,
+                    border,
+                    opacity_layer,
+                    box_shadow,
+                    1.0,
+                );
+                extracted_quads.quads.extend(quads);
+            }
+            RenderCommand::Text {
                 subpixel,
-                opacity_layer: 0,
-            },
-            RenderCommand::Image { handle } => Self::Image {
-                border_radius: style.border_radius.resolve(),
-                layout: Rect::default(),
-                handle,
-                opacity_layer: 0,
-            },
+                text_layout,
+                properties,
+                ..
+            } => {
+                let font = self
+                    .font
+                    .resolve_or_else(|| String::from(crate::DEFAULT_FONT));
+                let quads = crate::render::font::extract_texts(
+                    camera_entity,
+                    background_color,
+                    text_layout,
+                    *layout,
+                    font,
+                    properties,
+                    subpixel,
+                    opacity_layer,
+                    fonts,
+                    font_mapping,
+                    dpi,
+                );
+                extracted_quads.quads.extend(quads);
+            }
+            RenderCommand::Image { handle } => {
+                let border_radius = self.border_radius.resolve();
+                let quads = crate::render::image::extract_images(
+                    camera_entity,
+                    border_radius,
+                    *layout,
+                    handle,
+                    opacity_layer,
+                    dpi,
+                );
+                extracted_quads.quads.extend(quads);
+            }
             RenderCommand::TextureAtlas {
-                handle,
-                size,
                 position,
-            } => Self::TextureAtlas {
-                handle,
-                layout: Rect::default(),
                 size,
-                position,
-                opacity_layer: 0,
-            },
-            RenderCommand::NinePatch { handle, border } => Self::NinePatch {
-                border,
-                layout: Rect::default(),
                 handle,
-                opacity_layer: 0,
-            },
-            RenderCommand::Svg { handle } => Self::Svg {
-                background_color: match style.background_color {
-                    StyleProp::Value(color) => Some(color),
-                    _ => None,
-                },
-                handle,
-                layout: Rect::default(),
-                opacity_layer: 0,
-            },
+            } => {
+                let quads = crate::render::texture_atlas::extract_texture_atlas(
+                    camera_entity,
+                    size,
+                    position,
+                    *layout,
+                    handle,
+                    opacity_layer,
+                    images,
+                    dpi,
+                );
+                extracted_quads.quads.extend(quads);
+            }
+            RenderCommand::NinePatch { border, handle } => {
+                let quads = crate::render::nine_patch::extract_nine_patch(
+                    camera_entity,
+                    *layout,
+                    handle,
+                    border,
+                    opacity_layer,
+                    images,
+                    dpi,
+                );
+                extracted_quads.quads.extend(quads);
+            }
+            RenderCommand::Svg { handle } => {
+                let quads = crate::render::svg::extract_svg(
+                    camera_entity,
+                    handle,
+                    *layout,
+                    match self.background_color {
+                        StyleProp::Value(color) => Some(color),
+                        _ => None,
+                    },
+                    opacity_layer,
+                    dpi,
+                );
+                extracted_quads.quads.extend(quads);
+            }
+            _ => {}
         }
+
+        None
     }
 }

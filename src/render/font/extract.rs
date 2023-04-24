@@ -1,12 +1,11 @@
 use bevy::{
     math::Vec2,
-    prelude::{Assets, Entity, Rect, Res},
+    prelude::{Assets, Color, Entity, Rect},
 };
-use kayak_font::KayakFont;
+use kayak_font::{KayakFont, TextLayout, TextProperties};
 
 use crate::{
     render::unified::pipeline::{ExtractedQuad, UIQuadType},
-    render_primitive::RenderPrimitive,
     styles::Corner,
 };
 
@@ -14,34 +13,18 @@ use super::font_mapping::FontMapping;
 
 pub fn extract_texts(
     camera_entity: Entity,
-    render_primitive: &RenderPrimitive,
-    fonts: &Res<Assets<KayakFont>>,
-    font_mapping: &Res<FontMapping>,
+    background_color: Color,
+    text_layout: TextLayout,
+    layout: crate::layout::Rect,
+    font: String,
+    properties: TextProperties,
+    subpixel: bool,
+    opacity_layer: u32,
+    fonts: &Assets<KayakFont>,
+    font_mapping: &FontMapping,
     _dpi: f32,
 ) -> Vec<ExtractedQuad> {
     let mut extracted_texts = Vec::new();
-    let (background_color, text_layout, layout, font, properties, subpixel, opacity_layer) =
-        match render_primitive {
-            RenderPrimitive::Text {
-                color,
-                text_layout,
-                layout,
-                font,
-                properties,
-                subpixel,
-                opacity_layer,
-                ..
-            } => (
-                color,
-                text_layout,
-                layout,
-                font,
-                *properties,
-                subpixel,
-                *opacity_layer,
-            ),
-            _ => panic!(""),
-        };
 
     let font_handle = font_mapping.get_handle(font.clone()).unwrap();
     let font = match fonts.get(&font_handle) {
@@ -68,10 +51,10 @@ pub fn extract_texts(
                 min: position,
                 max: position + size,
             },
-            color: *background_color,
+            color: background_color,
             char_id: font.get_char_id(glyph_rect.content).unwrap(),
             z_index: layout.z_index,
-            quad_type: if *subpixel || forced {
+            quad_type: if subpixel || forced {
                 UIQuadType::TextSubpixel
             } else {
                 UIQuadType::Text

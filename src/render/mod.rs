@@ -24,6 +24,7 @@ use self::{
 mod extract;
 pub(crate) mod font;
 pub(crate) mod image;
+pub mod material;
 pub(crate) mod nine_patch;
 mod opacity_layer;
 pub(crate) mod quad;

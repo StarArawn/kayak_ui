@@ -1,33 +1,25 @@
 use crate::{
     render::unified::pipeline::{ExtractedQuad, UIQuadType},
-    render_primitive::RenderPrimitive,
-    styles::Corner,
+    styles::{Corner, Edge},
 };
 use bevy::{
     math::Vec2,
-    prelude::{Assets, Entity, Rect, Res},
+    prelude::*,
     render::{color::Color, texture::Image},
 };
 
 pub fn extract_nine_patch(
     camera_entity: Entity,
-    render_primitive: &RenderPrimitive,
-    images: &Res<Assets<Image>>,
+    layout: crate::layout::Rect,
+    handle: Handle<Image>,
+    border: Edge<f32>,
+    opacity_layer: u32,
+    images: &Assets<Image>,
     dpi: f32,
 ) -> Vec<ExtractedQuad> {
     let mut extracted_quads = Vec::new();
 
-    let (layout, handle, border, opacity_layer) = match render_primitive {
-        RenderPrimitive::NinePatch {
-            layout,
-            handle,
-            border,
-            opacity_layer,
-        } => (layout, handle, border, *opacity_layer),
-        _ => panic!(""),
-    };
-
-    let image = images.get(handle);
+    let image = images.get(&handle);
 
     if image.is_none() {
         return vec![];

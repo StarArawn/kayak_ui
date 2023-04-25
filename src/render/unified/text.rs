@@ -9,8 +9,6 @@ use bevy::{
 };
 use kayak_font::bevy::{FontTextureCache, KayakFontPlugin};
 
-use super::pipeline::UnifiedPipeline;
-
 #[derive(Default)]
 pub struct TextRendererPlugin;
 
@@ -25,9 +23,8 @@ impl Plugin for TextRendererPlugin {
 fn create_and_update_font_cache_texture(
     device: Res<RenderDevice>,
     queue: Res<RenderQueue>,
-    pipeline: Res<UnifiedPipeline>,
     mut font_texture_cache: ResMut<FontTextureCache>,
     images: Res<RenderAssets<Image>>,
 ) {
-    font_texture_cache.process_new(&device, &queue, pipeline.into_inner(), &images);
+    font_texture_cache.process_new(&device, &queue, &images);
 }

@@ -1,29 +1,17 @@
 use crate::{
     render::unified::pipeline::{ExtractedQuad, UIQuadType},
-    render_primitive::RenderPrimitive,
     styles::Corner,
 };
-use bevy::{
-    math::Vec2,
-    prelude::{Entity, Rect},
-    render::color::Color,
-};
+use bevy::{math::Vec2, prelude::*, render::color::Color};
 
 pub fn extract_images(
     camera_entity: Entity,
-    render_command: &RenderPrimitive,
+    border_radius: Corner<f32>,
+    layout: crate::layout::Rect,
+    handle: Handle<Image>,
+    opacity_layer: u32,
     _dpi: f32,
 ) -> Vec<ExtractedQuad> {
-    let (border_radius, layout, handle, opacity_layer) = match render_command {
-        RenderPrimitive::Image {
-            border_radius,
-            layout,
-            handle,
-            opacity_layer,
-        } => (*border_radius, layout, handle, *opacity_layer),
-        _ => panic!(""),
-    };
-
     vec![ExtractedQuad {
         camera_entity,
         rect: Rect {
@@ -36,12 +24,7 @@ pub fn extract_images(
         font_handle: None,
         quad_type: UIQuadType::Image,
         type_index: 0,
-        border_radius: Corner {
-            top_left: border_radius.top_left,
-            top_right: border_radius.top_right,
-            bottom_left: border_radius.bottom_left,
-            bottom_right: border_radius.bottom_right,
-        },
+        border_radius,
         image: Some(handle.clone_weak()),
         uv_max: None,
         uv_min: None,

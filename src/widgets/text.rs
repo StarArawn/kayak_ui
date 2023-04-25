@@ -85,6 +85,8 @@ pub fn text_render(
                     alignment: text.alignment,
                     word_wrap: text.word_wrap,
                     subpixel: text.subpixel,
+                    text_layout: Default::default(),
+                    properties: Default::default(),
                 }),
                 font: if let Some(ref font) = text.font {
                     StyleProp::Value(font.clone())

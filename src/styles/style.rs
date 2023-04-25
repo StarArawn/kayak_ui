@@ -15,6 +15,7 @@ use bevy::reflect::Reflect;
 use bevy::window::CursorIcon;
 
 use crate::cursor::PointerEvents;
+use crate::render::material::MaterialHandle;
 
 use super::AsRefOption;
 pub use super::Corner;
@@ -94,6 +95,18 @@ where
             value.clone()
         } else {
             default
+        }
+    }
+
+    /// Returns the concrete value of this style property as an Option<T> or None.
+    ///
+    /// If this style property is not [`StyleProp::Value`], then the none
+    /// will be returned.
+    pub fn resolve_as_option(&self) -> Option<T> {
+        if let Self::Value(value) = self {
+            Some(value.clone())
+        } else {
+            None
         }
     }
 
@@ -410,6 +423,9 @@ define_styles! {
         /// Box shadow
         /// Currently only applied to quads
         pub box_shadow: StyleProp<Vec<BoxShadow>>,
+        /// Overrides the default renderer with a custom material
+        #[reflect(ignore)]
+        pub material: StyleProp<MaterialHandle>,
     }
 }
 
@@ -460,6 +476,7 @@ impl KStyle {
             col_span: StyleProp::Default,
             opacity: StyleProp::Value(1.0),
             box_shadow: StyleProp::Default,
+            material: StyleProp::Default,
         }
     }
 

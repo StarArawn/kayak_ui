@@ -1,31 +1,22 @@
 use crate::{
     context::{KayakRootContext, WidgetName},
     node::Node,
-    render_primitive::RenderPrimitive,
-    styles::Corner,
     CameraUIKayak,
 };
 use bevy::{
-    prelude::{
-        Assets, Camera, Camera2d, Camera3d, Color, Commands, Component, Entity, GlobalTransform,
-        Image, IntoSystemAppConfig, IntoSystemAppConfigs, Mat4, Plugin, Query, Rect, Res, ResMut,
-        UVec4, Vec2, With,
-    },
+    prelude::*,
     render::{
         render_phase::RenderPhase,
-        view::{ColorGrading, ExtractedView},
-        Extract, ExtractSchedule, RenderApp,
+        render_resource::{DynamicUniformBuffer, ShaderType},
+        renderer::{RenderDevice, RenderQueue},
+        view::ColorGrading,
+        Extract, ExtractSchedule, RenderApp, RenderSet,
     },
     window::{PrimaryWindow, Window, WindowRef},
 };
 use kayak_font::KayakFont;
 
-use super::{
-    font::{self, FontMapping},
-    image, nine_patch, texture_atlas,
-    ui_pass::TransparentUI,
-    unified::pipeline::{ExtractedQuad, ExtractedQuads, UIQuadType},
-};
+use super::{font::FontMapping, ui_pass::TransparentUI, unified::pipeline::ExtractedQuads};
 
 // mod nine_patch;
 // mod texture_atlas;
@@ -35,18 +26,22 @@ pub struct BevyKayakUIExtractPlugin;
 impl Plugin for BevyKayakUIExtractPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
         let render_app = app.sub_app_mut(RenderApp);
-        render_app.add_system(extract.in_schedule(ExtractSchedule));
-        render_app.add_systems(
-            (
-                extract_default_ui_camera_view::<Camera2d>,
-                extract_default_ui_camera_view::<Camera3d>,
+        render_app
+            .init_resource::<UIViewUniforms>()
+            .add_system(extract.in_schedule(ExtractSchedule))
+            .add_systems(
+                (
+                    extract_default_ui_camera_view::<Camera2d>,
+                    extract_default_ui_camera_view::<Camera3d>,
+                )
+                    .in_schedule(ExtractSchedule),
             )
-                .in_schedule(ExtractSchedule),
-        );
+            .add_system(prepare_view_uniforms.in_set(RenderSet::Prepare));
     }
 }
 
 pub fn extract(
+    mut commands: Commands,
     context_query: Extract<Query<(Entity, &KayakRootContext)>>,
     fonts: Extract<Res<Assets<KayakFont>>>,
     font_mapping: Extract<Res<FontMapping>>,
@@ -58,7 +53,7 @@ pub fn extract(
     mut extracted_quads: ResMut<ExtractedQuads>,
 ) {
     extracted_quads.quads.clear();
-    let mut render_primitives = Vec::new();
+
     for (_entity, context) in context_query.iter() {
         let dpi = if let Ok(camera) = cameras.get(context.camera_entity) {
             match &camera.target {
@@ -77,117 +72,36 @@ pub fn extract(
         } else {
             1.0
         };
-        let mut new_render_primitives = context.build_render_primitives(&node_query, &widget_names);
-        render_primitives.extend(
-            new_render_primitives
-                .drain(..)
-                .map(|r| (context.camera_entity, dpi, r)),
-        );
-    }
 
-    for (camera_entity, dpi, render_primitive) in render_primitives {
-        match render_primitive {
-            RenderPrimitive::Text { .. } => {
-                let text_quads = font::extract_texts(
-                    camera_entity,
-                    &render_primitive,
-                    &fonts,
-                    &font_mapping,
-                    dpi,
-                );
-                extracted_quads.quads.extend(text_quads);
-            }
-            RenderPrimitive::Image { .. } => {
-                let image_quads = image::extract_images(camera_entity, &render_primitive, dpi);
-                extracted_quads.quads.extend(image_quads);
-            }
-            RenderPrimitive::Quad { .. } => {
-                let quad_quads = super::quad::extract_quads(camera_entity, &render_primitive, 1.0);
-                extracted_quads.quads.extend(quad_quads);
-            }
-            RenderPrimitive::NinePatch { .. } => {
-                let nine_patch_quads =
-                    nine_patch::extract_nine_patch(camera_entity, &render_primitive, &images, dpi);
-                extracted_quads.quads.extend(nine_patch_quads);
-            }
-            RenderPrimitive::Svg { .. } => {
-                extracted_quads.quads.push(super::svg::extract_svg(
-                    camera_entity,
-                    &render_primitive,
-                    dpi,
-                ));
-            }
-            RenderPrimitive::TextureAtlas { .. } => {
-                let texture_atlas_quads = texture_atlas::extract_texture_atlas(
-                    camera_entity,
-                    &render_primitive,
-                    &images,
-                    dpi,
-                );
-                extracted_quads.quads.extend(texture_atlas_quads);
-            }
-            RenderPrimitive::Clip {
-                layout,
-                opacity_layer,
-            } => {
-                extracted_quads.quads.push(ExtractedQuad {
-                    camera_entity,
-                    rect: Rect {
-                        min: Vec2::new(layout.posx, layout.posy) * dpi,
-                        max: Vec2::new(layout.posx + layout.width, layout.posy + layout.height)
-                            * dpi,
-                    },
-                    color: Color::default(),
-                    char_id: 0,
-                    z_index: layout.z_index,
-                    font_handle: None,
-                    quad_type: UIQuadType::Clip,
-                    type_index: 0,
-                    border_radius: Corner::default(),
-                    image: None,
-                    uv_min: None,
-                    uv_max: None,
-                    opacity_layer,
-                    ..Default::default()
-                });
-            }
-            RenderPrimitive::OpacityLayer { index, z } => {
-                extracted_quads.quads.push(ExtractedQuad {
-                    camera_entity,
-                    z_index: z,
-                    quad_type: UIQuadType::OpacityLayer,
-                    opacity_layer: index,
-                    ..Default::default()
-                });
-            }
-            RenderPrimitive::DrawOpacityLayer {
-                opacity,
-                index,
-                z,
-                layout,
-            } => {
-                extracted_quads.quads.push(ExtractedQuad {
-                    camera_entity,
-                    z_index: z,
-                    color: Color::rgba(1.0, 1.0, 1.0, opacity),
-                    opacity_layer: index,
-                    quad_type: UIQuadType::DrawOpacityLayer,
-                    rect: Rect {
-                        min: Vec2::new(layout.posx, layout.posy),
-                        max: Vec2::new(layout.posx + layout.width, layout.posy + layout.height),
-                    },
-                    ..Default::default()
-                });
-            }
-            _ => {}
-        }
+        context.build_render_primitives(
+            &mut commands,
+            context.camera_entity,
+            dpi,
+            &node_query,
+            &widget_names,
+            &fonts,
+            &font_mapping,
+            &images,
+            &mut extracted_quads,
+        );
     }
 }
 
-#[derive(Component)]
-pub struct DefaultCameraView(pub Entity);
-
 const UI_CAMERA_TRANSFORM_OFFSET: f32 = -0.1;
+
+#[derive(Component)]
+pub struct UIExtractedView {
+    pub projection: Mat4,
+    pub transform: GlobalTransform,
+    // The view-projection matrix. When provided it is used instead of deriving it from
+    // `projection` and `transform` fields, which can be helpful in cases where numerical
+    // stability matters and there is a more direct way to derive the view-projection matrix.
+    pub view_projection: Option<Mat4>,
+    pub hdr: bool,
+    // uvec4(origin.x, origin.y, width, height)
+    pub viewport: UVec4,
+    pub color_grading: ColorGrading,
+}
 
 pub fn extract_default_ui_camera_view<T: Component>(
     mut commands: Commands,
@@ -202,8 +116,8 @@ pub fn extract_default_ui_camera_view<T: Component>(
             // use a projection matrix with the origin in the top left instead of the bottom left that comes with OrthographicProjection
             let projection_matrix =
                 Mat4::orthographic_rh(0.0, logical_size.x, logical_size.y, 0.0, 0.0, 1000.0);
-            let default_camera_view = commands
-                .spawn(ExtractedView {
+            commands.get_or_spawn(entity).insert((
+                UIExtractedView {
                     projection: projection_matrix,
                     transform: GlobalTransform::from_xyz(
                         0.0,
@@ -219,12 +133,69 @@ pub fn extract_default_ui_camera_view<T: Component>(
                     ),
                     view_projection: None,
                     color_grading: ColorGrading::default(),
-                })
-                .id();
-            commands.get_or_spawn(entity).insert((
-                DefaultCameraView(default_camera_view),
+                },
                 RenderPhase::<TransparentUI>::default(),
             ));
         }
     }
+}
+
+#[derive(Resource, Default)]
+pub struct UIViewUniforms {
+    pub uniforms: DynamicUniformBuffer<UIViewUniform>,
+}
+
+#[derive(Clone, ShaderType)]
+pub struct UIViewUniform {
+    pub view_proj: Mat4,
+    pub inverse_view_proj: Mat4,
+    pub view: Mat4,
+    pub inverse_view: Mat4,
+    pub projection: Mat4,
+    pub inverse_projection: Mat4,
+    pub world_position: Vec3,
+    // viewport(x_origin, y_origin, width, height)
+    pub viewport: Vec4,
+    pub color_grading: ColorGrading,
+}
+
+#[derive(Component, Debug)]
+pub struct UIViewUniformOffset {
+    pub offset: u32,
+}
+
+fn prepare_view_uniforms(
+    mut commands: Commands,
+    render_device: Res<RenderDevice>,
+    render_queue: Res<RenderQueue>,
+    mut view_uniforms: ResMut<UIViewUniforms>,
+    views: Query<(Entity, &UIExtractedView)>,
+) {
+    view_uniforms.uniforms.clear();
+    for (entity, camera) in &views {
+        let projection = camera.projection;
+        let inverse_projection = projection.inverse();
+        let view = camera.transform.compute_matrix();
+        let inverse_view = view.inverse();
+        let view_uniforms = UIViewUniformOffset {
+            offset: view_uniforms.uniforms.push(UIViewUniform {
+                view_proj: camera
+                    .view_projection
+                    .unwrap_or_else(|| projection * inverse_view),
+                inverse_view_proj: view * inverse_projection,
+                view,
+                inverse_view,
+                projection,
+                inverse_projection,
+                world_position: camera.transform.translation(),
+                viewport: camera.viewport.as_vec4(),
+                color_grading: camera.color_grading,
+            }),
+        };
+        commands.entity(entity).insert(view_uniforms);
+    }
+
+    view_uniforms
+        .uniforms
+        .write_buffer(&render_device, &render_queue);
 }

@@ -1,23 +1,29 @@
+use std::marker::PhantomData;
+
 use bevy::asset::HandleId;
-use bevy::prelude::{Commands, Mesh, Rect, Resource, Vec3};
+use bevy::ecs::query::ROQueryItem;
+use bevy::ecs::system::{SystemParam, SystemParamItem};
+use bevy::prelude::{Commands, Mesh, Rect, Resource, Vec3, With};
+use bevy::render::globals::{GlobalsBuffer, GlobalsUniform};
 use bevy::render::mesh::VertexAttributeValues;
-use bevy::render::render_phase::BatchedPhaseItem;
-use bevy::render::render_resource::{
-    DynamicUniformBuffer, ShaderType, SpecializedRenderPipeline, SpecializedRenderPipelines,
+use bevy::render::render_phase::{
+    BatchedPhaseItem, DrawFunctionId, PhaseItem, RenderCommand, RenderCommandResult,
+    SetItemPipeline,
 };
-use bevy::render::view::{ExtractedView, ViewTarget};
+use bevy::render::render_resource::{
+    CachedRenderPipelineId, DynamicUniformBuffer, ShaderType, SpecializedRenderPipeline,
+    SpecializedRenderPipelines,
+};
+use bevy::render::view::ViewTarget;
 use bevy::utils::FloatOrd;
 use bevy::{
-    ecs::system::{
-        lifetimeless::{Read, SQuery, SRes},
-        SystemState,
-    },
+    ecs::system::lifetimeless::{Read, SRes},
     math::{Mat4, Quat, Vec2, Vec4},
     prelude::{Component, Entity, FromWorld, Handle, Query, Res, ResMut, World},
     render::{
         color::Color,
         render_asset::RenderAssets,
-        render_phase::{Draw, DrawFunctions, RenderPhase, TrackedRenderPass},
+        render_phase::{DrawFunctions, RenderPhase, TrackedRenderPass},
         render_resource::{
             BindGroup, BindGroupDescriptor, BindGroupEntry, BindGroupLayout,
             BindGroupLayoutDescriptor, BindGroupLayoutEntry, BindingResource, BindingType,
@@ -31,30 +37,26 @@ use bevy::{
         },
         renderer::{RenderDevice, RenderQueue},
         texture::{BevyDefault, GpuImage, Image},
-        view::{ViewUniformOffset, ViewUniforms},
     },
     utils::HashMap,
 };
 use bevy_svg::prelude::Svg;
 use bytemuck::{Pod, Zeroable};
-use kayak_font::{
-    bevy::{FontRenderingPipeline, FontTextureCache},
-    KayakFont,
-};
+use kayak_font::{bevy::FontTextureCache, KayakFont};
 
-use super::{Dpi, UNIFIED_SHADER_HANDLE};
+use super::UNIFIED_SHADER_HANDLE;
 use crate::prelude::Corner;
+use crate::render::extract::{UIExtractedView, UIViewUniform, UIViewUniformOffset, UIViewUniforms};
 use crate::render::opacity_layer::OpacityLayerManager;
 use crate::render::svg::RenderSvgs;
-use crate::render::ui_pass::{TransparentOpacityUI, TransparentUI};
+use crate::render::ui_pass::{TransparentOpacityUI, TransparentUI, TransparentUIGeneric};
 
-#[derive(Resource)]
+#[derive(Resource, Clone)]
 pub struct UnifiedPipeline {
-    view_layout: BindGroupLayout,
-    types_layout: BindGroupLayout,
-    pub(crate) font_image_layout: BindGroupLayout,
-    image_layout: BindGroupLayout,
-    empty_font_texture: (GpuImage, BindGroup),
+    pub view_layout: BindGroupLayout,
+    pub types_layout: BindGroupLayout,
+    pub image_layout: BindGroupLayout,
+    empty_font_texture: GpuImage,
     default_image: (GpuImage, BindGroup),
 }
 
@@ -76,12 +78,6 @@ const QUAD_VERTEX_POSITIONS: [Vec2; 4] = [
     Vec2::new(0.0, 1.0),
 ];
 
-impl FontRenderingPipeline for UnifiedPipeline {
-    fn get_font_image_layout(&self) -> &BindGroupLayout {
-        &self.font_image_layout
-    }
-}
-
 #[derive(Debug, Component, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct UnifiedPipelineKey {
     pub msaa: u32,
@@ -94,18 +90,28 @@ impl FromWorld for UnifiedPipeline {
         let render_device = world.get_resource::<RenderDevice>().unwrap();
 
         let view_layout = render_device.create_bind_group_layout(&BindGroupLayoutDescriptor {
-            entries: &[BindGroupLayoutEntry {
-                binding: 0,
-                visibility: ShaderStages::VERTEX | ShaderStages::FRAGMENT,
-                ty: BindingType::Buffer {
-                    ty: BufferBindingType::Uniform,
-                    has_dynamic_offset: true,
-                    // TODO: change this to ViewUniform::std140_size_static once crevice fixes this!
-                    // Context: https://github.com/LPGhatguy/crevice/issues/29
-                    min_binding_size: BufferSize::new(144),
+            entries: &[
+                BindGroupLayoutEntry {
+                    binding: 0,
+                    visibility: ShaderStages::VERTEX | ShaderStages::FRAGMENT,
+                    ty: BindingType::Buffer {
+                        ty: BufferBindingType::Uniform,
+                        has_dynamic_offset: true,
+                        min_binding_size: Some(UIViewUniform::min_size()),
+                    },
+                    count: None,
                 },
-                count: None,
-            }],
+                BindGroupLayoutEntry {
+                    binding: 1,
+                    visibility: ShaderStages::VERTEX_FRAGMENT,
+                    ty: BindingType::Buffer {
+                        ty: BufferBindingType::Uniform,
+                        has_dynamic_offset: false,
+                        min_binding_size: Some(GlobalsUniform::min_size()),
+                    },
+                    count: None,
+                },
+            ],
             label: Some("ui_view_layout"),
         });
 
@@ -125,30 +131,6 @@ impl FromWorld for UnifiedPipeline {
             label: Some("ui_types_layout"),
         });
 
-        // Used by fonts
-        let font_image_layout =
-            render_device.create_bind_group_layout(&BindGroupLayoutDescriptor {
-                entries: &[
-                    BindGroupLayoutEntry {
-                        binding: 0,
-                        visibility: ShaderStages::FRAGMENT,
-                        ty: BindingType::Texture {
-                            multisampled: false,
-                            sample_type: TextureSampleType::Float { filterable: true },
-                            view_dimension: TextureViewDimension::D2Array,
-                        },
-                        count: None,
-                    },
-                    BindGroupLayoutEntry {
-                        binding: 1,
-                        visibility: ShaderStages::FRAGMENT,
-                        ty: BindingType::Sampler(SamplerBindingType::Filtering),
-                        count: None,
-                    },
-                ],
-                label: Some("text_image_layout"),
-            });
-
         let image_layout = render_device.create_bind_group_layout(&BindGroupLayoutDescriptor {
             entries: &[
                 BindGroupLayoutEntry {
@@ -167,11 +149,27 @@ impl FromWorld for UnifiedPipeline {
                     ty: BindingType::Sampler(SamplerBindingType::Filtering),
                     count: None,
                 },
+                BindGroupLayoutEntry {
+                    binding: 2,
+                    visibility: ShaderStages::FRAGMENT,
+                    ty: BindingType::Texture {
+                        multisampled: false,
+                        sample_type: TextureSampleType::Float { filterable: true },
+                        view_dimension: TextureViewDimension::D2Array,
+                    },
+                    count: None,
+                },
+                BindGroupLayoutEntry {
+                    binding: 3,
+                    visibility: ShaderStages::FRAGMENT,
+                    ty: BindingType::Sampler(SamplerBindingType::Filtering),
+                    count: None,
+                },
             ],
             label: Some("image_layout"),
         });
 
-        let empty_font_texture = FontTextureCache::get_empty(&render_device, &font_image_layout);
+        let empty_font_texture = FontTextureCache::get_empty(&render_device);
 
         let texture_descriptor = TextureDescriptor {
             label: Some("font_texture_array"),
@@ -224,13 +222,20 @@ impl FromWorld for UnifiedPipeline {
                     binding: 1,
                     resource: BindingResource::Sampler(&image.sampler),
                 },
+                BindGroupEntry {
+                    binding: 2,
+                    resource: BindingResource::TextureView(&empty_font_texture.texture_view),
+                },
+                BindGroupEntry {
+                    binding: 3,
+                    resource: BindingResource::Sampler(&empty_font_texture.sampler),
+                },
             ],
             layout: &image_layout,
         });
 
         UnifiedPipeline {
             view_layout,
-            font_image_layout,
             empty_font_texture,
             types_layout,
             image_layout,
@@ -305,9 +310,8 @@ impl SpecializedRenderPipeline for UnifiedPipeline {
             }),
             layout: vec![
                 self.view_layout.clone(),
-                self.font_image_layout.clone(),
-                self.types_layout.clone(),
                 self.image_layout.clone(),
+                self.types_layout.clone(),
             ],
             primitive: PrimitiveState {
                 front_face: FrontFace::Ccw,
@@ -384,7 +388,7 @@ impl Default for ExtractedQuad {
 
 #[repr(C)]
 #[derive(Copy, Clone)]
-struct QuadVertex {
+pub struct QuadVertex {
     pub position: [f32; 3],
     pub color: [f32; 4],
     pub uv: [f32; 4],
@@ -405,8 +409,7 @@ struct QuadType {
 
 #[derive(Resource)]
 pub struct QuadMeta {
-    vertices: BufferVec<QuadVertex>,
-    view_bind_group: Option<BindGroup>,
+    pub vertices: BufferVec<QuadVertex>,
     types_buffer: DynamicUniformBuffer<QuadType>,
     types_bind_group: Option<BindGroup>,
 }
@@ -415,7 +418,6 @@ impl Default for QuadMeta {
     fn default() -> Self {
         Self {
             vertices: BufferVec::new(BufferUsages::VERTEX),
-            view_bind_group: None,
             types_buffer: DynamicUniformBuffer::default(),
             types_bind_group: None,
         }
@@ -429,87 +431,191 @@ pub struct ExtractedQuads {
 
 #[derive(Debug, Component, PartialEq, Copy, Clone)]
 pub struct QuadBatch {
-    image_handle_id: Option<HandleId>,
-    font_handle_id: Option<HandleId>,
-    quad_type: UIQuadType,
-    type_id: u32,
-    z_index: f32,
+    pub image_handle_id: Option<HandleId>,
+    pub font_handle_id: Option<HandleId>,
+    pub quad_type: UIQuadType,
+    pub type_id: u32,
+    pub z_index: f32,
 }
 
 #[derive(Default, Resource)]
 pub struct ImageBindGroups {
     values: HashMap<Handle<Image>, BindGroup>,
+    font_values: HashMap<Handle<KayakFont>, BindGroup>,
     previous_sizes: HashMap<Handle<Image>, Vec2>,
 }
 
-pub fn queue_quads(
-    (render_svgs, opacity_layers): (Res<RenderSvgs>, Res<OpacityLayerManager>),
+#[derive(Component, Debug)]
+pub struct UIViewBindGroup {
+    pub value: BindGroup,
+}
+
+pub fn queue_ui_view_bind_groups(
     mut commands: Commands,
-    draw_functions: Res<DrawFunctions<TransparentUI>>,
-    draw_functions_opacity: Res<DrawFunctions<TransparentOpacityUI>>,
+    render_device: Res<RenderDevice>,
+    unified_pipeline: Res<UnifiedPipeline>,
+    view_uniforms: Res<UIViewUniforms>,
+    views: Query<Entity, With<UIExtractedView>>,
+    globals_buffer: Res<GlobalsBuffer>,
+) {
+    if let (Some(view_binding), Some(globals)) = (
+        view_uniforms.uniforms.binding(),
+        globals_buffer.buffer.binding(),
+    ) {
+        for entity in &views {
+            let view_bind_group = render_device.create_bind_group(&BindGroupDescriptor {
+                entries: &[
+                    BindGroupEntry {
+                        binding: 0,
+                        resource: view_binding.clone(),
+                    },
+                    BindGroupEntry {
+                        binding: 1,
+                        resource: globals.clone(),
+                    },
+                ],
+                label: Some("ui_view_bind_group"),
+                layout: &unified_pipeline.view_layout,
+            });
+            commands.entity(entity).insert(UIViewBindGroup {
+                value: view_bind_group,
+            });
+        }
+    }
+}
+
+#[derive(Resource, Default, Debug, Clone, Copy)]
+pub struct QuadTypeOffsets {
+    pub quad_type_offset: u32,
+    pub text_sub_pixel_type_offset: u32,
+    pub text_type_offset: u32,
+    pub image_type_offset: u32,
+    pub box_shadow_type_offset: u32,
+}
+
+pub fn queue_quad_types(
+    mut commands: Commands,
+    quad_pipeline: Res<UnifiedPipeline>,
     render_device: Res<RenderDevice>,
     render_queue: Res<RenderQueue>,
-    mut sprite_meta: ResMut<QuadMeta>,
-    view_uniforms: Res<ViewUniforms>,
-    quad_pipeline: Res<UnifiedPipeline>,
-    mut pipelines: ResMut<SpecializedRenderPipelines<UnifiedPipeline>>,
-    mut pipeline_cache: ResMut<PipelineCache>,
-    mut extracted_quads: ResMut<ExtractedQuads>,
-    mut views: Query<(
-        Entity,
-        &mut RenderPhase<TransparentUI>,
-        &mut RenderPhase<TransparentOpacityUI>,
-        &ExtractedView,
-    )>,
-    mut image_bind_groups: ResMut<ImageBindGroups>,
-    unified_pipeline: Res<UnifiedPipeline>,
-    gpu_images: Res<RenderAssets<Image>>,
+    mut quad_meta: ResMut<QuadMeta>,
 ) {
+    quad_meta.types_buffer.clear();
+    // sprite_meta.types_buffer.reserve(2, &render_device);
+    let quad_type_offset = quad_meta.types_buffer.push(QuadType {
+        t: 0,
+        _padding_1: 0,
+        _padding_2: 0,
+        _padding_3: 0,
+    });
+    let text_sub_pixel_type_offset = quad_meta.types_buffer.push(QuadType {
+        t: 1,
+        _padding_1: 0,
+        _padding_2: 0,
+        _padding_3: 0,
+    });
+    let text_type_offset = quad_meta.types_buffer.push(QuadType {
+        t: 2,
+        _padding_1: 0,
+        _padding_2: 0,
+        _padding_3: 0,
+    });
+    let image_type_offset = quad_meta.types_buffer.push(QuadType {
+        t: 3,
+        _padding_1: 0,
+        _padding_2: 0,
+        _padding_3: 0,
+    });
+    let box_shadow_type_offset = quad_meta.types_buffer.push(QuadType {
+        t: 4,
+        _padding_1: 0,
+        _padding_2: 0,
+        _padding_3: 0,
+    });
+    let quad_type_offsets = QuadTypeOffsets {
+        quad_type_offset,
+        text_sub_pixel_type_offset,
+        text_type_offset,
+        image_type_offset,
+        box_shadow_type_offset,
+    };
+    commands.insert_resource(quad_type_offsets);
+
+    quad_meta
+        .types_buffer
+        .write_buffer(&render_device, &render_queue);
+
+    if let Some(type_binding) = quad_meta.types_buffer.binding() {
+        quad_meta.types_bind_group = Some(render_device.create_bind_group(&BindGroupDescriptor {
+            entries: &[BindGroupEntry {
+                binding: 0,
+                resource: type_binding,
+            }],
+            label: Some("quad_type_bind_group"),
+            layout: &quad_pipeline.types_layout,
+        }));
+    }
+}
+
+#[derive(SystemParam)]
+pub struct QueueQuads<'w, 's> {
+    render_svgs: Res<'w, RenderSvgs>,
+    opacity_layers: Res<'w, OpacityLayerManager>,
+    commands: Commands<'w, 's>,
+    draw_functions: Res<'w, DrawFunctions<TransparentUI>>,
+    draw_functions_opacity: Res<'w, DrawFunctions<TransparentOpacityUI>>,
+    render_device: Res<'w, RenderDevice>,
+    quad_meta: ResMut<'w, QuadMeta>,
+    quad_pipeline: Res<'w, UnifiedPipeline>,
+    pipelines: ResMut<'w, SpecializedRenderPipelines<UnifiedPipeline>>,
+    pipeline_cache: ResMut<'w, PipelineCache>,
+    extracted_quads: ResMut<'w, ExtractedQuads>,
+    views: Query<
+        'w,
+        's,
+        (
+            Entity,
+            &'static mut RenderPhase<TransparentUI>,
+            &'static mut RenderPhase<TransparentOpacityUI>,
+            &'static UIExtractedView,
+        ),
+    >,
+    image_bind_groups: ResMut<'w, ImageBindGroups>,
+    unified_pipeline: Res<'w, UnifiedPipeline>,
+    gpu_images: Res<'w, RenderAssets<Image>>,
+    font_texture_cache: Res<'w, FontTextureCache>,
+    quad_type_offsets: Res<'w, QuadTypeOffsets>,
+}
+
+pub fn queue_quads(queue_quads: QueueQuads) {
+    let QueueQuads {
+        render_svgs,
+        opacity_layers,
+        mut commands,
+        draw_functions,
+        draw_functions_opacity,
+        render_device,
+        mut quad_meta,
+        quad_pipeline,
+        mut pipelines,
+        mut pipeline_cache,
+        mut extracted_quads,
+        mut views,
+        mut image_bind_groups,
+        unified_pipeline,
+        gpu_images,
+        font_texture_cache,
+        quad_type_offsets,
+    } = queue_quads;
+
     let extracted_sprite_len = extracted_quads.quads.len();
     // don't create buffers when there are no quads
     if extracted_sprite_len == 0 {
         return;
     }
 
-    sprite_meta.types_buffer.clear();
-    // sprite_meta.types_buffer.reserve(2, &render_device);
-    let quad_type_offset = sprite_meta.types_buffer.push(QuadType {
-        t: 0,
-        _padding_1: 0,
-        _padding_2: 0,
-        _padding_3: 0,
-    });
-    let text_sub_pixel_type_offset = sprite_meta.types_buffer.push(QuadType {
-        t: 1,
-        _padding_1: 0,
-        _padding_2: 0,
-        _padding_3: 0,
-    });
-    let text_type_offset = sprite_meta.types_buffer.push(QuadType {
-        t: 2,
-        _padding_1: 0,
-        _padding_2: 0,
-        _padding_3: 0,
-    });
-    let image_type_offset = sprite_meta.types_buffer.push(QuadType {
-        t: 3,
-        _padding_1: 0,
-        _padding_2: 0,
-        _padding_3: 0,
-    });
-    let box_shadow_type_offset = sprite_meta.types_buffer.push(QuadType {
-        t: 4,
-        _padding_1: 0,
-        _padding_2: 0,
-        _padding_3: 0,
-    });
-
-    sprite_meta
-        .types_buffer
-        .write_buffer(&render_device, &render_queue);
-
-    sprite_meta.vertices.clear();
-    sprite_meta.vertices.reserve(
+    quad_meta.vertices.clear();
+    quad_meta.vertices.reserve(
         extracted_sprite_len * QUAD_VERTEX_POSITIONS.len(),
         &render_device,
     );
@@ -518,439 +624,501 @@ pub fn queue_quads(
     // NOTE: This can be done independent of views by reasonably assuming that all 2D views look along the negative-z axis in world space
     let extracted_quads = &mut extracted_quads.quads;
     extracted_quads.sort_unstable_by(|a, b| a.z_index.partial_cmp(&b.z_index).unwrap());
-    // dbg!(extracted_quads.iter().map(|e| (e.quad_type, e.z_index, e.rect, e.color)).collect::<Vec<_>>());
 
-    //match a.z_index.partial_cmp(&b.z_index) {
-    // Some(Ordering::Equal) | None => match a.quad_type.partial_cmp(&b.quad_type) {
-    // Some(Ordering::Equal) | None =>
-    //     match a.image.cmp(&b.image) {
-    //         Ordering::Equal => a.font_handle.cmp(&b.font_handle),
-    //         other => other,
-    //     },
-    // Some(other) => other,
-    // }
-    // Some(other) => other,
-    //});
+    let mut current_batch = QuadBatch {
+        image_handle_id: None,
+        font_handle_id: None,
+        quad_type: UIQuadType::None,
+        type_id: quad_type_offsets.quad_type_offset,
+        z_index: -999.0,
+    };
+    let mut current_batch_entity = Entity::PLACEHOLDER;
 
-    if let Some(type_binding) = sprite_meta.types_buffer.binding() {
-        sprite_meta.types_bind_group =
-            Some(render_device.create_bind_group(&BindGroupDescriptor {
-                entries: &[BindGroupEntry {
-                    binding: 0,
-                    resource: type_binding,
-                }],
-                label: Some("quad_type_bind_group"),
-                layout: &quad_pipeline.types_layout,
-            }));
-    }
+    // Vertex buffer indices
+    let mut index = 0;
 
-    if let Some(view_binding) = view_uniforms.uniforms.binding() {
-        sprite_meta.view_bind_group = Some(render_device.create_bind_group(&BindGroupDescriptor {
-            entries: &[BindGroupEntry {
-                binding: 0,
-                resource: view_binding,
-            }],
-            label: Some("quad_view_bind_group"),
-            layout: &quad_pipeline.view_layout,
-        }));
+    let mut previous_clip_rect = Rect::default();
 
-        let mut current_batch = QuadBatch {
-            image_handle_id: None,
-            font_handle_id: None,
-            quad_type: UIQuadType::None,
-            type_id: quad_type_offset,
-            z_index: -999.0,
+    let draw_quad = draw_functions.read().get_id::<DrawUI>().unwrap();
+    let draw_opacity_quad = draw_functions_opacity
+        .read()
+        .get_id::<DrawUITransparent>()
+        .unwrap();
+    for (camera_entity, mut transparent_phase, mut opacity_transparent_phase, view) in
+        views.iter_mut()
+    {
+        let key = UnifiedPipelineKey {
+            msaa: 1,
+            hdr: view.hdr,
         };
-        let mut current_batch_entity = Entity::PLACEHOLDER;
+        let spec_pipeline = pipelines.specialize(&mut pipeline_cache, &quad_pipeline, key);
 
-        // Vertex buffer indices
-        let mut index = 0;
+        for quad in extracted_quads.iter_mut() {
+            if previous_clip_rect.width() < 1.0 || previous_clip_rect.height() < 1.0 {
+                continue;
+            }
 
-        let mut previous_clip_rect = Rect::default();
+            queue_quads_inner(
+                &mut commands,
+                &render_device,
+                &font_texture_cache,
+                &opacity_layers,
+                &mut image_bind_groups,
+                &gpu_images,
+                &unified_pipeline,
+                &render_svgs,
+                &mut transparent_phase,
+                &mut opacity_transparent_phase,
+                draw_opacity_quad,
+                draw_quad,
+                spec_pipeline,
+                &mut quad_meta,
+                quad,
+                camera_entity,
+                &mut previous_clip_rect,
+                *quad_type_offsets,
+                &mut current_batch,
+                &mut current_batch_entity,
+                &mut index,
+            )
+        }
+    }
+}
 
-        let draw_quad = draw_functions.read().get_id::<DrawUI>().unwrap();
-        let draw_opacity_quad = draw_functions_opacity
-            .read()
-            .get_id::<DrawOpacityUI>()
-            .unwrap();
-        for (camera_entity, mut transparent_phase, mut opacity_transparent_phase, view) in
-            views.iter_mut()
-        {
-            let key = UnifiedPipelineKey {
-                msaa: 1,
-                hdr: view.hdr,
-            };
-            let spec_pipeline = pipelines.specialize(&mut pipeline_cache, &quad_pipeline, key);
+pub fn queue_quads_inner(
+    commands: &mut Commands,
+    render_device: &RenderDevice,
+    font_texture_cache: &FontTextureCache,
+    opacity_layers: &OpacityLayerManager,
+    image_bind_groups: &mut ImageBindGroups,
+    gpu_images: &RenderAssets<Image>,
+    unified_pipeline: &UnifiedPipeline,
+    render_svgs: &RenderSvgs,
+    transparent_phase: &mut RenderPhase<TransparentUI>,
+    opacity_transparent_phase: &mut RenderPhase<TransparentOpacityUI>,
+    draw_opacity_quad: DrawFunctionId,
+    draw_quad: DrawFunctionId,
+    spec_pipeline: CachedRenderPipelineId,
+    quad_meta: &mut QuadMeta,
+    quad: &mut ExtractedQuad,
+    camera_entity: Entity,
+    previous_clip_rect: &mut Rect,
+    quad_type_offsets: QuadTypeOffsets,
+    current_batch: &mut QuadBatch,
+    current_batch_entity: &mut Entity,
+    index: &mut u32,
+) {
+    if camera_entity != quad.camera_entity {
+        return;
+    }
 
-            for quad in extracted_quads.iter_mut() {
-                if camera_entity != quad.camera_entity {
-                    continue;
-                }
+    if quad.quad_type == UIQuadType::Clip {
+        *previous_clip_rect = quad.rect;
+    }
 
-                if quad.quad_type == UIQuadType::Clip {
-                    previous_clip_rect = quad.rect;
-                }
+    match quad.quad_type {
+        UIQuadType::Quad => quad.type_index = quad_type_offsets.quad_type_offset,
+        UIQuadType::Text => quad.type_index = quad_type_offsets.text_type_offset,
+        UIQuadType::TextSubpixel => quad.type_index = quad_type_offsets.text_sub_pixel_type_offset,
+        UIQuadType::Image => quad.type_index = quad_type_offsets.image_type_offset,
+        UIQuadType::BoxShadow => quad.type_index = quad_type_offsets.box_shadow_type_offset,
+        UIQuadType::Clip => quad.type_index = 100000,
+        UIQuadType::None => quad.type_index = 100001,
+        UIQuadType::OpacityLayer => quad.type_index = 100002,
+        UIQuadType::DrawOpacityLayer => quad.type_index = quad_type_offsets.image_type_offset,
+    };
 
-                if previous_clip_rect.width() < 1.0 || previous_clip_rect.height() < 1.0 {
-                    continue;
-                }
+    // Ignore opacity layers
+    if quad.quad_type == UIQuadType::OpacityLayer || quad.quad_type == UIQuadType::None {
+        return;
+    }
 
-                match quad.quad_type {
-                    UIQuadType::Quad => quad.type_index = quad_type_offset,
-                    UIQuadType::Text => quad.type_index = text_type_offset,
-                    UIQuadType::TextSubpixel => quad.type_index = text_sub_pixel_type_offset,
-                    UIQuadType::Image => quad.type_index = image_type_offset,
-                    UIQuadType::BoxShadow => quad.type_index = box_shadow_type_offset,
-                    UIQuadType::Clip => quad.type_index = 100000,
-                    UIQuadType::None => quad.type_index = 100001,
-                    UIQuadType::OpacityLayer => quad.type_index = 100002,
-                    UIQuadType::DrawOpacityLayer => quad.type_index = image_type_offset,
-                };
+    let mut new_batch = QuadBatch {
+        image_handle_id: quad.image.clone().map(HandleId::from),
+        font_handle_id: quad.font_handle.clone().map(HandleId::from),
+        quad_type: quad.quad_type,
+        type_id: quad.type_index,
+        z_index: 0.0, // z_index: quad.z_index,
+    };
 
-                // Ignore opacity layers
-                if quad.quad_type == UIQuadType::OpacityLayer || quad.quad_type == UIQuadType::None
-                {
-                    continue;
-                }
+    if new_batch != *current_batch
+        || matches!(quad.quad_type, UIQuadType::Clip)
+        || matches!(quad.quad_type, UIQuadType::DrawOpacityLayer)
+    {
+        if let Some(image_handle) = quad.image.as_ref() {
+            if let Some(gpu_image) = gpu_images.get(image_handle) {
+                image_bind_groups
+                    .values
+                    .entry(image_handle.clone_weak())
+                    .or_insert_with(|| {
+                        render_device.create_bind_group(&BindGroupDescriptor {
+                            entries: &[
+                                BindGroupEntry {
+                                    binding: 0,
+                                    resource: BindingResource::TextureView(&gpu_image.texture_view),
+                                },
+                                BindGroupEntry {
+                                    binding: 1,
+                                    resource: BindingResource::Sampler(&gpu_image.sampler),
+                                },
+                                BindGroupEntry {
+                                    binding: 2,
+                                    resource: BindingResource::TextureView(
+                                        &unified_pipeline.empty_font_texture.texture_view,
+                                    ),
+                                },
+                                BindGroupEntry {
+                                    binding: 3,
+                                    resource: BindingResource::Sampler(
+                                        &unified_pipeline.empty_font_texture.sampler,
+                                    ),
+                                },
+                            ],
+                            label: Some("ui_image_bind_group"),
+                            layout: &unified_pipeline.image_layout,
+                        })
+                    });
+            } else {
+                // Skip unloaded texture.
+                return;
+            }
+        }
 
-                let new_batch = QuadBatch {
-                    image_handle_id: quad.image.clone().map(HandleId::from),
-                    font_handle_id: quad.font_handle.clone().map(HandleId::from),
-                    quad_type: quad.quad_type,
-                    type_id: quad.type_index,
-                    z_index: 0.0, // z_index: quad.z_index,
-                };
+        if let Some(font_handle) = quad.font_handle.as_ref() {
+            if let Some(gpu_image) = font_texture_cache.get_gpu_image(font_handle, gpu_images) {
+                new_batch.image_handle_id = Some(font_handle.id());
+                image_bind_groups
+                    .font_values
+                    .entry(font_handle.clone_weak())
+                    .or_insert_with(|| {
+                        render_device.create_bind_group(&BindGroupDescriptor {
+                            entries: &[
+                                BindGroupEntry {
+                                    binding: 0,
+                                    resource: BindingResource::TextureView(
+                                        &unified_pipeline.default_image.0.texture_view,
+                                    ),
+                                },
+                                BindGroupEntry {
+                                    binding: 1,
+                                    resource: BindingResource::Sampler(
+                                        &unified_pipeline.default_image.0.sampler,
+                                    ),
+                                },
+                                BindGroupEntry {
+                                    binding: 2,
+                                    resource: BindingResource::TextureView(&gpu_image.texture_view),
+                                },
+                                BindGroupEntry {
+                                    binding: 3,
+                                    resource: BindingResource::Sampler(&gpu_image.sampler),
+                                },
+                            ],
+                            label: Some("ui_text_bind_group"),
+                            layout: &unified_pipeline.image_layout,
+                        })
+                    });
+            }
+        }
 
-                if new_batch != current_batch
-                    || matches!(quad.quad_type, UIQuadType::Clip)
-                    || matches!(quad.quad_type, UIQuadType::DrawOpacityLayer)
-                {
-                    if let Some(image_handle) = quad.image.as_ref() {
-                        if let Some(gpu_image) = gpu_images.get(image_handle) {
+        // Start new batch
+        *current_batch = new_batch;
+
+        if quad.quad_type == UIQuadType::DrawOpacityLayer {
+            if let Some(layer) = opacity_layers.camera_layers.get(&camera_entity) {
+                let image_handle = layer.get_image_handle(quad.opacity_layer);
+                if let Some(gpu_image) = gpu_images.get(&image_handle) {
+                    let new_image = if let Some(prev_size) =
+                        image_bind_groups.previous_sizes.get(&image_handle)
+                    {
+                        if gpu_image.size != *prev_size {
                             image_bind_groups
-                                .values
-                                .entry(image_handle.clone_weak())
-                                .or_insert_with(|| {
-                                    render_device.create_bind_group(&BindGroupDescriptor {
-                                        entries: &[
-                                            BindGroupEntry {
-                                                binding: 0,
-                                                resource: BindingResource::TextureView(
-                                                    &gpu_image.texture_view,
-                                                ),
-                                            },
-                                            BindGroupEntry {
-                                                binding: 1,
-                                                resource: BindingResource::Sampler(
-                                                    &gpu_image.sampler,
-                                                ),
-                                            },
-                                        ],
-                                        label: Some("ui_image_bind_group"),
-                                        layout: &unified_pipeline.image_layout,
-                                    })
-                                });
+                                .previous_sizes
+                                .insert(image_handle.clone_weak(), gpu_image.size);
+                            true
                         } else {
-                            // Skip unloaded texture.
-                            continue;
+                            false
                         }
-                    }
+                    } else {
+                        image_bind_groups
+                            .previous_sizes
+                            .insert(image_handle.clone_weak(), gpu_image.size);
+                        true
+                    };
 
-                    // Start new batch
-                    current_batch = new_batch;
-
-                    if quad.quad_type == UIQuadType::DrawOpacityLayer {
-                        if let Some(layer) = opacity_layers.camera_layers.get(&camera_entity) {
-                            let image_handle = layer.get_image_handle(quad.opacity_layer);
-                            if let Some(gpu_image) = gpu_images.get(&image_handle) {
-                                let new_image = if let Some(prev_size) =
-                                    image_bind_groups.previous_sizes.get(&image_handle)
-                                {
-                                    if gpu_image.size != *prev_size {
-                                        image_bind_groups
-                                            .previous_sizes
-                                            .insert(image_handle.clone_weak(), gpu_image.size);
-                                        true
-                                    } else {
-                                        false
-                                    }
-                                } else {
-                                    image_bind_groups
-                                        .previous_sizes
-                                        .insert(image_handle.clone_weak(), gpu_image.size);
-                                    true
-                                };
-
-                                if new_image {
-                                    image_bind_groups.values.insert(
-                                        image_handle.clone_weak(),
-                                        render_device.create_bind_group(&BindGroupDescriptor {
-                                            entries: &[
-                                                BindGroupEntry {
-                                                    binding: 0,
-                                                    resource: BindingResource::TextureView(
-                                                        &gpu_image.texture_view,
-                                                    ),
-                                                },
-                                                BindGroupEntry {
-                                                    binding: 1,
-                                                    resource: BindingResource::Sampler(
-                                                        &gpu_image.sampler,
-                                                    ),
-                                                },
-                                            ],
-                                            label: Some("draw_opacity_layer_bind_group"),
-                                            layout: &unified_pipeline.image_layout,
-                                        }),
-                                    );
-                                }
-
-                                current_batch.image_handle_id =
-                                    Some(image_handle).map(HandleId::from);
-                                // bevy::prelude::info!("Attaching opacity layer with index: {} with view: {:?}", quad.opacity_layer, gpu_image.texture_view);
-                            } else {
-                                continue;
-                            }
-                        }
-                        quad.opacity_layer = 0;
-                    }
-
-                    current_batch_entity = commands.spawn(current_batch).id();
-                    // dbg!((current_batch_entity, current_batch, quad.rect));
-                }
-
-                let sprite_rect = quad.rect;
-                let item_start = index;
-                let mut item_end = index;
-
-                if let (Some(svg_handle), color) =
-                    (quad.svg_handle.0.as_ref(), quad.svg_handle.1.as_ref())
-                {
-                    if let Some((svg, mesh)) = render_svgs.get(svg_handle) {
-                        let new_height =
-                            (svg.view_box.h as f32 / svg.view_box.w as f32) * sprite_rect.size().x;
-                        let svg_scale_x = sprite_rect.size().x / svg.view_box.w as f32;
-                        let svg_scale_y = new_height / svg.view_box.h as f32;
-                        let positions = mesh
-                            .attribute(Mesh::ATTRIBUTE_POSITION)
-                            .unwrap()
-                            .as_float3()
-                            .unwrap();
-                        let colors = match mesh.attribute(Mesh::ATTRIBUTE_COLOR).unwrap() {
-                            VertexAttributeValues::Float32x4(d) => Some(d),
-                            _ => None,
-                        }
-                        .unwrap();
-                        let indices = mesh.indices().unwrap();
-
-                        for index in indices.iter() {
-                            let position = positions[index];
-                            let color = if let Some(color) = color {
-                                [color.r(), color.g(), color.b(), color.a()]
-                            } else {
-                                colors[index]
-                            };
-                            let world = Mat4::from_scale_rotation_translation(
-                                Vec3::new(svg_scale_x, svg_scale_y, 1.0), //sprite_rect.size().extend(1.0),
-                                Quat::default(),
-                                sprite_rect.min.extend(0.0),
-                            );
-                            let final_position = (world
-                                * Vec4::new(
-                                    position[0],  // - 34.5,
-                                    -position[1], // - 95.0,
-                                    position[2],
-                                    1.0,
-                                ))
-                            .truncate();
-
-                            sprite_meta.vertices.push(QuadVertex {
-                                position: final_position.into(),
-                                color,
-                                uv: [0.0; 4],
-                                pos_size: [
-                                    sprite_rect.min.x,
-                                    sprite_rect.min.y,
-                                    sprite_rect.size().x,
-                                    sprite_rect.size().y,
+                    if new_image {
+                        image_bind_groups.values.insert(
+                            image_handle.clone_weak(),
+                            render_device.create_bind_group(&BindGroupDescriptor {
+                                entries: &[
+                                    BindGroupEntry {
+                                        binding: 0,
+                                        resource: BindingResource::TextureView(
+                                            &gpu_image.texture_view,
+                                        ),
+                                    },
+                                    BindGroupEntry {
+                                        binding: 1,
+                                        resource: BindingResource::Sampler(&gpu_image.sampler),
+                                    },
+                                    BindGroupEntry {
+                                        binding: 2,
+                                        resource: BindingResource::TextureView(
+                                            &unified_pipeline.empty_font_texture.texture_view,
+                                        ),
+                                    },
+                                    BindGroupEntry {
+                                        binding: 3,
+                                        resource: BindingResource::Sampler(
+                                            &unified_pipeline.empty_font_texture.sampler,
+                                        ),
+                                    },
                                 ],
-                            });
-                        }
-                        index += indices.len() as u32;
-                        item_end = index;
+                                label: Some("draw_opacity_layer_bind_group"),
+                                layout: &unified_pipeline.image_layout,
+                            }),
+                        );
                     }
+
+                    current_batch.image_handle_id = Some(image_handle).map(HandleId::from);
+                    // bevy::prelude::info!("Attaching opacity layer with index: {} with view: {:?}", quad.opacity_layer, gpu_image.texture_view);
                 } else {
-                    let color = quad.color.as_linear_rgba_f32();
-
-                    let uv_min = quad.uv_min.unwrap_or(Vec2::ZERO);
-                    let uv_max = quad.uv_max.unwrap_or(Vec2::ONE);
-
-                    let bottom_left = Vec4::new(
-                        uv_min.x,
-                        uv_min.y,
-                        quad.char_id as f32,
-                        quad.border_radius.bottom_left,
-                    );
-                    let top_left = Vec4::new(
-                        uv_min.x,
-                        uv_max.y,
-                        quad.char_id as f32,
-                        quad.border_radius.top_left,
-                    );
-                    let top_right = Vec4::new(
-                        uv_max.x,
-                        uv_max.y,
-                        quad.char_id as f32,
-                        quad.border_radius.top_right,
-                    );
-                    let bottom_right = Vec4::new(
-                        uv_max.x,
-                        uv_min.y,
-                        quad.char_id as f32,
-                        quad.border_radius.bottom_right,
-                    );
-
-                    let uvs: [[f32; 4]; 6] = [
-                        top_left.into(),
-                        bottom_right.into(),
-                        bottom_left.into(),
-                        top_left.into(),
-                        top_right.into(),
-                        bottom_right.into(),
-                    ];
-
-                    const QUAD_INDICES: [usize; 6] = [0, 2, 3, 0, 1, 2];
-
-                    const QUAD_VERTEX_POSITIONS: [Vec2; 4] = [
-                        Vec2::new(0.0, 0.0),
-                        Vec2::new(1.0, 0.0),
-                        Vec2::new(1.0, 1.0),
-                        Vec2::new(0.0, 1.0),
-                    ];
-
-                    if !matches!(quad.quad_type, UIQuadType::Clip) {
-                        for (index, vertex_index) in QUAD_INDICES.iter().enumerate() {
-                            let vertex_position = QUAD_VERTEX_POSITIONS[*vertex_index];
-                            let world = Mat4::from_scale_rotation_translation(
-                                sprite_rect.size().extend(1.0),
-                                Quat::default(),
-                                sprite_rect.min.extend(0.0),
-                            );
-                            let final_position =
-                                (world * vertex_position.extend(0.0).extend(1.0)).truncate();
-                            sprite_meta.vertices.push(QuadVertex {
-                                position: final_position.into(),
-                                color,
-                                uv: uvs[index],
-                                pos_size: [
-                                    sprite_rect.min.x,
-                                    sprite_rect.min.y,
-                                    sprite_rect.size().x,
-                                    sprite_rect.size().y,
-                                ],
-                            });
-                        }
-
-                        index += QUAD_INDICES.len() as u32;
-                        item_end = index;
-                    }
-                }
-
-                if quad.opacity_layer > 0 {
-                    opacity_transparent_phase.add(TransparentOpacityUI {
-                        draw_function: draw_opacity_quad,
-                        pipeline: spec_pipeline,
-                        entity: current_batch_entity,
-                        sort_key: FloatOrd(quad.z_index),
-                        quad_type: quad.quad_type,
-                        type_index: quad.type_index,
-                        rect: sprite_rect,
-                        batch_range: Some(item_start..item_end),
-                        opacity_layer: quad.opacity_layer,
-                    });
-                } else {
-                    transparent_phase.add(TransparentUI {
-                        draw_function: draw_quad,
-                        pipeline: spec_pipeline,
-                        entity: current_batch_entity,
-                        sort_key: FloatOrd(quad.z_index),
-                        quad_type: quad.quad_type,
-                        type_index: quad.type_index,
-                        rect: sprite_rect,
-                        batch_range: Some(item_start..item_end),
-                    });
+                    return;
                 }
             }
+            quad.opacity_layer = 0;
+        }
+
+        *current_batch_entity = commands.spawn(*current_batch).id();
+        // dbg!((current_batch_entity, current_batch, quad.rect));
+    }
+
+    let sprite_rect = quad.rect;
+    let item_start = *index;
+    let mut item_end = *index;
+
+    if let (Some(svg_handle), color) = (quad.svg_handle.0.as_ref(), quad.svg_handle.1.as_ref()) {
+        if let Some((svg, mesh)) = render_svgs.get(svg_handle) {
+            let new_height = (svg.view_box.h as f32 / svg.view_box.w as f32) * sprite_rect.size().x;
+            let svg_scale_x = sprite_rect.size().x / svg.view_box.w as f32;
+            let svg_scale_y = new_height / svg.view_box.h as f32;
+            let positions = mesh
+                .attribute(Mesh::ATTRIBUTE_POSITION)
+                .unwrap()
+                .as_float3()
+                .unwrap();
+            let colors = match mesh.attribute(Mesh::ATTRIBUTE_COLOR).unwrap() {
+                VertexAttributeValues::Float32x4(d) => Some(d),
+                _ => None,
+            }
+            .unwrap();
+            let indices = mesh.indices().unwrap();
+
+            for index in indices.iter() {
+                let position = positions[index];
+                let color = if let Some(color) = color {
+                    [color.r(), color.g(), color.b(), color.a()]
+                } else {
+                    colors[index]
+                };
+                let world = Mat4::from_scale_rotation_translation(
+                    Vec3::new(svg_scale_x, svg_scale_y, 1.0), //sprite_rect.size().extend(1.0),
+                    Quat::default(),
+                    sprite_rect.min.extend(0.0),
+                );
+                let final_position = (world
+                    * Vec4::new(
+                        position[0],  // - 34.5,
+                        -position[1], // - 95.0,
+                        position[2],
+                        1.0,
+                    ))
+                .truncate();
+
+                quad_meta.vertices.push(QuadVertex {
+                    position: final_position.into(),
+                    color,
+                    uv: [0.0; 4],
+                    pos_size: [
+                        sprite_rect.min.x,
+                        sprite_rect.min.y,
+                        sprite_rect.size().x,
+                        sprite_rect.size().y,
+                    ],
+                });
+            }
+            *index += indices.len() as u32;
+            item_end = *index;
+        }
+    } else {
+        let color = quad.color.as_linear_rgba_f32();
+
+        let uv_min = quad.uv_min.unwrap_or(Vec2::ZERO);
+        let uv_max = quad.uv_max.unwrap_or(Vec2::ONE);
+
+        let bottom_left = Vec4::new(
+            uv_min.x,
+            uv_min.y,
+            quad.char_id as f32,
+            quad.border_radius.bottom_left,
+        );
+        let top_left = Vec4::new(
+            uv_min.x,
+            uv_max.y,
+            quad.char_id as f32,
+            quad.border_radius.top_left,
+        );
+        let top_right = Vec4::new(
+            uv_max.x,
+            uv_max.y,
+            quad.char_id as f32,
+            quad.border_radius.top_right,
+        );
+        let bottom_right = Vec4::new(
+            uv_max.x,
+            uv_min.y,
+            quad.char_id as f32,
+            quad.border_radius.bottom_right,
+        );
+
+        let uvs: [[f32; 4]; 6] = [
+            top_left.into(),
+            bottom_right.into(),
+            bottom_left.into(),
+            top_left.into(),
+            top_right.into(),
+            bottom_right.into(),
+        ];
+
+        const QUAD_INDICES: [usize; 6] = [0, 2, 3, 0, 1, 2];
+
+        const QUAD_VERTEX_POSITIONS: [Vec2; 4] = [
+            Vec2::new(0.0, 0.0),
+            Vec2::new(1.0, 0.0),
+            Vec2::new(1.0, 1.0),
+            Vec2::new(0.0, 1.0),
+        ];
+
+        if !matches!(quad.quad_type, UIQuadType::Clip) {
+            for (index, vertex_index) in QUAD_INDICES.iter().enumerate() {
+                let vertex_position = QUAD_VERTEX_POSITIONS[*vertex_index];
+                let world = Mat4::from_scale_rotation_translation(
+                    sprite_rect.size().extend(1.0),
+                    Quat::default(),
+                    sprite_rect.min.extend(0.0),
+                );
+                let final_position = (world * vertex_position.extend(0.0).extend(1.0)).truncate();
+                quad_meta.vertices.push(QuadVertex {
+                    position: final_position.into(),
+                    color,
+                    uv: uvs[index],
+                    pos_size: [
+                        sprite_rect.min.x,
+                        sprite_rect.min.y,
+                        sprite_rect.size().x,
+                        sprite_rect.size().y,
+                    ],
+                });
+            }
+
+            *index += QUAD_INDICES.len() as u32;
+            item_end = *index;
         }
     }
 
-    sprite_meta
-        .vertices
-        .write_buffer(&render_device, &render_queue);
-}
-
-pub struct DrawUI {
-    params: SystemState<(
-        SRes<QuadMeta>,
-        SRes<UnifiedPipeline>,
-        SRes<PipelineCache>,
-        SRes<FontTextureCache>,
-        SRes<ImageBindGroups>,
-        // TODO: Figure out how to get a per view DPI value.
-        SRes<Dpi>,
-        SQuery<Read<ViewUniformOffset>>,
-        SQuery<Read<QuadBatch>>,
-        SQuery<Read<ExtractedView>>,
-    )>,
-}
-
-impl DrawUI {
-    pub fn new(world: &mut World) -> Self {
-        Self {
-            params: SystemState::new(world),
-        }
+    if quad.opacity_layer > 0 {
+        opacity_transparent_phase.add(TransparentOpacityUI {
+            draw_function: draw_opacity_quad,
+            pipeline: spec_pipeline,
+            entity: *current_batch_entity,
+            sort_key: FloatOrd(quad.z_index),
+            quad_type: quad.quad_type,
+            type_index: quad.type_index,
+            rect: sprite_rect,
+            batch_range: Some(item_start..item_end),
+            opacity_layer: quad.opacity_layer,
+        });
+    } else {
+        transparent_phase.add(TransparentUI {
+            draw_function: draw_quad,
+            pipeline: spec_pipeline,
+            entity: *current_batch_entity,
+            sort_key: FloatOrd(quad.z_index),
+            quad_type: quad.quad_type,
+            type_index: quad.type_index,
+            rect: sprite_rect,
+            batch_range: Some(item_start..item_end),
+        });
     }
 }
 
-impl Draw<TransparentUI> for DrawUI {
-    fn draw<'w>(
-        &mut self,
-        world: &'w World,
+pub type DrawUI = (
+    SetItemPipeline,
+    SetUIViewBindGroup<TransparentUI, 0>,
+    DrawUIDraw<TransparentUI>,
+);
+
+pub type DrawUITransparent = (
+    SetItemPipeline,
+    SetUIViewBindGroup<TransparentOpacityUI, 0>,
+    DrawUIDraw<TransparentOpacityUI>,
+);
+
+pub struct SetUIViewBindGroup<T, const I: usize> {
+    phantom: PhantomData<T>,
+}
+impl<T: PhaseItem, const I: usize> RenderCommand<T> for SetUIViewBindGroup<T, I> {
+    type Param = ();
+    type ViewWorldQuery = (Read<UIViewUniformOffset>, Read<UIViewBindGroup>);
+    type ItemWorldQuery = ();
+
+    #[inline]
+    fn render<'w>(
+        _item: &T,
+        (view_uniform, ui_view_bind_group): ROQueryItem<'w, Self::ViewWorldQuery>,
+        _: (),
+        _: SystemParamItem<'w, '_, Self::Param>,
         pass: &mut TrackedRenderPass<'w>,
-        view: Entity,
-        item: &TransparentUI,
-    ) {
-        let (
-            quad_meta,
-            unified_pipeline,
-            pipelines,
-            font_texture_cache,
-            image_bind_groups,
-            _dpi,
-            views,
-            quad_batches,
-            extracted_views,
-        ) = self.params.get(world);
+    ) -> RenderCommandResult {
+        pass.set_bind_group(I, &ui_view_bind_group.value, &[view_uniform.offset]);
+        RenderCommandResult::Success
+    }
+}
 
-        let view_uniform = views.get(view).unwrap();
-        let extracted_view = extracted_views.get(view).unwrap();
+#[derive(Default)]
+pub struct DrawUIDraw<T> {
+    phantom: PhantomData<T>,
+}
+
+impl<T: PhaseItem + TransparentUIGeneric + BatchedPhaseItem> RenderCommand<T> for DrawUIDraw<T> {
+    type Param = (SRes<QuadMeta>, SRes<UnifiedPipeline>, SRes<ImageBindGroups>);
+
+    type ViewWorldQuery = Read<UIExtractedView>;
+    type ItemWorldQuery = Read<QuadBatch>;
+
+    fn render<'w>(
+        item: &T,
+        view: bevy::ecs::query::ROQueryItem<'w, Self::ViewWorldQuery>,
+        batch: bevy::ecs::query::ROQueryItem<'w, Self::ItemWorldQuery>,
+        param: bevy::ecs::system::SystemParamItem<'w, '_, Self::Param>,
+        pass: &mut TrackedRenderPass<'w>,
+    ) -> RenderCommandResult {
+        let (quad_meta, unified_pipeline, image_bind_groups) = param;
+
         let quad_meta = quad_meta.into_inner();
-        let batch = quad_batches.get(item.entity).unwrap();
 
-        if item.quad_type == UIQuadType::Clip {
-            let window_size = (
-                extracted_view.viewport.z as f32,
-                extracted_view.viewport.w as f32,
-            );
-            let x = item.rect.min.x as u32;
-            let y = item.rect.min.y as u32;
-            let mut width = item.rect.width() as u32;
-            let mut height = item.rect.height() as u32;
+        if item.get_quad_type() == UIQuadType::Clip {
+            let window_size = (view.viewport.z as f32, view.viewport.w as f32);
+            let rect = item.get_rect();
+            let x = rect.min.x as u32;
+            let y = rect.min.y as u32;
+            let mut width = rect.width() as u32;
+            let mut height = rect.height() as u32;
 
             width = width.min(window_size.0 as u32);
             height = height.min(window_size.1 as u32);
             if width == 0 || height == 0 || x > window_size.0 as u32 || y > window_size.1 as u32 {
-                return;
+                return RenderCommandResult::Success;
             }
             if x + width >= window_size.0 as u32 {
                 width = window_size.0 as u32 - x;
@@ -958,181 +1126,52 @@ impl Draw<TransparentUI> for DrawUI {
             if y + height >= window_size.1 as u32 {
                 height = window_size.1 as u32 - y;
             }
-            // dbg!((x, y, width, height));
             pass.set_scissor_rect(x, y, width, height);
-            return;
+            return RenderCommandResult::Success;
         }
 
-        if let Some(pipeline) = pipelines.into_inner().get_render_pipeline(item.pipeline) {
-            pass.set_render_pipeline(pipeline);
-            pass.set_vertex_buffer(0, quad_meta.vertices.buffer().unwrap().slice(..));
-            pass.set_bind_group(
-                0,
-                quad_meta.view_bind_group.as_ref().unwrap(),
-                &[view_uniform.offset],
-            );
+        pass.set_vertex_buffer(0, quad_meta.vertices.buffer().unwrap().slice(..));
 
-            pass.set_bind_group(
-                2,
-                quad_meta.types_bind_group.as_ref().unwrap(),
-                &[batch.type_id],
-            );
+        pass.set_bind_group(
+            2,
+            quad_meta.types_bind_group.as_ref().unwrap(),
+            &[batch.type_id],
+        );
 
-            let unified_pipeline = unified_pipeline.into_inner();
-            if let Some(font_handle) = batch.font_handle_id.as_ref() {
-                if let Some(image_bindings) = font_texture_cache
-                    .into_inner()
-                    .get_binding(&Handle::weak(*font_handle))
-                {
-                    pass.set_bind_group(1, image_bindings, &[]);
-                } else {
-                    pass.set_bind_group(1, &unified_pipeline.empty_font_texture.1, &[]);
-                }
+        let unified_pipeline = unified_pipeline.into_inner();
+        // if let Some(font_handle) = batch.font_handle_id.as_ref() {
+        //     if let Some(image_bindings) = font_texture_cache
+        //         .into_inner()
+        //         .get_binding(&Handle::weak(*font_handle))
+        //     {
+        //         pass.set_bind_group(1, image_bindings, &[]);
+        //     } else {
+        //         pass.set_bind_group(1, &unified_pipeline.empty_font_texture.1, &[]);
+        //     }
+        // } else {
+        //     pass.set_bind_group(1, &unified_pipeline.empty_font_texture.1, &[]);
+        // }
+
+        if let Some(image_handle) = batch.image_handle_id.as_ref() {
+            let image_bind_groups = image_bind_groups.into_inner();
+            if let Some(bind_group) = image_bind_groups.values.get(&Handle::weak(*image_handle)) {
+                pass.set_bind_group(1, bind_group, &[]);
             } else {
-                pass.set_bind_group(1, &unified_pipeline.empty_font_texture.1, &[]);
-            }
-
-            if let Some(image_handle) = batch.image_handle_id.as_ref() {
                 if let Some(bind_group) = image_bind_groups
-                    .into_inner()
-                    .values
+                    .font_values
                     .get(&Handle::weak(*image_handle))
                 {
-                    pass.set_bind_group(3, bind_group, &[]);
+                    pass.set_bind_group(1, bind_group, &[]);
                 } else {
-                    pass.set_bind_group(3, &unified_pipeline.default_image.1, &[]);
+                    pass.set_bind_group(1, &unified_pipeline.default_image.1, &[]);
                 }
-            } else {
-                pass.set_bind_group(3, &unified_pipeline.default_image.1, &[]);
             }
-
-            pass.draw(item.batch_range().as_ref().unwrap().clone(), 0..1);
-        }
-    }
-}
-
-pub struct DrawOpacityUI {
-    params: SystemState<(
-        SRes<QuadMeta>,
-        SRes<UnifiedPipeline>,
-        SRes<PipelineCache>,
-        SRes<FontTextureCache>,
-        SRes<ImageBindGroups>,
-        // TODO: Figure out how to get a per view DPI value.
-        SRes<Dpi>,
-        SQuery<Read<ViewUniformOffset>>,
-        SQuery<Read<QuadBatch>>,
-        SQuery<Read<ExtractedView>>,
-    )>,
-}
-
-impl DrawOpacityUI {
-    pub fn new(world: &mut World) -> Self {
-        Self {
-            params: SystemState::new(world),
-        }
-    }
-}
-
-impl Draw<TransparentOpacityUI> for DrawOpacityUI {
-    fn draw<'w>(
-        &mut self,
-        world: &'w World,
-        pass: &mut TrackedRenderPass<'w>,
-        view: Entity,
-        item: &TransparentOpacityUI,
-    ) {
-        let (
-            quad_meta,
-            unified_pipeline,
-            pipelines,
-            font_texture_cache,
-            image_bind_groups,
-            _dpi,
-            views,
-            quad_batches,
-            extracted_views,
-        ) = self.params.get(world);
-
-        let view_uniform = views.get(view).unwrap();
-        let extracted_view = extracted_views.get(view).unwrap();
-        let quad_meta = quad_meta.into_inner();
-        let batch = quad_batches.get(item.entity).unwrap();
-
-        if item.quad_type == UIQuadType::OpacityLayer {
-            return;
+        } else {
+            pass.set_bind_group(1, &unified_pipeline.default_image.1, &[]);
         }
 
-        if item.quad_type == UIQuadType::Clip {
-            let window_size = (
-                extracted_view.viewport.z as f32,
-                extracted_view.viewport.w as f32,
-            );
-            let x = item.rect.min.x as u32;
-            let y = item.rect.min.y as u32;
-            let mut width = item.rect.width() as u32;
-            let mut height = item.rect.height() as u32;
+        pass.draw(item.batch_range().as_ref().unwrap().clone(), 0..1);
 
-            width = width.min(window_size.0 as u32);
-            height = height.min(window_size.1 as u32);
-            if width == 0 || height == 0 || x > window_size.0 as u32 || y > window_size.1 as u32 {
-                return;
-            }
-            if x + width >= window_size.0 as u32 {
-                width = window_size.0 as u32 - x;
-            }
-            if y + height >= window_size.1 as u32 {
-                height = window_size.1 as u32 - y;
-            }
-            // dbg!((x, y, width, height));
-            pass.set_scissor_rect(x, y, width, height);
-            return;
-        }
-
-        if let Some(pipeline) = pipelines.into_inner().get_render_pipeline(item.pipeline) {
-            pass.set_render_pipeline(pipeline);
-            pass.set_vertex_buffer(0, quad_meta.vertices.buffer().unwrap().slice(..));
-            pass.set_bind_group(
-                0,
-                quad_meta.view_bind_group.as_ref().unwrap(),
-                &[view_uniform.offset],
-            );
-
-            pass.set_bind_group(
-                2,
-                quad_meta.types_bind_group.as_ref().unwrap(),
-                &[batch.type_id],
-            );
-
-            let unified_pipeline = unified_pipeline.into_inner();
-            if let Some(font_handle) = batch.font_handle_id.as_ref() {
-                if let Some(image_bindings) = font_texture_cache
-                    .into_inner()
-                    .get_binding(&Handle::weak(*font_handle))
-                {
-                    pass.set_bind_group(1, image_bindings, &[]);
-                } else {
-                    pass.set_bind_group(1, &unified_pipeline.empty_font_texture.1, &[]);
-                }
-            } else {
-                pass.set_bind_group(1, &unified_pipeline.empty_font_texture.1, &[]);
-            }
-
-            if let Some(image_handle) = batch.image_handle_id.as_ref() {
-                if let Some(bind_group) = image_bind_groups
-                    .into_inner()
-                    .values
-                    .get(&Handle::weak(*image_handle))
-                {
-                    pass.set_bind_group(3, bind_group, &[]);
-                } else {
-                    pass.set_bind_group(3, &unified_pipeline.default_image.1, &[]);
-                }
-            } else {
-                pass.set_bind_group(3, &unified_pipeline.default_image.1, &[]);
-            }
-
-            pass.draw(item.batch_range().as_ref().unwrap().clone(), 0..1);
-        }
+        RenderCommandResult::Success
     }
 }

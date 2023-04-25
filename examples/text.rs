@@ -1,3 +1,4 @@
+use ::kayak_font::{TextLayout, TextProperties};
 use bevy::prelude::*;
 use kayak_ui::prelude::{widgets::*, KStyle, *};
 
@@ -22,6 +23,8 @@ fn my_widget_1_render(
                 alignment: Alignment::Start,
                 word_wrap: false,
                 subpixel: false,
+                text_layout: TextLayout::default(),
+                properties: TextProperties::default(),
             }),
             ..Default::default()
         }

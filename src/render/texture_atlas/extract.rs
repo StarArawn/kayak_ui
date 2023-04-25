@@ -1,34 +1,26 @@
 use crate::{
     render::unified::pipeline::{ExtractedQuad, UIQuadType},
-    render_primitive::RenderPrimitive,
     styles::Corner,
 };
 use bevy::{
     math::Vec2,
-    prelude::{Assets, Entity, Rect, Res},
+    prelude::*,
     render::{color::Color, texture::Image},
 };
 
 pub fn extract_texture_atlas(
     camera_entity: Entity,
-    render_primitive: &RenderPrimitive,
-    images: &Res<Assets<Image>>,
+    size: Vec2,
+    position: Vec2,
+    layout: crate::layout::Rect,
+    handle: Handle<Image>,
+    opacity_layer: u32,
+    images: &Assets<Image>,
     _dpi: f32,
 ) -> Vec<ExtractedQuad> {
     let mut extracted_quads = Vec::new();
 
-    let (size, position, layout, handle, opacity_layer) = match render_primitive {
-        RenderPrimitive::TextureAtlas {
-            size,
-            position,
-            layout,
-            handle,
-            opacity_layer,
-        } => (size, position, layout, handle, *opacity_layer),
-        _ => panic!(""),
-    };
-
-    let image = images.get(handle);
+    let image = images.get(&handle);
 
     if image.is_none() {
         return vec![];

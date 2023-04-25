@@ -2,7 +2,7 @@ use bevy::{
     prelude::{Assets, Commands, Entity, In, Query, Res, With},
     utils::HashMap,
 };
-use kayak_font::KayakFont;
+use kayak_font::{KayakFont, TextProperties};
 use morphorm::Hierarchy;
 
 use crate::{
@@ -10,7 +10,6 @@ use crate::{
     node::{DirtyNode, Node, NodeBuilder, WrappedIndex},
     prelude::{KStyle, KayakRootContext, Tree},
     render::font::FontMapping,
-    render_primitive::RenderPrimitive,
     styles::{ComputedStyles, RenderCommand, StyleProp, Units},
 };
 
@@ -141,7 +140,7 @@ pub fn calculate_nodes(
                 -1.0
             };
 
-            let (primitive, needs_layout) = create_primitive(
+            let needs_layout = create_primitive(
                 &mut commands,
                 &context,
                 &fonts,
@@ -177,7 +176,6 @@ pub fn calculate_nodes(
                 .with_id(dirty_entity)
                 .with_styles(styles, Some(raw_styles))
                 .with_children(children)
-                .with_primitive(primitive)
                 .with_opacity(opacity)
                 .build();
 
@@ -202,8 +200,6 @@ pub fn calculate_nodes(
             node.z = current_z;
             new_nodes.insert(dirty_entity.0, (node, needs_layout));
         }
-
-        // let has_new_nodes = new_nodes.len() > 0;
 
         for (entity, (node, needs_layout)) in new_nodes.drain() {
             if !needs_layout {
@@ -261,92 +257,106 @@ fn create_primitive(
     styles: &mut KStyle,
     _prev_styles: KStyle,
     all_styles_query: &Query<&ComputedStyles>,
-) -> (RenderPrimitive, bool) {
-    let mut render_primitive = RenderPrimitive::from(&styles.clone());
+) -> bool {
     let mut needs_layout = true;
+    if let StyleProp::Value(render_command) = &mut styles.render_command {
+        match render_command {
+            RenderCommand::Text {
+                alignment,
+                content,
+                word_wrap,
+                text_layout,
+                properties,
+                ..
+            } => {
+                let font = styles
+                    .font
+                    .resolve_or_else(|| String::from(crate::DEFAULT_FONT));
+                // --- Bind to Font Asset --- //
+                let font_handle = font_mapping.get_handle(font.clone()).unwrap();
+                if let Some(font) = fonts.get(&font_handle) {
+                    if let Ok(node_tree) = context.tree.try_read() {
+                        if let Some(parent_id) =
+                            find_not_empty_parent(&node_tree, all_styles_query, &id)
+                        {
+                            if let Some(parent_layout) = context.get_layout(&parent_id) {
+                                let border_x = if let Ok(style) = all_styles_query.get(parent_id.0)
+                                {
+                                    let border = style.0.border.resolve();
+                                    border.left + border.right
+                                } else {
+                                    0.0
+                                };
+                                let border_y = if let Ok(style) = all_styles_query.get(parent_id.0)
+                                {
+                                    let border = style.0.border.resolve();
+                                    border.top + border.bottom
+                                } else {
+                                    0.0
+                                };
 
-    match &mut render_primitive {
-        RenderPrimitive::Text {
-            content,
-            font,
-            properties,
-            text_layout,
-            word_wrap,
-            ..
-        } => {
-            // --- Bind to Font Asset --- //
-            let font_handle = font_mapping.get_handle(font.clone()).unwrap();
-            if let Some(font) = fonts.get(&font_handle) {
-                if let Ok(node_tree) = context.tree.try_read() {
-                    if let Some(parent_id) =
-                        find_not_empty_parent(&node_tree, all_styles_query, &id)
-                    {
-                        if let Some(parent_layout) = context.get_layout(&parent_id) {
-                            let border_x = if let Ok(style) = all_styles_query.get(parent_id.0) {
-                                let border = style.0.border.resolve();
-                                border.left + border.right
+                                let font_size = styles.font_size.resolve_or(14.0);
+                                *properties = TextProperties {
+                                    font_size,
+                                    line_height: styles.line_height.resolve_or(font_size * 1.2),
+                                    alignment: *alignment,
+                                    ..properties.clone()
+                                };
+
+                                properties.max_size = (
+                                    parent_layout.width - border_x,
+                                    parent_layout.height - border_y,
+                                );
+
+                                // TODO: Fix this hack.
+                                if !*word_wrap {
+                                    properties.max_size.0 = 100000.0;
+                                }
+
+                                needs_layout = false;
+
+                                if properties.max_size.0 == 0.0 || properties.max_size.1 == 0.0 {
+                                    needs_layout = true;
+                                }
+
+                                if context.get_geometry_changed(&parent_id) {
+                                    needs_layout = true;
+                                }
+
+                                if dirty.contains(parent_id.0) {
+                                    needs_layout = true;
+                                }
+
+                                // --- Calculate Text Layout --- //
+                                *text_layout = font.measure(content, *properties);
+                                let measurement = text_layout.size();
+
+                                log::trace!(
+                                    "Text Node: {}, has a measurement of: {:?}, it's parent takes up: {:?}",
+                                    &content,
+                                    measurement,
+                                    properties.max_size
+                                );
+
+                                // --- Apply Layout --- //
+                                if matches!(styles.width, StyleProp::Default) {
+                                    styles.width = StyleProp::Value(Units::Pixels(measurement.0));
+                                }
+                                if matches!(styles.height, StyleProp::Default) {
+                                    styles.height = StyleProp::Value(Units::Pixels(measurement.1));
+                                }
                             } else {
-                                0.0
-                            };
-                            let border_y = if let Ok(style) = all_styles_query.get(parent_id.0) {
-                                let border = style.0.border.resolve();
-                                border.top + border.bottom
-                            } else {
-                                0.0
-                            };
-                            properties.max_size = (
-                                parent_layout.width - border_x,
-                                parent_layout.height - border_y,
-                            );
-
-                            // TODO: Fix this hack.
-                            if !*word_wrap {
-                                properties.max_size.0 = 100000.0;
-                            }
-
-                            needs_layout = false;
-
-                            if properties.max_size.0 == 0.0 || properties.max_size.1 == 0.0 {
-                                needs_layout = true;
-                            }
-
-                            if context.get_geometry_changed(&parent_id) {
-                                needs_layout = true;
-                            }
-
-                            if dirty.contains(parent_id.0) {
-                                needs_layout = true;
-                            }
-
-                            // --- Calculate Text Layout --- //
-                            *text_layout = font.measure(content, *properties);
-                            let measurement = text_layout.size();
-
-                            log::trace!(
-                                "Text Node: {}, has a measurement of: {:?}, it's parent takes up: {:?}",
-                                &content,
-                                measurement,
-                                properties.max_size
-                            );
-
-                            // --- Apply Layout --- //
-                            if matches!(styles.width, StyleProp::Default) {
-                                styles.width = StyleProp::Value(Units::Pixels(measurement.0));
-                            }
-                            if matches!(styles.height, StyleProp::Default) {
-                                styles.height = StyleProp::Value(Units::Pixels(measurement.1));
+                                log::trace!("no layout for: {:?}", parent_id.0.index());
                             }
                         } else {
-                            log::trace!("no layout for: {:?}", parent_id.0.index());
+                            log::trace!("No parent found for: {:?}", id.0.index());
                         }
-                    } else {
-                        log::trace!("No parent found for: {:?}", id.0.index());
                     }
                 }
             }
-        }
-        _ => {
-            needs_layout = false;
+            _ => {
+                needs_layout = false;
+            }
         }
     }
 
@@ -361,7 +371,7 @@ fn create_primitive(
     //     needs_layout = false;
     // }
 
-    (render_primitive, needs_layout)
+    needs_layout
 }
 
 pub fn find_not_empty_parent(

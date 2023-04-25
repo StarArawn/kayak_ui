@@ -5,10 +5,10 @@ use bevy::{
     render::{
         render_asset::RenderAssets,
         render_resource::{
-            AddressMode, BindGroup, BindGroupDescriptor, BindGroupEntry, BindGroupLayout,
-            BindingResource, CommandEncoderDescriptor, Extent3d, FilterMode, ImageCopyTexture,
-            Origin3d, SamplerDescriptor, TextureAspect, TextureDescriptor, TextureDimension,
-            TextureFormat, TextureUsages, TextureViewDescriptor, TextureViewDimension,
+            AddressMode, BindGroupLayout, CommandEncoderDescriptor, Extent3d, FilterMode,
+            ImageCopyTexture, Origin3d, SamplerDescriptor, TextureAspect, TextureDescriptor,
+            TextureDimension, TextureFormat, TextureUsages, TextureViewDescriptor,
+            TextureViewDimension,
         },
         renderer::{RenderDevice, RenderQueue},
         texture::{GpuImage, Image},
@@ -25,7 +25,6 @@ pub const MAX_CHARACTERS: u32 = 500;
 #[derive(Resource)]
 pub struct FontTextureCache {
     images: HashMap<Handle<KayakFont>, GpuImage>,
-    pub(crate) bind_groups: HashMap<Handle<KayakFont>, BindGroup>,
     fonts: HashMap<Handle<KayakFont>, KayakFont>,
     new_fonts: Vec<Handle<KayakFont>>,
     updated_fonts: Vec<Handle<KayakFont>>,
@@ -41,7 +40,6 @@ impl FontTextureCache {
     pub fn new() -> Self {
         Self {
             images: HashMap::default(),
-            bind_groups: HashMap::default(),
             fonts: HashMap::default(),
             new_fonts: Vec::new(),
             updated_fonts: Vec::new(),
@@ -58,15 +56,26 @@ impl FontTextureCache {
         }
     }
 
-    pub fn get_binding(&self, handle: &Handle<KayakFont>) -> Option<&BindGroup> {
-        self.bind_groups.get(handle)
+    pub fn get_gpu_image<'s>(
+        &'s self,
+        handle: &Handle<KayakFont>,
+        render_images: &'s RenderAssets<Image>,
+    ) -> Option<&'s GpuImage> {
+        if let Some(gpu_image) = self.images.get(handle) {
+            Some(gpu_image)
+        } else {
+            if let Some(font) = self.fonts.get(handle) {
+                render_images.get(font.image.get())
+            } else {
+                None
+            }
+        }
     }
 
-    pub fn process_new<T: FontRenderingPipeline>(
+    pub fn process_new(
         &mut self,
         device: &RenderDevice,
         queue: &RenderQueue,
-        pipeline: &T,
         render_images: &Res<RenderAssets<Image>>,
     ) {
         let new_fonts: Vec<_> = self.new_fonts.drain(..).collect();
@@ -74,27 +83,17 @@ impl FontTextureCache {
             let mut was_processed = true;
             if let Some(font) = self.fonts.get(&kayak_font_handle) {
                 if matches!(font.image, ImageType::Array(..)) {
-                    if let Some(array_texture) = render_images.get(font.image.get()) {
-                        Self::create_from_array(
-                            &mut self.bind_groups,
-                            kayak_font_handle.clone_weak(),
-                            device,
-                            pipeline,
-                            array_texture,
-                        );
-                    } else {
+                    if render_images.get(font.image.get()).is_none() {
                         was_processed = false;
                     }
                 } else {
                     if let Some(atlas_texture) = render_images.get(font.image.get()) {
                         Self::create_from_atlas(
                             &mut self.images,
-                            &mut self.bind_groups,
                             &font.sdf,
                             kayak_font_handle.clone_weak(),
                             device,
                             queue,
-                            pipeline,
                             atlas_texture,
                             font.sdf.max_glyph_size().into(),
                         );
@@ -175,7 +174,7 @@ impl FontTextureCache {
         images.insert(font_handle, image);
     }
 
-    pub fn get_empty(device: &RenderDevice, layout: &BindGroupLayout) -> (GpuImage, BindGroup) {
+    pub fn get_empty(device: &RenderDevice) -> GpuImage {
         let texture_descriptor = TextureDescriptor {
             label: Some("font_texture_array"),
             size: Extent3d {
@@ -215,33 +214,15 @@ impl FontTextureCache {
             size: Vec2 { x: 1.0, y: 1.0 },
             texture_format: TextureFormat::Rgba8Unorm,
         };
-
-        let binding = device.create_bind_group(&BindGroupDescriptor {
-            label: Some("text_image_bind_group"),
-            entries: &[
-                BindGroupEntry {
-                    binding: 0,
-                    resource: BindingResource::TextureView(&image.texture_view),
-                },
-                BindGroupEntry {
-                    binding: 1,
-                    resource: BindingResource::Sampler(&image.sampler),
-                },
-            ],
-            layout,
-        });
-
-        (image, binding)
+        image
     }
 
-    pub fn create_from_atlas<T: FontRenderingPipeline>(
+    pub fn create_from_atlas(
         images: &mut HashMap<Handle<KayakFont>, GpuImage>,
-        bind_groups: &mut HashMap<Handle<KayakFont>, BindGroup>,
         sdf: &Sdf,
         font_handle: Handle<KayakFont>,
         device: &RenderDevice,
         queue: &RenderQueue,
-        pipeline: &T,
         atlas_texture: &GpuImage,
         size: Vec2,
     ) {
@@ -258,24 +239,6 @@ impl FontTextureCache {
         });
 
         let gpu_image = images.get(&font_handle).unwrap();
-
-        // create bind group
-        let binding = device.create_bind_group(&BindGroupDescriptor {
-            label: Some("text_image_bind_group"),
-            entries: &[
-                BindGroupEntry {
-                    binding: 0,
-                    resource: BindingResource::TextureView(&gpu_image.texture_view),
-                },
-                BindGroupEntry {
-                    binding: 1,
-                    resource: BindingResource::Sampler(&gpu_image.sampler),
-                },
-            ],
-            layout: pipeline.get_font_image_layout(),
-        });
-
-        bind_groups.insert(font_handle.clone_weak(), binding);
 
         // Now fill the texture data.
 
@@ -317,31 +280,5 @@ impl FontTextureCache {
 
         let command_buffer = command_encoder.finish();
         queue.submit(vec![command_buffer]);
-    }
-
-    pub fn create_from_array<T: FontRenderingPipeline>(
-        bind_groups: &mut HashMap<Handle<KayakFont>, BindGroup>,
-        font_handle: Handle<KayakFont>,
-        device: &RenderDevice,
-        pipeline: &T,
-        array_texture: &GpuImage,
-    ) {
-        // create bind group
-        let binding = device.create_bind_group(&BindGroupDescriptor {
-            label: Some("text_image_bind_group"),
-            entries: &[
-                BindGroupEntry {
-                    binding: 0,
-                    resource: BindingResource::TextureView(&array_texture.texture_view),
-                },
-                BindGroupEntry {
-                    binding: 1,
-                    resource: BindingResource::Sampler(&array_texture.sampler),
-                },
-            ],
-            layout: pipeline.get_font_image_layout(),
-        });
-
-        bind_groups.insert(font_handle.clone_weak(), binding);
     }
 }

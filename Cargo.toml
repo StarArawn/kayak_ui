@@ -32,6 +32,7 @@ bevy_svg = { git = "https://github.com/StarArawn/bevy_svg", rev = "9a14eccf680b7
 interpolation = { version = "0.2" }
 usvg = "0.27"
 fancy-regex = "0.11.0"
+uuid = { version = "1.3", features = ["v4"] }
 
 [dev-dependencies]
 fastrand = "1.8"

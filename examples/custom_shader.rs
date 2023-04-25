@@ -1,4 +1,4 @@
-use bevy::{prelude::*, render::render_resource::AsBindGroup, reflect::TypeUuid};
+use bevy::{prelude::*, reflect::TypeUuid, render::render_resource::AsBindGroup};
 use kayak_ui::{
     prelude::{widgets::*, *},
     CameraUIKayak,
@@ -6,9 +6,7 @@ use kayak_ui::{
 
 #[derive(AsBindGroup, TypeUuid, Debug, Clone)]
 #[uuid = "94c4e6f9-6f10-422c-85ec-6d582d471afc"]
-pub struct MyUIMaterial {
-
-}
+pub struct MyUIMaterial {}
 impl MaterialUI for MyUIMaterial {
     fn fragment_shader() -> bevy::render::render_resource::ShaderRef {
         "rainbow_shader.wgsl".into()

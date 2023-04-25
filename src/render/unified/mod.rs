@@ -59,7 +59,6 @@ impl Plugin for UnifiedRenderPlugin {
         let unified_shader = Shader::from_wgsl(include_str!("shaders/shader.wgsl"));
         shaders.set_untracked(UNIFIED_SHADER_HANDLE, unified_shader);
 
-
         let render_app = app.sub_app_mut(RenderApp);
         render_app
             .init_resource::<QuadTypeOffsets>()

@@ -9,14 +9,14 @@ use bevy::{
 use std::hash::Hash;
 use std::marker::PhantomData;
 
-use crate::render::ui_pass::{TransparentUI, TransparentOpacityUI};
+use crate::render::ui_pass::{TransparentOpacityUI, TransparentUI};
 
 use super::{
     pipeline::{
         extract_materials_ui, prepare_materials_ui, queue_material_ui_quads, DrawMaterialUI,
         ExtractedMaterialsUI, MaterialUIPipeline, RenderMaterialsUI,
     },
-    MaterialUI, DrawMaterialUITransparent,
+    DrawMaterialUITransparent, MaterialUI,
 };
 
 /// Adds the necessary ECS resources and render logic to enable rendering entities using the given [`MaterialUI`]

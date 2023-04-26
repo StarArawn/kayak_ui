@@ -339,7 +339,7 @@ pub fn queue_material_ui_quads<M: MaterialUI>(
     // Vertex buffer indices
     let mut index = 0;
 
-    let mut previous_clip_rect = Rect::default();
+    // let mut previous_clip_rect = Rect::default();
 
     let draw_quad = draw_functions.read().get_id::<DrawMaterialUI<M>>().unwrap();
     let draw_opacity_quad = draw_functions_opacity
@@ -382,7 +382,6 @@ pub fn queue_material_ui_quads<M: MaterialUI>(
                     &mut quad_meta,
                     &mut quad,
                     camera_entity,
-                    &mut previous_clip_rect,
                     *quad_types_offsets,
                     &mut current_batch,
                     &mut current_batch_entity,

@@ -654,6 +654,13 @@ pub fn queue_quads(queue_quads: QueueQuads) {
         let spec_pipeline = pipelines.specialize(&mut pipeline_cache, &quad_pipeline, key);
 
         for quad in extracted_quads.iter_mut() {
+            if quad.quad_type == UIQuadType::Clip {
+                previous_clip_rect = quad.rect;
+            }
+        
+            if previous_clip_rect.width() < 1.0 || previous_clip_rect.height() < 1.0 {
+                continue;
+            }
             queue_quads_inner(
                 &mut commands,
                 &render_device,
@@ -671,7 +678,6 @@ pub fn queue_quads(queue_quads: QueueQuads) {
                 &mut quad_meta,
                 quad,
                 camera_entity,
-                &mut previous_clip_rect,
                 *quad_type_offsets,
                 &mut current_batch,
                 &mut current_batch_entity,
@@ -698,7 +704,6 @@ pub fn queue_quads_inner(
     quad_meta: &mut QuadMeta,
     quad: &mut ExtractedQuad,
     camera_entity: Entity,
-    previous_clip_rect: &mut Rect,
     quad_type_offsets: QuadTypeOffsets,
     current_batch: &mut QuadBatch,
     current_batch_entity: &mut Entity,
@@ -706,10 +711,6 @@ pub fn queue_quads_inner(
 ) {
     if camera_entity != quad.camera_entity {
         return;
-    }
-
-    if quad.quad_type == UIQuadType::Clip {
-        *previous_clip_rect = quad.rect;
     }
 
     match quad.quad_type {

@@ -365,6 +365,14 @@ pub fn queue_material_ui_quads<M: MaterialUI>(
                     },
                 );
 
+                if quad.quad_type == UIQuadType::Clip {
+                    previous_clip_rect = quad.rect;
+                }
+            
+                if previous_clip_rect.width() < 1.0 || previous_clip_rect.height() < 1.0 {
+                    continue;
+                }
+
                 queue_quads_inner(
                     &mut commands,
                     &render_device,
@@ -382,7 +390,6 @@ pub fn queue_material_ui_quads<M: MaterialUI>(
                     &mut quad_meta,
                     &mut quad,
                     camera_entity,
-                    &mut previous_clip_rect,
                     *quad_types_offsets,
                     &mut current_batch,
                     &mut current_batch_entity,

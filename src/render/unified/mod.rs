@@ -24,7 +24,7 @@ use crate::{
 
 use self::pipeline::{
     queue_quad_types, queue_ui_view_bind_groups, DrawUITransparent, ExtractedQuads,
-    ImageBindGroups, QuadTypeOffsets,
+    ImageBindGroups, QuadTypeOffsets, PreviousClip,
 };
 
 use super::{svg::RenderSvgs, ui_pass::TransparentOpacityUI};
@@ -68,6 +68,7 @@ impl Plugin for UnifiedRenderPlugin {
             .init_resource::<SpecializedRenderPipelines<UnifiedPipeline>>()
             .init_resource::<QuadMeta>()
             .init_resource::<RenderSvgs>()
+            .init_resource::<PreviousClip>()
             .add_system(super::svg::extract_svg_asset.in_schedule(ExtractSchedule))
             .add_system(extract_baseline.in_schedule(ExtractSchedule))
             .add_system(queue_quad_types.in_set(RenderSet::Queue))

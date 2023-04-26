@@ -557,6 +557,11 @@ pub fn queue_quad_types(
     }
 }
 
+#[derive(Resource, Default)]
+pub struct PreviousClip {
+    pub rect: Rect,
+}
+
 #[derive(SystemParam)]
 pub struct QueueQuads<'w, 's> {
     render_svgs: Res<'w, RenderSvgs>,
@@ -585,6 +590,7 @@ pub struct QueueQuads<'w, 's> {
     gpu_images: Res<'w, RenderAssets<Image>>,
     font_texture_cache: Res<'w, FontTextureCache>,
     quad_type_offsets: Res<'w, QuadTypeOffsets>,
+    prev_clip: ResMut<'w, PreviousClip>,
 }
 
 pub fn queue_quads(queue_quads: QueueQuads) {
@@ -606,6 +612,7 @@ pub fn queue_quads(queue_quads: QueueQuads) {
         gpu_images,
         font_texture_cache,
         quad_type_offsets,
+        mut prev_clip,
     } = queue_quads;
 
     let extracted_sprite_len = extracted_quads.quads.len();
@@ -637,8 +644,6 @@ pub fn queue_quads(queue_quads: QueueQuads) {
     // Vertex buffer indices
     let mut index = 0;
 
-    let mut previous_clip_rect = Rect::default();
-
     let draw_quad = draw_functions.read().get_id::<DrawUI>().unwrap();
     let draw_opacity_quad = draw_functions_opacity
         .read()
@@ -655,10 +660,10 @@ pub fn queue_quads(queue_quads: QueueQuads) {
 
         for quad in extracted_quads.iter_mut() {
             if quad.quad_type == UIQuadType::Clip {
-                previous_clip_rect = quad.rect;
+                prev_clip.rect = quad.rect;
             }
 
-            if previous_clip_rect.width() < 1.0 || previous_clip_rect.height() < 1.0 {
+            if prev_clip.rect.width() < 1.0 || prev_clip.rect.height() < 1.0 {
                 continue;
             }
             queue_quads_inner(

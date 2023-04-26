@@ -654,10 +654,6 @@ pub fn queue_quads(queue_quads: QueueQuads) {
         let spec_pipeline = pipelines.specialize(&mut pipeline_cache, &quad_pipeline, key);
 
         for quad in extracted_quads.iter_mut() {
-            if previous_clip_rect.width() < 1.0 || previous_clip_rect.height() < 1.0 {
-                continue;
-            }
-
             queue_quads_inner(
                 &mut commands,
                 &render_device,

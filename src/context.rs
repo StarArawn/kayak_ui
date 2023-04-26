@@ -1233,6 +1233,8 @@ impl Plugin for KayakContextPlugin {
             .register_type::<ComputedStyles>()
             .register_type::<KStyle>()
             .register_type::<KChildren>()
+            .register_type::<crate::layout::Rect>()
+            .register_type::<crate::node::Node>()
             .register_type::<WidgetName>()
             .register_type::<StyleProp<Color>>()
             .register_type::<StyleProp<Corner<f32>>>()

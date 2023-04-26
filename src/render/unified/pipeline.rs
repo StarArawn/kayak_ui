@@ -657,7 +657,7 @@ pub fn queue_quads(queue_quads: QueueQuads) {
             if quad.quad_type == UIQuadType::Clip {
                 previous_clip_rect = quad.rect;
             }
-        
+
             if previous_clip_rect.width() < 1.0 || previous_clip_rect.height() < 1.0 {
                 continue;
             }

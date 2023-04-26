@@ -58,7 +58,9 @@ impl KChildren {
     ) {
         for child in self.inner.iter() {
             if let Some(parent_id) = parent_id {
-                commands.entity(*child).set_parent(parent_id);
+                if let Some(mut entity_commands) = commands.get_entity(*child) {
+                    entity_commands.set_parent(parent_id);
+                }
             }
             widget_context.add_widget(parent_id, *child);
         }

@@ -791,7 +791,6 @@ pub fn queue_quads_inner(
                     });
             } else {
                 // Skip unloaded texture.
-                dbg!("Skip texture not loaded in!");
                 return;
             }
         }

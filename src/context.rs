@@ -1056,12 +1056,12 @@ fn update_widget(
     commands.entity(entity.0).remove::<Mounted>();
 
     let diff = if let Ok(tree) = tree.read() {
-        tree.diff_children(&widget_context, entity, UPDATE_DEPTH)
+        tree.diff_children(&widget_context, entity, 0)
     } else {
         panic!("Failed to acquire read lock.");
     };
 
-    // log::info!("Entity: {:?}, Diff: {:?}", entity.0, &diff);
+    log::trace!("Entity: {:?}, Diff: {:?}", entity.0, &diff);
 
     // Always mark widget dirty if it's re-rendered.
     // Mark node as needing a recalculation of rendering/layout.
@@ -1078,7 +1078,11 @@ fn update_widget(
                 entity_commands.insert(Mounted);
                 entity_commands.set_parent(parent.0);
             }
-            world.entity_mut(parent.0).add_child(changed_entity.0);
+            if world.get_entity(changed_entity.0).is_some() {
+                if let Some(mut entity_commands) = world.get_entity_mut(parent.0) {
+                    entity_commands.add_child(changed_entity.0);
+                }
+            }
         } else if changes
             .iter()
             .any(|change| matches!(change, Change::Deleted))

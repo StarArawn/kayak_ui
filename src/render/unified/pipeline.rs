@@ -697,7 +697,7 @@ pub fn queue_quads(queue_quads: QueueQuads) {
             )
         }
     }
-    
+
     prev_index.index = index;
 }
 

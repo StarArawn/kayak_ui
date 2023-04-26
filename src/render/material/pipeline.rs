@@ -34,9 +34,9 @@ use crate::render::{
     svg::RenderSvgs,
     ui_pass::{TransparentOpacityUI, TransparentUI},
     unified::pipeline::{
-        queue_quads_inner, DrawUIDraw, ExtractedQuad, ImageBindGroups, PreviousClip, QuadBatch,
-        QuadMeta, QuadTypeOffsets, SetUIViewBindGroup, UIQuadType, UnifiedPipeline,
-        UnifiedPipelineKey, PreviousIndex,
+        queue_quads_inner, DrawUIDraw, ExtractedQuad, ImageBindGroups, PreviousClip, PreviousIndex,
+        QuadBatch, QuadMeta, QuadTypeOffsets, SetUIViewBindGroup, UIQuadType, UnifiedPipeline,
+        UnifiedPipelineKey,
     },
 };
 
@@ -319,13 +319,20 @@ pub fn queue_material_ui_quads<M: MaterialUI>(
         &'static UIExtractedView,
     )>,
     mut image_bind_groups: ResMut<ImageBindGroups>,
-    (gpu_images, font_texture_cache, quad_types_offsets, render_materials, mut prev_clip, prev_index): (
+    (
+        gpu_images,
+        font_texture_cache,
+        quad_types_offsets,
+        render_materials,
+        mut prev_clip,
+        prev_index,
+    ): (
         Res<RenderAssets<Image>>,
         Res<FontTextureCache>,
         Res<QuadTypeOffsets>,
         Res<RenderMaterialsUI<M>>,
         ResMut<PreviousClip>,
-        Res<PreviousIndex>
+        Res<PreviousIndex>,
     ),
 ) where
     M::Data: PartialEq + Eq + Hash + Clone,

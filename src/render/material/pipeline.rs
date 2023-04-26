@@ -34,8 +34,9 @@ use crate::render::{
     svg::RenderSvgs,
     ui_pass::{TransparentOpacityUI, TransparentUI},
     unified::pipeline::{
-        queue_quads_inner, DrawUIDraw, ExtractedQuad, ImageBindGroups, QuadBatch, QuadMeta,
-        QuadTypeOffsets, SetUIViewBindGroup, UIQuadType, UnifiedPipeline, UnifiedPipelineKey, PreviousClip,
+        queue_quads_inner, DrawUIDraw, ExtractedQuad, ImageBindGroups, PreviousClip, QuadBatch,
+        QuadMeta, QuadTypeOffsets, SetUIViewBindGroup, UIQuadType, UnifiedPipeline,
+        UnifiedPipelineKey,
     },
 };
 
@@ -360,11 +361,11 @@ pub fn queue_material_ui_quads<M: MaterialUI>(
                 if quad.quad_type == UIQuadType::Clip {
                     prev_clip.rect = quad.rect;
                 }
-    
+
                 if prev_clip.rect.width() < 1.0 || prev_clip.rect.height() < 1.0 {
                     continue;
                 }
-                
+
                 let pipeline_id = pipelines.specialize(
                     &pipeline_cache,
                     &materialui_pipeline,

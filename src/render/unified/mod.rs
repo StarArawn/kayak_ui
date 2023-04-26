@@ -24,7 +24,7 @@ use crate::{
 
 use self::pipeline::{
     queue_quad_types, queue_ui_view_bind_groups, DrawUITransparent, ExtractedQuads,
-    ImageBindGroups, QuadTypeOffsets, PreviousClip,
+    ImageBindGroups, PreviousClip, QuadTypeOffsets,
 };
 
 use super::{svg::RenderSvgs, ui_pass::TransparentOpacityUI};

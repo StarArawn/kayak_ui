@@ -35,7 +35,7 @@ use crate::render::{
     ui_pass::{TransparentOpacityUI, TransparentUI},
     unified::pipeline::{
         queue_quads_inner, DrawUIDraw, ExtractedQuad, ImageBindGroups, QuadBatch, QuadMeta,
-        QuadTypeOffsets, SetUIViewBindGroup, UIQuadType, UnifiedPipeline, UnifiedPipelineKey,
+        QuadTypeOffsets, SetUIViewBindGroup, UIQuadType, UnifiedPipeline, UnifiedPipelineKey, PreviousClip,
     },
 };
 
@@ -318,11 +318,12 @@ pub fn queue_material_ui_quads<M: MaterialUI>(
         &'static UIExtractedView,
     )>,
     mut image_bind_groups: ResMut<ImageBindGroups>,
-    (gpu_images, font_texture_cache, quad_types_offsets, render_materials): (
+    (gpu_images, font_texture_cache, quad_types_offsets, render_materials, mut prev_clip): (
         Res<RenderAssets<Image>>,
         Res<FontTextureCache>,
         Res<QuadTypeOffsets>,
         Res<RenderMaterialsUI<M>>,
+        ResMut<PreviousClip>,
     ),
 ) where
     M::Data: PartialEq + Eq + Hash + Clone,
@@ -356,6 +357,14 @@ pub fn queue_material_ui_quads<M: MaterialUI>(
 
         for (mut quad, material_handle) in extracted_quads.iter_mut() {
             if let Some(materialui) = render_materials.get(material_handle) {
+                if quad.quad_type == UIQuadType::Clip {
+                    prev_clip.rect = quad.rect;
+                }
+    
+                if prev_clip.rect.width() < 1.0 || prev_clip.rect.height() < 1.0 {
+                    continue;
+                }
+                
                 let pipeline_id = pipelines.specialize(
                     &pipeline_cache,
                     &materialui_pipeline,

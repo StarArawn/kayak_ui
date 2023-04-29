@@ -79,10 +79,8 @@ impl AssetLoader for TTFLoader {
                 for subtable in subtable.subtables {
                     subtable.codepoints(|codepoint| {
                         if let Some(mapping) = subtable.glyph_index(codepoint) {
-                            glyph_to_char
-                                .insert(mapping, std::char::from_u32(codepoint).unwrap());
-                            char_to_glyph
-                                .insert(std::char::from_u32(codepoint).unwrap(), mapping);
+                            glyph_to_char.insert(mapping, std::char::from_u32(codepoint).unwrap());
+                            char_to_glyph.insert(std::char::from_u32(codepoint).unwrap(), mapping);
                         }
                     })
                 }
@@ -204,7 +202,7 @@ impl AssetLoader for TTFLoader {
                     let cache_image = cache_image;
                     let image = image::load_from_memory(&cache_image).unwrap();
                     image.as_bytes().to_vec()
-                },
+                }
                 Err(_) => {
                     #[cfg(not(target_family = "wasm"))]
                     image_builder

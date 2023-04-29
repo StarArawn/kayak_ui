@@ -58,13 +58,10 @@ pub fn tab_button_render(
                 move |In(_entity): In<Entity>,
                       event: Res<KEvent>,
                       mut query: Query<&mut TabContext>| {
-                    match event.event_type {
-                        EventType::Click(..) => {
-                            if let Ok(mut tab_context) = query.get_mut(context_entity) {
-                                tab_context.current_index = button_index;
-                            }
+                    if let EventType::Click(..) = event.event_type {
+                        if let Ok(mut tab_context) = query.get_mut(context_entity) {
+                            tab_context.current_index = button_index;
                         }
-                        _ => {}
                     }
                 },
             );

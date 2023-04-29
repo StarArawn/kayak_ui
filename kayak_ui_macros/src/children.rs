@@ -13,7 +13,9 @@ impl Children {
     }
 
     pub fn is_block(&self) -> bool {
-        self.nodes.iter().any(|node| matches!(node, Child::RawBlock(..)))
+        self.nodes
+            .iter()
+            .any(|node| matches!(node, Child::RawBlock(..)))
     }
 
     // pub fn get_clonable_attributes(&self, index: usize) -> Vec<proc_macro2::TokenStream> {

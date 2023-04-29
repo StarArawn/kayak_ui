@@ -127,21 +127,15 @@ impl EdgeSegment {
     pub fn find_bounds(&self, l: &mut f64, b: &mut f64, r: &mut f64, t: &mut f64) {
         match *self {
             Self::Line { p0, p1, .. } => line::find_bounds(p0, p1, l, b, r, t),
-            Self::Quadratic { p0, p1, p2, .. } => {
-                quadratic::find_bounds(p0, p1, p2, l, b, r, t)
-            }
-            Self::Cubic { p0, p1, p2, p3, .. } => {
-                cubic::find_bounds(p0, p1, p2, p3, l, b, r, t)
-            }
+            Self::Quadratic { p0, p1, p2, .. } => quadratic::find_bounds(p0, p1, p2, l, b, r, t),
+            Self::Cubic { p0, p1, p2, p3, .. } => cubic::find_bounds(p0, p1, p2, p3, l, b, r, t),
         }
     }
 
     pub fn split_in_thirds(&self) -> (EdgeSegment, EdgeSegment, EdgeSegment) {
         match *self {
             Self::Line { p0, p1, color } => line::split_in_thirds(p0, p1, color),
-            Self::Quadratic { p0, p1, p2, color } => {
-                quadratic::split_in_thirds(p0, p1, p2, color)
-            }
+            Self::Quadratic { p0, p1, p2, color } => quadratic::split_in_thirds(p0, p1, p2, color),
             Self::Cubic {
                 p0,
                 p1,
@@ -155,12 +149,8 @@ impl EdgeSegment {
     pub fn signed_distance(&self, origin: Vector2) -> (SignedDistance, f64) {
         match *self {
             Self::Line { p0, p1, .. } => line::signed_distance(p0, p1, origin),
-            Self::Quadratic { p0, p1, p2, .. } => {
-                quadratic::signed_distance(p0, p1, p2, origin)
-            }
-            Self::Cubic { p0, p1, p2, p3, .. } => {
-                cubic::signed_distance(p0, p1, p2, p3, origin)
-            }
+            Self::Quadratic { p0, p1, p2, .. } => quadratic::signed_distance(p0, p1, p2, origin),
+            Self::Cubic { p0, p1, p2, p3, .. } => cubic::signed_distance(p0, p1, p2, p3, origin),
         }
     }
 

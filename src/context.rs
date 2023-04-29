@@ -1117,8 +1117,12 @@ fn update_widget(
 
         let widget_update_system = &mut systems
             .get_mut(&widget_type)
-            .unwrap_or_else(|| panic!("Wasn't able to find render/update systems for widget: {}!",
-                widget_type))
+            .unwrap_or_else(|| {
+                panic!(
+                    "Wasn't able to find render/update systems for widget: {}!",
+                    widget_type
+                )
+            })
             .0;
         let old_tick = widget_update_system.get_last_change_tick();
 

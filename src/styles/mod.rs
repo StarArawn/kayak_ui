@@ -115,7 +115,8 @@ fn parse_rgba(s: &str) -> Color {
     let s = s.replace("rgba(", "").replace("rgb(", "").replace(')', "");
     let values = s.split(',').collect::<Vec<_>>();
 
-    let r = values.first()
+    let r = values
+        .first()
         .map(|s| s.trim().parse::<f32>().map(|v| v / 255.0).unwrap_or(0.0))
         .unwrap_or(0.0);
     let g = values

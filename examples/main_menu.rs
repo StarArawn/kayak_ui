@@ -149,11 +149,8 @@ fn startup(
 
     let handle_click_close = OnEvent::new(
         move |In(_entity): In<Entity>, event: ResMut<KEvent>, mut exit: EventWriter<AppExit>| {
-            match event.event_type {
-                EventType::Click(..) => {
-                    exit.send(AppExit);
-                }
-                _ => {}
+            if let EventType::Click(..) = event.event_type {
+                exit.send(AppExit);
             }
         },
     );

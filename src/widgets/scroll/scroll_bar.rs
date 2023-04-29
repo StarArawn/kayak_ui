@@ -149,7 +149,8 @@ pub fn scroll_bar_render(
                     green,
                     blue,
                     alpha,
-                } = &mut border_color {
+                } = &mut border_color
+                {
                     *alpha = (*alpha - 0.2).max(0.0);
                     *red = (*red + 0.1).min(1.0);
                     *green = (*green + 0.1).min(1.0);

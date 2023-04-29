@@ -22,7 +22,7 @@ fn my_widget_1_update(
                     constructor! {
                         <TextWidgetBundle
                             text={TextProps {
-                                content: (*text).clone().into(),
+                                content: (*text).into(),
                                 ..Default::default()
                             }}
                         />

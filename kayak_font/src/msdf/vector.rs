@@ -59,7 +59,11 @@ impl Vector2 {
 
     pub fn clamp(n: i32, b: i32) -> i32 {
         if n > 0 {
-            if n <= b { n } else { b }
+            if n <= b {
+                n
+            } else {
+                b
+            }
         } else {
             0
         }

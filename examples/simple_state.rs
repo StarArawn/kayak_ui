@@ -55,7 +55,6 @@ fn current_count_render(
                 <KButtonBundle
                     button={KButton {
                         text: "Click me!".into(),
-                        ..Default::default()
                     }}
                     styles={KStyle {
                         font_size: (48.).into(),
@@ -66,15 +65,12 @@ fn current_count_render(
                         move |In(_entity): In<Entity>,
                         mut event: ResMut<KEvent>,
                             mut query: Query<&mut CurrentCountState>| {
-                            match event.event_type {
-                                EventType::Click(..) => {
-                                    event.prevent_default();
-                                    event.stop_propagation();
-                                    if let Ok(mut current_count) = query.get_mut(state_entity) {
-                                        current_count.foo += 1;
-                                    }
+                            if let EventType::Click(..) = event.event_type {
+                                event.prevent_default();
+                                event.stop_propagation();
+                                if let Ok(mut current_count) = query.get_mut(state_entity) {
+                                    current_count.foo += 1;
                                 }
-                                _ => {}
                             }
                         },
                     )}

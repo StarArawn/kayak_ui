@@ -189,12 +189,10 @@ pub fn scroll_box_render(
                                 match evt.delta {
                                     ScrollUnit::Line { x, y } => {
                                         if !disable_horizontal {
-                                            scroll_context
-                                                .set_scroll_x(scroll_x - x * scroll_line);
+                                            scroll_context.set_scroll_x(scroll_x - x * scroll_line);
                                         }
                                         if !disable_vertical {
-                                            scroll_context
-                                                .set_scroll_y(scroll_y + y * scroll_line);
+                                            scroll_context.set_scroll_y(scroll_y + y * scroll_line);
                                         }
                                     }
                                     ScrollUnit::Pixel { x, y } => {

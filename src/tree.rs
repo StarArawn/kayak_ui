@@ -360,14 +360,15 @@ impl Tree {
 
                 let parent_a = self.parent(children_a.get(*id).unwrap().1);
                 let parent_b = self.parent(*node);
-                let definitely_moved = if let (Some(parent_a), Some(parent_b)) = (parent_a, parent_b) {
-                    parent_a != parent_b
-                        || (parent_a == parent_b
-                            && *node != children_a.get(*id).unwrap().1
-                            && children_a.iter().any(|(_, node_b)| node == node_b))
-                } else {
-                    false
-                };
+                let definitely_moved =
+                    if let (Some(parent_a), Some(parent_b)) = (parent_a, parent_b) {
+                        parent_a != parent_b
+                            || (parent_a == parent_b
+                                && *node != children_a.get(*id).unwrap().1
+                                && children_a.iter().any(|(_, node_b)| node == node_b))
+                    } else {
+                        false
+                    };
 
                 if definitely_moved {
                     let change = if change[0] == Change::Unchanged {
@@ -481,14 +482,15 @@ impl Tree {
 
                 let parent_a = self.parent(tree1.get(*id).unwrap().1);
                 let parent_b = self.parent(*node);
-                let definitely_moved = if let (Some(parent_a), Some(parent_b)) = (parent_a, parent_b) {
-                    parent_a != parent_b
-                        || (parent_a == parent_b
-                            && *node != tree1.get(*id).unwrap().1
-                            && tree1.iter().any(|(_, node_b)| node == node_b))
-                } else {
-                    false
-                };
+                let definitely_moved =
+                    if let (Some(parent_a), Some(parent_b)) = (parent_a, parent_b) {
+                        parent_a != parent_b
+                            || (parent_a == parent_b
+                                && *node != tree1.get(*id).unwrap().1
+                                && tree1.iter().any(|(_, node_b)| node == node_b))
+                    } else {
+                        false
+                    };
 
                 if definitely_moved {
                     let change = if change[0] == Change::Unchanged {

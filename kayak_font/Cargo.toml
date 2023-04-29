@@ -32,3 +32,6 @@ bevy = { version = "0.10", optional = true, default-features = false, features =
 [dev-dependencies]
 bevy = { version = "0.10" }
 bytemuck = "1.12.0"
+
+[package.metadata.docs.rs]
+features = ["bevy/x11"]

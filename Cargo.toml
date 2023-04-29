@@ -48,4 +48,4 @@ name = "todo"
 path = "examples/todo/todo.rs"
 
 [package.metadata.docs.rs]
-features = ["x11"]
+features = ["bevy/x11"]

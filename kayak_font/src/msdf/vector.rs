@@ -23,25 +23,25 @@ impl Vector2 {
                 Vector2::new(0.0, -allow_zero)
             };
         }
-        return if polarity {
+        if polarity {
             Vector2::new(-self.y / len, self.x / len)
         } else {
             Vector2::new(self.y / len, -self.x / len)
-        };
+        }
     }
 
     pub fn get_orthogonal(&self, polarity: bool) -> Vector2 {
-        return if polarity {
+        if polarity {
             Vector2::new(-self.y, self.x)
         } else {
             Vector2::new(self.y, -self.x)
-        };
+        }
     }
     pub fn dot_product(a: Vector2, b: Vector2) -> f64 {
-        return a.x * b.x + a.y * b.y;
+        a.x * b.x + a.y * b.y
     }
     pub fn cross_product(a: Vector2, b: Vector2) -> f64 {
-        return a.x * b.y - a.y * b.x;
+        a.x * b.y - a.y * b.x
     }
 
     pub fn normalize(&self, allow_zero: bool) -> Vector2 {
@@ -50,32 +50,37 @@ impl Vector2 {
             let allow_zero = if !allow_zero { 1.0 } else { 0.0 };
             return Vector2::new(0.0, allow_zero);
         }
-        return Vector2::new(self.x / len, self.y / len);
+        Vector2::new(self.x / len, self.y / len)
     }
 
     pub fn length(&self) -> f64 {
-        return (self.x * self.x + self.y * self.y).sqrt();
+        (self.x * self.x + self.y * self.y).sqrt()
     }
 
     pub fn clamp(n: i32, b: i32) -> i32 {
         if n > 0 {
-            return if n <= b { n } else { b };
+            if n <= b {
+                n
+            } else {
+                b
+            }
+        } else {
+            0
         }
-        return 0;
     }
 
     pub fn sign(n: f64) -> f64 {
-        return if n == 0.0 {
+        if n == 0.0 {
             0.0
         } else if n > 0.0 {
             1.0
         } else {
             -1.0
-        };
+        }
     }
 
     pub fn shoelace(a: Vector2, b: Vector2) -> f64 {
-        return (b.x - a.x) * (a.y + b.y);
+        (b.x - a.x) * (a.y + b.y)
     }
 
     pub fn point_bounds(p: Vector2, l: &mut f64, b: &mut f64, r: &mut f64, t: &mut f64) {

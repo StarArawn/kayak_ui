@@ -678,7 +678,7 @@ fn lerp_ang(a: f32, b: f32, x: f32) -> f32 {
     let ang = ((((a - b) % std::f32::consts::TAU) + std::f32::consts::PI * 3.)
         % std::f32::consts::TAU)
         - std::f32::consts::PI;
-    return ang * x + b;
+    ang * x + b
 }
 
 /// Linear interpolation between two colors in Lch space
@@ -693,13 +693,13 @@ fn lerp_lch(a: Color, b: Color, x: f32) -> Color {
 
     let alpha = lerp(a_a, b_a, x);
 
-    return Color::Lcha {
+    Color::Lcha {
         lightness: xy.x,
         chroma: xy.y,
         hue,
         alpha,
     }
-    .as_rgba();
+    .as_rgba()
 }
 
 fn rgb_to_hsv(from: &Color) -> Vec3 {
@@ -739,7 +739,7 @@ fn rgb_to_hsv(from: &Color) -> Vec3 {
         res.x = 4.0 + (r - g) / delta;
     }
 
-    res.x = res.x * 60.0; // Convert to degrees
+    res.x *= 60.0; // Convert to degrees
     if res.x < 0.0 {
         res.x += 360.0; // Unwrap angle in case of negative
     }
@@ -759,23 +759,23 @@ fn hsv_to_rgb(from: &Vec3) -> Color {
 
     let mut res = Vec4::new(0.0, 0.0, 0.0, 1.0);
 
-    if h >= 0.0 && h < 60.0 {
+    if (0.0..60.0).contains(&h) {
         res.x = c;
         res.y = x;
         res.z = 0.0;
-    } else if h >= 60.0 && h < 120.0 {
+    } else if (60.0..120.0).contains(&h) {
         res.x = x;
         res.y = c;
         res.z = 0.0;
-    } else if h >= 120.0 && h < 180.0 {
+    } else if (120.0..180.0).contains(&h) {
         res.x = 0.0;
         res.y = c;
         res.z = x;
-    } else if h >= 180.0 && h < 240.0 {
+    } else if (180.0..240.0).contains(&h) {
         res.x = 0.0;
         res.y = x;
         res.z = c;
-    } else if h >= 240.0 && h < 300.0 {
+    } else if (240.0..300.0).contains(&h) {
         res.x = x;
         res.y = 0.0;
         res.z = c;
@@ -785,7 +785,7 @@ fn hsv_to_rgb(from: &Vec3) -> Color {
         res.z = x;
     }
 
-    res = res + Vec4::new(m, m, m, 0.0);
+    res += Vec4::new(m, m, m, 0.0);
 
     Color::from(res)
 }

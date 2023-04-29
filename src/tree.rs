@@ -258,9 +258,8 @@ impl Tree {
         let children_b = other_tree.children.get(&root_node);
 
         // Handle both easy cases first..
-        if children_a.is_some() && children_b.is_none() {
+        if let (Some(children_a), None) = (children_a, children_b) {
             return children_a
-                .unwrap()
                 .iter()
                 .enumerate()
                 .map(|(child_id, child_node)| {
@@ -268,9 +267,8 @@ impl Tree {
                 })
                 .collect::<Vec<_>>()
                 .into();
-        } else if children_a.is_none() && children_b.is_some() {
+        } else if let (None, Some(children_b)) = (children_a, children_b) {
             return children_b
-                .unwrap()
                 .iter()
                 .enumerate()
                 .map(|(child_id, child_node)| {
@@ -362,16 +360,15 @@ impl Tree {
 
                 let parent_a = self.parent(children_a.get(*id).unwrap().1);
                 let parent_b = self.parent(*node);
-                let definitely_moved = if parent_a.is_some() && parent_b.is_some() {
-                    let parent_a = parent_a.unwrap();
-                    let parent_b = parent_b.unwrap();
-                    parent_a != parent_b
-                        || (parent_a == parent_b
-                            && *node != children_a.get(*id).unwrap().1
-                            && children_a.iter().any(|(_, node_b)| node == node_b))
-                } else {
-                    false
-                };
+                let definitely_moved =
+                    if let (Some(parent_a), Some(parent_b)) = (parent_a, parent_b) {
+                        parent_a != parent_b
+                            || (parent_a == parent_b
+                                && *node != children_a.get(*id).unwrap().1
+                                && children_a.iter().any(|(_, node_b)| node == node_b))
+                    } else {
+                        false
+                    };
 
                 if definitely_moved {
                     let change = if change[0] == Change::Unchanged {
@@ -485,16 +482,15 @@ impl Tree {
 
                 let parent_a = self.parent(tree1.get(*id).unwrap().1);
                 let parent_b = self.parent(*node);
-                let definitely_moved = if parent_a.is_some() && parent_b.is_some() {
-                    let parent_a = parent_a.unwrap();
-                    let parent_b = parent_b.unwrap();
-                    parent_a != parent_b
-                        || (parent_a == parent_b
-                            && *node != tree1.get(*id).unwrap().1
-                            && tree1.iter().any(|(_, node_b)| node == node_b))
-                } else {
-                    false
-                };
+                let definitely_moved =
+                    if let (Some(parent_a), Some(parent_b)) = (parent_a, parent_b) {
+                        parent_a != parent_b
+                            || (parent_a == parent_b
+                                && *node != tree1.get(*id).unwrap().1
+                                && tree1.iter().any(|(_, node_b)| node == node_b))
+                    } else {
+                        false
+                    };
 
                 if definitely_moved {
                     let change = if change[0] == Change::Unchanged {
@@ -527,19 +523,18 @@ impl Tree {
         if children_a.is_none() && children_b.is_none() {
             // Nothing to do.
             return;
-        } else if children_a.is_none() && children_b.is_some() {
+        } else if let (None, Some(children_b)) = (children_a.as_ref(), children_b) {
             // Simple case of moving all children over to A.
-            self.children.insert(root_node, children_b.unwrap().clone());
+            self.children.insert(root_node, children_b.clone());
             for (parent, children) in self.children.iter() {
                 for child in children.iter() {
                     self.parents.insert(*child, *parent);
                 }
             }
             return;
-        } else if children_a.is_some() && children_b.is_none() {
+        } else if let (Some(children_a), None) = (children_a.as_ref(), children_b) {
             // Case for erasing all
             if has_changes {
-                let children_a = children_a.unwrap();
                 for child in children_a.iter() {
                     self.parents.remove(child);
                 }
@@ -644,7 +639,7 @@ impl Tree {
             for child in children.iter() {
                 println!("    [{}]", child.0.index());
             }
-            println!("");
+            println!();
         }
     }
 

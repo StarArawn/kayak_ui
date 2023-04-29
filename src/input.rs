@@ -18,7 +18,7 @@ pub(crate) fn process_events(world: &mut World) {
     // TODO: Rewrite an process events per window.
     let window_size = if let Ok(window) = world
         .query_filtered::<&Window, With<PrimaryWindow>>()
-        .get_single(&world)
+        .get_single(world)
     {
         Vec2::new(window.width(), window.height())
     } else {
@@ -63,21 +63,18 @@ pub(crate) fn process_events(world: &mut World) {
             {
                 // Currently, we can only handle a single MouseMoved event at a time so everything but the last needs to be skipped
                 input_events.push(InputEvent::MouseMoved((
-                    event.position.x as f32,
-                    window_size.y - event.position.y as f32,
+                    event.position.x,
+                    window_size.y - event.position.y,
                 )));
             }
 
             for event in custom_event_mouse_button.0.iter(&mouse_button_input_events) {
-                match event.button {
-                    MouseButton::Left => {
-                        if event.state == ButtonState::Pressed {
-                            input_events.push(InputEvent::MouseLeftPress);
-                        } else if event.state == ButtonState::Released {
-                            input_events.push(InputEvent::MouseLeftRelease);
-                        }
+                if let MouseButton::Left = event.button {
+                    if event.state == ButtonState::Pressed {
+                        input_events.push(InputEvent::MouseLeftPress);
+                    } else if event.state == ButtonState::Released {
+                        input_events.push(InputEvent::MouseLeftRelease);
                     }
-                    _ => {}
                 }
             }
 

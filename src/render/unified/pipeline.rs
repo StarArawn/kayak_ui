@@ -578,7 +578,7 @@ pub struct QueueQuads<'w, 's> {
     quad_meta: ResMut<'w, QuadMeta>,
     quad_pipeline: Res<'w, UnifiedPipeline>,
     pipelines: ResMut<'w, SpecializedRenderPipelines<UnifiedPipeline>>,
-    pipeline_cache: ResMut<'w, PipelineCache>,
+    pipeline_cache: Res<'w, PipelineCache>,
     extracted_quads: ResMut<'w, ExtractedQuads>,
     views: Query<
         'w,
@@ -610,7 +610,7 @@ pub fn queue_quads(queue_quads: QueueQuads) {
         mut quad_meta,
         quad_pipeline,
         mut pipelines,
-        mut pipeline_cache,
+        pipeline_cache,
         mut extracted_quads,
         mut views,
         mut image_bind_groups,
@@ -663,7 +663,7 @@ pub fn queue_quads(queue_quads: QueueQuads) {
             msaa: 1,
             hdr: view.hdr,
         };
-        let spec_pipeline = pipelines.specialize(&mut pipeline_cache, &quad_pipeline, key);
+        let spec_pipeline = pipelines.specialize(&pipeline_cache, &quad_pipeline, key);
 
         for quad in extracted_quads.iter_mut() {
             if quad.quad_type == UIQuadType::Clip {
@@ -1167,15 +1167,13 @@ impl<T: PhaseItem + TransparentUIGeneric + BatchedPhaseItem> RenderCommand<T> fo
             let image_bind_groups = image_bind_groups.into_inner();
             if let Some(bind_group) = image_bind_groups.values.get(&Handle::weak(*image_handle)) {
                 pass.set_bind_group(1, bind_group, &[]);
+            } else if let Some(bind_group) = image_bind_groups
+                .font_values
+                .get(&Handle::weak(*image_handle))
+            {
+                pass.set_bind_group(1, bind_group, &[]);
             } else {
-                if let Some(bind_group) = image_bind_groups
-                    .font_values
-                    .get(&Handle::weak(*image_handle))
-                {
-                    pass.set_bind_group(1, bind_group, &[]);
-                } else {
-                    pass.set_bind_group(1, &unified_pipeline.default_image.1, &[]);
-                }
+                pass.set_bind_group(1, &unified_pipeline.default_image.1, &[]);
             }
         } else {
             pass.set_bind_group(1, &unified_pipeline.default_image.1, &[]);

@@ -81,11 +81,8 @@ pub fn render(
                         if let Ok(mut context) = query.get_mut(context_entity) {
                             event.stop_propagation();
                             event.prevent_default();
-                            match event.event_type {
-                                EventType::Click(..) => {
-                                    context.toggle_current(current_index);
-                                }
-                                _ => {}
+                            if let EventType::Click(..) = event.event_type {
+                                context.toggle_current(current_index);
                             }
                         }
                     },

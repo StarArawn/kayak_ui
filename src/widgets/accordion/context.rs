@@ -16,7 +16,7 @@ pub struct AccordionContext {
 
 impl AccordionContext {
     pub fn is_open(&self, index: usize) -> bool {
-        self.accordions.get(&index).map(|v| *v).unwrap_or(false)
+        self.accordions.get(&index).copied().unwrap_or(false)
     }
 
     pub fn toggle_current(&mut self, index: usize) {
@@ -80,8 +80,10 @@ pub fn render(
         {
             context_entity
         } else {
-            let mut accordion_context = AccordionContext::default();
-            accordion_context.allow_one = accordion.allow_only_one;
+            let mut accordion_context = AccordionContext {
+                allow_one: accordion.allow_only_one,
+                ..AccordionContext::default()
+            };
             if let Some(default_open) = accordion.default_open {
                 accordion_context.toggle_current(default_open);
             }

@@ -21,9 +21,9 @@ pub use units::*;
 #[derive(Component, Reflect, Debug, Default, Clone, PartialEq)]
 pub struct ComputedStyles(pub KStyle);
 
-impl Into<ComputedStyles> for KStyle {
-    fn into(self) -> ComputedStyles {
-        ComputedStyles(self)
+impl From<KStyle> for ComputedStyles {
+    fn from(val: KStyle) -> Self {
+        ComputedStyles(val)
     }
 }
 
@@ -47,7 +47,7 @@ impl BoxShadow {
         let box_shadow_string: String = s.to_string();
         let box_shadow_string = box_shadow_string
             .replace("box-shadow: ", "")
-            .replace(";", "");
+            .replace(';', "");
 
         let values_parsed = fancy_regex::Regex::new(r",(?![^\(]*\))").unwrap();
         let split_regex = fancy_regex::Regex::new(r"\s(?![^(]*\))").unwrap();
@@ -60,7 +60,7 @@ impl BoxShadow {
         for value in values_split.map(|s| s.trim()) {
             // Split single shadow
             let parts = Split {
-                finder: split_regex.find_iter(&value),
+                finder: split_regex.find_iter(value),
                 last: 0,
             }
             .collect::<Vec<_>>();
@@ -68,14 +68,14 @@ impl BoxShadow {
             let color = parts
                 .last()
                 .map(|last| {
-                    if last.contains("rgb") || last.contains("#") {
-                        Some(last.clone())
+                    if last.contains("rgb") || last.contains('#') {
+                        Some(*last)
                     } else {
                         None
                     }
                 })
                 .and_then(|s| s)
-                .unwrap_or(parts.first().unwrap().clone());
+                .unwrap_or(parts.first().cloned().unwrap());
 
             let nums = parts
                 .iter()
@@ -84,7 +84,7 @@ impl BoxShadow {
                 .map(|v| v.replace("px", "").parse::<f32>().unwrap_or(0.0))
                 .collect::<Vec<f32>>();
 
-            let offset_x = nums.get(0).copied().unwrap_or(0.0);
+            let offset_x = nums.first().copied().unwrap_or(0.0);
             let offset_y = nums.get(1).copied().unwrap_or(0.0);
             let blur_radius = nums.get(2).copied().unwrap_or(0.0);
             let spread = nums.get(3).copied().unwrap_or(0.0);
@@ -112,11 +112,11 @@ fn is_rgba(s: &str) -> bool {
 }
 
 fn parse_rgba(s: &str) -> Color {
-    let s = s.replace("rgba(", "").replace("rgb(", "").replace(")", "");
-    let values = s.split(",").collect::<Vec<_>>();
+    let s = s.replace("rgba(", "").replace("rgb(", "").replace(')', "");
+    let values = s.split(',').collect::<Vec<_>>();
 
     let r = values
-        .get(0)
+        .first()
         .map(|s| s.trim().parse::<f32>().map(|v| v / 255.0).unwrap_or(0.0))
         .unwrap_or(0.0);
     let g = values

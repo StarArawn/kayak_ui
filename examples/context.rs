@@ -107,15 +107,12 @@ fn update_theme_button(
                             query: Query<&ThemeButton>,
                             mut context_query: Query<&mut Theme>,
                             | {
-                                match event.event_type {
-                                    EventType::Click(..) => {
-                                        if let Ok(button) = query.get(theme_button_entity) {
-                                            if let Ok(mut context_theme) = context_query.get_mut(theme_context_entity) {
-                                                *context_theme = button.theme.clone();
-                                            }
+                                if let EventType::Click(..) = event.event_type {
+                                    if let Ok(button) = query.get(theme_button_entity) {
+                                        if let Ok(mut context_theme) = context_query.get_mut(theme_context_entity) {
+                                            *context_theme = button.theme.clone();
                                         }
-                                    },
-                                    _ => {}
+                                    }
                                 }
                             },
                         )}
@@ -284,7 +281,7 @@ fn update_theme_demo(
                                 }}
                             />
                             <KButtonBundle
-                                button={KButton { text: "BUTTON".into(), ..Default::default() }}
+                                button={KButton { text: "BUTTON".into() }}
                                 styles={btn_style}
                             />
                             {

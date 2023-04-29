@@ -6,7 +6,7 @@ mod line;
 mod quadratic;
 
 pub fn non_zero_sign(n: f64) -> i32 {
-    return 2 * (if n > 0.0 { 1 } else { 0 }) - 1;
+    2 * (if n > 0.0 { 1 } else { 0 }) - 1
 }
 pub fn mix(a: Vector2, b: Vector2, weight: f64) -> Vector2 {
     Vector2::new(
@@ -17,18 +17,18 @@ pub fn mix(a: Vector2, b: Vector2, weight: f64) -> Vector2 {
 
 #[derive(Debug, Clone, Copy)]
 pub enum EdgeSegment {
-    LineSegment {
+    Line {
         color: EdgeColor,
         p0: Vector2,
         p1: Vector2,
     },
-    QuadraticSegment {
+    Quadratic {
         color: EdgeColor,
         p0: Vector2,
         p1: Vector2,
         p2: Vector2,
     },
-    CubicSegment {
+    Cubic {
         color: EdgeColor,
         p0: Vector2,
         p1: Vector2,
@@ -39,7 +39,7 @@ pub enum EdgeSegment {
 
 impl Default for EdgeSegment {
     fn default() -> Self {
-        EdgeSegment::LineSegment {
+        EdgeSegment::Line {
             color: EdgeColor::WHITE,
             p0: Vector2::default(),
             p1: Vector2::default(),
@@ -49,14 +49,14 @@ impl Default for EdgeSegment {
 
 impl EdgeSegment {
     pub fn new_linear(p0: Vector2, p1: Vector2, color: EdgeColor) -> Self {
-        Self::LineSegment { p0, p1, color }
+        Self::Line { p0, p1, color }
     }
 
     pub fn new_quadratic(p0: Vector2, mut p1: Vector2, p2: Vector2, color: EdgeColor) -> Self {
         if p1 == p0 || p1 == p2 {
             p1 = 0.5 * (p0 + p2);
         }
-        Self::QuadraticSegment { p0, p1, p2, color }
+        Self::Quadratic { p0, p1, p2, color }
     }
 
     pub fn new_cubic(
@@ -70,7 +70,7 @@ impl EdgeSegment {
             p1 = mix(p0, p3, 1.0 / 3.0);
             p2 = mix(p0, p3, 2.0 / 3.0);
         }
-        Self::CubicSegment {
+        Self::Cubic {
             p0,
             p1,
             p2,
@@ -110,39 +110,33 @@ impl EdgeSegment {
 
     pub fn direction(&self, param: f64) -> Vector2 {
         match *self {
-            Self::LineSegment { p0, p1, .. } => line::direction(p0, p1, param),
-            Self::QuadraticSegment { p0, p1, p2, .. } => quadratic::direction(p0, p1, p2, param),
-            Self::CubicSegment { p0, p1, p2, p3, .. } => cubic::direction(p0, p1, p2, p3, param),
+            Self::Line { p0, p1, .. } => line::direction(p0, p1, param),
+            Self::Quadratic { p0, p1, p2, .. } => quadratic::direction(p0, p1, p2, param),
+            Self::Cubic { p0, p1, p2, p3, .. } => cubic::direction(p0, p1, p2, p3, param),
         }
     }
 
     pub fn point(&self, param: f64) -> Vector2 {
         match *self {
-            Self::LineSegment { p0, p1, .. } => line::point(p0, p1, param),
-            Self::QuadraticSegment { p0, p1, p2, .. } => quadratic::point(p0, p1, p2, param),
-            Self::CubicSegment { p0, p1, p2, p3, .. } => cubic::point(p0, p1, p2, p3, param),
+            Self::Line { p0, p1, .. } => line::point(p0, p1, param),
+            Self::Quadratic { p0, p1, p2, .. } => quadratic::point(p0, p1, p2, param),
+            Self::Cubic { p0, p1, p2, p3, .. } => cubic::point(p0, p1, p2, p3, param),
         }
     }
 
     pub fn find_bounds(&self, l: &mut f64, b: &mut f64, r: &mut f64, t: &mut f64) {
         match *self {
-            Self::LineSegment { p0, p1, .. } => line::find_bounds(p0, p1, l, b, r, t),
-            Self::QuadraticSegment { p0, p1, p2, .. } => {
-                quadratic::find_bounds(p0, p1, p2, l, b, r, t)
-            }
-            Self::CubicSegment { p0, p1, p2, p3, .. } => {
-                cubic::find_bounds(p0, p1, p2, p3, l, b, r, t)
-            }
+            Self::Line { p0, p1, .. } => line::find_bounds(p0, p1, l, b, r, t),
+            Self::Quadratic { p0, p1, p2, .. } => quadratic::find_bounds(p0, p1, p2, l, b, r, t),
+            Self::Cubic { p0, p1, p2, p3, .. } => cubic::find_bounds(p0, p1, p2, p3, l, b, r, t),
         }
     }
 
     pub fn split_in_thirds(&self) -> (EdgeSegment, EdgeSegment, EdgeSegment) {
         match *self {
-            Self::LineSegment { p0, p1, color } => line::split_in_thirds(p0, p1, color),
-            Self::QuadraticSegment { p0, p1, p2, color } => {
-                quadratic::split_in_thirds(p0, p1, p2, color)
-            }
-            Self::CubicSegment {
+            Self::Line { p0, p1, color } => line::split_in_thirds(p0, p1, color),
+            Self::Quadratic { p0, p1, p2, color } => quadratic::split_in_thirds(p0, p1, p2, color),
+            Self::Cubic {
                 p0,
                 p1,
                 p2,
@@ -154,37 +148,33 @@ impl EdgeSegment {
 
     pub fn signed_distance(&self, origin: Vector2) -> (SignedDistance, f64) {
         match *self {
-            Self::LineSegment { p0, p1, .. } => line::signed_distance(p0, p1, origin),
-            Self::QuadraticSegment { p0, p1, p2, .. } => {
-                quadratic::signed_distance(p0, p1, p2, origin)
-            }
-            Self::CubicSegment { p0, p1, p2, p3, .. } => {
-                cubic::signed_distance(p0, p1, p2, p3, origin)
-            }
+            Self::Line { p0, p1, .. } => line::signed_distance(p0, p1, origin),
+            Self::Quadratic { p0, p1, p2, .. } => quadratic::signed_distance(p0, p1, p2, origin),
+            Self::Cubic { p0, p1, p2, p3, .. } => cubic::signed_distance(p0, p1, p2, p3, origin),
         }
     }
 
     pub fn has_color(&self, c: EdgeColor) -> bool {
         match *self {
-            Self::LineSegment { color, .. } => color as usize & c as usize != 0,
-            Self::QuadraticSegment { color, .. } => color as usize & c as usize != 0,
-            Self::CubicSegment { color, .. } => color as usize & c as usize != 0,
+            Self::Line { color, .. } => color as usize & c as usize != 0,
+            Self::Quadratic { color, .. } => color as usize & c as usize != 0,
+            Self::Cubic { color, .. } => color as usize & c as usize != 0,
         }
     }
 
     pub fn get_color(&self) -> EdgeColor {
         match self {
-            Self::LineSegment { color, .. } => *color,
-            Self::QuadraticSegment { color, .. } => *color,
-            Self::CubicSegment { color, .. } => *color,
+            Self::Line { color, .. } => *color,
+            Self::Quadratic { color, .. } => *color,
+            Self::Cubic { color, .. } => *color,
         }
     }
 
     pub fn set_color(&mut self, c: EdgeColor) {
         match self {
-            Self::LineSegment { color, .. } => *color = c,
-            Self::QuadraticSegment { color, .. } => *color = c,
-            Self::CubicSegment { color, .. } => *color = c,
+            Self::Line { color, .. } => *color = c,
+            Self::Quadratic { color, .. } => *color = c,
+            Self::Cubic { color, .. } => *color = c,
         }
     }
 }

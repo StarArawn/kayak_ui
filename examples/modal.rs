@@ -54,13 +54,10 @@ fn my_widget_render(
                             mut query: Query<&mut MyWidgetState>| {
                             event.prevent_default();
                             event.stop_propagation();
-                            match event.event_type {
-                                EventType::Click(..) => {
-                                    if let Ok(mut state) = query.get_mut(state_entity) {
-                                        state.show_modal = true;
-                                    }
+                            if let EventType::Click(..) = event.event_type {
+                                if let Ok(mut state) = query.get_mut(state_entity) {
+                                    state.show_modal = true;
                                 }
-                                _ => {}
                             }
                         },
                     )}
@@ -80,20 +77,17 @@ fn my_widget_render(
                     }}
                 >
                     <KButtonBundle
-                        button={KButton { text: "Hide Window".into(), ..Default::default() }}
+                        button={KButton { text: "Hide Window".into() }}
                         on_event={OnEvent::new(
                             move |In(_entity): In<Entity>,
                             mut event: ResMut<KEvent>,
                                 mut query: Query<&mut MyWidgetState>| {
-                                match event.event_type {
-                                    EventType::Click(..) => {
-                                        event.prevent_default();
-                                        event.stop_propagation();
-                                        if let Ok(mut state) = query.get_mut(state_entity) {
-                                            state.show_modal = false;
-                                        }
+                                if let EventType::Click(..) = event.event_type {
+                                    event.prevent_default();
+                                    event.stop_propagation();
+                                    if let Ok(mut state) = query.get_mut(state_entity) {
+                                        state.show_modal = false;
                                     }
-                                    _ => {}
                                 }
                             },
                         )}

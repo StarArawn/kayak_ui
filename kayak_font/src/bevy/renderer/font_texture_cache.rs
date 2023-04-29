@@ -63,12 +63,10 @@ impl FontTextureCache {
     ) -> Option<&'s GpuImage> {
         if let Some(gpu_image) = self.images.get(handle) {
             Some(gpu_image)
+        } else if let Some(font) = self.fonts.get(handle) {
+            render_images.get(font.image.get())
         } else {
-            if let Some(font) = self.fonts.get(handle) {
-                render_images.get(font.image.get())
-            } else {
-                None
-            }
+            None
         }
     }
 
@@ -86,20 +84,18 @@ impl FontTextureCache {
                     if render_images.get(font.image.get()).is_none() {
                         was_processed = false;
                     }
+                } else if let Some(atlas_texture) = render_images.get(font.image.get()) {
+                    Self::create_from_atlas(
+                        &mut self.images,
+                        &font.sdf,
+                        kayak_font_handle.clone_weak(),
+                        device,
+                        queue,
+                        atlas_texture,
+                        font.sdf.max_glyph_size().into(),
+                    );
                 } else {
-                    if let Some(atlas_texture) = render_images.get(font.image.get()) {
-                        Self::create_from_atlas(
-                            &mut self.images,
-                            &font.sdf,
-                            kayak_font_handle.clone_weak(),
-                            device,
-                            queue,
-                            atlas_texture,
-                            font.sdf.max_glyph_size().into(),
-                        );
-                    } else {
-                        was_processed = false;
-                    }
+                    was_processed = false;
                 }
             }
             if !was_processed {
@@ -206,15 +202,14 @@ impl FontTextureCache {
             array_layer_count: std::num::NonZeroU32::new(MAX_CHARACTERS),
         });
 
-        let image = GpuImage {
+        GpuImage {
             texture,
             sampler,
             texture_view,
             mip_level_count: 1,
             size: Vec2 { x: 1.0, y: 1.0 },
             texture_format: TextureFormat::Rgba8Unorm,
-        };
-        image
+        }
     }
 
     pub fn create_from_atlas(

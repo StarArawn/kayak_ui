@@ -17,9 +17,9 @@ impl Default for LayoutType {
     }
 }
 
-impl Into<morphorm::LayoutType> for LayoutType {
-    fn into(self) -> morphorm::LayoutType {
-        match self {
+impl From<LayoutType> for morphorm::LayoutType {
+    fn from(val: LayoutType) -> Self {
+        match val {
             LayoutType::Column => morphorm::LayoutType::Column,
             LayoutType::Row => morphorm::LayoutType::Row,
             LayoutType::Grid => morphorm::LayoutType::Grid,
@@ -42,11 +42,11 @@ impl Default for KPositionType {
     }
 }
 
-impl Into<morphorm::PositionType> for KPositionType {
-    fn into(self) -> morphorm::PositionType {
-        match self {
-            Self::ParentDirected => morphorm::PositionType::ParentDirected,
-            Self::SelfDirected => morphorm::PositionType::SelfDirected,
+impl From<KPositionType> for morphorm::PositionType {
+    fn from(val: KPositionType) -> Self {
+        match val {
+            KPositionType::ParentDirected => morphorm::PositionType::ParentDirected,
+            KPositionType::SelfDirected => morphorm::PositionType::SelfDirected,
         }
     }
 }
@@ -70,13 +70,13 @@ impl Default for Units {
     }
 }
 
-impl Into<morphorm::Units> for Units {
-    fn into(self) -> morphorm::Units {
-        match self {
-            Self::Pixels(value) => morphorm::Units::Pixels(value),
-            Self::Percentage(value) => morphorm::Units::Percentage(value),
-            Self::Stretch(value) => morphorm::Units::Stretch(value),
-            Self::Auto => morphorm::Units::Auto,
+impl From<Units> for morphorm::Units {
+    fn from(val: Units) -> Self {
+        match val {
+            Units::Pixels(value) => morphorm::Units::Pixels(value),
+            Units::Percentage(value) => morphorm::Units::Percentage(value),
+            Units::Stretch(value) => morphorm::Units::Stretch(value),
+            Units::Auto => morphorm::Units::Auto,
         }
     }
 }
@@ -85,42 +85,30 @@ impl Units {
     /// Converts the units to an f32 value
     pub fn value_or(&self, parent_value: f32, auto: f32) -> f32 {
         match self {
-            &Units::Pixels(pixels) => pixels,
-            &Units::Percentage(percentage) => (percentage / 100.0) * parent_value,
-            &Units::Stretch(_) => auto,
-            &Units::Auto => auto,
+            Units::Pixels(pixels) => *pixels,
+            Units::Percentage(percentage) => (percentage / 100.0) * parent_value,
+            Units::Stretch(_) => auto,
+            Units::Auto => auto,
         }
     }
 
     /// Returns true if the value is in pixels
     pub fn is_pixels(&self) -> bool {
-        match self {
-            Units::Pixels(_) => true,
-            _ => false,
-        }
+        matches!(self, Units::Pixels(_))
     }
 
     /// Returns true if the value is a percentage
     pub fn is_percentage(&self) -> bool {
-        match self {
-            Units::Percentage(_) => true,
-            _ => false,
-        }
+        matches!(self, Units::Percentage(_))
     }
 
     /// Returns true if the value is a stretch factor
     pub fn is_stretch(&self) -> bool {
-        match self {
-            Units::Stretch(_) => true,
-            _ => false,
-        }
+        matches!(self, Units::Stretch(_))
     }
 
     /// Returns true if the value is auto
     pub fn is_auto(&self) -> bool {
-        match self {
-            Units::Auto => true,
-            _ => false,
-        }
+        matches!(self, Units::Auto)
     }
 }

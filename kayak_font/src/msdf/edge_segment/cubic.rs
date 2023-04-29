@@ -144,7 +144,7 @@ pub fn signed_distance(
             t -= Vector2::dot_product(qe, d1)
                 / (Vector2::dot_product(d1, d1) + Vector2::dot_product(qe, d2));
 
-            if t < 0.0 || t > 1.0 {
+            if !(0.0..=1.0).contains(&t) {
                 break;
             }
 
@@ -177,10 +177,10 @@ pub fn signed_distance(
         }
     }
 
-    if param >= 0.0 && param <= 1.0 {
-        return (SignedDistance::new(min_distance, 0.0), param);
+    if (0.0..=1.0).contains(&param) {
+        (SignedDistance::new(min_distance, 0.0), param)
     } else if param < 0.5 {
-        return (
+        (
             SignedDistance::new(
                 min_distance,
                 fabs(Vector2::dot_product(
@@ -189,9 +189,9 @@ pub fn signed_distance(
                 )),
             ),
             param,
-        );
+        )
     } else {
-        return (
+        (
             SignedDistance::new(
                 min_distance,
                 fabs(Vector2::dot_product(
@@ -200,6 +200,6 @@ pub fn signed_distance(
                 )),
             ),
             param,
-        );
+        )
     }
 }

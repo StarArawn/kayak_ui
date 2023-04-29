@@ -51,11 +51,8 @@ pub fn render_todo_items(
                     move |In(_entity): In<Entity>,
                           event: Res<KEvent>,
                         mut todo_list: ResMut<TodoList>,| {
-                        match event.event_type {
-                            EventType::Click(..) => {
-                                todo_list.items.remove(index);
-                            },
-                            _ => {}
+                        if let EventType::Click(..) = event.event_type {
+                            todo_list.items.remove(index);
                         }
                     },
                 );

@@ -186,11 +186,8 @@ fn startup(
         move |In(_entity): In<Entity>,
               event: Res<KEvent>,
               mut active_color: ResMut<ActiveColor>| {
-            match event.event_type {
-                EventType::Click(..) => {
-                    active_color.index = (active_color.index + 1) % COLORS.len();
-                }
-                _ => {}
+            if let EventType::Click(..) = event.event_type {
+                active_color.index = (active_color.index + 1) % COLORS.len();
             }
         },
     );
@@ -235,7 +232,6 @@ fn startup(
                 <KButtonBundle
                     button={KButton {
                         text: "Change Tile Color".into(),
-                        ..Default::default()
                     }}
                     on_event={handle_change_color}
                     styles={button_styles}

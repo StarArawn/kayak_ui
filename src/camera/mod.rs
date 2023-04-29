@@ -12,7 +12,7 @@ impl ExtractComponent for CameraUIKayak {
     type Out = CameraUIKayak;
 
     fn extract_component(item: QueryItem<Self::Query>) -> Option<Self::Out> {
-        Some(item.clone())
+        Some(*item)
     }
 }
 

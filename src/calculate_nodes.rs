@@ -273,7 +273,7 @@ fn create_primitive(
                     .font
                     .resolve_or_else(|| String::from(crate::DEFAULT_FONT));
                 // --- Bind to Font Asset --- //
-                let font_handle = font_mapping.get_handle(font.clone()).unwrap();
+                let font_handle = font_mapping.get_handle(font).unwrap();
                 if let Some(font) = fonts.get(&font_handle) {
                     if let Ok(node_tree) = context.tree.try_read() {
                         if let Some(parent_id) =
@@ -300,7 +300,7 @@ fn create_primitive(
                                     font_size,
                                     line_height: styles.line_height.resolve_or(font_size * 1.2),
                                     alignment: *alignment,
-                                    ..properties.clone()
+                                    ..*properties
                                 };
 
                                 properties.max_size = (

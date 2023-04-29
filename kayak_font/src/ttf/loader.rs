@@ -1,3 +1,4 @@
+#![allow(clippy::needless_question_mark, clippy::question_mark)]
 use bevy::{
     asset::{AssetLoader, LoadContext, LoadedAsset},
     render::render_resource::{Extent3d, TextureFormat},
@@ -17,7 +18,7 @@ use crate::{
 pub struct TTFLoader;
 
 #[derive(DeJson, Default, Debug, Clone)]
-pub struct KTTF {
+pub struct Kttf {
     file: String,
     char_range_start: String,
     char_range_end: String,
@@ -38,7 +39,7 @@ impl AssetLoader for TTFLoader {
                 .downcast_ref::<FileAssetIo>()
                 .unwrap();
 
-            let kttf: KTTF =
+            let kttf: Kttf =
                 nanoserde::DeJson::deserialize_json(std::str::from_utf8(bytes).unwrap()).unwrap();
 
             let char_range_start =
@@ -79,9 +80,9 @@ impl AssetLoader for TTFLoader {
                     subtable.codepoints(|codepoint| {
                         if let Some(mapping) = subtable.glyph_index(codepoint) {
                             glyph_to_char
-                                .insert(mapping, unsafe { std::mem::transmute(codepoint) });
+                                .insert(mapping, std::char::from_u32(codepoint).unwrap());
                             char_to_glyph
-                                .insert(unsafe { std::mem::transmute(codepoint) }, mapping);
+                                .insert(std::char::from_u32(codepoint).unwrap(), mapping);
                         }
                     })
                 }
@@ -134,7 +135,7 @@ impl AssetLoader for TTFLoader {
                     advance: advance * pixel_scale as f32,
                     atlas_bounds: Some(Rect {
                         left: 0.0,
-                        bottom: 0.0 as f32,
+                        bottom: 0.0,
                         right: size_x as f32,
                         top: size_y as f32,
                     }),
@@ -163,7 +164,7 @@ impl AssetLoader for TTFLoader {
                         range,
                         scale,
                         translation + Vector2::new(0.0, size_x as f64 * 1.25),
-                        1.11111111111111111,
+                        1.111_111_111_111_111_2,
                     );
 
                     // let left = (translation.x - char_bounds.x_min as f64 * pixel_scale).max(0.0).floor() as u32;
@@ -198,16 +199,19 @@ impl AssetLoader for TTFLoader {
                 yy += size_y as u32;
             }
 
-            let image_bytes = if cache_image.is_err() {
-                #[cfg(not(target_family = "wasm"))]
-                image_builder
-                    .save(asset_io.root_path().join(cache_path))
-                    .unwrap();
-                image_builder.as_bytes().to_vec()
-            } else {
-                let cache_image = cache_image.unwrap();
-                let image = image::load_from_memory(&cache_image).unwrap();
-                image.as_bytes().to_vec()
+            let image_bytes = match cache_image {
+                Ok(cache_image) => {
+                    let cache_image = cache_image;
+                    let image = image::load_from_memory(&cache_image).unwrap();
+                    image.as_bytes().to_vec()
+                },
+                Err(_) => {
+                    #[cfg(not(target_family = "wasm"))]
+                    image_builder
+                        .save(asset_io.root_path().join(cache_path))
+                        .unwrap();
+                    image_builder.as_bytes().to_vec()
+                }
             };
 
             let mut sdf = Sdf::default();
@@ -241,7 +245,7 @@ impl AssetLoader for TTFLoader {
 }
 
 fn calculate_plane(
-    loaded_file: &KTTF,
+    loaded_file: &Kttf,
     shape: &mut Shape,
     geometry_scale: f32,
     scale: f32,

@@ -153,7 +153,7 @@ fn startup(
                     },
                     style_b: KStyle {
                         width: Units::Pixels(100.0).into(),
-                        ..quad_styles.clone()
+                        ..quad_styles
                     },
                     ..Default::default()
                 }}

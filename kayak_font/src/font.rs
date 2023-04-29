@@ -85,7 +85,7 @@ impl KayakFont {
     }
 
     pub fn get_char_id(&self, c: char) -> Option<u32> {
-        self.char_ids.get(&c).and_then(|id| Some(*id))
+        self.char_ids.get(&c).copied()
     }
 
     pub fn get_word_width(&self, word: &str, properties: TextProperties) -> f32 {
@@ -271,6 +271,7 @@ impl KayakFont {
             let start = line.glyph_index();
             let end = line.glyph_index() + line.total_glyphs();
 
+            #[allow(clippy::needless_range_loop)]
             for index in start..end {
                 let rect = &mut glyph_rects[index];
                 rect.position.0 += shift_x;

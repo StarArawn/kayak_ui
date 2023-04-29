@@ -177,7 +177,7 @@ impl EventDispatcher {
     /// Process and dispatch a set of [InputEvents](crate::InputEvent)
     pub(crate) fn process_events(
         &mut self,
-        input_events: &Vec<InputEvent>,
+        input_events: &[InputEvent],
         context: &mut KayakRootContext,
         world: &mut World,
     ) {
@@ -797,39 +797,35 @@ impl EventDispatcher {
         context: &mut KayakRootContext,
         world: &mut World,
     ) {
-        match event.event_type {
-            EventType::KeyDown(evt) => match evt.key() {
-                KeyCode::Tab => {
-                    let (index, current_focus) =
-                        if let Ok(mut focus_tree) = context.focus_tree.try_write() {
-                            let current_focus = focus_tree.current();
+        if let EventType::KeyDown(evt) = event.event_type {
+            if let KeyCode::Tab = evt.key() {
+                let (index, current_focus) =
+                    if let Ok(mut focus_tree) = context.focus_tree.try_write() {
+                        let current_focus = focus_tree.current();
 
-                            let index = if evt.is_shift_pressed() {
-                                focus_tree.prev()
-                            } else {
-                                focus_tree.next()
-                            };
-                            (index, current_focus)
+                        let index = if evt.is_shift_pressed() {
+                            focus_tree.prev()
                         } else {
-                            (None, None)
+                            focus_tree.next()
                         };
+                        (index, current_focus)
+                    } else {
+                        (None, None)
+                    };
 
-                    if let Some(index) = index {
-                        let mut events = vec![KEvent::new(index.0, EventType::Focus)];
-                        if let Some(current_focus) = current_focus {
-                            if current_focus != index {
-                                events.push(KEvent::new(current_focus.0, EventType::Blur));
-                            }
+                if let Some(index) = index {
+                    let mut events = vec![KEvent::new(index.0, EventType::Focus)];
+                    if let Some(current_focus) = current_focus {
+                        if current_focus != index {
+                            events.push(KEvent::new(current_focus.0, EventType::Blur));
                         }
-                        if let Ok(mut focus_tree) = context.focus_tree.try_write() {
-                            focus_tree.focus(index);
-                        }
-                        self.dispatch_events(events, context, world);
                     }
+                    if let Ok(mut focus_tree) = context.focus_tree.try_write() {
+                        focus_tree.focus(index);
+                    }
+                    self.dispatch_events(events, context, world);
                 }
-                _ => {}
-            },
-            _ => {}
+            }
         }
     }
 

@@ -56,18 +56,14 @@ pub fn extract(
 
     for (_entity, context) in context_query.iter() {
         let dpi = if let Ok(camera) = cameras.get(context.camera_entity) {
-            match &camera.target {
-                bevy::render::camera::RenderTarget::Window(window_ref) => match window_ref {
-                    WindowRef::Primary => {
-                        if let Ok(window) = primary_window.get_single() {
-                            window.scale_factor() as f32
-                        } else {
-                            1.0
-                        }
-                    }
-                    _ => 1.0,
-                },
-                _ => 1.0,
+            if let bevy::render::camera::RenderTarget::Window(WindowRef::Primary) = &camera.target {
+                if let Ok(window) = primary_window.get_single() {
+                    window.scale_factor() as f32
+                } else {
+                    1.0
+                }
+            } else {
+                1.0
             }
         } else {
             1.0

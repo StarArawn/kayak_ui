@@ -144,19 +144,16 @@ pub fn scroll_bar_render(
                         });
 
                 let mut border_color = thumb_color;
-                match &mut border_color {
-                    Color::Rgba {
-                        red,
-                        green,
-                        blue,
-                        alpha,
-                    } => {
-                        *alpha = (*alpha - 0.2).max(0.0);
-                        *red = (*red + 0.1).min(1.0);
-                        *green = (*green + 0.1).min(1.0);
-                        *blue = (*blue + 0.1).min(1.0);
-                    }
-                    _ => {}
+                if let Color::Rgba {
+                    red,
+                    green,
+                    blue,
+                    alpha,
+                } = &mut border_color {
+                    *alpha = (*alpha - 0.2).max(0.0);
+                    *red = (*red + 0.1).min(1.0);
+                    *green = (*green + 0.1).min(1.0);
+                    *blue = (*blue + 0.1).min(1.0);
                 }
 
                 let mut thumb_style = KStyle::default()

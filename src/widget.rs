@@ -164,9 +164,7 @@ impl<'w, 's, Props: PartialEq + Component, State: PartialEq + Component>
         }
 
         // Check state
-        if current_state_entity.is_some() && previous_state_entity.is_some() {
-            let previous_state_entity = previous_state_entity.unwrap();
-            let current_state_entity = current_state_entity.unwrap();
+        if let (Some(current_state_entity), Some(previous_state_entity)) = (current_state_entity, previous_state_entity) {
             if let (Ok(state), Ok(previous_state)) = (
                 self.state_query.get(current_state_entity),
                 self.state_query.get(previous_state_entity),

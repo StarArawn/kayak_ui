@@ -185,17 +185,14 @@ pub fn update_opacity_layer_cameras(
     mut images: ResMut<Assets<Image>>,
 ) {
     for (camera_entity, camera) in cameras.iter() {
-        match &camera.target {
-            RenderTarget::Window(window_ref) => {
-                let window_entity = match window_ref {
-                    WindowRef::Entity(entity) => *entity,
-                    WindowRef::Primary => primary_window.get_single().unwrap(),
-                };
-                if let Ok(camera_window) = windows.get(window_entity) {
-                    opacity_layers.add_or_update(&camera_entity, camera_window, &mut images);
-                }
+        if let RenderTarget::Window(window_ref) = &camera.target {
+            let window_entity = match window_ref {
+                WindowRef::Entity(entity) => *entity,
+                WindowRef::Primary => primary_window.get_single().unwrap(),
+            };
+            if let Ok(camera_window) = windows.get(window_entity) {
+                opacity_layers.add_or_update(&camera_entity, camera_window, &mut images);
             }
-            _ => {}
         }
     }
 }
@@ -220,9 +217,9 @@ pub fn extract_core_pipeline_camera_phases(
 
 fn prepare_opacity_layers(
     mut opacity_layers: ResMut<OpacityLayerManager>,
-    mut gpu_images: ResMut<RenderAssets<Image>>,
+    gpu_images: Res<RenderAssets<Image>>,
 ) {
     for (_, layer) in opacity_layers.camera_layers.iter_mut() {
-        layer.set_texture_views(&mut gpu_images);
+        layer.set_texture_views(&gpu_images);
     }
 }

@@ -16,7 +16,7 @@ bevy_renderer = ["bevy"]
 
 [dependencies]
 anyhow = { version = "1.0" }
-nanoserde = "0.1.30"
+nanoserde = "0.1.32"
 unicode-segmentation = "1.10.0"
 num = "0.4"
 num-derive = "0.3"

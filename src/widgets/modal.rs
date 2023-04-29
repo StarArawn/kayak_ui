@@ -102,7 +102,7 @@ pub fn render(
             },
             style_b: KStyle {
                 opacity: 1.0.into(),
-                ..styles.clone()
+                ..styles
             },
             autoplay: false,
         };
@@ -150,7 +150,7 @@ pub fn render(
                             render_command: RenderCommand::Quad.into(),
                             position_type: KPositionType::SelfDirected.into(),
                             ..Default::default()
-                        }.with_style(modal_styles).into()}
+                        }.with_style(modal_styles)}
                     >
                         <BackgroundBundle
                             styles={KStyle {

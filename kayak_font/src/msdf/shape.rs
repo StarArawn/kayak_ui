@@ -54,6 +54,6 @@ impl Shape {
         let mut right = LARGE_VALUE;
         let mut top = -LARGE_VALUE;
         self.find_bounds(&mut left, &mut bottom, &mut right, &mut top);
-        return (left, bottom, right, top);
+        (left, bottom, right, top)
     }
 }

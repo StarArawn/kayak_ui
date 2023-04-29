@@ -107,24 +107,24 @@ pub fn signed_distance(
         }
     }
 
-    if param >= 0.0 && param <= 1.0 {
-        return (SignedDistance::new(min_distance, 0.0), param);
+    if (0.0..=1.0).contains(&param) {
+        (SignedDistance::new(min_distance, 0.0), param)
     } else if param < 0.5 {
-        return (
+        (
             SignedDistance::new(
                 min_distance,
                 (Vector2::dot_product(ab.normalize(false), qa.normalize(false))).abs(),
             ),
             param,
-        );
+        )
     } else {
-        return (
+        (
             SignedDistance::new(
                 min_distance,
                 (Vector2::dot_product((p2 - p1).normalize(false), (p2 - origin).normalize(false)))
                     .abs(),
             ),
             param,
-        );
+        )
     }
 }

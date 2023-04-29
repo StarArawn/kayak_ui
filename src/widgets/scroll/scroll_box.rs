@@ -185,31 +185,28 @@ pub fn scroll_box_render(
                           mut event: ResMut<KEvent>,
                           mut query: Query<&mut ScrollContext>| {
                         if let Ok(mut scroll_context) = query.get_mut(context_entity) {
-                            match event.event_type {
-                                EventType::Scroll(evt) => {
-                                    match evt.delta {
-                                        ScrollUnit::Line { x, y } => {
-                                            if !disable_horizontal {
-                                                scroll_context
-                                                    .set_scroll_x(scroll_x - x * scroll_line);
-                                            }
-                                            if !disable_vertical {
-                                                scroll_context
-                                                    .set_scroll_y(scroll_y + y * scroll_line);
-                                            }
+                            if let EventType::Scroll(evt) = event.event_type {
+                                match evt.delta {
+                                    ScrollUnit::Line { x, y } => {
+                                        if !disable_horizontal {
+                                            scroll_context
+                                                .set_scroll_x(scroll_x - x * scroll_line);
                                         }
-                                        ScrollUnit::Pixel { x, y } => {
-                                            if !disable_horizontal {
-                                                scroll_context.set_scroll_x(scroll_x - x);
-                                            }
-                                            if !disable_vertical {
-                                                scroll_context.set_scroll_y(scroll_y + y);
-                                            }
+                                        if !disable_vertical {
+                                            scroll_context
+                                                .set_scroll_y(scroll_y + y * scroll_line);
                                         }
                                     }
-                                    event.stop_propagation();
+                                    ScrollUnit::Pixel { x, y } => {
+                                        if !disable_horizontal {
+                                            scroll_context.set_scroll_x(scroll_x - x);
+                                        }
+                                        if !disable_vertical {
+                                            scroll_context.set_scroll_y(scroll_y + y);
+                                        }
+                                    }
                                 }
-                                _ => {}
+                                event.stop_propagation();
                             }
                         }
                     },

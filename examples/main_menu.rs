@@ -143,8 +143,8 @@ fn startup(
     preload_resource.images.extend(vec![
         panel1_image.clone(),
         logo_image.clone(),
-        button_image.clone(),
-        button_image_hover.clone(),
+        button_image,
+        button_image_hover,
     ]);
 
     let handle_click_close = OnEvent::new(

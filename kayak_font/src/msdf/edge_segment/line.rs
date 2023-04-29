@@ -40,11 +40,11 @@ pub fn signed_distance(p0: Vector2, p1: Vector2, origin: Vector2) -> (SignedDist
             return (SignedDistance::new(ortho_distance, 0.0), param);
         }
     }
-    return (
+    (
         SignedDistance::new(
             non_zero_sign(Vector2::cross_product(aq, ab)) as f64 * endpoint_distance,
             Vector2::dot_product(ab.normalize(false), eq.normalize(false)).abs(),
         ),
         param,
-    );
+    )
 }

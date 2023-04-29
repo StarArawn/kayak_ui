@@ -1,3 +1,4 @@
+#![allow(clippy::needless_question_mark, clippy::question_mark)]
 use nanoserde::{DeJson, DeJsonErr, DeJsonState, SerJson, SerJsonState};
 
 pub struct UnicodeChar(char);

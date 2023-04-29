@@ -12,6 +12,7 @@ pub mod signed_distance;
 pub mod ttf_parser;
 pub mod vector;
 
+#[allow(clippy::upper_case_acronyms)]
 #[derive(Debug, Clone, Copy, PartialEq, FromPrimitive)]
 pub enum EdgeColor {
     BLACK = 0,

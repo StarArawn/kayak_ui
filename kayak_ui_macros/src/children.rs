@@ -13,10 +13,7 @@ impl Children {
     }
 
     pub fn is_block(&self) -> bool {
-        self.nodes.iter().any(|node| match node {
-            Child::RawBlock(_) => true,
-            _ => false,
-        })
+        self.nodes.iter().any(|node| matches!(node, Child::RawBlock(..)))
     }
 
     // pub fn get_clonable_attributes(&self, index: usize) -> Vec<proc_macro2::TokenStream> {
@@ -64,10 +61,7 @@ impl Children {
                 (
                     entity_id,
                     quote! { #child },
-                    match child {
-                        Child::Widget(_) => true,
-                        _ => false,
-                    },
+                    matches!(child, Child::Widget(_)),
                     index,
                 )
             })
@@ -165,6 +159,7 @@ impl Children {
 
                 let mut output = Vec::new();
                 // output.push(quote! { #base_clone });
+                #[allow(clippy::needless_range_loop)]
                 for i in 0..children_quotes.len() {
                     // output.push(quote! { #base_clones_inner });
                     let name: proc_macro2::TokenStream = format!("child{}", i).parse().unwrap();

@@ -403,7 +403,7 @@ fn get_single_grapheme_length(
     font_assets: &Res<Assets<KayakFont>>,
     font_mapping: &FontMapping,
     style_font: &StyleProp<String>,
-    text: &String,
+    text: &str,
 ) -> usize {
     let font_handle = match style_font {
         StyleProp::Value(font) => font_mapping.get_handle(font.clone()).unwrap(),
@@ -411,7 +411,7 @@ fn get_single_grapheme_length(
     };
 
     if let Some(font) = font_assets.get(&font_handle) {
-        let graphemes = font.get_graphemes(&text);
+        let graphemes = font.get_graphemes(text);
         return graphemes[0].len();
     }
 

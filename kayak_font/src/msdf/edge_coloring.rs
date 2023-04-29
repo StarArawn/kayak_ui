@@ -17,7 +17,7 @@ fn estimate_edge_length(edge: &EdgeSegment) -> f64 {
         len += (cur - prev).length();
         prev = cur;
     }
-    return len;
+    len
 }
 
 fn switch_color(color: &mut EdgeColor, seed: &mut usize, banned: EdgeColor) {
@@ -68,6 +68,7 @@ pub fn simple(shape: &mut Shape, angle_threshold: f64, mut seed: usize) {
         let edge_count = edges.len();
         if edge_count != 0 {
             let mut prev_dir = edges.last().unwrap().direction(1.0);
+            #[allow(clippy::needless_range_loop)]
             for i in 0..edge_count {
                 let edge = &edges[i];
                 if is_corner(
@@ -81,7 +82,8 @@ pub fn simple(shape: &mut Shape, angle_threshold: f64, mut seed: usize) {
             }
         }
 
-        if corners.len() == 0 {
+        if corners.is_empty() {
+            #[allow(clippy::needless_range_loop)]
             for i in 0..edge_count {
                 edges[i].set_color(EdgeColor::WHITE);
             }
@@ -103,7 +105,7 @@ pub fn simple(shape: &mut Shape, angle_threshold: f64, mut seed: usize) {
                 let mut parts = [EdgeSegment::default(); 7];
 
                 let (o1, o2, o3) = edges[0].split_in_thirds();
-                parts[0 + 3 * corner] = o1;
+                parts[3 * corner] = o1;
                 parts[1 + 3 * corner] = o2;
                 parts[2 + 3 * corner] = o3;
 
@@ -124,6 +126,7 @@ pub fn simple(shape: &mut Shape, angle_threshold: f64, mut seed: usize) {
                     parts[2].set_color(colors[2]);
                 }
                 edges.clear();
+                #[allow(clippy::needless_range_loop)]
                 for i in 0..7 {
                     edges.push(parts[i]);
                 }
@@ -171,6 +174,7 @@ pub fn ink_trap(shape: &mut Shape, angle_threshold: f64, mut seed: usize) {
         if !contour.edges.is_empty() {
             let mut prev_direction = contour.edges.last().unwrap().direction(1.0);
             let mut index = 0;
+            #[allow(clippy::explicit_counter_loop)]
             for edge in contour.edges.iter() {
                 if is_corner(
                     prev_direction.normalize(false),
@@ -210,10 +214,10 @@ pub fn ink_trap(shape: &mut Shape, angle_threshold: f64, mut seed: usize) {
                         ((3.0 + 2.875 * i as f64 / (m as f64 - 1.0) - 1.4375 + 0.5) as i32 - 3) + 1;
                     contour.edges[(corner + i) % m].set_color(colors[lookup as usize]);
                 }
-            } else if contour.edges.len() >= 1 {
+            } else if !contour.edges.is_empty() {
                 let mut parts = vec![EdgeSegment::default(); 7];
                 let (o1, o2, o3) = contour.edges[0].split_in_thirds();
-                parts[0 + 3 * corner] = o1;
+                parts[3 * corner] = o1;
                 parts[1 + 3 * corner] = o2;
                 parts[2 + 3 * corner] = o3;
                 if contour.edges.len() >= 2 {
@@ -258,6 +262,7 @@ pub fn ink_trap(shape: &mut Shape, angle_threshold: f64, mut seed: usize) {
 
                     let mut color = EdgeColor::WHITE;
                     let mut initial_color = EdgeColor::BLACK;
+                    #[allow(clippy::needless_range_loop)]
                     for i in 0..corner_count {
                         if !corners[i].minor {
                             major_corner_count -= 1;

@@ -22,12 +22,12 @@ pub fn solve_quadratic(a: f64, b: f64, c: f64) -> (i32, [f64; 3]) {
         dscr = dscr.sqrt();
         result[0] = (-b + dscr) / (2.0 * a);
         result[1] = (-b - dscr) / (2.0 * a);
-        return (2, result);
+        (2, result)
     } else if dscr == 0.0 {
         result[0] = -b / (2.0 * a);
-        return (1, result);
+        (1, result)
     } else {
-        return (0, result);
+        (0, result)
     }
 }
 
@@ -54,7 +54,7 @@ pub fn solve_cubic_norm(mut a: f64, b: f64, c: f64) -> (i32, [f64; 3]) {
         result[0] = q * (t / 3.0).cos() - a;
         result[1] = q * ((t + 2.0 * std::f64::consts::PI) / 3.0).cos() - a;
         result[2] = q * ((t - 2.0 * std::f64::consts::PI) / 3.0).cos() - a;
-        return (3, result);
+        (3, result)
     } else {
         result_a = -(fabs(r) + (r2 - q3).sqrt()).powf(1.0 / 3.0);
         if r < 0.0 {
@@ -68,7 +68,7 @@ pub fn solve_cubic_norm(mut a: f64, b: f64, c: f64) -> (i32, [f64; 3]) {
         if fabs(result[2]) < EPSILON {
             return (2, result);
         }
-        return (1, result);
+        (1, result)
     }
 }
 

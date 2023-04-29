@@ -143,7 +143,7 @@ impl KayakRootContext {
     /// Retreives the current entity that has focus or None if nothing is focused.
     pub fn get_current_focus(&self) -> Option<Entity> {
         if let Ok(tree) = self.focus_tree.try_read() {
-            return tree.current().and_then(|a| Some(a.0));
+            return tree.current().map(|a| a.0);
         }
         None
     }
@@ -335,7 +335,7 @@ impl KayakRootContext {
                         tree.add(WrappedIndex(entity.unwrap()), parent_id.map(WrappedIndex))
                     }
                 }
-            } else if let Ok(mut tree) = self.order_tree.try_write() {
+            } else if let Ok(_tree) = self.order_tree.try_write() {
                 // let root_node = tree.root_node;
                 // if entity.map(WrappedIndex) != root_node {
                 //     tree.add(entity.map(WrappedIndex).unwrap(), root_node);
@@ -420,7 +420,6 @@ impl KayakRootContext {
                 None,
                 0,
                 0,
-                0,
             );
         }
     }
@@ -444,7 +443,6 @@ fn recurse_node_tree_to_build_primitives(
     _parent_global_z: f32,
     mut current_global_z: f32,
     mut prev_clip: Option<ExtractedQuad>,
-    depth: usize,
     mut current_opacity_layer: u32,
     mut total_opacity_layers: u32,
 ) -> (usize, f32, u32) {
@@ -546,7 +544,6 @@ fn recurse_node_tree_to_build_primitives(
                         current_parent_global_z,
                         current_global_z,
                         prev_clip.clone(),
-                        depth + 1,
                         current_opacity_layer,
                         total_opacity_layers,
                     );
@@ -890,7 +887,7 @@ fn update_widgets(
                                 (unique_ids.try_write(), unique_ids_parents.try_write())
                             {
                                 if let Some(parent) = unique_ids_parents.get(&entity) {
-                                    if let Some(keyed_hashmap) = unique_ids.get_mut(&parent) {
+                                    if let Some(keyed_hashmap) = unique_ids.get_mut(parent) {
                                         let possible_key = keyed_hashmap
                                             .iter()
                                             .find(|(_, keyed_entity)| **keyed_entity == entity)
@@ -1075,9 +1072,9 @@ fn update_widget(
     cloned_widget_entities: &Arc<RwLock<HashMap<Entity, Entity>>>,
     widget_state: &WidgetState,
     new_ticks: &mut HashMap<String, u32>,
-    order_tree: &Arc<RwLock<Tree>>,
-    unique_ids: &Arc<RwLock<HashMap<Entity, HashMap<String, Entity>>>>,
-    unique_ids_parents: &Arc<RwLock<HashMap<Entity, Entity>>>,
+    _order_tree: &Arc<RwLock<Tree>>,
+    _unique_ids: &Arc<RwLock<HashMap<Entity, HashMap<String, Entity>>>>,
+    _unique_ids_parents: &Arc<RwLock<HashMap<Entity, Entity>>>,
 ) -> (Tree, bool) {
     // Check if we should update this widget
     let should_rerender = {
@@ -1120,10 +1117,8 @@ fn update_widget(
 
         let widget_update_system = &mut systems
             .get_mut(&widget_type)
-            .expect(&format!(
-                "Wasn't able to find render/update systems for widget: {}!",
-                widget_type
-            ))
+            .unwrap_or_else(|| panic!("Wasn't able to find render/update systems for widget: {}!",
+                widget_type))
             .0;
         let old_tick = widget_update_system.get_last_change_tick();
 
@@ -1398,8 +1393,8 @@ impl From<String> for WidgetName {
     }
 }
 
-impl Into<String> for WidgetName {
-    fn into(self) -> String {
-        self.0
+impl From<WidgetName> for String {
+    fn from(val: WidgetName) -> Self {
+        val.0
     }
 }

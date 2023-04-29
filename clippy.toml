@@ -1,0 +1,3 @@
+# BLOCKED: https://github.com/rust-lang/cargo/issues/5034 for properly disabling lints
+type-complexity-threshold = 9000
+too-many-arguments-threshold = 30

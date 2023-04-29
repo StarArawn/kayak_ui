@@ -80,7 +80,7 @@ pub fn button_render(
                     },
                     border: Edge::all(2.0).into(),
                     border_radius: StyleProp::Value(Corner::all(10.0)),
-                    font_size: StyleProp::Value(font_size).into(),
+                    font_size: StyleProp::Value(font_size),
                     height: StyleProp::Value(height),
                     width: Units::Stretch(1.0).into(),
                     cursor: StyleProp::Value(KCursorIcon(CursorIcon::Hand)),

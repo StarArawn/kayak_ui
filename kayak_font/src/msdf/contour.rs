@@ -145,7 +145,7 @@ impl Contour {
                 }
             }
         }
-        return Vector2::sign(total) as i32;
+        Vector2::sign(total) as i32
     }
 
     pub fn bound_miters(

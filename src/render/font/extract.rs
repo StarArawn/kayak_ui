@@ -26,7 +26,7 @@ pub fn extract_texts(
 ) -> Vec<ExtractedQuad> {
     let mut extracted_texts = Vec::new();
 
-    let font_handle = font_mapping.get_handle(font.clone()).unwrap();
+    let font_handle = font_mapping.get_handle(font).unwrap();
     let font = match fonts.get(&font_handle) {
         Some(font) => font,
         None => {

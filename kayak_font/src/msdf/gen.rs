@@ -166,9 +166,7 @@ pub fn msdf_error_correction(output: &mut FloatRGBBmp, threshold: Vector2) {
             }
         }
     }
-    let clash_count = clashes.len();
-    for i in 0..clash_count {
-        let clash = clashes[i];
+    for clash in clashes {
         let pixel = output.get_pixel(clash.0, clash.1);
         let med = median(pixel.r, pixel.g, pixel.b);
         output.set_pixel(clash.0, clash.1, FloatRGB::new(med, med, med));

@@ -554,7 +554,7 @@ impl Tree {
         for (id, node, parent_node, change) in changes.changes.iter() {
             match change.as_slice() {
                 [Change::Deleted] => {
-                    // self.parents.remove(node);
+                    self.parents.remove(node);
                     if children_a.get(*id).is_some() {
                         children_a[*id] = WrappedIndex(Entity::from_raw(0));
                     }
@@ -630,6 +630,21 @@ impl Tree {
     pub fn dump(&self) {
         if let Some(root) = self.root_node {
             self.dump_at(root);
+        }
+    }
+
+    /// Sometimes we need to see the entire tree even dangling nodes.
+    /// This function will display everything.
+    pub fn dump_all(&self) {
+        let mut children = self.children.iter().collect::<Vec<_>>();
+        children.sort_by(|(a, _), (b, _)| a.0.index().partial_cmp(&b.0.index()).unwrap());
+
+        for (parent, children) in children.iter() {
+            println!("[{}]", parent.0.index());
+            for child in children.iter() {
+                println!("    [{}]", child.0.index());
+            }
+            println!("");
         }
     }
 
@@ -750,7 +765,7 @@ impl<'a> Iterator for DownwardIterator<'a> {
             }
         }
 
-        self.current_node
+        None
     }
 }
 

@@ -25,7 +25,7 @@ pub struct KayakWidgetContext {
     layout_cache: Arc<RwLock<LayoutCache>>,
     pub(crate) index: Arc<RwLock<HashMap<Entity, usize>>>,
     widget_state: WidgetState,
-    order_tree: Arc<RwLock<Tree>>,
+    pub(crate) order_tree: Arc<RwLock<Tree>>,
     pub camera_entity: Option<Entity>,
     // Unique id's store entity id's related to a key rather than the child tree.
     // This lets users get a unique entity. The first Entity is the parent widget.
@@ -233,7 +233,8 @@ impl KayakWidgetContext {
 
                 if let Some(child) = child {
                     log::trace!(
-                        "Reusing widget entity {:?} with parent: {:?}!",
+                        "Reusing widget at index: {}, entity {:?} with parent: {:?}!",
+                        index,
                         child.index(),
                         parent_id.unwrap().index()
                     );
@@ -300,6 +301,18 @@ impl KayakWidgetContext {
         if let Some(parent) = parent {
             assert!(parent != entity, "Parent cannot equal entity!");
         }
+
+        // Sometimes we need to remove the old entity from the tree.
+        if let Ok(mut old_tree) = self.old_tree.write() {
+            if let Some(parent) = parent.map(WrappedIndex) {
+                if let Some(old_parent) = old_tree.parent(WrappedIndex(entity)) {
+                    if old_parent != parent {
+                        old_tree.remove(WrappedIndex(entity));
+                    }
+                }
+            }
+        }
+
         if let Ok(mut tree) = self.new_tree.write() {
             tree.add(WrappedIndex(entity), parent.map(WrappedIndex));
         }
@@ -337,9 +350,14 @@ impl KayakWidgetContext {
     /// Dumps the tree to the console in a human readable format.
     /// This is relatively slow to do if the tree is large
     /// so avoid doing unless necessary.
-    pub fn dbg_tree(&self) {
+    pub fn dbg_tree(&self, entity: Entity) {
+        println!("New:");
         if let Ok(tree) = self.new_tree.read() {
-            tree.dump()
+            tree.dump_at(WrappedIndex(entity));
+        }
+        println!("Old:");
+        if let Ok(tree) = self.old_tree.read() {
+            tree.dump_at(WrappedIndex(entity));
         }
     }
 

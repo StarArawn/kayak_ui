@@ -49,6 +49,10 @@ impl KChildren {
         }
     }
 
+    pub fn contains_entity(&self, entity: Entity) -> bool {
+        self.inner.iter().any(|e| *e == entity)
+    }
+
     /// Processes all widgets and adds them to the tree.
     pub fn process(
         &self,

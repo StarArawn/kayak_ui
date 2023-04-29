@@ -286,7 +286,8 @@ impl KayakRootContext {
 
                 if let Some(child) = child {
                     log::trace!(
-                        "Reusing widget entity {:?} with parent: {:?}!",
+                        "Reusing child {} as widget entity {:?} with parent: {:?}!",
+                        index,
                         child.index(),
                         parent_id.unwrap().index()
                     );
@@ -334,6 +335,15 @@ impl KayakRootContext {
                         tree.add(WrappedIndex(entity.unwrap()), parent_id.map(WrappedIndex))
                     }
                 }
+            } else if let Ok(mut tree) = self.order_tree.try_write() {
+                // let root_node = tree.root_node;
+                // if entity.map(WrappedIndex) != root_node {
+                //     tree.add(entity.map(WrappedIndex).unwrap(), root_node);
+                //     // Don't forget to advance indices or weird stuff can happen.
+                //     if let Some(parent_entity) = root_node {
+                //         self.get_and_add_index(parent_entity.0);
+                //     }
+                // }
             }
         }
         entity.unwrap()
@@ -780,7 +790,7 @@ fn update_widgets(
                 if should_update_children {
                     if let Ok(mut tree) = tree.write() {
                         let mut _had_removal = false;
-                        let diff = tree.diff_children(&widget_context, *entity, UPDATE_DEPTH);
+                        let diff = tree.diff_children(&widget_context, *entity, 0);
                         for (_index, child, _parent, changes) in diff.changes.iter() {
                             if changes
                                 .iter()
@@ -799,17 +809,141 @@ fn update_widgets(
                             }
                         }
 
-                        // if _had_removal {
-                        //     tree.dump();
+                        // let had_change = diff.has_changes();
+                        // if had_change {
+                        //     tree.dump_at(*entity);
                         //     dbg!(&diff);
                         // }
 
+                        // Children of this node need to be despawned.
+                        let mut despawn_list = Vec::default();
+                        'outer: for (_index, changed_entity, parent, changes) in diff.changes.iter() {
+                            if changes.iter().any(|change| *change == Change::Inserted) {
+                                if let Some(mut entity_commands) = world.get_entity_mut(changed_entity.0) {
+                                    entity_commands.insert(Mounted);
+                                    entity_commands.set_parent(parent.0);
+                                }
+                                if world.get_entity(changed_entity.0).is_some() {
+                                    if let Some(mut entity_commands) = world.get_entity_mut(parent.0) {
+                                        entity_commands.add_child(changed_entity.0);
+                                    }
+                                }
+                            } else if changes
+                                .iter()
+                                .any(|change| matches!(change, Change::Deleted))
+                            {
+                                // Remove from order tree.
+                                // This is safe to do right away.
+                                // if let Ok(mut order_tree) = order_tree.try_write() {
+                                //     order_tree.remove(*changed_entity);
+                                // }
+                                // If the child exists as a child of one of the children we do not need to remove it.
+                                // TODO: This is kinda of expensive we should think of a way of making this faster..
+                                if let Ok(order_tree) = order_tree.try_read() {
+                                    for child in order_tree.child_iter(*parent) {
+                                        if let Some(entity_ref) = world.get_entity(child.0) {
+                                            if let Some(children) = entity_ref.get::<KChildren>() {
+                                                if children.contains_entity(changed_entity.0) {
+                                                    trace!("Caught an entity that was marked as deleted but wasn't! {:?}", changed_entity.0);
+                                                    // Don't despawn changed entity because it exists as a child passed via props
+                                                    continue 'outer;
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                                for child in tree.down_iter_at(*changed_entity, true) {
+                                    trace!("Trying to remove: {:?} with parent {:?}", child.0, tree.parent(child));
+                                    // Due to a bug in bevy we need to remove the parent manually otherwise we'll panic later.
+                                    if let Some(mut entity_mut) = world.get_entity_mut(child.0) {
+                                        entity_mut.remove_parent();
+                                    }
+                                    if let Some(parent) = tree.parent(child) {
+                                        despawn_list.push((parent.0, child.0));
+                                    }
+
+                                    if let Ok(mut order_tree) = order_tree.try_write() {
+                                        order_tree.remove(child);
+                                    }
+                                }
+                            }
+                        }
+
                         tree.merge(&widget_context, *entity, diff, UPDATE_DEPTH);
 
-                        // if _had_removal {
-                        //     tree.dump();
+                        // if had_change {
+                        //     tree.dump_at(*entity);
                         // }
 
+                        for (parent, entity) in despawn_list.drain(..) {
+                            // Clear out keyed entity.
+                            if let (Ok(mut unique_ids), Ok(mut unique_ids_parents)) =
+                                (unique_ids.try_write(), unique_ids_parents.try_write())
+                            {
+                                if let Some(parent) = unique_ids_parents.get(&entity) {
+                                    if let Some(keyed_hashmap) = unique_ids.get_mut(&parent) {
+                                        let possible_key = keyed_hashmap
+                                            .iter()
+                                            .find(|(_, keyed_entity)| **keyed_entity == entity)
+                                            .map(|(key, _)| key.clone());
+                                        if let Some(key) = possible_key {
+                                            keyed_hashmap.remove(&key);
+                                            unique_ids_parents.remove(&entity);
+                                            log::trace!("Removing key {key}, for entity: {:?}", entity);
+                                        }
+                                    }
+                                }
+                            }
+
+                            // Remove state entity
+                            if let Some(state_entity) = widget_state.remove(entity) {
+                                if let Some(entity_mut) = world.get_entity_mut(state_entity) {
+                                    entity_mut.despawn_recursive();
+                                }
+                            }
+
+                            // Remove widget entity
+                            if let Some(entity_mut) = world.get_entity_mut(entity) {
+                                log::trace!(
+                                    "Removing entity! {:?} - {:?} with parent {:?}",
+                                    entity.index(),
+                                    entity_mut.get::<WidgetName>(),
+                                    parent.index(),
+                                    // entity.index()
+                                );
+                                entity_mut.despawn();
+
+                                // Also remove all cloned widget entities
+                                if let Ok(cloned_widget_entities) = cloned_widget_entities.try_read() {
+                                    if let Some(entity) = cloned_widget_entities.get(&entity) {
+                                        world.despawn(*entity);
+                                    }
+                                }
+                            }
+                        }
+
+                        // if should_update_children {
+                        if let Ok(cloned_widget_entities) = cloned_widget_entities.try_read() {
+                            if let Some(target_entity) = cloned_widget_entities.get(&entity.0) {
+                                if let Some(styles) = world.entity(entity.0).get::<KStyle>().cloned() {
+                                    if let Some(mut entity) = world.get_entity_mut(*target_entity) {
+                                        entity.insert(styles);
+                                    }
+                                }
+                                if let Some(styles) = world.entity(entity.0).get::<ComputedStyles>().cloned() {
+                                    if let Some(mut entity) = world.get_entity_mut(*target_entity) {
+                                        entity.insert(styles);
+                                    }
+                                }
+                                if let Some(children) = world.entity(entity.0).get::<KChildren>().cloned() {
+                                    if let Some(mut entity) = world.get_entity_mut(*target_entity) {
+                                        entity.insert(children);
+                                    }
+                                }
+                            }
+                        }
+
+                        // Mark nodes left as dirty.
                         for child in widget_context.child_iter(*entity) {
                             if let Some(mut entity_commands) = world.get_entity_mut(child.0) {
                                 entity_commands.insert(DirtyNode);
@@ -849,25 +983,49 @@ fn update_widgets(
         } else {
             // In this case the entity we are trying to process no longer exists.
             // The approach taken here removes said entities from the tree.
-            let mut despawn_list = Vec::default();
-            if let Ok(mut tree) = tree.write() {
-                for child in tree.down_iter_at(*entity, true) {
-                    despawn_list.push(child.0);
-                    if let Ok(mut order_tree) = order_tree.try_write() {
-                        // had_removal = true;
-                        log::trace!(
-                            "Removing entity! {:?} inside of: {:?}",
-                            child.0.index(),
-                            entity.0.index()
-                        );
-                        order_tree.remove(child);
+
+            // If the child exists as a child of one of the children we do not need to remove it.
+            // TODO: This is kinda of expensive we should think of a way of making this faster..
+            let mut contained_in_children = false;
+            if let Ok(order_tree) = order_tree.try_read() {
+                if let Some(parent) = order_tree.parent(*entity) {
+                    trace!("Had parent for: {}", entity.0.index());
+                    for child in order_tree.child_iter(parent) {
+                        if let Some(entity_ref) = world.get_entity(child.0) {
+                            if let Some(children) = entity_ref.get::<KChildren>() {
+                                if children.contains_entity(entity.0) {
+                                    trace!("Caught an entity that was marked as dangling but wasn't! {:?}", entity.0);
+                                    contained_in_children = true;
+                                    // Don't despawn changed entity because it exists as a child passed via props
+                                    break;
+                                }
+                            }
+                        }
                     }
                 }
+            }
 
-                for entity in despawn_list.drain(..) {
-                    tree.remove(WrappedIndex(entity));
-                    if let Some(entity_mut) = world.get_entity_mut(entity) {
-                        entity_mut.despawn();
+            if !contained_in_children {
+                let mut despawn_list = Vec::default();
+                if let Ok(mut tree) = tree.write() {
+                    for child in tree.down_iter_at(*entity, true) {
+                        despawn_list.push(child.0);
+                        if let Ok(mut order_tree) = order_tree.try_write() {
+                            // had_removal = true;
+                            log::trace!(
+                                "Removing dangling entity! {:?} inside of: {:?}",
+                                child.0.index(),
+                                entity.0.index()
+                            );
+                            order_tree.remove(child);
+                        }
+                    }
+
+                    for entity in despawn_list.drain(..) {
+                        tree.remove(WrappedIndex(entity));
+                        if let Some(entity_mut) = world.get_entity_mut(entity) {
+                            entity_mut.despawn();
+                        }
                     }
                 }
             }
@@ -1055,13 +1213,13 @@ fn update_widget(
 
     commands.entity(entity.0).remove::<Mounted>();
 
-    let diff = if let Ok(tree) = tree.read() {
-        tree.diff_children(&widget_context, entity, 0)
-    } else {
-        panic!("Failed to acquire read lock.");
-    };
+    // let diff = if let Ok(tree) = tree.read() {
+    //     tree.diff_children(&widget_context, entity, 0)
+    // } else {
+    //     panic!("Failed to acquire read lock.");
+    // };
 
-    log::trace!("Entity: {:?}, Diff: {:?}", entity.0, &diff);
+    // log::trace!("Entity: {:?}, Diff: {:?}", entity.0, &diff);
 
     // Always mark widget dirty if it's re-rendered.
     // Mark node as needing a recalculation of rendering/layout.
@@ -1069,121 +1227,11 @@ fn update_widget(
 
     command_queue.apply(world);
 
-    // Children of this node need to be despawned.
-    let mut despawn_list = Vec::default();
+    // if let Ok(tree) = order_tree.try_read() {
+    //     tree.dump_all();
+    // }
 
-    for (_index, changed_entity, parent, changes) in diff.changes.iter() {
-        if changes.iter().any(|change| *change == Change::Inserted) {
-            if let Some(mut entity_commands) = world.get_entity_mut(changed_entity.0) {
-                entity_commands.insert(Mounted);
-                entity_commands.set_parent(parent.0);
-            }
-            if world.get_entity(changed_entity.0).is_some() {
-                if let Some(mut entity_commands) = world.get_entity_mut(parent.0) {
-                    entity_commands.add_child(changed_entity.0);
-                }
-            }
-        } else if changes
-            .iter()
-            .any(|change| matches!(change, Change::Deleted))
-        {
-            if let Ok(tree) = tree.try_read() {
-                for child in tree.down_iter_at(*changed_entity, true) {
-                    // Due to a bug in bevy we need to remove the parent manually otherwise we'll panic later.
-                    world.entity_mut(child.0).remove_parent();
-
-                    // let children = if let Some(parent) = tree.get_parent(child) {
-                    //     world.entity(parent.0).get::<KChildren>()
-                    // } else {
-                    //     None
-                    // };
-
-                    let parent = tree.parent(child).unwrap();
-
-                    // if let Some(children) = children {
-                    // for child in children.iter() {
-                    //     despawn_list.push((parent.0, *child));
-                    // }
-                    // } //else {
-
-                    despawn_list.push((parent.0, child.0));
-
-                    // }
-                    if let Ok(mut order_tree) = order_tree.try_write() {
-                        order_tree.remove(child);
-                    }
-                }
-            }
-        }
-    }
-
-    for (parent, entity) in despawn_list.drain(..) {
-        // Clear out keyed entity.
-        if let (Ok(mut unique_ids), Ok(mut unique_ids_parents)) =
-            (unique_ids.try_write(), unique_ids_parents.try_write())
-        {
-            if let Some(parent) = unique_ids_parents.get(&entity) {
-                if let Some(keyed_hashmap) = unique_ids.get_mut(&parent) {
-                    let possible_key = keyed_hashmap
-                        .iter()
-                        .find(|(_, keyed_entity)| **keyed_entity == entity)
-                        .map(|(key, _)| key.clone());
-                    if let Some(key) = possible_key {
-                        keyed_hashmap.remove(&key);
-                        unique_ids_parents.remove(&entity);
-                        log::trace!("Removing key {key}, for entity: {:?}", entity);
-                    }
-                }
-            }
-        }
-
-        // Remove state entity
-        if let Some(state_entity) = widget_state.remove(entity) {
-            if let Some(entity_mut) = world.get_entity_mut(state_entity) {
-                entity_mut.despawn_recursive();
-            }
-        }
-
-        // Remove widget entity
-        if let Some(entity_mut) = world.get_entity_mut(entity) {
-            log::trace!(
-                "Removing entity! {:?} - {:?} with parent {:?}",
-                entity.index(),
-                entity_mut.get::<WidgetName>(),
-                parent.index(),
-                // entity.index()
-            );
-            entity_mut.despawn();
-
-            // Also remove all cloned widget entities
-            if let Ok(cloned_widget_entities) = cloned_widget_entities.try_read() {
-                if let Some(entity) = cloned_widget_entities.get(&entity) {
-                    world.despawn(*entity);
-                }
-            }
-        }
-    }
-
-    // if should_update_children {
-    if let Ok(cloned_widget_entities) = cloned_widget_entities.try_read() {
-        if let Some(target_entity) = cloned_widget_entities.get(&entity.0) {
-            if let Some(styles) = world.entity(entity.0).get::<KStyle>().cloned() {
-                if let Some(mut entity) = world.get_entity_mut(*target_entity) {
-                    entity.insert(styles);
-                }
-            }
-            if let Some(styles) = world.entity(entity.0).get::<ComputedStyles>().cloned() {
-                if let Some(mut entity) = world.get_entity_mut(*target_entity) {
-                    entity.insert(styles);
-                }
-            }
-            if let Some(children) = world.entity(entity.0).get::<KChildren>().cloned() {
-                if let Some(mut entity) = world.get_entity_mut(*target_entity) {
-                    entity.insert(children);
-                }
-            }
-        }
-    }
+    
     // for (_, child_entity, _, changes) in diff.changes.iter() {
     //     // Clone to entity.
     //     if changes.iter().any(|change| *change == Change::Deleted) {

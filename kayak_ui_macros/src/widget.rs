@@ -73,7 +73,6 @@ impl Widget {
                     (
                         entity_id.clone(),
                         quote! {{
-                            let parent_org = parent_id;
                             #props
                             #widget_block
                             #entity_id
@@ -184,8 +183,6 @@ impl Widget {
             // });
             let start = if !only_children {
                 quote! {
-                    let parent_id_old = parent_id;
-                    let parent_id = Some(#entity_id);
                     let mut children = KChildren::new();
                 }
             } else {
@@ -198,7 +195,6 @@ impl Widget {
                 quote! {
                     // #prop_ident.children.despawn(&mut commands);
                     #prop_ident.children = children;
-                    let parent_id = parent_id_old;
                 }
             } else {
                 quote! {}
@@ -217,7 +213,7 @@ impl Widget {
         }
 
         let props = quote! {
-            let #entity_id = widget_context.spawn_widget(&mut commands, #entity_key, parent_org);
+            let #entity_id = widget_context.spawn_widget(&mut commands, #entity_key, parent_id);
             let mut #prop_ident = #name {
                 #assigned_attrs
                 ..Default::default()

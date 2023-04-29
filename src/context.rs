@@ -817,14 +817,19 @@ fn update_widgets(
 
                         // Children of this node need to be despawned.
                         let mut despawn_list = Vec::default();
-                        'outer: for (_index, changed_entity, parent, changes) in diff.changes.iter() {
+                        'outer: for (_index, changed_entity, parent, changes) in diff.changes.iter()
+                        {
                             if changes.iter().any(|change| *change == Change::Inserted) {
-                                if let Some(mut entity_commands) = world.get_entity_mut(changed_entity.0) {
+                                if let Some(mut entity_commands) =
+                                    world.get_entity_mut(changed_entity.0)
+                                {
                                     entity_commands.insert(Mounted);
                                     entity_commands.set_parent(parent.0);
                                 }
                                 if world.get_entity(changed_entity.0).is_some() {
-                                    if let Some(mut entity_commands) = world.get_entity_mut(parent.0) {
+                                    if let Some(mut entity_commands) =
+                                        world.get_entity_mut(parent.0)
+                                    {
                                         entity_commands.add_child(changed_entity.0);
                                     }
                                 }
@@ -853,7 +858,11 @@ fn update_widgets(
                                     }
                                 }
                                 for child in tree.down_iter_at(*changed_entity, true) {
-                                    trace!("Trying to remove: {:?} with parent {:?}", child.0, tree.parent(child));
+                                    trace!(
+                                        "Trying to remove: {:?} with parent {:?}",
+                                        child.0,
+                                        tree.parent(child)
+                                    );
                                     // Due to a bug in bevy we need to remove the parent manually otherwise we'll panic later.
                                     if let Some(mut entity_mut) = world.get_entity_mut(child.0) {
                                         entity_mut.remove_parent();
@@ -889,7 +898,10 @@ fn update_widgets(
                                         if let Some(key) = possible_key {
                                             keyed_hashmap.remove(&key);
                                             unique_ids_parents.remove(&entity);
-                                            log::trace!("Removing key {key}, for entity: {:?}", entity);
+                                            log::trace!(
+                                                "Removing key {key}, for entity: {:?}",
+                                                entity
+                                            );
                                         }
                                     }
                                 }
@@ -914,7 +926,9 @@ fn update_widgets(
                                 entity_mut.despawn();
 
                                 // Also remove all cloned widget entities
-                                if let Ok(cloned_widget_entities) = cloned_widget_entities.try_read() {
+                                if let Ok(cloned_widget_entities) =
+                                    cloned_widget_entities.try_read()
+                                {
                                     if let Some(entity) = cloned_widget_entities.get(&entity) {
                                         world.despawn(*entity);
                                     }
@@ -925,17 +939,23 @@ fn update_widgets(
                         // if should_update_children {
                         if let Ok(cloned_widget_entities) = cloned_widget_entities.try_read() {
                             if let Some(target_entity) = cloned_widget_entities.get(&entity.0) {
-                                if let Some(styles) = world.entity(entity.0).get::<KStyle>().cloned() {
+                                if let Some(styles) =
+                                    world.entity(entity.0).get::<KStyle>().cloned()
+                                {
                                     if let Some(mut entity) = world.get_entity_mut(*target_entity) {
                                         entity.insert(styles);
                                     }
                                 }
-                                if let Some(styles) = world.entity(entity.0).get::<ComputedStyles>().cloned() {
+                                if let Some(styles) =
+                                    world.entity(entity.0).get::<ComputedStyles>().cloned()
+                                {
                                     if let Some(mut entity) = world.get_entity_mut(*target_entity) {
                                         entity.insert(styles);
                                     }
                                 }
-                                if let Some(children) = world.entity(entity.0).get::<KChildren>().cloned() {
+                                if let Some(children) =
+                                    world.entity(entity.0).get::<KChildren>().cloned()
+                                {
                                     if let Some(mut entity) = world.get_entity_mut(*target_entity) {
                                         entity.insert(children);
                                     }
@@ -1231,7 +1251,6 @@ fn update_widget(
     //     tree.dump_all();
     // }
 
-    
     // for (_, child_entity, _, changes) in diff.changes.iter() {
     //     // Clone to entity.
     //     if changes.iter().any(|change| *change == Change::Deleted) {

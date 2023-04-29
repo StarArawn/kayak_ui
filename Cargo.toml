@@ -46,3 +46,6 @@ path = "examples/tabs/tabs.rs"
 [[example]]
 name = "todo"
 path = "examples/todo/todo.rs"
+
+[package.metadata.docs.rs]
+features = ["x11"]

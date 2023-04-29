@@ -39,4 +39,4 @@ jobs:
     - name: Run fmt check
       run: cargo fmt --all -- --check
     - name: Run clippy
-      run: cargo clippy --no-deps -- -D warnings
+      run: cargo clippy --no-deps -- -D warnings --features "bevy/x11"

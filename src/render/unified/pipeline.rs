@@ -172,7 +172,7 @@ impl FromWorld for UnifiedPipeline {
         let empty_font_texture = FontTextureCache::get_empty(&render_device);
 
         let texture_descriptor = TextureDescriptor {
-            label: Some("font_texture_array"),
+            label: Some("empty_texture"),
             size: Extent3d {
                 width: 1,
                 height: 1,
@@ -192,7 +192,7 @@ impl FromWorld for UnifiedPipeline {
         let sampler = render_device.create_sampler(&sampler_descriptor);
 
         let texture_view = texture.create_view(&TextureViewDescriptor {
-            label: Some("font_texture_array_view"),
+            label: Some("empty_texture_view"),
             format: Some(TextureFormat::Rgba8UnormSrgb),
             dimension: Some(TextureViewDimension::D2),
             aspect: bevy::render::render_resource::TextureAspect::All,
@@ -562,6 +562,11 @@ pub struct PreviousClip {
     pub rect: Rect,
 }
 
+#[derive(Resource, Default)]
+pub struct PreviousIndex {
+    pub index: u32,
+}
+
 #[derive(SystemParam)]
 pub struct QueueQuads<'w, 's> {
     render_svgs: Res<'w, RenderSvgs>,
@@ -591,6 +596,7 @@ pub struct QueueQuads<'w, 's> {
     font_texture_cache: Res<'w, FontTextureCache>,
     quad_type_offsets: Res<'w, QuadTypeOffsets>,
     prev_clip: ResMut<'w, PreviousClip>,
+    prev_index: ResMut<'w, PreviousIndex>,
 }
 
 pub fn queue_quads(queue_quads: QueueQuads) {
@@ -613,6 +619,7 @@ pub fn queue_quads(queue_quads: QueueQuads) {
         font_texture_cache,
         quad_type_offsets,
         mut prev_clip,
+        mut prev_index,
     } = queue_quads;
 
     let extracted_sprite_len = extracted_quads.quads.len();
@@ -690,6 +697,8 @@ pub fn queue_quads(queue_quads: QueueQuads) {
             )
         }
     }
+
+    prev_index.index = index;
 }
 
 pub fn queue_quads_inner(

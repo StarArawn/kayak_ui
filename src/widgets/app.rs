@@ -111,7 +111,6 @@ pub fn app_render(
             })
             .with_style(app_style)
             .into();
-
         let parent_id = Some(entity);
         rsx! {
             <ClipBundle

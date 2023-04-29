@@ -30,7 +30,7 @@ jobs:
           target/
         key: ${{ runner.os }}-cargo-build-stable-${{ hashFiles('**/Cargo.toml') }}
     - name: Install alsa and udev
-      run: sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev libudev-dev
+      run: sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev libudev-dev libwayland-dev libxkbcommon-dev
       if: runner.os == 'linux'
     - name: Build
       run: cargo build --verbose --workspace --features "bevy/x11"
@@ -39,4 +39,4 @@ jobs:
     - name: Run fmt check
       run: cargo fmt --all -- --check
     - name: Run clippy
-      run: cargo clippy --no-deps -- -D warnings --features "bevy/x11"
+      run: cargo clippy --workspace --all-targets --all-features --features "bevy/x11"

@@ -28,8 +28,6 @@ fn startup(
 
     let my_material = MyUIMaterial {};
     let my_material_handle = materials.add(my_material);
-    let my_material_handle1 = my_material_handle.clone();
-    let my_material_handle2 = my_material_handle.clone();
 
     let mut widget_context = KayakRootContext::new(camera_entity);
     widget_context.add_plugin(KayakWidgetsContextPlugin);
@@ -39,29 +37,15 @@ fn startup(
             <TextWidgetBundle
                 styles={KStyle {
                     position_type: KPositionType::SelfDirected.into(),
+                    left: Units::Pixels(20.0).into(),
+                    top: Units::Pixels(5.0).into(),
                     material: MaterialHandle::new(move |commands, entity| {
-                        commands.entity(entity).insert(my_material_handle1.clone_weak());
+                        commands.entity(entity).insert(my_material_handle.clone_weak());
                     }).into(),
                     ..Default::default()
                 }}
                 text={TextProps {
                     content: "Hello Shader!".into(),
-                    size: 20.0,
-                    ..Default::default()
-                }}
-            />
-            <TextWidgetBundle
-                styles={KStyle {
-                    position_type: KPositionType::SelfDirected.into(),
-                    left: Units::Pixels(20.0).into(),
-                    top: Units::Pixels(5.0).into(),
-                    material: MaterialHandle::new(move |commands, entity| {
-                        commands.entity(entity).insert(my_material_handle2.clone_weak());
-                    }).into(),
-                    ..Default::default()
-                }}
-                text={TextProps {
-                    content: "Hello World!".into(),
                     size: 20.0,
                     ..Default::default()
                 }}

@@ -13,7 +13,7 @@ use super::font_mapping::FontMapping;
 
 pub fn extract_texts(
     camera_entity: Entity,
-    background_color: Color,
+    color: Color,
     text_layout: TextLayout,
     layout: crate::layout::Rect,
     font: String,
@@ -51,7 +51,7 @@ pub fn extract_texts(
                 min: position,
                 max: position + size,
             },
-            color: background_color,
+            color,
             char_id: font.get_char_id(glyph_rect.content).unwrap(),
             z_index: layout.z_index,
             quad_type: if subpixel || forced {

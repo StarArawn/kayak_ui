@@ -117,9 +117,10 @@ impl RenderPrimitive for KStyle {
                 let font = self
                     .font
                     .resolve_or_else(|| String::from(crate::DEFAULT_FONT));
+                let color = self.color.resolve_or(Color::WHITE);
                 let text = crate::render::font::extract_texts(
                     camera_entity,
-                    background_color,
+                    color,
                     text_layout,
                     *layout,
                     font,

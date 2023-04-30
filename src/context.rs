@@ -741,16 +741,6 @@ fn update_widgets(
     unique_ids_parents: &Arc<RwLock<HashMap<Entity, Entity>>>,
 ) {
     for entity in widgets.iter() {
-        // A small hack to add parents to widgets
-        // let mut command_queue = CommandQueue::default();
-        // {
-        //     let mut commands = Commands::new(&mut command_queue, &world);
-        //     if let Some(mut entity_commands) = commands.get_entity(entity.0) {
-        //         entity_commands.set_parent(camera_entity);
-        //     }
-        // }
-        // command_queue.apply(world);
-
         if let Some(entity_ref) = world.get_entity(entity.0) {
             if let Some(widget_type) = entity_ref.get::<WidgetName>() {
                 let widget_context = KayakWidgetContext::new(
@@ -816,6 +806,38 @@ fn update_widgets(
                         let mut despawn_list = Vec::default();
                         'outer: for (_index, changed_entity, parent, changes) in diff.changes.iter()
                         {
+                            // If a tree node goes from A to B we need to know and delete the descendants.
+                            if let Ok(previous_entities) = cloned_widget_entities.read() {
+                                if let Some(previous_entity) =
+                                    previous_entities.get(&changed_entity.0)
+                                {
+                                    if let (Some(entity_ref), Some(prev_entity_ref)) = (
+                                        world.get_entity(changed_entity.0),
+                                        world.get_entity(*previous_entity),
+                                    ) {
+                                        if let (Some(widget_name), Some(prev_widget_name)) = (
+                                            entity_ref.get::<WidgetName>(),
+                                            prev_entity_ref.get::<WidgetName>(),
+                                        ) {
+                                            if widget_name != prev_widget_name {
+                                                // Do something
+                                                for child in tree.down_iter_at(*changed_entity, false) {
+                                                    if let Some(parent) = tree.parent(child) {
+                                                        // Due to a bug in bevy we need to remove the parent manually otherwise we'll panic later.
+                                                        if let Some(mut entity_mut) = world.get_entity_mut(child.0) {
+                                                            entity_mut.remove_parent();
+                                                        }
+                                                        despawn_list.push((parent.0, child.0));
+                                                        if let Ok(mut order_tree) = order_tree.try_write() {
+                                                            order_tree.remove(child);
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                             if changes.iter().any(|change| *change == Change::Inserted) {
                                 if let Some(mut entity_commands) =
                                     world.get_entity_mut(changed_entity.0)

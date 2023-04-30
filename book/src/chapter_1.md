@@ -2,7 +2,7 @@
 Kayak UI is quite easy to setup! First make sure you add it to your cargo.toml file in your project. 
 
 ```toml
-kayak_ui = "0.2"
+kayak_ui = "0.4"
 ```
 
 Once you've added Kayak UI to your bevy project you can now start to use it! In order for you to copy and run this in your own project don't forget to move the `roboto.kayak_font` and the `roboto.png` files to your asset folder. Optionally you can also generate your own font! See: [Chapter 5 - Fonts](./chapter_6.md)

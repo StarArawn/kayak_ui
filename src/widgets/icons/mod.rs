@@ -1,4 +1,4 @@
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use bevy::{
     prelude::{Assets, HandleUntyped, Mesh, Plugin},
@@ -17,8 +17,10 @@ impl Plugin for IconsPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
         let expand_less_bytes = include_bytes!("expand_less.svg");
         let expand_more_bytes = include_bytes!("expand_more.svg");
-        let mut expand_less = Svg::from_bytes(expand_less_bytes, Path::new("")).unwrap();
-        let mut expand_more = Svg::from_bytes(expand_more_bytes, Path::new("")).unwrap();
+        let mut expand_less =
+            Svg::from_bytes(expand_less_bytes, Path::new(""), None::<PathBuf>).unwrap();
+        let mut expand_more =
+            Svg::from_bytes(expand_more_bytes, Path::new(""), None::<PathBuf>).unwrap();
 
         let mut meshes = app.world.get_resource_mut::<Assets<Mesh>>().unwrap();
         expand_less.mesh = meshes.add(expand_less.tessellate());

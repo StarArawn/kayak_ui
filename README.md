@@ -36,6 +36,8 @@ Kayak UI is in the very early stages of development. Important features are miss
 - Fully integrated into bevy to capture input events, use bevy assets(images, etc).
 - Dpi Scaling
 - Batched Rendering
+- Opacity Layers
+- Custom Materials
 
 ## Missing features
 - More default widgets.
@@ -48,14 +50,15 @@ Kayak UI is in the very early stages of development. Important features are miss
 Use bevy `0.10`! Make sure the version of Kayak you are using uses the same version of bevy.
 
 ```rust
-kayak_ui = "0.3"
+kayak_ui = "0.4"
 bevy = "0.10"
 ```
 
 |bevy|kayak_ui|
 |---|---|
 |`main`|`bevy-track`|
-|0.10|0.3|
+|0.10.x|0.4|
+|0.10.x|0.3|
 |0.9|0.2|
 |0.9|0.1|
 

@@ -820,15 +820,20 @@ fn update_widgets(
                                             prev_entity_ref.get::<WidgetName>(),
                                         ) {
                                             if widget_name != prev_widget_name {
-                                                // Do something
-                                                for child in tree.down_iter_at(*changed_entity, false) {
+                                                for child in
+                                                    tree.down_iter_at(*changed_entity, false)
+                                                {
                                                     if let Some(parent) = tree.parent(child) {
                                                         // Due to a bug in bevy we need to remove the parent manually otherwise we'll panic later.
-                                                        if let Some(mut entity_mut) = world.get_entity_mut(child.0) {
+                                                        if let Some(mut entity_mut) =
+                                                            world.get_entity_mut(child.0)
+                                                        {
                                                             entity_mut.remove_parent();
                                                         }
                                                         despawn_list.push((parent.0, child.0));
-                                                        if let Ok(mut order_tree) = order_tree.try_write() {
+                                                        if let Ok(mut order_tree) =
+                                                            order_tree.try_write()
+                                                        {
                                                             order_tree.remove(child);
                                                         }
                                                     }

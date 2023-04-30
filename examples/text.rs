@@ -18,6 +18,7 @@ fn my_widget_1_render(
         // Note: We will see two updates because of the mutable change to styles.
         // Which means when foo changes MyWidget will render twice!
         *computed_styles = KStyle {
+            color: Color::RED.into(),
             render_command: StyleProp::Value(RenderCommand::Text {
                 content: format!("My number is: {}", my_widget.foo),
                 alignment: Alignment::Start,

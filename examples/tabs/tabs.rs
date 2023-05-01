@@ -75,10 +75,10 @@ fn startup(
                             ..Default::default()
                         }}
                     >
-                        <TabBundle tab={Tab { index: 0 }}>
+                        <TabBundle key={"tab1"} tab={Tab { index: 0 }}>
                             <TextWidgetBundle text={TextProps { content: "Tab 1 Content".into(), size: 14.0, line_height: Some(14.0), ..Default::default() }} />
                         </TabBundle>
-                        <TabBundle tab={Tab { index: 1 }}>
+                        <TabBundle key={"tab2"} tab={Tab { index: 1 }}>
                             <TextWidgetBundle text={TextProps { content: "Tab 2 Content".into(), size: 14.0, line_height: Some(14.0), ..Default::default() }} />
                         </TabBundle>
                     </ElementBundle>

@@ -194,10 +194,10 @@ impl KayakWidgetContext {
     ///     widget_context.add_widget(None, root_entity);
     /// }
     ///```
-    pub fn spawn_widget(
+    pub fn spawn_widget<'a>(
         &self,
         commands: &mut Commands,
-        key: Option<&'static str>,
+        key: Option<&'a str>,
         parent_id: Option<Entity>,
     ) -> Entity {
         let mut entity = None;
@@ -358,6 +358,11 @@ impl KayakWidgetContext {
         println!("Old:");
         if let Ok(tree) = self.old_tree.read() {
             tree.dump_at(WrappedIndex(entity));
+        }
+
+        println!("Order tree:");
+        if let Ok(order_tree) = self.order_tree.read() {
+            order_tree.dump_all_at(None, entity);
         }
     }
 

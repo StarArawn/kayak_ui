@@ -13,7 +13,7 @@ use crate::widget_state::WidgetState;
 /// as a parameter.
 #[derive(Component, Clone)]
 pub struct OnEvent {
-    has_initialized: bool,
+    has_initialized: Arc<RwLock<bool>>,
     system: Arc<RwLock<dyn System<In = Entity, Out = ()>>>,
 }
 
@@ -22,7 +22,6 @@ impl Default for OnEvent {
         Self::new(|In(_entity)| {})
     }
 }
-
 impl OnEvent {
     /// Create a new event handler
     ///
@@ -31,7 +30,7 @@ impl OnEvent {
     /// 2. The event
     pub fn new<Params>(system: impl IntoSystem<Entity, (), Params>) -> OnEvent {
         Self {
-            has_initialized: false,
+            has_initialized: Arc::new(RwLock::new(false)),
             system: Arc::new(RwLock::new(IntoSystem::into_system(system))),
         }
     }
@@ -48,9 +47,11 @@ impl OnEvent {
         world: &mut World,
     ) -> (EventDispatcherContext, KEvent) {
         if let Ok(mut system) = self.system.try_write() {
-            if !self.has_initialized {
-                system.initialize(world);
-                self.has_initialized = true;
+            if let Ok(mut has_initialized) = self.has_initialized.try_write() {
+                if !*has_initialized {
+                    system.initialize(world);
+                    *has_initialized = true;
+                }
             }
             // Insert resources
             world.insert_resource(event_dispatcher_context);
@@ -58,11 +59,11 @@ impl OnEvent {
             world.insert_resource(event);
 
             system.run(entity, world);
+            system.apply_buffers(world);
 
             event_dispatcher_context = world.remove_resource::<EventDispatcherContext>().unwrap();
             event = world.remove_resource::<KEvent>().unwrap();
-
-            system.apply_buffers(world);
+            world.remove_resource::<WidgetState>().unwrap();
         }
         (event_dispatcher_context, event)
     }

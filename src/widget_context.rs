@@ -72,10 +72,8 @@ impl KayakWidgetContext {
         parent_id: Option<Entity>,
         context_entity: Entity,
     ) {
-        if let Some(parent_id) = parent_id {
-            self.context_entities
-                .add_context_entity::<T>(parent_id, context_entity);
-        }
+        self.context_entities
+            .add_context_entity::<T>(parent_id, context_entity);
     }
 
     /// Finds the closest matching context entity by traversing up the tree.
@@ -86,7 +84,7 @@ impl KayakWidgetContext {
         // Check self first..
         if let Some(entity) = self
             .context_entities
-            .get_context_entity::<T>(current_entity)
+            .get_context_entity::<T>(Some(current_entity))
         {
             return Some(entity);
         }
@@ -97,11 +95,19 @@ impl KayakWidgetContext {
             while parent.is_some() {
                 if let Some(entity) = self
                     .context_entities
-                    .get_context_entity::<T>(parent.unwrap().0)
+                    .get_context_entity::<T>(Some(parent.unwrap().0))
                 {
                     return Some(entity);
                 }
                 parent = tree.get_parent(parent.unwrap());
+            }
+
+            // Finally check root AKA no parent.
+            if let Some(entity) = self
+                .context_entities
+                .get_context_entity::<T>(None)
+            {
+                return Some(entity);
             }
         }
 

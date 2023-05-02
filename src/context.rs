@@ -227,10 +227,8 @@ impl KayakRootContext {
         parent_id: Option<Entity>,
         context_entity: Entity,
     ) {
-        if let Some(parent_id) = parent_id {
-            self.context_entities
-                .add_context_entity::<T>(parent_id, context_entity);
-        }
+        self.context_entities
+            .add_context_entity::<T>(parent_id, context_entity);
     }
 
     /// Returns a new/existing widget entity.

@@ -731,12 +731,13 @@ fn update_widgets(
     unique_ids_parents: &Arc<RwLock<HashMap<Entity, Entity>>>,
 ) {
     for entity in widgets.iter() {
-        if let (Some(entity_ref), Some(_)) = (
-            world.get_entity(entity.0),
-            tree.try_write()
-                .ok()
-                .map(|tree| tree.contains(*entity).clone()),
-        ) {
+        // if let (Some(entity_ref), Some(_)) = (
+        //     world.get_entity(entity.0),
+        //     tree.try_write()
+        //         .ok()
+        //         .map(|tree| tree.contains(*entity).clone()),
+        // )
+        if let Some(entity_ref) = world.get_entity(entity.0) {
             if let Some(widget_type) = entity_ref.get::<WidgetName>() {
                 let widget_context = KayakWidgetContext::new(
                     tree.clone(),
@@ -796,6 +797,7 @@ fn update_widgets(
                         'outer: for (_index, changed_entity, parent, changes) in diff.changes.iter()
                         {
                             // If a tree node goes from A to B we need to know and delete the descendants.
+                            let mut remove_state = Vec::default();
                             if let Ok(previous_entities) = cloned_widget_entities.read() {
                                 if let Some(previous_entity) =
                                     previous_entities.get(&changed_entity.0)
@@ -809,6 +811,8 @@ fn update_widgets(
                                             prev_entity_ref.get::<WidgetName>(),
                                         ) {
                                             if widget_name != prev_widget_name {
+                                                // It doesn't matter we always need to remove state
+                                                remove_state.push(changed_entity.0);
                                                 if let Some(_) = tree.parent(*changed_entity) {
                                                     for child in
                                                         tree.down_iter_at(*changed_entity, false)
@@ -875,13 +879,32 @@ fn update_widgets(
                                 }
                             }
 
+                            for entity in remove_state.iter() { 
+                                if let Some(state_entity) = widget_state.remove(*entity) {
+                                    if let Some(mut entity_mut) = world.get_entity_mut(state_entity) {
+                                        entity_mut.remove_parent();
+                                        entity_mut.despawn_recursive();
+                                    }
+                                }
+                                // Also remove all cloned widget entities
+                                if let Ok(mut cloned_widget_entities) =
+                                    cloned_widget_entities.try_write()
+                                {
+                                    if let Some(target) = cloned_widget_entities.get(entity) {
+                                        world.despawn(*target);
+                                    }
+                                    cloned_widget_entities.remove(entity);
+                                }
+                            }
+
                             if changes.iter().any(|change| *change == Change::Inserted) {
                                 if let Some(mut entity_commands) =
                                     world.get_entity_mut(changed_entity.0)
                                 {
-                                    entity_commands.insert(Mounted);
                                     entity_commands.remove::<bevy::prelude::Parent>();
                                     entity_commands.set_parent(parent.0);
+                                    entity_commands.insert(Mounted);
+                                    entity_commands.insert(DirtyNode);
                                 }
                                 if world.get_entity(changed_entity.0).is_some() {
                                     if let Some(mut entity_commands) =
@@ -1101,6 +1124,13 @@ fn update_widgets(
                         entity_mut.remove::<bevy::prelude::Children>();
                         entity_mut.despawn();
                     }
+                    // Remove state entity
+                    if let Some(state_entity) = widget_state.remove(entity.0) {
+                        if let Some(mut entity_mut) = world.get_entity_mut(state_entity) {
+                            entity_mut.remove_parent();
+                            entity_mut.despawn_recursive();
+                        }
+                    }
                 }
             }
         }
@@ -1163,7 +1193,9 @@ fn update_widget(
                 } else {
                     let target = world.spawn_empty().insert(PreviousWidget).id();
                     if let Some(parent_id) = old_parent_entity {
-                        world.entity_mut(parent_id).add_child(target);
+                        if let Some(mut entity_mut) = world.get_entity_mut(parent_id) {
+                            entity_mut.add_child(target);
+                        }
                     }
                     cloned_widget_entities.insert(entity.0, target);
                     target

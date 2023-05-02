@@ -815,7 +815,7 @@ fn update_widgets(
                                                     for child in
                                                         tree.down_iter_at(*changed_entity, false)
                                                     {
-                                                        trace!(
+                                                        info!(
                                                             "Removing AvsB children {}::{}",
                                                             entity_ref
                                                                 .get::<WidgetName>()
@@ -827,34 +827,42 @@ fn update_widgets(
                                                         if let Ok(order_tree) =
                                                             order_tree.try_read()
                                                         {
-                                                            'back_up: for sibling in order_tree
-                                                                .child_iter(
-                                                                    order_tree
-                                                                        .parent(*changed_entity)
-                                                                        .unwrap(),
-                                                                )
-                                                            {
-                                                                for child in
-                                                                    tree.down_iter_at(sibling, true)
+                                                            if let Some(order_tree_parent) = order_tree
+                                                                .parent(*changed_entity) {
+                                                                'back_up: for sibling in order_tree
+                                                                    .child_iter(order_tree_parent)
                                                                 {
-                                                                    if let Some(entity_ref) =
-                                                                        world.get_entity(child.0)
-                                                                    {
-                                                                        if let Some(children) =
-                                                                            entity_ref
-                                                                                .get::<KChildren>()
+                                                                    dbg!(sibling, changed_entity);
+                                                                    if sibling == *changed_entity {
+                                                                        continue 'back_up;
+                                                                    }
+                                                                    for child in
+                                                                        tree.down_iter_at(sibling, true)
+                                                                    {   
+                                                                        // Ignore self again.
+                                                                        dbg!(child);
+                                                                        if child == *parent {
+                                                                            continue;
+                                                                        }
+                                                                        if let Some(entity_ref) =
+                                                                            world.get_entity(child.0)
                                                                         {
-                                                                            if children
-                                                                                .contains_entity(
-                                                                                    changed_entity
-                                                                                        .0,
-                                                                                )
+                                                                            if let Some(children) =
+                                                                                entity_ref
+                                                                                    .get::<KChildren>()
                                                                             {
-                                                                                trace!("Caught an entity that was marked as deleted but wasn't! {:?}", changed_entity.0);
-                                                                                // Don't despawn changed entity because it exists as a child passed via props
-                                                                                should_delete =
-                                                                                    false;
-                                                                                break 'back_up;
+                                                                                if children
+                                                                                    .contains_entity(
+                                                                                        changed_entity
+                                                                                            .0,
+                                                                                    )
+                                                                                {
+                                                                                    info!("Caught an entity that was marked as deleted but wasn't! {:?} in {:?}", changed_entity.0, child.0);
+                                                                                    // Don't despawn changed entity because it exists as a child passed via props
+                                                                                    should_delete =
+                                                                                        false;
+                                                                                    break 'back_up;
+                                                                                }
                                                                             }
                                                                         }
                                                                     }
@@ -1005,7 +1013,7 @@ fn update_widgets(
                                     entity_mut.get::<WidgetName>(),
                                     parent.index(),
                                 );
-                                entity_mut.remove_parent();
+                                entity_mut.remove::<Parent>();
                                 entity_mut.remove::<bevy::prelude::Children>();
                                 entity_mut.despawn();
 

@@ -951,8 +951,8 @@ pub fn queue_quads_inner(
                     color,
                     uv: [0.0; 4],
                     pos_size: [
-                        sprite_rect.min.x,
-                        sprite_rect.min.y,
+                        0.0,
+                        0.0,
                         sprite_rect.size().x,
                         sprite_rect.size().y,
                     ],

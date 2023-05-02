@@ -4,7 +4,7 @@ use bevy::ecs::prelude::*;
 use bevy::prelude::{Color, Image};
 use bevy::render::render_asset::RenderAssets;
 use bevy::render::render_phase::{
-    BatchedPhaseItem, CachedRenderPipelinePhaseItem, DrawFunctionId, PhaseItem,
+    BatchedPhaseItem, CachedRenderPipelinePhaseItem, DrawFunctionId, PhaseItem, DrawFunctions,
 };
 use bevy::render::render_resource::{CachedRenderPipelineId, RenderPassColorAttachment};
 use bevy::render::{
@@ -209,6 +209,10 @@ impl Node for MainPassUINode {
             if let Some(opacity_layer_manager) =
                 opacity_layer_manager.camera_layers.get(&view_entity)
             {
+                let draw_functions = world.resource::<DrawFunctions<TransparentOpacityUI>>();
+                let mut draw_functions = draw_functions.write();
+                draw_functions.prepare(world);
+
                 for layer_id in 1..MAX_OPACITY_LAYERS {
                     // Start new render pass.
                     let gpu_images = world.get_resource::<RenderAssets<Image>>().unwrap();
@@ -229,8 +233,11 @@ impl Node for MainPassUINode {
 
                     let mut tracked_pass =
                         render_context.begin_tracked_render_pass(pass_descriptor);
-
-                    transparent_opacity_phase.render(&mut tracked_pass, world, view_entity);
+            
+                    for item in transparent_opacity_phase.items.iter().filter(|i| i.opacity_layer == layer_id) {
+                        let draw_function = draw_functions.get_mut(item.draw_function()).unwrap();
+                        draw_function.draw(world, &mut tracked_pass, view_entity, item);
+                    }
                 }
             }
         }

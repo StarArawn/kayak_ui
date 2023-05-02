@@ -811,11 +811,11 @@ fn update_widgets(
                                             if widget_name != prev_widget_name {
                                                 // It doesn't matter we always need to remove state
                                                 remove_state.push(changed_entity.0);
-                                                if let Some(_) = tree.parent(*changed_entity) {
+                                                if tree.parent(*changed_entity).is_some() {
                                                     for child in
                                                         tree.down_iter_at(*changed_entity, false)
                                                     {
-                                                        info!(
+                                                        trace!(
                                                             "Removing AvsB children {}::{}",
                                                             entity_ref
                                                                 .get::<WidgetName>()
@@ -827,25 +827,25 @@ fn update_widgets(
                                                         if let Ok(order_tree) =
                                                             order_tree.try_read()
                                                         {
-                                                            if let Some(order_tree_parent) = order_tree
-                                                                .parent(*changed_entity) {
+                                                            if let Some(order_tree_parent) =
+                                                                order_tree.parent(*changed_entity)
+                                                            {
                                                                 'back_up: for sibling in order_tree
                                                                     .child_iter(order_tree_parent)
                                                                 {
-                                                                    dbg!(sibling, changed_entity);
                                                                     if sibling == *changed_entity {
                                                                         continue 'back_up;
                                                                     }
-                                                                    for child in
-                                                                        tree.down_iter_at(sibling, true)
-                                                                    {   
+                                                                    for child in tree
+                                                                        .down_iter_at(sibling, true)
+                                                                    {
                                                                         // Ignore self again.
-                                                                        dbg!(child);
                                                                         if child == *parent {
                                                                             continue;
                                                                         }
                                                                         if let Some(entity_ref) =
-                                                                            world.get_entity(child.0)
+                                                                            world
+                                                                                .get_entity(child.0)
                                                                         {
                                                                             if let Some(children) =
                                                                                 entity_ref
@@ -857,7 +857,7 @@ fn update_widgets(
                                                                                             .0,
                                                                                     )
                                                                                 {
-                                                                                    info!("Caught an entity that was marked as deleted but wasn't! {:?} in {:?}", changed_entity.0, child.0);
+                                                                                    trace!("Caught an entity that was marked as deleted but wasn't! {:?} in {:?}", changed_entity.0, child.0);
                                                                                     // Don't despawn changed entity because it exists as a child passed via props
                                                                                     should_delete =
                                                                                         false;
@@ -885,9 +885,10 @@ fn update_widgets(
                                 }
                             }
 
-                            for entity in remove_state.iter() { 
+                            for entity in remove_state.iter() {
                                 if let Some(state_entity) = widget_state.remove(*entity) {
-                                    if let Some(mut entity_mut) = world.get_entity_mut(state_entity) {
+                                    if let Some(mut entity_mut) = world.get_entity_mut(state_entity)
+                                    {
                                         entity_mut.remove_parent();
                                         entity_mut.despawn_recursive();
                                     }

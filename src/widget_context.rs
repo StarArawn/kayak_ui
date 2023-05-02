@@ -103,10 +103,7 @@ impl KayakWidgetContext {
             }
 
             // Finally check root AKA no parent.
-            if let Some(entity) = self
-                .context_entities
-                .get_context_entity::<T>(None)
-            {
+            if let Some(entity) = self.context_entities.get_context_entity::<T>(None) {
                 return Some(entity);
             }
         }
@@ -200,10 +197,10 @@ impl KayakWidgetContext {
     ///     widget_context.add_widget(None, root_entity);
     /// }
     ///```
-    pub fn spawn_widget<'a>(
+    pub fn spawn_widget(
         &self,
         commands: &mut Commands,
-        key: Option<&'a str>,
+        key: Option<&str>,
         parent_id: Option<Entity>,
     ) -> Entity {
         let mut entity = None;

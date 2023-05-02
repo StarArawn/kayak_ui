@@ -950,12 +950,7 @@ pub fn queue_quads_inner(
                     position: final_position.into(),
                     color,
                     uv: [0.0; 4],
-                    pos_size: [
-                        0.0,
-                        0.0,
-                        sprite_rect.size().x,
-                        sprite_rect.size().y,
-                    ],
+                    pos_size: [0.0, 0.0, sprite_rect.size().x, sprite_rect.size().y],
                 });
             }
             *index += indices.len() as u32;

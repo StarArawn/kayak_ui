@@ -4,7 +4,7 @@ use bevy::ecs::prelude::*;
 use bevy::prelude::{Color, Image};
 use bevy::render::render_asset::RenderAssets;
 use bevy::render::render_phase::{
-    BatchedPhaseItem, CachedRenderPipelinePhaseItem, DrawFunctionId, PhaseItem, DrawFunctions,
+    BatchedPhaseItem, CachedRenderPipelinePhaseItem, DrawFunctionId, DrawFunctions, PhaseItem,
 };
 use bevy::render::render_resource::{CachedRenderPipelineId, RenderPassColorAttachment};
 use bevy::render::{
@@ -233,8 +233,12 @@ impl Node for MainPassUINode {
 
                     let mut tracked_pass =
                         render_context.begin_tracked_render_pass(pass_descriptor);
-            
-                    for item in transparent_opacity_phase.items.iter().filter(|i| i.opacity_layer == layer_id) {
+
+                    for item in transparent_opacity_phase
+                        .items
+                        .iter()
+                        .filter(|i| i.opacity_layer == layer_id)
+                    {
                         let draw_function = draw_functions.get_mut(item.draw_function()).unwrap();
                         draw_function.draw(world, &mut tracked_pass, view_entity, item);
                     }

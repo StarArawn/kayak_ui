@@ -30,7 +30,10 @@ impl ContextEntities {
         inner.insert(T::default().type_id(), context_entity);
     }
 
-    pub fn get_context_entity<T: Default + 'static>(&self, parent_id: Option<Entity>) -> Option<Entity> {
+    pub fn get_context_entity<T: Default + 'static>(
+        &self,
+        parent_id: Option<Entity>,
+    ) -> Option<Entity> {
         if !self.ce.contains_key(&parent_id) {
             return None;
         }

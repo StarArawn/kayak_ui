@@ -63,6 +63,7 @@ impl KChildren {
         for child in self.inner.iter() {
             if let Some(parent_id) = parent_id {
                 if let Some(mut entity_commands) = commands.get_entity(*child) {
+                    entity_commands.remove::<Parent>();
                     entity_commands.set_parent(parent_id);
                 }
             }

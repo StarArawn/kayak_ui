@@ -1,8 +1,9 @@
-use bevy::prelude::Entity;
+use bevy::prelude::{Entity, World};
 use bevy::utils::HashMap;
 use morphorm::Hierarchy;
 use std::iter::Rev;
 
+use crate::context::WidgetName;
 use crate::node::WrappedIndex;
 
 #[derive(Default, Debug, Clone, PartialEq, Eq)]
@@ -34,6 +35,25 @@ impl ChildChanges {
             .iter()
             .all(|change| change.3.iter().all(|c| *c == Change::Unchanged))
     }
+
+    pub fn debug_print(&self, world: &World) {
+        for (index, child, parent, changes) in self.changes.iter() {
+            if let Some(entity_ref) = world.get_entity(child.0) {
+                let name = entity_ref
+                    .get::<WidgetName>()
+                    .map(|n| n.0.clone())
+                    .unwrap_or("Unknown".into());
+                println!(
+                    "[name: {}, index: {}, entity: {}, parent: {},  change: {:?}]",
+                    name,
+                    index,
+                    child.0.index(),
+                    parent.0.index(),
+                    changes
+                );
+            }
+        }
+    }
 }
 
 impl From<Vec<(usize, WrappedIndex, WrappedIndex, Vec<Change>)>> for ChildChanges {
@@ -57,6 +77,11 @@ impl Tree {
         } else {
             self.root_node = Some(index);
         }
+    }
+
+    pub fn remove_without_children(&mut self, index: WrappedIndex) {
+        self.parents.remove(&index);
+        self.children.remove(&index);
     }
 
     /// Remove the given node and recursively removes its descendants
@@ -630,16 +655,71 @@ impl Tree {
 
     /// Sometimes we need to see the entire tree even dangling nodes.
     /// This function will display everything.
-    pub fn dump_all(&self) {
+    pub fn dump_all(&self, world: &World) {
         let mut children = self.children.iter().collect::<Vec<_>>();
         children.sort_by(|(a, _), (b, _)| a.0.index().partial_cmp(&b.0.index()).unwrap());
 
         for (parent, children) in children.iter() {
-            println!("[{}]", parent.0.index());
+            let name = if let Some(entity_ref) = world.get_entity(parent.0) {
+                entity_ref.get::<WidgetName>().map(|n| n.0.clone())
+            } else {
+                None
+            };
+            println!(
+                "[{}::{}]",
+                name.unwrap_or("Unknown".into()),
+                parent.0.index()
+            );
             for child in children.iter() {
-                println!("    [{}]", child.0.index());
+                let name = if let Some(entity_ref) = world.get_entity(parent.0) {
+                    entity_ref.get::<WidgetName>().map(|n| n.0.clone())
+                } else {
+                    None
+                };
+                println!(
+                    "    [{}::{}]",
+                    name.unwrap_or("Unknown".into()),
+                    child.0.index()
+                );
             }
             println!();
+        }
+    }
+
+    /// Sometimes we need to see the entire tree even dangling nodes.
+    /// This function will display everything.
+    pub fn dump_all_at(&self, world: Option<&World>, parent: Entity) {
+        let no_children = vec![];
+        let children = self
+            .children
+            .get(&WrappedIndex(parent))
+            .unwrap_or(&no_children);
+
+        let name: Option<String> = if let Some(world) = world {
+            if let Some(entity_ref) = world.get_entity(parent) {
+                entity_ref.get::<WidgetName>().map(|n| n.0.clone())
+            } else {
+                None
+            }
+        } else {
+            None
+        };
+        println!("[{}::{}]", name.unwrap_or("Unknown".into()), parent.index());
+        for child in children.iter() {
+            let name = if let Some(world) = world {
+                if let Some(entity_ref) = world.get_entity(child.0) {
+                    entity_ref.get::<WidgetName>().map(|n| n.0.clone())
+                } else {
+                    None
+                }
+            } else {
+                None
+            };
+            println!(
+                "    [{}::{}]",
+                name.unwrap_or("Unknown".into()),
+                child.0.index()
+            );
         }
     }
 

@@ -8,7 +8,7 @@ use dashmap::DashMap;
 
 #[derive(Debug, Clone)]
 pub struct ContextEntities {
-    ce: Arc<DashMap<Entity, DashMap<TypeId, Entity>>>,
+    ce: Arc<DashMap<Option<Entity>, DashMap<TypeId, Entity>>>,
 }
 
 impl ContextEntities {
@@ -20,7 +20,7 @@ impl ContextEntities {
 
     pub fn add_context_entity<T: Default + 'static>(
         &self,
-        parent_id: Entity,
+        parent_id: Option<Entity>,
         context_entity: Entity,
     ) {
         if !self.ce.contains_key(&parent_id) {
@@ -30,7 +30,10 @@ impl ContextEntities {
         inner.insert(T::default().type_id(), context_entity);
     }
 
-    pub fn get_context_entity<T: Default + 'static>(&self, parent_id: Entity) -> Option<Entity> {
+    pub fn get_context_entity<T: Default + 'static>(
+        &self,
+        parent_id: Option<Entity>,
+    ) -> Option<Entity> {
         if !self.ce.contains_key(&parent_id) {
             return None;
         }

@@ -425,9 +425,8 @@ impl EventDispatcher {
                             let mut stack_children = Vec::new();
                             for child in children {
                                 let child_z = world
-                                    .entity(child.0)
-                                    .get::<Node>()
-                                    .map(|node| node.z)
+                                    .get_entity(child.0)
+                                    .map(|e| e.get::<Node>().map(|node| node.z).unwrap_or(0.0))
                                     .unwrap_or(0.0);
                                 stack_children.push((child_z, (*child, depth + 1)));
                             }
@@ -862,7 +861,7 @@ impl EventDispatcher {
     }
 }
 
-#[derive(Resource)]
+#[derive(Resource, Default)]
 pub struct EventDispatcherContext {
     cursor_capture: Option<WrappedIndex>,
 }

@@ -20,17 +20,23 @@ fn startup(
     let parent_id = None;
     rsx! {
         <KayakAppBundle>
-            <KSvgBundle
-                svg={KSvg(svg)}
+            <ElementBundle
                 styles={KStyle {
                     position_type: StyleProp::Value(KPositionType::SelfDirected),
-                    left: StyleProp::Value(Units::Pixels(10.0)),
-                    top: StyleProp::Value(Units::Pixels(10.0)),
-                    width: StyleProp::Value(Units::Pixels(800.0)),
-                    height: StyleProp::Value(Units::Pixels(800.0)),
+                    left: StyleProp::Value(Units::Pixels(-34.545261 * 7.6)),
+                    top: StyleProp::Value(Units::Pixels(10.0 - 95.557219 * 7.6)),
                     ..Default::default()
                 }}
-            />
+            >
+                <KSvgBundle
+                    svg={KSvg(svg)}
+                    styles={KStyle {
+                        width: StyleProp::Value(Units::Pixels(800.0)),
+                        height: StyleProp::Value(Units::Pixels(800.0)),
+                        ..Default::default()
+                    }}
+                />
+            </ElementBundle>
         </KayakAppBundle>
     };
 

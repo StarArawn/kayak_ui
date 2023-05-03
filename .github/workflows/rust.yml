@@ -39,4 +39,4 @@ jobs:
     - name: Run fmt check
       run: cargo fmt --all -- --check
     - name: Run clippy
-      run: cargo clippy --workspace --all-targets --all-features --features "bevy/x11"
+      run: cargo clippy --workspace --all-targets --all-features --features "bevy/x11" -- --deny warnings

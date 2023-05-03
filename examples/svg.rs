@@ -23,8 +23,8 @@ fn startup(
             <ElementBundle
                 styles={KStyle {
                     position_type: StyleProp::Value(KPositionType::SelfDirected),
-                    left: StyleProp::Value(Units::Pixels(-34.545261 * 7.6)),
-                    top: StyleProp::Value(Units::Pixels(10.0 - 95.557219 * 7.6)),
+                    left: StyleProp::Value(Units::Pixels(-34.545 * 7.6)),
+                    top: StyleProp::Value(Units::Pixels(10.0 - 95.557 * 7.6)),
                     ..Default::default()
                 }}
             >

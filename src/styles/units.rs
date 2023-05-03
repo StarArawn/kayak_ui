@@ -1,20 +1,15 @@
 use bevy::reflect::{FromReflect, Reflect};
 
 /// The layout type determines how nodes will be positioned when directed by the parent
-#[derive(Debug, FromReflect, Reflect, Clone, Copy, PartialEq)]
+#[derive(Default, Debug, FromReflect, Reflect, Clone, Copy, PartialEq)]
 pub enum LayoutType {
     /// Stack child elements horizontally
     Row,
+    #[default]
     /// Stack child elements vertically
     Column,
     /// Position child elements into specified rows and columns
     Grid,
-}
-
-impl Default for LayoutType {
-    fn default() -> Self {
-        LayoutType::Column
-    }
 }
 
 impl From<LayoutType> for morphorm::LayoutType {
@@ -28,18 +23,13 @@ impl From<LayoutType> for morphorm::LayoutType {
 }
 
 /// The position type determines whether a node will be positioned in-line with its siblings or seperate
-#[derive(Debug, Reflect, FromReflect, Clone, Copy, PartialEq)]
+#[derive(Default, Debug, Reflect, FromReflect, Clone, Copy, PartialEq)]
 pub enum KPositionType {
     /// Node is positioned relative to parent but ignores its siblings
     SelfDirected,
+    #[default]
     /// Node is positioned relative to parent and in-line with siblings
     ParentDirected,
-}
-
-impl Default for KPositionType {
-    fn default() -> Self {
-        KPositionType::ParentDirected
-    }
 }
 
 impl From<KPositionType> for morphorm::PositionType {
@@ -52,7 +42,7 @@ impl From<KPositionType> for morphorm::PositionType {
 }
 
 /// Units which describe spacing and size
-#[derive(Debug, FromReflect, Reflect, Clone, Copy, PartialEq)]
+#[derive(Default, Debug, FromReflect, Reflect, Clone, Copy, PartialEq)]
 pub enum Units {
     /// A number of pixels
     Pixels(f32),
@@ -60,14 +50,9 @@ pub enum Units {
     Percentage(f32),
     /// A factor of the remaining free space
     Stretch(f32),
+    #[default]
     /// Automatically determine the value
     Auto,
-}
-
-impl Default for Units {
-    fn default() -> Self {
-        Units::Auto
-    }
 }
 
 impl From<Units> for morphorm::Units {

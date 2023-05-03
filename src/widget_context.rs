@@ -1,9 +1,7 @@
 use std::sync::{Arc, RwLock};
 
-use bevy::{
-    prelude::{BuildChildren, Commands, Component, Entity, Resource},
-    utils::HashMap,
-};
+use bevy::prelude::{BuildChildren, Commands, Component, Entity, Resource};
+use dashmap::DashMap;
 use morphorm::Hierarchy;
 
 use crate::{
@@ -23,15 +21,15 @@ pub struct KayakWidgetContext {
     new_tree: Arc<RwLock<Tree>>,
     context_entities: ContextEntities,
     layout_cache: Arc<RwLock<LayoutCache>>,
-    pub(crate) index: Arc<RwLock<HashMap<Entity, usize>>>,
+    pub(crate) index: DashMap<Entity, usize>,
     widget_state: WidgetState,
     pub(crate) order_tree: Arc<RwLock<Tree>>,
     pub camera_entity: Option<Entity>,
     // Unique id's store entity id's related to a key rather than the child tree.
     // This lets users get a unique entity. The first Entity is the parent widget.
     // The 2nd hashmap is a list of keys and their entities.
-    unique_ids: Arc<RwLock<HashMap<Entity, HashMap<String, Entity>>>>,
-    unique_ids_parents: Arc<RwLock<HashMap<Entity, Entity>>>,
+    unique_ids: DashMap<Entity, DashMap<String, Entity>>,
+    unique_ids_parents: DashMap<Entity, Entity>,
 }
 
 impl KayakWidgetContext {
@@ -41,10 +39,10 @@ impl KayakWidgetContext {
         layout_cache: Arc<RwLock<LayoutCache>>,
         widget_state: WidgetState,
         order_tree: Arc<RwLock<Tree>>,
-        index: Arc<RwLock<HashMap<Entity, usize>>>,
+        index: DashMap<Entity, usize>,
         camera_entity: Option<Entity>,
-        unique_ids: Arc<RwLock<HashMap<Entity, HashMap<String, Entity>>>>,
-        unique_ids_parents: Arc<RwLock<HashMap<Entity, Entity>>>,
+        unique_ids: DashMap<Entity, DashMap<String, Entity>>,
+        unique_ids_parents: DashMap<Entity, Entity>,
     ) -> Self {
         Self {
             old_tree,
@@ -152,19 +150,15 @@ impl KayakWidgetContext {
     }
 
     fn get_and_add_index(&self, parent: Entity) -> usize {
-        if let Ok(mut hash_map) = self.index.try_write() {
-            if hash_map.contains_key(&parent) {
-                let index = hash_map.get_mut(&parent).unwrap();
-                let current_index = *index;
-                *index += 1;
-                return current_index;
-            } else {
-                hash_map.insert(parent, 1);
-                return 0;
-            }
+        if self.index.contains_key(&parent) {
+            let mut index = self.index.get_mut(&parent).unwrap();
+            let current_index = *index;
+            *index.value_mut() += 1;
+            current_index
+        } else {
+            self.index.insert(parent, 1);
+            0
         }
-
-        0
     }
 
     /// Creates or grabs the existing state entity
@@ -206,27 +200,22 @@ impl KayakWidgetContext {
         let mut entity = None;
         if let Some(parent_entity) = parent_id {
             if let Some(key) = key.map(|key| key.to_string()) {
-                if let Ok(unique_ids) = self.unique_ids.try_read() {
-                    if let Some(key_hashmap) = unique_ids.get(&parent_entity) {
-                        entity = key_hashmap.get(&key).cloned();
+                if let Some(key_hashmap) = self.unique_ids.get(&parent_entity) {
+                    entity = key_hashmap.get(&key).map(|v| *v.value());
 
-                        if let Some(child) = entity {
-                            if let Some(mut entity_commands) = commands.get_entity(child) {
-                                entity_commands.despawn();
-                            }
-                            entity =
-                                Some(commands.get_or_spawn(child).set_parent(parent_entity).id());
-                            log::trace!(
-                                "Reusing keyed widget entity {:?} with parent: {:?}!",
-                                child.index(),
-                                parent_id.unwrap().index()
-                            );
+                    if let Some(child) = entity {
+                        if let Some(mut entity_commands) = commands.get_entity(child) {
+                            entity_commands.despawn();
                         }
-                    } else {
-                        log::trace!("couldn't find key entity on parent!");
+                        entity = Some(commands.get_or_spawn(child).set_parent(parent_entity).id());
+                        log::trace!(
+                            "Reusing keyed widget entity {:?} with parent: {:?}!",
+                            child.index(),
+                            parent_id.unwrap().index()
+                        );
                     }
                 } else {
-                    panic!("Couldn't get unique id lock!");
+                    log::trace!("couldn't find key entity on parent!");
                 }
             } else {
                 let children = self.get_children_ordered(parent_entity);
@@ -262,22 +251,16 @@ impl KayakWidgetContext {
                 commands.entity(entity.unwrap()).set_parent(parent_entity);
 
                 if let Some(key) = key.map(|key| key.to_string()) {
-                    if let Ok(mut unique_ids) = self.unique_ids.try_write() {
-                        if let Some(key_hashmap) = unique_ids.get_mut(&parent_entity) {
-                            key_hashmap.insert(key, entity.unwrap());
-                            if let Ok(mut unique_ids_parents) = self.unique_ids_parents.try_write()
-                            {
-                                unique_ids_parents.insert(entity.unwrap(), parent_entity);
-                            }
-                        } else {
-                            let mut key_hashmap = HashMap::new();
-                            key_hashmap.insert(key, entity.unwrap());
-                            unique_ids.insert(parent_entity, key_hashmap);
-                            if let Ok(mut unique_ids_parents) = self.unique_ids_parents.try_write()
-                            {
-                                unique_ids_parents.insert(entity.unwrap(), parent_entity);
-                            }
-                        }
+                    if let Some(key_hashmap) = self.unique_ids.get_mut(&parent_entity) {
+                        key_hashmap.insert(key, entity.unwrap());
+                        self.unique_ids_parents
+                            .insert(entity.unwrap(), parent_entity);
+                    } else {
+                        let key_hashmap = DashMap::new();
+                        key_hashmap.insert(key, entity.unwrap());
+                        self.unique_ids.insert(parent_entity, key_hashmap);
+                        self.unique_ids_parents
+                            .insert(entity.unwrap(), parent_entity);
                     }
                 } else {
                     // We need to add it to the ordered tree

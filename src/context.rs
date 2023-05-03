@@ -6,6 +6,7 @@ use bevy::{
     utils::{HashMap, HashSet},
     window::PrimaryWindow,
 };
+use dashmap::DashMap;
 use kayak_font::KayakFont;
 use morphorm::Hierarchy;
 
@@ -92,16 +93,16 @@ pub struct KayakRootContext {
     pub(crate) context_entities: ContextEntities,
     pub(crate) current_cursor: CursorIcon,
     pub(crate) clone_systems: Arc<RwLock<EntityCloneSystems>>,
-    pub(crate) cloned_widget_entities: Arc<RwLock<HashMap<Entity, Entity>>>,
+    pub(crate) cloned_widget_entities: DashMap<Entity, Entity>,
     pub(crate) widget_state: WidgetState,
     pub(crate) order_tree: Arc<RwLock<Tree>>,
-    pub(crate) index: Arc<RwLock<HashMap<Entity, usize>>>,
+    pub(crate) index: DashMap<Entity, usize>,
     /// Unique id's store entity id's related to a key rather than the child tree.
     /// This lets users get a unique entity. The first Entity is the parent widget.
     /// The 2nd hashmap is a list of keys and their entities.
-    pub(crate) unique_ids: Arc<RwLock<HashMap<Entity, HashMap<String, Entity>>>>,
+    pub(crate) unique_ids: DashMap<Entity, DashMap<String, Entity>>,
     /// Maps keyed entities to spawn parents. We can't use the tree in this case.
-    pub(crate) unique_ids_parents: Arc<RwLock<HashMap<Entity, Entity>>>,
+    pub(crate) unique_ids_parents: DashMap<Entity, Entity>,
     pub(crate) uninitilized_systems: HashSet<String>,
     pub camera_entity: Entity,
 }
@@ -246,24 +247,19 @@ impl KayakRootContext {
         let mut entity = None;
         if let Some(parent_entity) = parent_id {
             if let Some(key) = key.map(|key| key.to_string()) {
-                if let Ok(unique_ids) = self.unique_ids.try_read() {
-                    if let Some(key_hashmap) = unique_ids.get(&parent_entity) {
-                        entity = key_hashmap.get(&key).cloned();
+                if let Some(key_hashmap) = self.unique_ids.get(&parent_entity) {
+                    entity = key_hashmap.get(&key).map(|v| *v.value());
 
-                        if let Some(child) = entity {
-                            if let Some(mut entity_commands) = commands.get_entity(child) {
-                                entity_commands.despawn();
-                            }
-                            entity =
-                                Some(commands.get_or_spawn(child).set_parent(parent_entity).id());
-                            log::trace!(
-                                "Reusing keyed widget entity {:?} with parent: {:?}!",
-                                child.index(),
-                                parent_id.unwrap().index()
-                            );
+                    if let Some(child) = entity {
+                        if let Some(mut entity_commands) = commands.get_entity(child) {
+                            entity_commands.despawn();
                         }
-                    } else {
-                        log::trace!("couldn't find key entity on parent!");
+                        entity = Some(commands.get_or_spawn(child).set_parent(parent_entity).id());
+                        log::trace!(
+                            "Reusing keyed widget entity {:?} with parent: {:?}!",
+                            child.index(),
+                            parent_id.unwrap().index()
+                        );
                     }
                 } else {
                     panic!("Couldn't get unique id lock!");
@@ -302,22 +298,16 @@ impl KayakRootContext {
                 commands.entity(entity.unwrap()).set_parent(parent_entity);
 
                 if let Some(key) = key.map(|key| key.to_string()) {
-                    if let Ok(mut unique_ids) = self.unique_ids.try_write() {
-                        if let Some(key_hashmap) = unique_ids.get_mut(&parent_entity) {
-                            key_hashmap.insert(key, entity.unwrap());
-                            if let Ok(mut unique_ids_parents) = self.unique_ids_parents.try_write()
-                            {
-                                unique_ids_parents.insert(entity.unwrap(), parent_entity);
-                            }
-                        } else {
-                            let mut key_hashmap = HashMap::new();
-                            key_hashmap.insert(key, entity.unwrap());
-                            unique_ids.insert(parent_entity, key_hashmap);
-                            if let Ok(mut unique_ids_parents) = self.unique_ids_parents.try_write()
-                            {
-                                unique_ids_parents.insert(entity.unwrap(), parent_entity);
-                            }
-                        }
+                    if let Some(key_hashmap) = self.unique_ids.get_mut(&parent_entity) {
+                        key_hashmap.insert(key, entity.unwrap());
+                        self.unique_ids_parents
+                            .insert(entity.unwrap(), parent_entity);
+                    } else {
+                        let key_hashmap = DashMap::new();
+                        key_hashmap.insert(key, entity.unwrap());
+                        self.unique_ids.insert(parent_entity, key_hashmap);
+                        self.unique_ids_parents
+                            .insert(entity.unwrap(), parent_entity);
                     }
                 } else {
                     // We need to add it to the ordered tree
@@ -351,19 +341,15 @@ impl KayakRootContext {
     }
 
     fn get_and_add_index(&self, parent: Entity) -> usize {
-        if let Ok(mut hash_map) = self.index.try_write() {
-            if hash_map.contains_key(&parent) {
-                let index = hash_map.get_mut(&parent).unwrap();
-                let current_index = *index;
-                *index += 1;
-                return current_index;
-            } else {
-                hash_map.insert(parent, 1);
-                return 0;
-            }
+        if self.index.contains_key(&parent) {
+            let mut index = self.index.get_mut(&parent).unwrap();
+            let current_index = *index;
+            *index.value_mut() += 1;
+            current_index
+        } else {
+            self.index.insert(parent, 1);
+            0
         }
-
-        0
     }
 
     /// Generates a flat list of widget render commands sorted by tree order.
@@ -690,9 +676,7 @@ pub fn update_widgets_sys(world: &mut World) {
         }
 
         // Clear out indices
-        if let Ok(mut indices) = context.index.try_write() {
-            indices.clear();
-        }
+        context.index.clear();
 
         world.entity_mut(entity).insert(context);
     }
@@ -708,13 +692,13 @@ fn update_widgets(
     context_entities: &ContextEntities,
     focus_tree: &FocusTree,
     clone_systems: &Arc<RwLock<EntityCloneSystems>>,
-    cloned_widget_entities: &Arc<RwLock<HashMap<Entity, Entity>>>,
+    cloned_widget_entities: &DashMap<Entity, Entity>,
     widget_state: &WidgetState,
     new_ticks: &mut HashMap<String, u32>,
     order_tree: &Arc<RwLock<Tree>>,
-    index: &Arc<RwLock<HashMap<Entity, usize>>>,
-    unique_ids: &Arc<RwLock<HashMap<Entity, HashMap<String, Entity>>>>,
-    unique_ids_parents: &Arc<RwLock<HashMap<Entity, Entity>>>,
+    index: &DashMap<Entity, usize>,
+    unique_ids: &DashMap<Entity, DashMap<String, Entity>>,
+    unique_ids_parents: &DashMap<Entity, Entity>,
 ) {
     for entity in widgets.iter() {
         // if let (Some(entity_ref), Some(_)) = (
@@ -785,86 +769,81 @@ fn update_widgets(
                         {
                             // If a tree node goes from A to B we need to know and delete the descendants.
                             let mut remove_state = Vec::default();
-                            if let Ok(previous_entities) = cloned_widget_entities.read() {
-                                if let Some(previous_entity) =
-                                    previous_entities.get(&changed_entity.0)
-                                {
-                                    if let (Some(entity_ref), Some(prev_entity_ref)) = (
-                                        world.get_entity(changed_entity.0),
-                                        world.get_entity(*previous_entity),
+                            if let Some(previous_entity) =
+                                cloned_widget_entities.get(&changed_entity.0)
+                            {
+                                if let (Some(entity_ref), Some(prev_entity_ref)) = (
+                                    world.get_entity(changed_entity.0),
+                                    world.get_entity(*previous_entity),
+                                ) {
+                                    if let (Some(widget_name), Some(prev_widget_name)) = (
+                                        entity_ref.get::<WidgetName>(),
+                                        prev_entity_ref.get::<WidgetName>(),
                                     ) {
-                                        if let (Some(widget_name), Some(prev_widget_name)) = (
-                                            entity_ref.get::<WidgetName>(),
-                                            prev_entity_ref.get::<WidgetName>(),
-                                        ) {
-                                            if widget_name != prev_widget_name {
-                                                // It doesn't matter we always need to remove state
-                                                remove_state.push(changed_entity.0);
-                                                if tree.parent(*changed_entity).is_some() {
-                                                    for child in
-                                                        tree.down_iter_at(*changed_entity, false)
-                                                    {
-                                                        trace!(
-                                                            "Removing AvsB children {}::{}",
-                                                            entity_ref
-                                                                .get::<WidgetName>()
-                                                                .map(|n| n.0.clone())
-                                                                .unwrap_or("Unknown".into()),
-                                                            changed_entity.0.index()
-                                                        );
-                                                        let mut should_delete = true;
-                                                        if let Ok(order_tree) =
-                                                            order_tree.try_read()
+                                        if widget_name != prev_widget_name {
+                                            // It doesn't matter we always need to remove state
+                                            remove_state.push(changed_entity.0);
+                                            if tree.parent(*changed_entity).is_some() {
+                                                for child in
+                                                    tree.down_iter_at(*changed_entity, false)
+                                                {
+                                                    trace!(
+                                                        "Removing AvsB children {}::{}",
+                                                        entity_ref
+                                                            .get::<WidgetName>()
+                                                            .map(|n| n.0.clone())
+                                                            .unwrap_or("Unknown".into()),
+                                                        changed_entity.0.index()
+                                                    );
+                                                    let mut should_delete = true;
+                                                    if let Ok(order_tree) = order_tree.try_read() {
+                                                        if let Some(order_tree_parent) =
+                                                            order_tree.parent(*changed_entity)
                                                         {
-                                                            if let Some(order_tree_parent) =
-                                                                order_tree.parent(*changed_entity)
+                                                            'back_up: for sibling in order_tree
+                                                                .child_iter(order_tree_parent)
                                                             {
-                                                                'back_up: for sibling in order_tree
-                                                                    .child_iter(order_tree_parent)
+                                                                if sibling == *changed_entity {
+                                                                    continue 'back_up;
+                                                                }
+                                                                for child in
+                                                                    tree.down_iter_at(sibling, true)
                                                                 {
-                                                                    if sibling == *changed_entity {
-                                                                        continue 'back_up;
+                                                                    // Ignore self again.
+                                                                    if child == *parent {
+                                                                        continue;
                                                                     }
-                                                                    for child in tree
-                                                                        .down_iter_at(sibling, true)
+                                                                    if let Some(entity_ref) =
+                                                                        world.get_entity(child.0)
                                                                     {
-                                                                        // Ignore self again.
-                                                                        if child == *parent {
-                                                                            continue;
-                                                                        }
-                                                                        if let Some(entity_ref) =
-                                                                            world
-                                                                                .get_entity(child.0)
+                                                                        if let Some(children) =
+                                                                            entity_ref
+                                                                                .get::<KChildren>()
                                                                         {
-                                                                            if let Some(children) =
-                                                                                entity_ref
-                                                                                    .get::<KChildren>()
+                                                                            if children
+                                                                                .contains_entity(
+                                                                                    changed_entity
+                                                                                        .0,
+                                                                                )
                                                                             {
-                                                                                if children
-                                                                                    .contains_entity(
-                                                                                        changed_entity
-                                                                                            .0,
-                                                                                    )
-                                                                                {
-                                                                                    trace!("Caught an entity that was marked as deleted but wasn't! {:?} in {:?}", changed_entity.0, child.0);
-                                                                                    // Don't despawn changed entity because it exists as a child passed via props
-                                                                                    should_delete =
-                                                                                        false;
-                                                                                    break 'back_up;
-                                                                                }
+                                                                                trace!("Caught an entity that was marked as deleted but wasn't! {:?} in {:?}", changed_entity.0, child.0);
+                                                                                // Don't despawn changed entity because it exists as a child passed via props
+                                                                                should_delete =
+                                                                                    false;
+                                                                                break 'back_up;
                                                                             }
                                                                         }
                                                                     }
                                                                 }
                                                             }
                                                         }
-                                                        if should_delete {
-                                                            despawn_list.push((parent.0, child.0));
-                                                            if let Ok(mut order_tree) =
-                                                                order_tree.try_write()
-                                                            {
-                                                                order_tree.remove(*changed_entity);
-                                                            }
+                                                    }
+                                                    if should_delete {
+                                                        despawn_list.push((parent.0, child.0));
+                                                        if let Ok(mut order_tree) =
+                                                            order_tree.try_write()
+                                                        {
+                                                            order_tree.remove(*changed_entity);
                                                         }
                                                     }
                                                 }
@@ -883,14 +862,10 @@ fn update_widgets(
                                     }
                                 }
                                 // Also remove all cloned widget entities
-                                if let Ok(mut cloned_widget_entities) =
-                                    cloned_widget_entities.try_write()
-                                {
-                                    if let Some(target) = cloned_widget_entities.get(entity) {
-                                        world.despawn(*target);
-                                    }
-                                    cloned_widget_entities.remove(entity);
+                                if let Some(target) = cloned_widget_entities.get(entity) {
+                                    world.despawn(*target);
                                 }
+                                cloned_widget_entities.remove(entity);
                             }
 
                             if changes.iter().any(|change| *change == Change::Inserted) {
@@ -966,23 +941,18 @@ fn update_widgets(
 
                         for (parent, entity) in despawn_list.drain(..) {
                             // Clear out keyed entity.
-                            if let (Ok(mut unique_ids), Ok(mut unique_ids_parents)) =
-                                (unique_ids.try_write(), unique_ids_parents.try_write())
+                            if let Some(parent) =
+                                unique_ids_parents.get(&entity).map(|v| *v.value())
                             {
-                                if let Some(parent) = unique_ids_parents.get(&entity) {
-                                    if let Some(keyed_hashmap) = unique_ids.get_mut(parent) {
-                                        let possible_key = keyed_hashmap
-                                            .iter()
-                                            .find(|(_, keyed_entity)| **keyed_entity == entity)
-                                            .map(|(key, _)| key.clone());
-                                        if let Some(key) = possible_key {
-                                            keyed_hashmap.remove(&key);
-                                            unique_ids_parents.remove(&entity);
-                                            log::trace!(
-                                                "Removing key {key}, for entity: {:?}",
-                                                entity
-                                            );
-                                        }
+                                if let Some(mut keyed_hashmap) = unique_ids.get_mut(&parent) {
+                                    let possible_key = keyed_hashmap
+                                        .iter()
+                                        .find(|item| *item.value() == entity)
+                                        .map(|item| item.key().clone());
+                                    if let Some(key) = possible_key {
+                                        keyed_hashmap.value_mut().remove(&key);
+                                        unique_ids_parents.remove(&entity);
+                                        log::trace!("Removing key {key}, for entity: {:?}", entity);
                                     }
                                 }
                             }
@@ -1008,39 +978,33 @@ fn update_widgets(
                                 entity_mut.despawn();
 
                                 // Also remove all cloned widget entities
-                                if let Ok(cloned_widget_entities) =
-                                    cloned_widget_entities.try_read()
+                                if let Some(entity) =
+                                    cloned_widget_entities.get(&entity).map(|v| *v.value())
                                 {
-                                    if let Some(entity) = cloned_widget_entities.get(&entity) {
-                                        world.despawn(*entity);
-                                    }
+                                    world.despawn(entity);
                                 }
                             }
                         }
 
                         // if should_update_children {
-                        if let Ok(cloned_widget_entities) = cloned_widget_entities.try_read() {
-                            if let Some(target_entity) = cloned_widget_entities.get(&entity.0) {
-                                if let Some(styles) =
-                                    world.entity(entity.0).get::<KStyle>().cloned()
-                                {
-                                    if let Some(mut entity) = world.get_entity_mut(*target_entity) {
-                                        entity.insert(styles);
-                                    }
+                        if let Some(target_entity) = cloned_widget_entities.get(&entity.0) {
+                            if let Some(styles) = world.entity(entity.0).get::<KStyle>().cloned() {
+                                if let Some(mut entity) = world.get_entity_mut(*target_entity) {
+                                    entity.insert(styles);
                                 }
-                                if let Some(styles) =
-                                    world.entity(entity.0).get::<ComputedStyles>().cloned()
-                                {
-                                    if let Some(mut entity) = world.get_entity_mut(*target_entity) {
-                                        entity.insert(styles);
-                                    }
+                            }
+                            if let Some(styles) =
+                                world.entity(entity.0).get::<ComputedStyles>().cloned()
+                            {
+                                if let Some(mut entity) = world.get_entity_mut(*target_entity) {
+                                    entity.insert(styles);
                                 }
-                                if let Some(children) =
-                                    world.entity(entity.0).get::<KChildren>().cloned()
-                                {
-                                    if let Some(mut entity) = world.get_entity_mut(*target_entity) {
-                                        entity.insert(children);
-                                    }
+                            }
+                            if let Some(children) =
+                                world.entity(entity.0).get::<KChildren>().cloned()
+                            {
+                                if let Some(mut entity) = world.get_entity_mut(*target_entity) {
+                                    entity.insert(children);
                                 }
                             }
                         }
@@ -1151,54 +1115,52 @@ fn update_widget(
     mut widget_context: KayakWidgetContext,
     previous_children: Vec<Entity>,
     clone_systems: &Arc<RwLock<EntityCloneSystems>>,
-    cloned_widget_entities: &Arc<RwLock<HashMap<Entity, Entity>>>,
+    cloned_widget_entities: &DashMap<Entity, Entity>,
     widget_state: &WidgetState,
     new_ticks: &mut HashMap<String, u32>,
     _order_tree: &Arc<RwLock<Tree>>,
-    _unique_ids: &Arc<RwLock<HashMap<Entity, HashMap<String, Entity>>>>,
-    _unique_ids_parents: &Arc<RwLock<HashMap<Entity, Entity>>>,
+    _unique_ids: &DashMap<Entity, DashMap<String, Entity>>,
+    _unique_ids_parents: &DashMap<Entity, Entity>,
 ) -> (Tree, bool) {
     // Check if we should update this widget
     let should_rerender = {
         // TODO: Move the spawning to when we create the widget.
-        let old_props_entity =
-            if let Ok(mut cloned_widget_entities) = cloned_widget_entities.try_write() {
-                let old_parent_entity = if let Ok(tree) = tree.try_read() {
-                    if let Some(parent_entity) = tree.get_parent(entity) {
-                        cloned_widget_entities.get(&parent_entity.0).copied()
-                    } else {
-                        None
-                    }
+        let old_props_entity = {
+            let old_parent_entity = if let Ok(tree) = tree.try_read() {
+                if let Some(parent_entity) = tree.get_parent(entity) {
+                    cloned_widget_entities
+                        .get(&parent_entity.0)
+                        .map(|v| *v.value())
                 } else {
                     None
-                };
-                if let Some(entity) = cloned_widget_entities.get(&entity.0).copied() {
-                    if let Some(possible_entity) = world.get_entity(entity) {
-                        let target = possible_entity.id();
-                        cloned_widget_entities.insert(entity, target);
-                        target
-                    } else {
-                        let target = world.spawn_empty().insert(PreviousWidget).id();
-                        if let Some(parent_id) = old_parent_entity {
-                            world.entity_mut(parent_id).add_child(target);
-                        }
-                        cloned_widget_entities.insert(entity, target);
-                        target
-                    }
+                }
+            } else {
+                None
+            };
+            if let Some(entity) = cloned_widget_entities.get(&entity.0).map(|v| *v.value()) {
+                if let Some(possible_entity) = world.get_entity(entity) {
+                    let target = possible_entity.id();
+                    cloned_widget_entities.insert(entity, target);
+                    target
                 } else {
                     let target = world.spawn_empty().insert(PreviousWidget).id();
                     if let Some(parent_id) = old_parent_entity {
-                        if let Some(mut entity_mut) = world.get_entity_mut(parent_id) {
-                            entity_mut.add_child(target);
-                        }
+                        world.entity_mut(parent_id).add_child(target);
                     }
-                    cloned_widget_entities.insert(entity.0, target);
+                    cloned_widget_entities.insert(entity, target);
                     target
                 }
             } else {
-                panic!("Couldn't get write lock!")
-            };
-
+                let target = world.spawn_empty().insert(PreviousWidget).id();
+                if let Some(parent_id) = old_parent_entity {
+                    if let Some(mut entity_mut) = world.get_entity_mut(parent_id) {
+                        entity_mut.add_child(target);
+                    }
+                }
+                cloned_widget_entities.insert(entity.0, target);
+                target
+            }
+        };
         let widget_update_system = &mut systems
             .get_mut(&widget_type)
             .unwrap_or_else(|| {
@@ -1222,38 +1184,34 @@ fn update_widget(
         widget_context = world.remove_resource::<KayakWidgetContext>().unwrap();
 
         if should_rerender {
-            if let Ok(cloned_widget_entities) = cloned_widget_entities.try_read() {
-                if let Some(target_entity) = cloned_widget_entities.get(&entity.0) {
-                    if let Ok(clone_systems) = clone_systems.try_read() {
-                        for s in clone_systems.0.iter() {
-                            s.0(world, *target_entity, entity.0);
-                            s.1(world, *target_entity, entity.0, widget_state);
-                            if let Some(styles) = world.entity(entity.0).get::<KStyle>().cloned() {
-                                if let Some(mut entity) = world.get_entity_mut(*target_entity) {
-                                    entity.insert(styles);
-                                }
+            if let Some(target_entity) = cloned_widget_entities.get(&entity.0).map(|v| *v.value()) {
+                if let Ok(clone_systems) = clone_systems.try_read() {
+                    for s in clone_systems.0.iter() {
+                        s.0(world, target_entity, entity.0);
+                        s.1(world, target_entity, entity.0, widget_state);
+                        if let Some(styles) = world.entity(entity.0).get::<KStyle>().cloned() {
+                            if let Some(mut entity) = world.get_entity_mut(target_entity) {
+                                entity.insert(styles);
                             }
-                            if let Some(styles) =
-                                world.entity(entity.0).get::<ComputedStyles>().cloned()
-                            {
-                                if let Some(mut entity) = world.get_entity_mut(*target_entity) {
-                                    entity.insert(styles);
-                                }
+                        }
+                        if let Some(styles) =
+                            world.entity(entity.0).get::<ComputedStyles>().cloned()
+                        {
+                            if let Some(mut entity) = world.get_entity_mut(target_entity) {
+                                entity.insert(styles);
                             }
-                            if let Some(children) =
-                                world.entity(entity.0).get::<KChildren>().cloned()
-                            {
-                                if let Some(mut entity) = world.get_entity_mut(*target_entity) {
-                                    entity.insert(children);
-                                }
+                        }
+                        if let Some(children) = world.entity(entity.0).get::<KChildren>().cloned() {
+                            if let Some(mut entity) = world.get_entity_mut(target_entity) {
+                                entity.insert(children);
                             }
+                        }
 
-                            if let Some(widget_name) =
-                                world.entity(entity.0).get::<WidgetName>().cloned()
-                            {
-                                if let Some(mut entity) = world.get_entity_mut(*target_entity) {
-                                    entity.insert(widget_name);
-                                }
+                        if let Some(widget_name) =
+                            world.entity(entity.0).get::<WidgetName>().cloned()
+                        {
+                            if let Some(mut entity) = world.get_entity_mut(target_entity) {
+                                entity.insert(widget_name);
                             }
                         }
                     }
@@ -1284,14 +1242,12 @@ fn update_widget(
         // Before rendering widget we need to advance the indices correctly..
         if let Some(children) = world.get::<KChildren>(entity.0) {
             let child_count = children.len();
-            if let Ok(mut indices) = widget_context.index.try_write() {
-                indices.insert(entity.0, 0);
-                log::trace!(
-                    "Advancing children for: {:?} by: {:?}",
-                    entity.0.index(),
-                    child_count
-                );
-            }
+            widget_context.index.insert(entity.0, 0);
+            log::trace!(
+                "Advancing children for: {:?} by: {:?}",
+                entity.0.index(),
+                child_count
+            );
         }
 
         // Remove children from previous render.
@@ -1308,9 +1264,7 @@ fn update_widget(
         world.remove_resource::<KayakWidgetContext>();
         world.remove_resource::<FocusTree>();
 
-        if let Ok(mut indices) = widget_context.index.try_write() {
-            indices.insert(entity.0, 0);
-        }
+        widget_context.index.insert(entity.0, 0);
     }
     let widget_context = widget_context.take();
     let mut command_queue = CommandQueue::default();

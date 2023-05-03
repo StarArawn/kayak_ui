@@ -86,7 +86,7 @@ type WidgetSystems = HashMap<
 pub struct KayakRootContext {
     pub tree: Arc<RwLock<Tree>>,
     pub(crate) layout_cache: Arc<RwLock<LayoutCache>>,
-    pub(crate) focus_tree: Arc<RwLock<FocusTree>>,
+    pub(crate) focus_tree: FocusTree,
     systems: WidgetSystems,
     pub(crate) current_z: f32,
     pub(crate) context_entities: ContextEntities,
@@ -138,14 +138,6 @@ impl KayakRootContext {
     /// Adds a kayak plugin and runs the build function on the context.
     pub fn add_plugin(&mut self, plugin: impl KayakUIPlugin) {
         plugin.build(self)
-    }
-
-    /// Retreives the current entity that has focus or None if nothing is focused.
-    pub fn get_current_focus(&self) -> Option<Entity> {
-        if let Ok(tree) = self.focus_tree.try_read() {
-            return tree.current().map(|a| a.0);
-        }
-        None
     }
 
     /// Get's the layout for th given widget index.
@@ -245,10 +237,10 @@ impl KayakRootContext {
     ///     widget_context.add_widget(None, root_entity);
     /// }
     ///```
-    pub fn spawn_widget<'a>(
+    pub fn spawn_widget(
         &self,
         commands: &mut Commands,
-        key: Option<&'a str>,
+        key: Option<&str>,
         parent_id: Option<Entity>,
     ) -> Entity {
         let mut entity = None;
@@ -647,18 +639,16 @@ pub fn update_widgets_sys(world: &mut World) {
 
         // let change_tick = world.increment_change_tick();
 
-        let old_focus = if let Ok(mut focus_tree) = context.focus_tree.try_write() {
-            let current = focus_tree.current();
-            focus_tree.clear();
-            if let Ok(tree) = context.tree.read() {
-                if let Some(root_node) = tree.root_node {
-                    focus_tree.add(root_node, &tree);
-                }
-            }
-            current
-        } else {
-            None
-        };
+        // let old_focus = {
+        //     let current = context.focus_tree.current();
+        //     context.focus_tree.clear();
+        //     if let Ok(tree) = context.tree.read() {
+        //         if let Some(root_node) = tree.root_node {
+        //             context.focus_tree.add(root_node, &tree);
+        //         }
+        //     }
+        //     current
+        // };
 
         let mut new_ticks = HashMap::new();
 
@@ -681,13 +671,11 @@ pub fn update_widgets_sys(world: &mut World) {
             &context.unique_ids_parents,
         );
 
-        if let Some(old_focus) = old_focus {
-            if let Ok(mut focus_tree) = context.focus_tree.try_write() {
-                if focus_tree.contains(old_focus) {
-                    focus_tree.focus(old_focus);
-                }
-            }
-        }
+        // if let Some(old_focus) = old_focus {
+        //     if context.focus_tree.contains(old_focus) {
+        //         context.focus_tree.focus(old_focus);
+        //     }
+        // }
 
         let tick = world.read_change_tick();
 
@@ -718,7 +706,7 @@ fn update_widgets(
     systems: &mut WidgetSystems,
     widgets: Vec<WrappedIndex>,
     context_entities: &ContextEntities,
-    focus_tree: &Arc<RwLock<FocusTree>>,
+    focus_tree: &FocusTree,
     clone_systems: &Arc<RwLock<EntityCloneSystems>>,
     cloned_widget_entities: &Arc<RwLock<HashMap<Entity, Entity>>>,
     widget_state: &WidgetState,
@@ -754,6 +742,7 @@ fn update_widgets(
                 let (widget_context, should_update_children) = update_widget(
                     systems,
                     tree,
+                    focus_tree,
                     world,
                     *entity,
                     widget_type.0.clone(),
@@ -1145,9 +1134,7 @@ fn update_widgets(
         if let Some(entity_ref) = world.get_entity(entity.0) {
             if entity_ref.contains::<Focusable>() {
                 if let Ok(tree) = tree.try_read() {
-                    if let Ok(mut focus_tree) = focus_tree.try_write() {
-                        focus_tree.add(*entity, &tree);
-                    }
+                    focus_tree.add(*entity, &tree);
                 }
             }
         }
@@ -1157,6 +1144,7 @@ fn update_widgets(
 fn update_widget(
     systems: &mut WidgetSystems,
     tree: &Arc<RwLock<Tree>>,
+    focus_tree: &FocusTree,
     world: &mut World,
     entity: WrappedIndex,
     widget_type: String,
@@ -1311,12 +1299,14 @@ fn update_widget(
         let widget_render_system = &mut systems.get_mut(&widget_type).unwrap().1;
         let old_tick = widget_render_system.get_last_change_tick();
         world.insert_resource(widget_context.clone());
+        world.insert_resource(focus_tree.clone());
         should_update_children = widget_render_system.run(entity.0, world);
         let new_tick = widget_render_system.get_last_change_tick();
         new_ticks.insert(widget_type.clone(), new_tick);
         widget_render_system.set_last_change_tick(old_tick);
         widget_render_system.apply_buffers(world);
         world.remove_resource::<KayakWidgetContext>();
+        world.remove_resource::<FocusTree>();
 
         if let Ok(mut indices) = widget_context.index.try_write() {
             indices.insert(entity.0, 0);

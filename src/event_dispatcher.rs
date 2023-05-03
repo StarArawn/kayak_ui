@@ -229,6 +229,7 @@ impl EventDispatcher {
                         (event_dispatcher_context, node_event) = on_event.try_call(
                             event_dispatcher_context,
                             context.widget_state.clone(),
+                            context.focus_tree.clone(),
                             index.0,
                             node_event,
                             world,
@@ -437,67 +438,67 @@ impl EventDispatcher {
                 }
             }
 
-            if let Ok(mut focus_tree) = context.focus_tree.try_write() {
-                // === Keyboard Events === //
-                for input_event in input_events {
-                    // Keyboard events only care about the currently focused widget so we don't need to run this over every node in the tree
-                    let events =
-                        self.process_keyboard_events(input_event, &mut states, &focus_tree);
-                    event_stream.extend(events);
-                }
+            // === Keyboard Events === //
+            for input_event in input_events {
+                // Keyboard events only care about the currently focused widget so we don't need to run this over every node in the tree
+                let events =
+                    self.process_keyboard_events(input_event, &mut states, &context.focus_tree);
+                event_stream.extend(events);
+            }
 
-                // === Additional Events === //
-                let mut had_focus_event = false;
+            // === Additional Events === //
+            let mut had_focus_event = false;
 
-                // These events are ones that require a specific target and need the tree to be evaluated before selecting the best match
-                for (event_type, state) in states {
-                    if let Some(node) = state.best_match {
-                        event_stream.push(KEvent::new(node.0, event_type));
+            // These events are ones that require a specific target and need the tree to be evaluated before selecting the best match
+            for (event_type, state) in states {
+                if let Some(node) = state.best_match {
+                    event_stream.push(KEvent::new(node.0, event_type));
 
-                        match event_type {
-                            EventType::Focus => {
-                                had_focus_event = true;
-                                if let Some(current_focus) = focus_tree.current() {
-                                    if current_focus != node {
-                                        event_stream
-                                            .push(KEvent::new(current_focus.0, EventType::Blur));
-                                    }
+                    match event_type {
+                        EventType::Focus => {
+                            had_focus_event = true;
+                            if let Some(current_focus) =
+                                context.focus_tree.current().map(WrappedIndex)
+                            {
+                                if current_focus != node {
+                                    event_stream
+                                        .push(KEvent::new(current_focus.0, EventType::Blur));
                                 }
-                                focus_tree.focus(node);
                             }
-                            EventType::Hover(..) => {
-                                self.hovered = Some(node);
-                            }
-                            _ => {}
+                            context.focus_tree.focus(node.0);
                         }
+                        EventType::Hover(..) => {
+                            self.hovered = Some(node);
+                        }
+                        _ => {}
                     }
                 }
+            }
 
-                // --- Blur Event --- //
-                if !had_focus_event && input_events.contains(&InputEvent::MouseLeftPress) {
-                    // A mouse press didn't contain a focus event -> blur
-                    if let Some(current_focus) = focus_tree.current() {
-                        event_stream.push(KEvent::new(current_focus.0, EventType::Blur));
-                        focus_tree.blur();
-                    }
+            // --- Blur Event --- //
+            if !had_focus_event && input_events.contains(&InputEvent::MouseLeftPress) {
+                // A mouse press didn't contain a focus event -> blur
+                if let Some(current_focus) = context.focus_tree.current() {
+                    event_stream.push(KEvent::new(current_focus, EventType::Blur));
+                    context.focus_tree.blur();
                 }
+            }
 
-                // === Process Cursor States === //
-                self.current_mouse_position = self.next_mouse_position;
-                self.is_mouse_pressed = self.next_mouse_pressed;
+            // === Process Cursor States === //
+            self.current_mouse_position = self.next_mouse_position;
+            self.is_mouse_pressed = self.next_mouse_pressed;
 
-                if self.hovered.is_none() {
-                    // No change -> revert
-                    self.hovered = old_hovered;
-                }
-                if self.contains_cursor.is_none() {
-                    // No change -> revert
-                    self.contains_cursor = old_contains_cursor;
-                }
-                if self.wants_cursor.is_none() {
-                    // No change -> revert
-                    self.wants_cursor = old_wants_cursor;
-                }
+            if self.hovered.is_none() {
+                // No change -> revert
+                self.hovered = old_hovered;
+            }
+            if self.contains_cursor.is_none() {
+                // No change -> revert
+                self.contains_cursor = old_contains_cursor;
+            }
+            if self.wants_cursor.is_none() {
+                // No change -> revert
+                self.wants_cursor = old_wants_cursor;
             }
         }
 
@@ -694,7 +695,7 @@ impl EventDispatcher {
         if let Some(current_focus) = focus_tree.current() {
             match input_event {
                 InputEvent::CharEvent { c } => {
-                    event_stream.push(KEvent::new(current_focus.0, EventType::CharInput { c: *c }))
+                    event_stream.push(KEvent::new(current_focus, EventType::CharInput { c: *c }))
                 }
                 InputEvent::Keyboard { key, is_pressed } => {
                     // === Modifers === //
@@ -717,12 +718,12 @@ impl EventDispatcher {
                     // === Event === //
                     if *is_pressed {
                         event_stream.push(KEvent::new(
-                            current_focus.0,
+                            current_focus,
                             EventType::KeyDown(KeyboardEvent::new(*key, self.keyboard_modifiers)),
                         ))
                     } else {
                         event_stream.push(KEvent::new(
-                            current_focus.0,
+                            current_focus,
                             EventType::KeyUp(KeyboardEvent::new(*key, self.keyboard_modifiers)),
                         ))
                     }
@@ -798,30 +799,25 @@ impl EventDispatcher {
     ) {
         if let EventType::KeyDown(evt) = event.event_type {
             if let KeyCode::Tab = evt.key() {
-                let (index, current_focus) =
-                    if let Ok(mut focus_tree) = context.focus_tree.try_write() {
-                        let current_focus = focus_tree.current();
+                let (index, current_focus) = {
+                    let current_focus = context.focus_tree.current();
 
-                        let index = if evt.is_shift_pressed() {
-                            focus_tree.prev()
-                        } else {
-                            focus_tree.next()
-                        };
-                        (index, current_focus)
+                    let index = if evt.is_shift_pressed() {
+                        context.focus_tree.prev()
                     } else {
-                        (None, None)
+                        context.focus_tree.next()
                     };
+                    (index, current_focus)
+                };
 
                 if let Some(index) = index {
-                    let mut events = vec![KEvent::new(index.0, EventType::Focus)];
+                    let mut events = vec![KEvent::new(index, EventType::Focus)];
                     if let Some(current_focus) = current_focus {
                         if current_focus != index {
-                            events.push(KEvent::new(current_focus.0, EventType::Blur));
+                            events.push(KEvent::new(current_focus, EventType::Blur));
                         }
                     }
-                    if let Ok(mut focus_tree) = context.focus_tree.try_write() {
-                        focus_tree.focus(index);
-                    }
+                    context.focus_tree.focus(index);
                     self.dispatch_events(events, context, world);
                 }
             }

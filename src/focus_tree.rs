@@ -1,5 +1,7 @@
+use std::sync::{Arc, RwLock};
+
 use bevy::{
-    prelude::{Component, Reflect, ReflectComponent},
+    prelude::{Component, Entity, Reflect, ReflectComponent, Resource},
     utils::HashMap,
 };
 
@@ -9,10 +11,10 @@ use crate::{node::WrappedIndex, prelude::Tree};
 #[reflect(Component)]
 pub struct Focusable;
 
-#[derive(Debug, Default, PartialEq, Eq)]
+#[derive(Resource, Debug, Clone, Default)]
 pub struct FocusTree {
-    tree: Tree,
-    current_focus: Option<WrappedIndex>,
+    tree: Arc<RwLock<Tree>>,
+    current_focus: Arc<RwLock<Option<WrappedIndex>>>,
 }
 
 /// A struct used to track and calculate widget focusability, based on the following rule:
@@ -28,140 +30,174 @@ pub(crate) struct FocusTracker {
 
 impl FocusTree {
     /// Add the given focusable index to the tree
-    pub fn add(&mut self, index: WrappedIndex, widget_context: &Tree) {
+    pub(crate) fn add(&self, index: WrappedIndex, widget_context: &Tree) {
         // Cases to handle:
         // 1. Tree empty -> insert root node
         // 2. Tree not empty
         //   a. Contains parent -> insert child node
         //   b. Not contains parent -> demote and replace root node
-
-        let mut current_index = index;
-        while let Some(parent) = widget_context.get_parent(current_index) {
-            current_index = parent;
-            if self.contains(parent) {
-                self.tree.add(index, Some(parent));
-                return;
+        if let Ok(mut tree) = self.tree.try_write() {
+            let mut current_index = index;
+            while let Some(parent) = widget_context.get_parent(current_index) {
+                current_index = parent;
+                if tree.contains(parent) {
+                    tree.add(index, Some(parent));
+                    return;
+                }
             }
-        }
 
-        if self.tree.root_node.is_none() {
-            // Set root node
-            self.tree.add(index, None);
-            self.focus(index);
+            if tree.root_node.is_none() {
+                // Set root node
+                tree.add(index, None);
+                self.focus(index.0);
+            }
         }
     }
 
     /// Remove the given focusable index from the tree
-    pub fn remove(&mut self, index: WrappedIndex) {
-        if self.current_focus == Some(index) {
-            self.blur();
-        }
+    pub(crate) fn remove(&self, index: WrappedIndex) {
+        if let (Ok(mut tree), Ok(mut current_focus)) =
+            (self.tree.try_write(), self.current_focus.try_write())
+        {
+            if *current_focus == Some(index) {
+                // Blur
+                *current_focus = tree.root_node;
+            }
 
-        if self.tree.root_node == Some(index) {
-            self.tree.remove(index);
-        } else {
-            self.tree.remove_and_reparent(index);
+            if tree.root_node == Some(index) {
+                tree.remove(index);
+            } else {
+                tree.remove_and_reparent(index);
+            }
         }
     }
 
     /// Checks if the given index is present in the tree
-    pub fn contains(&self, index: WrappedIndex) -> bool {
-        self.tree.contains(index)
+    pub fn contains(&self, index: Entity) -> bool {
+        if let Ok(tree) = self.tree.try_read() {
+            tree.contains(WrappedIndex(index))
+        } else {
+            false
+        }
     }
 
     /// Clear the tree and remove the current focus
-    pub fn clear(&mut self) {
-        self.tree = Tree::default();
-        self.blur();
+    pub(crate) fn clear(&mut self) {
+        if let Ok(mut tree) = self.tree.try_write() {
+            *tree = Tree::default();
+            self.blur();
+        }
     }
 
     /// Set the current focus
-    pub fn focus(&mut self, index: WrappedIndex) {
-        self.current_focus = Some(index);
+    pub fn focus(&self, index: Entity) {
+        if let Ok(mut current_focus) = self.current_focus.try_write() {
+            *current_focus = Some(WrappedIndex(index));
+        }
     }
 
     /// Remove the current focus
     ///
     /// This returns focus to the root node
-    pub fn blur(&mut self) {
-        self.current_focus = self.tree.root_node;
+    pub fn blur(&self) {
+        if let (Ok(tree), Ok(mut current_focus)) =
+            (self.tree.try_read(), self.current_focus.try_write())
+        {
+            *current_focus = tree.root_node;
+        }
     }
 
     /// Get the currently focused index
-    pub fn current(&self) -> Option<WrappedIndex> {
-        self.current_focus
+    pub fn current(&self) -> Option<Entity> {
+        if let Ok(current_focus) = self.current_focus.try_read() {
+            current_focus.map(|i| i.0)
+        } else {
+            None
+        }
     }
 
     /// Change focus to the next focusable index
-    pub fn next(&mut self) -> Option<WrappedIndex> {
-        self.current_focus = self.peek_next();
-        self.current_focus
+    pub fn next(&self) -> Option<Entity> {
+        if let Ok(mut current_focus) = self.current_focus.try_write() {
+            *current_focus = self.peek_next(*current_focus);
+            current_focus.map(|i| i.0)
+        } else {
+            None
+        }
     }
 
     /// Change focus to the previous focusable index
-    pub fn prev(&mut self) -> Option<WrappedIndex> {
-        self.current_focus = self.peek_prev();
-        self.current_focus
+    pub fn prev(&self) -> Option<Entity> {
+        if let Ok(mut current_focus) = self.current_focus.try_write() {
+            *current_focus = self.peek_prev(*current_focus);
+            current_focus.map(|i| i.0)
+        } else {
+            None
+        }
     }
 
     /// Peek the next focusable index without actually changing focus
-    pub fn peek_next(&self) -> Option<WrappedIndex> {
-        if let Some(index) = self.current_focus {
-            // === Enter Children === //
-            if let Some(child) = self.tree.get_first_child(index) {
-                return Some(child);
-            }
-
-            // === Enter Siblings === //
-            if let Some(sibling) = self.tree.get_next_sibling(index) {
-                return Some(sibling);
-            }
-
-            // === Go Back Up === //
-            let mut next = index;
-            while let Some(parent) = self.tree.get_parent(next) {
-                if let Some(uncle) = self.tree.get_next_sibling(parent) {
-                    return Some(uncle);
+    pub fn peek_next(&self, current_focus: Option<WrappedIndex>) -> Option<WrappedIndex> {
+        if let Ok(tree) = self.tree.try_read() {
+            if let Some(index) = current_focus {
+                // === Enter Children === //
+                if let Some(child) = tree.get_first_child(index) {
+                    return Some(child);
                 }
-                next = parent;
-            }
-        }
 
-        // Default to root node to begin the cycle again
-        self.tree.root_node
+                // === Enter Siblings === //
+                if let Some(sibling) = tree.get_next_sibling(index) {
+                    return Some(sibling);
+                }
+
+                // === Go Back Up === //
+                let mut next = index;
+                while let Some(parent) = tree.get_parent(next) {
+                    if let Some(uncle) = tree.get_next_sibling(parent) {
+                        return Some(uncle);
+                    }
+                    next = parent;
+                }
+            }
+
+            // Default to root node to begin the cycle again
+            tree.root_node
+        } else {
+            None
+        }
     }
 
     /// Peek the previous focusable index without actually changing focus
-    pub fn peek_prev(&self) -> Option<WrappedIndex> {
-        if let Some(index) = self.current_focus {
-            // === Enter Siblings === //
-            if let Some(sibling) = self.tree.get_prev_sibling(index) {
-                let mut next = sibling;
-                while let Some(child) = self.tree.get_last_child(next) {
+    pub fn peek_prev(&self, current_focus: Option<WrappedIndex>) -> Option<WrappedIndex> {
+        if let Ok(tree) = self.tree.try_read() {
+            if let Some(index) = current_focus {
+                // === Enter Siblings === //
+                if let Some(sibling) = tree.get_prev_sibling(index) {
+                    let mut next = sibling;
+                    while let Some(child) = tree.get_last_child(next) {
+                        next = child;
+                    }
+                    return Some(next);
+                }
+
+                // === Enter Parent === //
+                if let Some(parent) = tree.get_parent(index) {
+                    return Some(parent);
+                }
+
+                // === Go Back Down === //
+                let mut next = index;
+                while let Some(child) = tree.get_last_child(next) {
                     next = child;
                 }
+
                 return Some(next);
             }
 
-            // === Enter Parent === //
-            if let Some(parent) = self.tree.get_parent(index) {
-                return Some(parent);
-            }
-
-            // === Go Back Down === //
-            let mut next = index;
-            while let Some(child) = self.tree.get_last_child(next) {
-                next = child;
-            }
-
-            return Some(next);
+            tree.root_node
+        } else {
+            None
         }
-
-        self.tree.root_node
-    }
-
-    pub fn tree(&self) -> &Tree {
-        &self.tree
     }
 }
 
@@ -227,7 +263,7 @@ mod tests {
 
     #[test]
     fn next_should_cycle() {
-        let mut focus_tree = FocusTree::default();
+        let focus_tree = FocusTree::default();
         let mut tree = Tree::default();
 
         let a = WrappedIndex(Entity::from_raw(0));
@@ -253,23 +289,25 @@ mod tests {
         focus_tree.add(a_a_a_b, &tree);
         focus_tree.add(a_b_a, &tree);
 
-        assert_eq!(Some(a), focus_tree.current_focus);
-        assert_eq!(Some(a_a), focus_tree.next());
-        assert_eq!(Some(a_a_a), focus_tree.next());
-        assert_eq!(Some(a_a_a_a), focus_tree.next());
-        assert_eq!(Some(a_a_a_b), focus_tree.next());
-        assert_eq!(Some(a_b), focus_tree.next());
-        assert_eq!(Some(a_b_a), focus_tree.next());
+        dbg!(&focus_tree);
 
-        assert_eq!(Some(a), focus_tree.next());
-        assert_eq!(Some(a_a), focus_tree.next());
+        assert_eq!(Some(a.0), focus_tree.current());
+        assert_eq!(Some(a_a.0), focus_tree.next());
+        assert_eq!(Some(a_a_a.0), focus_tree.next());
+        assert_eq!(Some(a_a_a_a.0), focus_tree.next());
+        assert_eq!(Some(a_a_a_b.0), focus_tree.next());
+        assert_eq!(Some(a_b.0), focus_tree.next());
+        assert_eq!(Some(a_b_a.0), focus_tree.next());
+
+        assert_eq!(Some(a.0), focus_tree.next());
+        assert_eq!(Some(a_a.0), focus_tree.next());
 
         // etc.
     }
 
     #[test]
     fn prev_should_cycle() {
-        let mut focus_tree = FocusTree::default();
+        let focus_tree = FocusTree::default();
         let mut tree = Tree::default();
 
         let a = WrappedIndex(Entity::from_raw(0));
@@ -295,16 +333,16 @@ mod tests {
         focus_tree.add(a_a_a_b, &tree);
         focus_tree.add(a_b_a, &tree);
 
-        assert_eq!(Some(a), focus_tree.current_focus);
-        assert_eq!(Some(a_b_a), focus_tree.prev());
-        assert_eq!(Some(a_b), focus_tree.prev());
-        assert_eq!(Some(a_a_a_b), focus_tree.prev());
-        assert_eq!(Some(a_a_a_a), focus_tree.prev());
-        assert_eq!(Some(a_a_a), focus_tree.prev());
-        assert_eq!(Some(a_a), focus_tree.prev());
+        assert_eq!(Some(a.0), focus_tree.current());
+        assert_eq!(Some(a_b_a.0), focus_tree.prev());
+        assert_eq!(Some(a_b.0), focus_tree.prev());
+        assert_eq!(Some(a_a_a_b.0), focus_tree.prev());
+        assert_eq!(Some(a_a_a_a.0), focus_tree.prev());
+        assert_eq!(Some(a_a_a.0), focus_tree.prev());
+        assert_eq!(Some(a_a.0), focus_tree.prev());
 
-        assert_eq!(Some(a), focus_tree.prev());
-        assert_eq!(Some(a_b_a), focus_tree.prev());
+        assert_eq!(Some(a.0), focus_tree.prev());
+        assert_eq!(Some(a_b_a.0), focus_tree.prev());
 
         // etc.
     }

@@ -4,6 +4,7 @@ use std::sync::{Arc, RwLock};
 
 use crate::event::KEvent;
 use crate::event_dispatcher::EventDispatcherContext;
+use crate::focus_tree::FocusTree;
 use crate::widget_state::WidgetState;
 
 /// A container for a function that handles events
@@ -42,6 +43,7 @@ impl OnEvent {
         &mut self,
         mut event_dispatcher_context: EventDispatcherContext,
         widget_state: WidgetState,
+        focus_tree: FocusTree,
         entity: Entity,
         mut event: KEvent,
         world: &mut World,
@@ -57,6 +59,7 @@ impl OnEvent {
             world.insert_resource(event_dispatcher_context);
             world.insert_resource(widget_state);
             world.insert_resource(event);
+            world.insert_resource(focus_tree);
 
             system.run(entity, world);
             system.apply_buffers(world);
@@ -64,6 +67,7 @@ impl OnEvent {
             event_dispatcher_context = world.remove_resource::<EventDispatcherContext>().unwrap();
             event = world.remove_resource::<KEvent>().unwrap();
             world.remove_resource::<WidgetState>().unwrap();
+            world.remove_resource::<FocusTree>().unwrap();
         }
         (event_dispatcher_context, event)
     }

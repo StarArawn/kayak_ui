@@ -21,15 +21,15 @@ pub struct KayakWidgetContext {
     new_tree: Arc<RwLock<Tree>>,
     context_entities: ContextEntities,
     layout_cache: Arc<RwLock<LayoutCache>>,
-    pub(crate) index: DashMap<Entity, usize>,
+    pub(crate) index: Arc<DashMap<Entity, usize>>,
     widget_state: WidgetState,
     pub(crate) order_tree: Arc<RwLock<Tree>>,
     pub camera_entity: Option<Entity>,
     // Unique id's store entity id's related to a key rather than the child tree.
     // This lets users get a unique entity. The first Entity is the parent widget.
     // The 2nd hashmap is a list of keys and their entities.
-    unique_ids: DashMap<Entity, DashMap<String, Entity>>,
-    unique_ids_parents: DashMap<Entity, Entity>,
+    unique_ids: Arc<DashMap<Entity, DashMap<String, Entity>>>,
+    unique_ids_parents: Arc<DashMap<Entity, Entity>>,
 }
 
 impl KayakWidgetContext {
@@ -39,10 +39,10 @@ impl KayakWidgetContext {
         layout_cache: Arc<RwLock<LayoutCache>>,
         widget_state: WidgetState,
         order_tree: Arc<RwLock<Tree>>,
-        index: DashMap<Entity, usize>,
+        index: Arc<DashMap<Entity, usize>>,
         camera_entity: Option<Entity>,
-        unique_ids: DashMap<Entity, DashMap<String, Entity>>,
-        unique_ids_parents: DashMap<Entity, Entity>,
+        unique_ids: Arc<DashMap<Entity, DashMap<String, Entity>>>,
+        unique_ids_parents: Arc<DashMap<Entity, Entity>>,
     ) -> Self {
         Self {
             old_tree,

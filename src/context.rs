@@ -93,16 +93,16 @@ pub struct KayakRootContext {
     pub(crate) context_entities: ContextEntities,
     pub(crate) current_cursor: CursorIcon,
     pub(crate) clone_systems: Arc<RwLock<EntityCloneSystems>>,
-    pub(crate) cloned_widget_entities: DashMap<Entity, Entity>,
+    pub(crate) cloned_widget_entities: Arc<DashMap<Entity, Entity>>,
     pub(crate) widget_state: WidgetState,
     pub(crate) order_tree: Arc<RwLock<Tree>>,
-    pub(crate) index: DashMap<Entity, usize>,
+    pub(crate) index: Arc<DashMap<Entity, usize>>,
     /// Unique id's store entity id's related to a key rather than the child tree.
     /// This lets users get a unique entity. The first Entity is the parent widget.
     /// The 2nd hashmap is a list of keys and their entities.
-    pub(crate) unique_ids: DashMap<Entity, DashMap<String, Entity>>,
+    pub(crate) unique_ids: Arc<DashMap<Entity, DashMap<String, Entity>>>,
     /// Maps keyed entities to spawn parents. We can't use the tree in this case.
-    pub(crate) unique_ids_parents: DashMap<Entity, Entity>,
+    pub(crate) unique_ids_parents: Arc<DashMap<Entity, Entity>>,
     pub(crate) uninitilized_systems: HashSet<String>,
     pub camera_entity: Entity,
 }
@@ -692,13 +692,13 @@ fn update_widgets(
     context_entities: &ContextEntities,
     focus_tree: &FocusTree,
     clone_systems: &Arc<RwLock<EntityCloneSystems>>,
-    cloned_widget_entities: &DashMap<Entity, Entity>,
+    cloned_widget_entities: &Arc<DashMap<Entity, Entity>>,
     widget_state: &WidgetState,
     new_ticks: &mut HashMap<String, u32>,
     order_tree: &Arc<RwLock<Tree>>,
-    index: &DashMap<Entity, usize>,
-    unique_ids: &DashMap<Entity, DashMap<String, Entity>>,
-    unique_ids_parents: &DashMap<Entity, Entity>,
+    index: &Arc<DashMap<Entity, usize>>,
+    unique_ids: &Arc<DashMap<Entity, DashMap<String, Entity>>>,
+    unique_ids_parents: &Arc<DashMap<Entity, Entity>>,
 ) {
     for entity in widgets.iter() {
         // if let (Some(entity_ref), Some(_)) = (
@@ -736,9 +736,6 @@ fn update_widgets(
                     cloned_widget_entities,
                     widget_state,
                     new_ticks,
-                    order_tree,
-                    unique_ids,
-                    unique_ids_parents,
                 );
 
                 if should_update_children {
@@ -1118,9 +1115,6 @@ fn update_widget(
     cloned_widget_entities: &DashMap<Entity, Entity>,
     widget_state: &WidgetState,
     new_ticks: &mut HashMap<String, u32>,
-    _order_tree: &Arc<RwLock<Tree>>,
-    _unique_ids: &DashMap<Entity, DashMap<String, Entity>>,
-    _unique_ids_parents: &DashMap<Entity, Entity>,
 ) -> (Tree, bool) {
     // Check if we should update this widget
     let should_rerender = {

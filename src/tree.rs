@@ -105,6 +105,8 @@ impl Tree {
             if let Some(root_node) = self.root_node {
                 if root_node == index {
                     self.root_node = None;
+                    self.parents.clear();
+                    self.children.clear();
                 }
             }
             Vec::default()

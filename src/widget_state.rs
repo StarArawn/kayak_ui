@@ -1,17 +1,14 @@
-use std::sync::{Arc, RwLock};
-
-use bevy::{
-    prelude::{BuildChildren, Commands, Component, Entity, Resource},
-    utils::HashMap,
-};
+use bevy::prelude::{BuildChildren, Commands, Component, Entity, Resource};
+use dashmap::DashMap;
+use std::sync::Arc;
 
 /// Stores mappings between widget entities and their corresponding state entities.
 #[derive(Resource, Default, Debug, Clone)]
 pub struct WidgetState {
     // Widget entity to state entity
-    mapping: Arc<RwLock<HashMap<Entity, Entity>>>,
+    mapping: Arc<DashMap<Entity, Entity>>,
     // State entity to widget entity
-    reverse_mapping: Arc<RwLock<HashMap<Entity, Entity>>>,
+    reverse_mapping: Arc<DashMap<Entity, Entity>>,
 }
 
 impl WidgetState {
@@ -22,55 +19,38 @@ impl WidgetState {
         widget_entity: Entity,
         initial_state: State,
     ) -> Entity {
-        if let (Ok(mut mapping), Ok(mut reverse_mapping)) =
-            (self.mapping.try_write(), self.reverse_mapping.try_write())
-        {
-            if mapping.contains_key(&widget_entity) {
-                *mapping.get(&widget_entity).unwrap()
-            } else {
-                let mut state_entity = None;
-                commands
-                    .entity(widget_entity)
-                    .with_children(|child_builder| {
-                        state_entity = Some(child_builder.spawn(initial_state).id());
-                        mapping.insert(widget_entity, state_entity.unwrap());
-                        reverse_mapping.insert(state_entity.unwrap(), widget_entity);
-                    });
-                state_entity.expect("State entity did not spawn!")
-            }
+        if self.mapping.contains_key(&widget_entity) {
+            *self.mapping.get(&widget_entity).unwrap()
         } else {
-            panic!("Couldn't get mapping lock!");
+            let mut state_entity = None;
+            commands
+                .entity(widget_entity)
+                .with_children(|child_builder| {
+                    state_entity = Some(child_builder.spawn(initial_state).id());
+                    self.mapping.insert(widget_entity, state_entity.unwrap());
+                    self.reverse_mapping
+                        .insert(state_entity.unwrap(), widget_entity);
+                });
+            state_entity.expect("State entity did not spawn!")
         }
     }
 
     /// Attempts to get a state entity
     pub fn get(&self, widget_entity: Entity) -> Option<Entity> {
-        if let Ok(mapping) = self.mapping.try_read() {
-            return mapping.get(&widget_entity).copied();
-        }
-
-        None
+        self.mapping.get(&widget_entity).map(|entry| *entry.value())
     }
 
     pub fn get_widget_entity(&self, state_entity: Entity) -> Option<Entity> {
-        if let Ok(reverse_mapping) = self.reverse_mapping.try_read() {
-            return reverse_mapping.get(&state_entity).copied();
-        }
-
-        None
+        self.reverse_mapping
+            .get(&state_entity)
+            .map(|entry| *entry.value())
     }
 
     pub fn remove(&self, widget_entity: Entity) -> Option<Entity> {
-        if let (Ok(mut mapping), Ok(mut reverse_mapping)) =
-            (self.mapping.try_write(), self.reverse_mapping.try_write())
-        {
-            let state_entity = mapping.remove(&widget_entity);
-            if let Some(state_entity) = state_entity {
-                reverse_mapping.remove(&state_entity);
-            }
-            return state_entity;
+        let state_entity = self.mapping.remove(&widget_entity).map(|(_, v)| v);
+        if let Some(state_entity) = state_entity {
+            self.reverse_mapping.remove(&state_entity);
         }
-
-        None
+        state_entity
     }
 }

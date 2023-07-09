@@ -109,10 +109,9 @@ fn update_resource(keyboard_input: Res<Input<KeyCode>>, mut my_resource: ResMut<
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
-        .add_plugin(KayakContextPlugin)
-        .add_plugin(KayakWidgets)
+        .add_plugins((KayakContextPlugin, KayakWidgets))
         .insert_resource(MyResource(1))
-        .add_startup_system(startup)
-        .add_system(update_resource)
+        .add_systems(Startup, startup)
+        .add_systems(Update, update_resource)
         .run()
 }

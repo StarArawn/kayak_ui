@@ -18,6 +18,9 @@ var<uniform> globals: Globals;
 
 struct QuadType {
     t: i32,
+    _padding_a: i32,
+    _padding_b: i32,
+    _padding_c: i32,
 };
 
 @group(2) @binding(0)

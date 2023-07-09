@@ -37,9 +37,6 @@ pub use opacity_layer::MAX_OPACITY_LAYERS;
 
 pub mod draw_ui_graph {
     pub const NAME: &str = "kayak_draw_ui";
-    pub mod input {
-        pub const VIEW_ENTITY: &str = "kayak_view_entity";
-    }
     pub mod node {
         pub const MAIN_PASS: &str = "kayak_ui_pass";
     }

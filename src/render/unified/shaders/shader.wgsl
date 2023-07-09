@@ -1,4 +1,4 @@
-#import kayak_ui::bindings
+#import kayak_ui::bindings view
 
 #import kayak_ui::vertex_output VertexOutput
 
@@ -20,7 +20,7 @@ fn vertex(
     return out;
 }
 
-#import kayak_ui::sample_quad
+#import kayak_ui::sample_quad sample_quad
 
 @fragment
 fn fragment(in: VertexOutput) -> @location(0) vec4<f32> {

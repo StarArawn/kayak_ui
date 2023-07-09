@@ -10,7 +10,7 @@ use bevy::{
         render_resource::{DynamicUniformBuffer, ShaderType},
         renderer::{RenderDevice, RenderQueue},
         view::ColorGrading,
-        Extract, ExtractSchedule, RenderApp, RenderSet,
+        Extract, ExtractSchedule, Render, RenderApp, RenderSet,
     },
     window::{PrimaryWindow, Window, WindowRef},
 };
@@ -28,15 +28,15 @@ impl Plugin for BevyKayakUIExtractPlugin {
         let render_app = app.sub_app_mut(RenderApp);
         render_app
             .init_resource::<UIViewUniforms>()
-            .add_system(extract.in_schedule(ExtractSchedule))
             .add_systems(
+                ExtractSchedule,
                 (
+                    extract,
                     extract_default_ui_camera_view::<Camera2d>,
                     extract_default_ui_camera_view::<Camera3d>,
-                )
-                    .in_schedule(ExtractSchedule),
+                ),
             )
-            .add_system(prepare_view_uniforms.in_set(RenderSet::Prepare));
+            .add_systems(Render, prepare_view_uniforms.in_set(RenderSet::Prepare));
     }
 }
 

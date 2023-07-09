@@ -1,10 +1,10 @@
-use bevy::reflect::{FromReflect, Reflect};
+use bevy::reflect::Reflect;
 
 use crate::{GlyphRect, Line, RowCol};
 use std::cmp::Ordering;
 
 /// The text alignment.
-#[derive(Copy, Clone, Reflect, FromReflect, Debug, PartialEq, Eq)]
+#[derive(Copy, Clone, Reflect, Debug, PartialEq, Eq)]
 pub enum Alignment {
     Start,
     Middle,
@@ -12,7 +12,7 @@ pub enum Alignment {
 }
 
 /// Properties to control text layout.
-#[derive(Copy, Clone, Reflect, FromReflect, Debug, PartialEq)]
+#[derive(Copy, Clone, Reflect, Debug, PartialEq)]
 pub struct TextProperties {
     /// The font size (in pixels).
     pub font_size: f32,
@@ -41,7 +41,7 @@ impl Default for TextProperties {
 /// Calculated text layout.
 ///
 /// This can be retrieved using [`measure`](crate::KayakFont::measure).
-#[derive(Clone, Reflect, FromReflect, Debug, Default, PartialEq)]
+#[derive(Clone, Reflect, Debug, Default, PartialEq)]
 pub struct TextLayout {
     glyphs: Vec<GlyphRect>,
     lines: Vec<Line>,

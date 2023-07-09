@@ -700,16 +700,16 @@ impl EventDispatcher {
                 InputEvent::Keyboard { key, is_pressed } => {
                     // === Modifers === //
                     match key {
-                        KeyCode::LControl | KeyCode::RControl => {
+                        KeyCode::ControlLeft | KeyCode::ControlRight => {
                             self.keyboard_modifiers.is_ctrl_pressed = *is_pressed
                         }
-                        KeyCode::LShift | KeyCode::RShift => {
+                        KeyCode::ShiftLeft | KeyCode::ShiftRight => {
                             self.keyboard_modifiers.is_shift_pressed = *is_pressed
                         }
-                        KeyCode::LAlt | KeyCode::RAlt => {
+                        KeyCode::AltLeft | KeyCode::AltRight => {
                             self.keyboard_modifiers.is_alt_pressed = *is_pressed
                         }
-                        KeyCode::LWin | KeyCode::RWin => {
+                        KeyCode::SuperLeft | KeyCode::SuperRight => {
                             self.keyboard_modifiers.is_meta_pressed = *is_pressed
                         }
                         _ => {}

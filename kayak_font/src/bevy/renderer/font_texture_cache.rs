@@ -137,7 +137,7 @@ impl FontTextureCache {
             lod_min_clamp: 0.0,
             lod_max_clamp: std::f32::MAX,
             compare: None,
-            anisotropy_clamp: None,
+            anisotropy_clamp: 1,
             border_color: None,
         };
 
@@ -152,7 +152,7 @@ impl FontTextureCache {
             base_mip_level: 0,
             base_array_layer: 0,
             mip_level_count: None,
-            array_layer_count: std::num::NonZeroU32::new(MAX_CHARACTERS),
+            array_layer_count: Some(MAX_CHARACTERS),
         });
 
         let image = GpuImage {
@@ -199,7 +199,7 @@ impl FontTextureCache {
             base_mip_level: 0,
             base_array_layer: 0,
             mip_level_count: None,
-            array_layer_count: std::num::NonZeroU32::new(MAX_CHARACTERS),
+            array_layer_count: Some(MAX_CHARACTERS),
         });
 
         GpuImage {

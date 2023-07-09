@@ -78,7 +78,13 @@ pub(crate) fn process_events(world: &mut World) {
                 }
             }
 
-            for MouseWheel { x, y, unit } in custom_event_mouse_wheel.0.iter(&mouse_wheel_events) {
+            for MouseWheel {
+                x,
+                y,
+                unit,
+                window: _,
+            } in custom_event_mouse_wheel.0.iter(&mouse_wheel_events)
+            {
                 input_events.push(InputEvent::Scroll {
                     dx: *x,
                     dy: *y,

@@ -1,6 +1,6 @@
 #import kayak_ui::bindings
 
-#import kayak_ui::vertex_output
+#import kayak_ui::vertex_output VertexOutput
 
 @vertex
 fn vertex(

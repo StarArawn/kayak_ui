@@ -667,11 +667,11 @@ pub fn update_widgets_sys(world: &mut World) {
 
         for (key, system) in context.systems.iter_mut() {
             if let Some(new_tick) = new_ticks.get(key) {
-                system.0.set_last_change_tick(*new_tick);
-                system.1.set_last_change_tick(*new_tick);
+                system.0.set_last_run(*new_tick);
+                system.1.set_last_run(*new_tick);
             } else {
-                system.0.set_last_change_tick(tick);
-                system.1.set_last_change_tick(tick);
+                system.0.set_last_run(tick);
+                system.1.set_last_run(tick);
             }
         }
 
@@ -694,7 +694,7 @@ fn update_widgets(
     clone_systems: &Arc<RwLock<EntityCloneSystems>>,
     cloned_widget_entities: &Arc<DashMap<Entity, Entity>>,
     widget_state: &WidgetState,
-    new_ticks: &mut HashMap<String, u32>,
+    new_ticks: &mut HashMap<String, bevy::ecs::component::Tick>,
     order_tree: &Arc<RwLock<Tree>>,
     index: &Arc<DashMap<Entity, usize>>,
     unique_ids: &Arc<DashMap<Entity, DashMap<String, Entity>>>,
@@ -1114,7 +1114,7 @@ fn update_widget(
     clone_systems: &Arc<RwLock<EntityCloneSystems>>,
     cloned_widget_entities: &DashMap<Entity, Entity>,
     widget_state: &WidgetState,
-    new_ticks: &mut HashMap<String, u32>,
+    new_ticks: &mut HashMap<String, bevy::ecs::component::Tick>,
 ) -> (Tree, bool) {
     // Check if we should update this widget
     let should_rerender = {
@@ -1164,15 +1164,15 @@ fn update_widget(
                 )
             })
             .0;
-        let old_tick = widget_update_system.get_last_change_tick();
+        let old_tick = widget_update_system.get_last_run();
 
         // Insert context as a bevy resource.
         world.insert_resource(widget_context);
         let should_rerender = widget_update_system.run((entity.0, old_props_entity), world);
-        let new_tick = widget_update_system.get_last_change_tick();
+        let new_tick = widget_update_system.get_last_run();
         new_ticks.insert(widget_type.clone(), new_tick);
-        widget_update_system.set_last_change_tick(old_tick);
-        widget_update_system.apply_buffers(world);
+        widget_update_system.set_last_run(old_tick);
+        widget_update_system.apply_deferred(world);
 
         // Extract context
         widget_context = world.remove_resource::<KayakWidgetContext>().unwrap();
@@ -1247,14 +1247,14 @@ fn update_widget(
         // Remove children from previous render.
         widget_context.remove_children(previous_children);
         let widget_render_system = &mut systems.get_mut(&widget_type).unwrap().1;
-        let old_tick = widget_render_system.get_last_change_tick();
+        let old_tick = widget_render_system.get_last_run();
         world.insert_resource(widget_context.clone());
         world.insert_resource(focus_tree.clone());
         should_update_children = widget_render_system.run(entity.0, world);
-        let new_tick = widget_render_system.get_last_change_tick();
+        let new_tick = widget_render_system.get_last_run();
         new_ticks.insert(widget_type.clone(), new_tick);
-        widget_render_system.set_last_change_tick(old_tick);
-        widget_render_system.apply_buffers(world);
+        widget_render_system.set_last_run(old_tick);
+        widget_render_system.apply_deferred(world);
         world.remove_resource::<KayakWidgetContext>();
         world.remove_resource::<FocusTree>();
 
@@ -1300,16 +1300,18 @@ impl Plugin for KayakContextPlugin {
             .insert_resource(CustomEventReader(ManualEventReader::<
                 bevy::input::keyboard::KeyboardInput,
             >::default()))
-            .add_plugin(crate::camera::KayakUICameraPlugin)
-            .add_plugin(crate::render::BevyKayakUIRenderPlugin)
-            .add_system(crate::input::process_events.in_base_set(CoreSet::Update))
-            .add_system(update_widgets_sys.in_base_set(CoreSet::PostUpdate))
-            .add_system(
-                calculate_ui
-                    .after(update_widgets_sys)
-                    .in_base_set(CoreSet::PostUpdate),
+            .add_plugins((
+                crate::camera::KayakUICameraPlugin,
+                crate::render::BevyKayakUIRenderPlugin,
+            ))
+            .add_systems(
+                Update,
+                (
+                    crate::input::process_events,
+                    crate::window_size::update_window_size,
+                ),
             )
-            .add_system(crate::window_size::update_window_size);
+            .add_systems(PostUpdate, (calculate_ui, update_widgets_sys).chain());
 
         // Register reflection types.
         // A bit annoying..
@@ -1360,10 +1362,10 @@ fn calculate_ui(world: &mut World) {
 
         for _ in 0..2 {
             context = node_system.run(context, world);
-            node_system.apply_buffers(world);
+            node_system.apply_deferred(world);
 
             context = layout_system.run(context, world);
-            layout_system.apply_buffers(world);
+            layout_system.apply_deferred(world);
             LayoutEventDispatcher::dispatch(&mut context, world);
         }
 

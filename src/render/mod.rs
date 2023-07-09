@@ -3,9 +3,9 @@ use bevy::{
     render::{
         camera::RenderTarget,
         render_asset::RenderAssets,
-        render_graph::{RenderGraph, RunGraphOnViewNode, SlotInfo, SlotType},
+        render_graph::{RenderGraph, RunGraphOnViewNode},
         render_phase::{batch_phase_system, sort_phase_system, DrawFunctions, RenderPhase},
-        Extract, ExtractSchedule, RenderApp, RenderSet,
+        Extract, ExtractSchedule, Render, RenderApp, RenderSet,
     },
     window::{PrimaryWindow, Window, WindowRef},
 };
@@ -53,26 +53,26 @@ pub struct BevyKayakUIRenderPlugin;
 impl Plugin for BevyKayakUIRenderPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
         app.init_resource::<OpacityLayerManager>()
-            .add_system(update_opacity_layer_cameras);
+            .add_systems(Update, update_opacity_layer_cameras);
 
         let render_app = app.sub_app_mut(RenderApp);
         render_app
             .init_resource::<DrawFunctions<TransparentUI>>()
             .init_resource::<DrawFunctions<TransparentOpacityUI>>()
-            .add_system(extract_core_pipeline_camera_phases.in_schedule(ExtractSchedule))
-            .add_system(
+            .add_systems(ExtractSchedule, extract_core_pipeline_camera_phases)
+            .add_systems(
+                Render,
                 prepare_opacity_layers
                     .in_set(RenderSet::Queue)
                     .before(unified::pipeline::queue_quads),
             )
-            .add_system(
-                batch_phase_system::<TransparentUI>
-                    .after(sort_phase_system::<TransparentUI>)
-                    .in_set(RenderSet::PhaseSort),
-            )
-            .add_system(
-                batch_phase_system::<TransparentOpacityUI>
-                    .after(sort_phase_system::<TransparentOpacityUI>)
+            .add_systems(
+                Render,
+                (
+                    batch_phase_system::<TransparentUI>.after(sort_phase_system::<TransparentUI>),
+                    batch_phase_system::<TransparentOpacityUI>
+                        .after(sort_phase_system::<TransparentOpacityUI>),
+                )
                     .in_set(RenderSet::PhaseSort),
             );
 
@@ -81,18 +81,6 @@ impl Plugin for BevyKayakUIRenderPlugin {
 
         // let mut draw_ui_graph = RenderGraph::default();
         // draw_ui_graph.add_node(draw_ui_graph::node::MAIN_PASS, pass_node_ui);
-        // let input_node_id = draw_ui_graph.set_input(vec![SlotInfo::new(
-        //     draw_ui_graph::input::VIEW_ENTITY,
-        //     SlotType::Entity,
-        // )]);
-        // draw_ui_graph
-        //     .add_slot_edge(
-        //         input_node_id,
-        //         draw_ui_graph::input::VIEW_ENTITY,
-        //         draw_ui_graph::node::MAIN_PASS,
-        //         MainPassUINode::IN_VIEW,
-        //     )
-        //     .unwrap();
         // graph.add_sub_graph(draw_ui_graph::NAME, draw_ui_graph);
 
         // // graph.add_node_edge(MAIN_PASS, draw_ui_graph::NAME).unwrap();
@@ -112,12 +100,6 @@ impl Plugin for BevyKayakUIRenderPlugin {
                 bevy::core_pipeline::core_2d::graph::node::MAIN_PASS,
                 draw_ui_graph::node::MAIN_PASS,
             );
-            graph_2d.add_slot_edge(
-                graph_2d.input_node().id,
-                bevy::core_pipeline::core_2d::graph::input::VIEW_ENTITY,
-                draw_ui_graph::node::MAIN_PASS,
-                RunGraphOnViewNode::IN_VIEW,
-            );
             graph_2d.add_node_edge(
                 bevy::core_pipeline::core_2d::graph::node::TONEMAPPING,
                 draw_ui_graph::node::MAIN_PASS,
@@ -135,7 +117,7 @@ impl Plugin for BevyKayakUIRenderPlugin {
                 RunGraphOnViewNode::new(draw_ui_graph::NAME),
             );
             graph_3d.add_node_edge(
-                bevy::core_pipeline::core_3d::graph::node::MAIN_PASS,
+                bevy::core_pipeline::core_3d::graph::node::END_MAIN_PASS,
                 draw_ui_graph::node::MAIN_PASS,
             );
             graph_3d.add_node_edge(
@@ -146,17 +128,13 @@ impl Plugin for BevyKayakUIRenderPlugin {
                 draw_ui_graph::node::MAIN_PASS,
                 bevy::core_pipeline::core_3d::graph::node::UPSCALING,
             );
-            graph_3d.add_slot_edge(
-                graph_3d.input_node().id,
-                bevy::core_pipeline::core_3d::graph::input::VIEW_ENTITY,
-                draw_ui_graph::node::MAIN_PASS,
-                RunGraphOnViewNode::IN_VIEW,
-            );
         }
 
-        app.add_plugin(font::TextRendererPlugin)
-            .add_plugin(UnifiedRenderPlugin)
-            .add_plugin(BevyKayakUIExtractPlugin);
+        app.add_plugins((
+            font::TextRendererPlugin,
+            UnifiedRenderPlugin,
+            BevyKayakUIExtractPlugin,
+        ));
     }
 }
 
@@ -164,16 +142,6 @@ fn get_ui_graph(render_app: &mut App) -> RenderGraph {
     let ui_pass_node = MainPassUINode::new(&mut render_app.world);
     let mut ui_graph = RenderGraph::default();
     ui_graph.add_node(draw_ui_graph::node::MAIN_PASS, ui_pass_node);
-    let input_node_id = ui_graph.set_input(vec![SlotInfo::new(
-        draw_ui_graph::input::VIEW_ENTITY,
-        SlotType::Entity,
-    )]);
-    ui_graph.add_slot_edge(
-        input_node_id,
-        draw_ui_graph::input::VIEW_ENTITY,
-        draw_ui_graph::node::MAIN_PASS,
-        MainPassUINode::IN_VIEW,
-    );
     ui_graph
 }
 

@@ -3,14 +3,14 @@ use std::collections::HashMap;
 
 use bevy::{
     prelude::{Entity, Query},
-    reflect::{FromReflect, Reflect},
+    reflect::Reflect,
 };
 use morphorm::Cache;
 pub use morphorm::GeometryChanged;
 
 use crate::node::WrappedIndex;
 
-#[derive(Debug, Reflect, FromReflect, Default, Clone, Copy, PartialEq)]
+#[derive(Debug, Reflect, Default, Clone, Copy, PartialEq)]
 pub struct Rect {
     pub posx: f32,
     pub posy: f32,

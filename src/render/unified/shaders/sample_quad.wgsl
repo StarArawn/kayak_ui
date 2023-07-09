@@ -1,5 +1,13 @@
 #define_import_path kayak_ui::sample_quad
 
+#import kayak_ui::bindings font_texture
+#import kayak_ui::bindings font_sampler
+#import kayak_ui::bindings image_texture
+#import kayak_ui::bindings image_sampler
+#import kayak_ui::bindings quad_type
+
+#import kayak_ui::vertex_output VertexOutput
+
 // Where P is the position in pixel space, B is the size of the box adn R is the radius of the current corner.
 fn sdRoundBox(p: vec2<f32>, b: vec2<f32>, r: f32) -> f32 {
     var q = abs(p) - b + r;

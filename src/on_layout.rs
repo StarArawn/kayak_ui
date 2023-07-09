@@ -50,7 +50,7 @@ impl OnLayout {
                 self.has_initialized = true;
             }
             event = system.run((event, entity), world);
-            system.apply_buffers(world);
+            system.apply_deferred(world);
         }
         event
     }

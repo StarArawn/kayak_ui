@@ -26,12 +26,6 @@ use super::RenderCommand;
 #[derive(Debug, Reflect, Clone, PartialEq, Eq)]
 pub struct KCursorIcon(#[reflect(ignore)] pub CursorIcon);
 
-impl FromReflect for KCursorIcon {
-    fn from_reflect(_reflect: &dyn Reflect) -> Option<Self> {
-        None
-    }
-}
-
 impl Default for KCursorIcon {
     fn default() -> Self {
         Self(CursorIcon::Default)
@@ -41,7 +35,7 @@ impl Default for KCursorIcon {
 /// The base container of all style properties
 ///
 /// The default value for this enum is [`StyleProp::Unset`].
-#[derive(Debug, Reflect, FromReflect, Clone, PartialEq, Eq)]
+#[derive(Debug, Reflect, Clone, PartialEq, Eq)]
 pub enum StyleProp<T: Default + Clone + Reflect + FromReflect> {
     /// This prop is unset, meaning its actual value is not determined until style resolution,
     /// wherein it will be set to the property's default value.
@@ -265,7 +259,7 @@ define_styles! {
     ///   // Applied second (sets any remaining `StyleProp::Unset` fields)
     ///   .with_style(&style_b);
     /// ```
-    #[derive(Component, Reflect, FromReflect, Debug, Default, Clone, PartialEq)]
+    #[derive(Component, Reflect, Debug, Default, Clone, PartialEq)]
     #[reflect(Component)]
     pub struct KStyle {
         /// The background color of this widget

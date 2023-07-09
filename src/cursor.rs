@@ -1,7 +1,7 @@
-use bevy::reflect::{FromReflect, Reflect};
+use bevy::reflect::Reflect;
 
 /// Controls how the cursor interacts on a given node
-#[derive(Debug, Reflect, FromReflect, Copy, Clone, PartialEq, Eq)]
+#[derive(Debug, Reflect, Copy, Clone, PartialEq, Eq)]
 pub enum PointerEvents {
     /// Allow all pointer events on this node and its children
     All,

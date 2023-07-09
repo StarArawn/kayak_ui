@@ -57,7 +57,7 @@ impl OnChange {
                     }
                     world.insert_resource(widget_context);
                     system.run((entity, value.clone()), world);
-                    system.apply_buffers(world);
+                    system.apply_deferred(world);
                 }
             }
         }

@@ -1,13 +1,13 @@
 use bevy::{
     prelude::{Handle, Image, Vec2},
-    reflect::{FromReflect, Reflect},
+    reflect::Reflect,
 };
 use bevy_svg::prelude::Svg;
 use kayak_font::{Alignment, TextLayout, TextProperties};
 
 use super::Edge;
 
-#[derive(Debug, Reflect, FromReflect, Clone, PartialEq)]
+#[derive(Debug, Reflect, Clone, PartialEq)]
 pub enum RenderCommand {
     Empty,
     /// Represents a node that has no renderable object but contributes to the layout.

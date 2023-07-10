@@ -1311,7 +1311,7 @@ impl Plugin for KayakContextPlugin {
                     crate::window_size::update_window_size,
                 ),
             )
-            .add_systems(PostUpdate, (calculate_ui, update_widgets_sys).chain());
+            .add_systems(PostUpdate, (update_widgets_sys, calculate_ui).chain());
 
         // Register reflection types.
         // A bit annoying..

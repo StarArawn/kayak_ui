@@ -47,6 +47,6 @@ fn main() {
         .add_plugins((KayakContextPlugin, KayakWidgets))
         .add_state::<GameState>()
         .add_systems(OnEnter(GameState::First), first_sys)
-        .add_systems(OnEnter(GameState::Second), second_sys)))
+        .add_systems(OnEnter(GameState::Second), second_sys)
         .run();
 }

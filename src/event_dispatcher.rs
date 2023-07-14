@@ -384,8 +384,7 @@ impl EventDispatcher {
             } else {
                 // No capturing widget -> process cursor events as normal
                 let mut stack: Vec<TreeNode> = vec![(root, 0)];
-                while !stack.is_empty() {
-                    let (current, depth) = stack.pop().unwrap();
+                while let Some((current, depth)) = stack.pop() {
                     let mut enter_children = true;
 
                     if let Some(entity_ref) = world.get_entity(current.0) {

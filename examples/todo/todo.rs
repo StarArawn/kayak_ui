@@ -1,5 +1,4 @@
 use bevy::prelude::*;
-// use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use kayak_ui::prelude::{widgets::*, *};
 
 mod input;
@@ -110,7 +109,7 @@ fn main() {
         .add_plugins((
             KayakContextPlugin,
             KayakWidgets,
-            // WorldInspectorPlugin::default(),
+            bevy_inspector_egui::quick::WorldInspectorPlugin::new(),
         ))
         .insert_resource(TodoList::new())
         .add_systems(Startup, startup)

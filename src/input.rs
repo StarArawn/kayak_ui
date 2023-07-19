@@ -70,7 +70,7 @@ pub(crate) fn process_events(world: &mut World) {
 
             for event in custom_event_mouse_button.0.iter(&mouse_button_input_events) {
                 match event.button{
-                    MouseButton::Left => {
+                    MouseButton::Left => {                    //MouseButton::Other(_) => todo!(),
                         if event.state == ButtonState::Pressed {
                             input_events.push(InputEvent::MouseLeftPress);
                         } else if event.state == ButtonState::Released {
@@ -84,7 +84,13 @@ pub(crate) fn process_events(world: &mut World) {
                             input_events.push(InputEvent::MouseRightRelease);
                         }
                     },
-                    MouseButton::Middle => todo!(),
+                    MouseButton::Middle => {
+                        if event.state == ButtonState::Pressed {
+                            input_events.push(InputEvent::MouseMiddlePress);
+                        } else if event.state == ButtonState::Released {
+                            input_events.push(InputEvent::MouseMiddleRelease);
+                        }
+                    },
                     _ => ()
                 }
             }

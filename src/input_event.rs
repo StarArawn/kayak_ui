@@ -13,6 +13,10 @@ pub enum InputEvent {
     MouseRightPress,
     /// An event that occurs when the user releases the right mouse button
     MouseRightRelease,
+    /// An event that occurs when the user presses the right mouse button
+    MouseMiddlePress,
+    /// An event that occurs when the user presses the right mouse button
+    MouseMiddleRelease,
     /// An event that occurs when the user scrolls
     Scroll { dx: f32, dy: f32, is_line: bool },
     /// An event that occurs when the user types in a character
@@ -40,6 +44,8 @@ impl InputEvent {
             Self::MouseLeftRelease => InputEventCategory::Mouse,
             Self::MouseRightPress => InputEventCategory::Mouse,
             Self::MouseRightRelease => InputEventCategory::Mouse,
+            Self::MouseMiddlePress => InputEventCategory::Mouse,
+            Self::MouseMiddleRelease => InputEventCategory::Mouse,
             Self::Scroll { .. } => InputEventCategory::Mouse,
             // Keyboard events
             Self::CharEvent { .. } => InputEventCategory::Keyboard,

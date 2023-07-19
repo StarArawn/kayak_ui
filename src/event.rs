@@ -1,4 +1,4 @@
-use bevy::prelude::{Entity, Resource, World};
+use bevy::{prelude::{Entity, Resource, World}, window::Cursor};
 
 use crate::{
     cursor::{CursorEvent, ScrollEvent},
@@ -73,9 +73,11 @@ impl KEvent {
             self.event_type,
             EventType::LeftClick(..)
                 | EventType::RightClick(..)
+                | EventType::MiddleClick(..)
                 | EventType::MouseIn(..)
                 | EventType::MouseLeftDown(..)
                 | EventType::MouseRightDown(..)
+                | EventType::MouseMiddleDown(..)
                 | EventType::Scroll(..)
                 | EventType::Focus
                 | EventType::Hover(..)
@@ -116,6 +118,8 @@ pub enum EventType {
     LeftClick(CursorEvent),
     /// An event that occurs when the user right clicks a widget
     RightClick(CursorEvent),
+    /// An event that occurs when the user middle clicks a widget
+    MiddleClick(CursorEvent),
     /// An event that occurs when the user hovers the cursor over a widget
     Hover(CursorEvent),
     /// An event that occurs when the user moves the cursor into a widget
@@ -130,6 +134,10 @@ pub enum EventType {
     MouseRightDown(CursorEvent),
     /// An event that occurs when the user releases right mouse button over a widget
     MouseRightUp(CursorEvent),
+    /// An event that occurs when the user releases middle mouse button over a widget
+    MouseMiddleDown(CursorEvent),
+    /// An event that occurs when the user releases middle mouse button over a widget
+    MouseMiddleUp(CursorEvent),
     /// An event that occurs when the user scrolls over a widget
     Scroll(ScrollEvent),
     /// An event that occurs when a widget receives focus
@@ -182,10 +190,13 @@ impl EventType {
             Self::Hover(..) => true,
             Self::LeftClick(..) => true,
             Self::RightClick(..) => true,
+            Self::MiddleClick(..) => true,
             Self::MouseLeftDown(..) => true,
             Self::MouseLeftUp(..) => true,
             Self::MouseRightDown(..) => true,
             Self::MouseRightUp(..) => true,
+            Self::MouseMiddleDown(..) => true,
+            Self::MouseMiddleUp(..) => true,
             Self::Scroll(..) => true,
             Self::CharInput { .. } => true,
             Self::KeyUp(..) => true,
@@ -205,10 +216,13 @@ impl EventType {
             Self::Hover(..) => EventCategory::Mouse,
             Self::LeftClick(..) => EventCategory::Mouse,
             Self::RightClick(..) => EventCategory::Mouse,
+            Self::MiddleClick(..) => EventCategory::Mouse,
             Self::MouseLeftDown(..) => EventCategory::Mouse,
             Self::MouseLeftUp(..) => EventCategory::Mouse,
             Self::MouseRightDown(..) => EventCategory::Mouse,
             Self::MouseRightUp(..) => EventCategory::Mouse,
+            Self::MouseMiddleDown(..) => EventCategory::Mouse,
+            Self::MouseMiddleUp(..) => EventCategory::Mouse,
             Self::MouseIn(..) => EventCategory::Mouse,
             Self::MouseOut(..) => EventCategory::Mouse,
             Self::Scroll(..) => EventCategory::Mouse,

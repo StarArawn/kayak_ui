@@ -38,7 +38,7 @@ impl Default for KEvent {
         Self {
             target: Entity::from_raw(0),
             current_target: Entity::from_raw(0),
-            event_type: EventType::Click(CursorEvent::default()),
+            event_type: EventType::LeftClick(CursorEvent::default()),
             should_propagate: true,
             default_prevented: false,
             on_change_systems: Vec::new(),
@@ -71,9 +71,11 @@ impl KEvent {
     pub fn stop_propagation(&mut self) {
         if matches!(
             self.event_type,
-            EventType::Click(..)
+            EventType::LeftClick(..)
+                | EventType::RightClick(..)
                 | EventType::MouseIn(..)
-                | EventType::MouseDown(..)
+                | EventType::MouseLeftDown(..)
+                | EventType::MouseRightDown(..)
                 | EventType::Scroll(..)
                 | EventType::Focus
                 | EventType::Hover(..)
@@ -110,18 +112,24 @@ impl KEvent {
 /// with a custom wrapper.
 #[derive(Debug, Clone, Copy)]
 pub enum EventType {
-    /// An event that occurs when the user clicks a widget
-    Click(CursorEvent),
+    /// An event that occurs when the user left clicks a widget
+    LeftClick(CursorEvent),
+    /// An event that occurs when the user right clicks a widget
+    RightClick(CursorEvent),
     /// An event that occurs when the user hovers the cursor over a widget
     Hover(CursorEvent),
     /// An event that occurs when the user moves the cursor into a widget
     MouseIn(CursorEvent),
     /// An event that occurs when the user moves the cursor out of a widget
     MouseOut(CursorEvent),
-    /// An event that occurs when the user presses down on the cursor over a widget
-    MouseDown(CursorEvent),
-    /// An event that occurs when the user releases the cursor over a widget
-    MouseUp(CursorEvent),
+    /// An event that occurs when the user presses left mouse button over a widget
+    MouseLeftDown(CursorEvent),
+    /// An event that occurs when the user releases left mouse button over a widget
+    MouseLeftUp(CursorEvent),
+    /// An event that occurs when the user presses right mouse button over a widget
+    MouseRightDown(CursorEvent),
+    /// An event that occurs when the user releases right mouse button over a widget
+    MouseRightUp(CursorEvent),
     /// An event that occurs when the user scrolls over a widget
     Scroll(ScrollEvent),
     /// An event that occurs when a widget receives focus
@@ -172,9 +180,12 @@ impl EventType {
         match self {
             // Propagates
             Self::Hover(..) => true,
-            Self::Click(..) => true,
-            Self::MouseDown(..) => true,
-            Self::MouseUp(..) => true,
+            Self::LeftClick(..) => true,
+            Self::RightClick(..) => true,
+            Self::MouseLeftDown(..) => true,
+            Self::MouseLeftUp(..) => true,
+            Self::MouseRightDown(..) => true,
+            Self::MouseRightUp(..) => true,
             Self::Scroll(..) => true,
             Self::CharInput { .. } => true,
             Self::KeyUp(..) => true,
@@ -192,9 +203,12 @@ impl EventType {
         match self {
             // Mouse
             Self::Hover(..) => EventCategory::Mouse,
-            Self::Click(..) => EventCategory::Mouse,
-            Self::MouseDown(..) => EventCategory::Mouse,
-            Self::MouseUp(..) => EventCategory::Mouse,
+            Self::LeftClick(..) => EventCategory::Mouse,
+            Self::RightClick(..) => EventCategory::Mouse,
+            Self::MouseLeftDown(..) => EventCategory::Mouse,
+            Self::MouseLeftUp(..) => EventCategory::Mouse,
+            Self::MouseRightDown(..) => EventCategory::Mouse,
+            Self::MouseRightUp(..) => EventCategory::Mouse,
             Self::MouseIn(..) => EventCategory::Mouse,
             Self::MouseOut(..) => EventCategory::Mouse,
             Self::Scroll(..) => EventCategory::Mouse,

@@ -207,7 +207,7 @@ pub fn scroll_bar_render(
                           mut query: Query<&mut ScrollContext>| {
                         if let Ok(mut scroll_context) = query.get_mut(context_entity) {
                             match event.event_type {
-                                EventType::MouseDown(data) => {
+                                EventType::MouseLeftDown(data) => {
                                     // --- Capture Cursor --- //
                                     event_dispatcher_context.capture_cursor(event.current_target);
                                     scroll_context.start_pos = data.position.into();
@@ -257,7 +257,7 @@ pub fn scroll_bar_render(
                                     };
                                     scroll_context.start_offset = offset.into();
                                 }
-                                EventType::MouseUp(..) => {
+                                EventType::MouseLeftUp(..) => {
                                     // --- Release Cursor --- //
                                     event_dispatcher_context.release_cursor(event.current_target);
                                     scroll_context.is_dragging = false;

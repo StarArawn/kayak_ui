@@ -107,7 +107,7 @@ fn update_theme_button(
                             query: Query<&ThemeButton>,
                             mut context_query: Query<&mut Theme>,
                             | {
-                                if let EventType::Click(..) = event.event_type {
+                                if let EventType::LeftClick(..) = event.event_type {
                                     if let Ok(button) = query.get(theme_button_entity) {
                                         if let Ok(mut context_theme) = context_query.get_mut(theme_context_entity) {
                                             *context_theme = button.theme.clone();

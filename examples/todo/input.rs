@@ -50,7 +50,7 @@ pub fn render_todo_input(
 
     let handle_click = OnEvent::new(
         move |In(_entity): In<Entity>, event: Res<KEvent>, mut todo_list: ResMut<TodoList>| {
-            if let EventType::Click(..) = event.event_type {
+            if let EventType::LeftClick(..) = event.event_type {
                 if !todo_list.new_item.is_empty() {
                     let value = todo_list.new_item.clone();
                     todo_list.items.push(value);

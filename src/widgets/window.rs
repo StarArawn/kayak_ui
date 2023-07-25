@@ -233,7 +233,7 @@ pub fn window_render(
                                             event.prevent_default();
                                             event.stop_propagation();
                                             match event.event_type {
-                                                EventType::MouseLeftDown(data) => {
+                                                EventType::MouseDown(data) => {
                                                     event_dispatcher_context.capture_cursor(entity);
                                                     window.is_dragging = true;
                                                     window.offset = Vec2::new(
@@ -241,7 +241,7 @@ pub fn window_render(
                                                         window.position.y - data.position.1,
                                                     );
                                                 }
-                                                EventType::MouseLeftUp(..) => {
+                                                EventType::MouseUp(..) => {
                                                     event_dispatcher_context.release_cursor(entity);
                                                     window.is_dragging = false;
                                                 }

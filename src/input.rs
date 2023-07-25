@@ -69,7 +69,7 @@ pub(crate) fn process_events(world: &mut World) {
             }
 
             for event in custom_event_mouse_button.0.iter(&mouse_button_input_events) {
-                match event.button{
+                   match event.button{
                     MouseButton::Left => {                    //MouseButton::Other(_) => todo!(),
                         if event.state == ButtonState::Pressed {
                             input_events.push(InputEvent::MouseLeftPress);
@@ -92,7 +92,7 @@ pub(crate) fn process_events(world: &mut World) {
                         }
                     },
                     _ => ()
-                }
+                   }
             }
 
             for MouseWheel { x, y, unit } in custom_event_mouse_wheel.0.iter(&mouse_wheel_events) {

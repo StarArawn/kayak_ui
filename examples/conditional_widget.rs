@@ -54,7 +54,7 @@ fn my_widget_render(
                             mut query: Query<&mut MyWidgetState>| {
                             event.prevent_default();
                             event.stop_propagation();
-                            if let EventType::LeftClick(..) = event.event_type {
+                            if let EventType::Click(..) = event.event_type {
                                 if let Ok(mut state) = query.get_mut(state_entity) {
                                     state.show_window = true;
                                 }
@@ -79,7 +79,7 @@ fn my_widget_render(
                                     move |In(_entity): In<Entity>,
                                     mut event: ResMut<KEvent>,
                                         mut query: Query<&mut MyWidgetState>| {
-                                        if let EventType::LeftClick(..) = event.event_type {
+                                        if let EventType::Click(..) = event.event_type {
                                             event.prevent_default();
                                             event.stop_propagation();
                                             if let Ok(mut state) = query.get_mut(state_entity) {

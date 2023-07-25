@@ -60,7 +60,7 @@ fn current_count_render(
                         move |In(_entity): In<Entity>,
                         mut event: ResMut<KEvent>,
                             mut query: Query<&mut CurrentCountState>| {
-                            if let EventType::LeftClick(..) = event.event_type {
+                            if let EventType::Click(..) = event.event_type {
                                 event.prevent_default();
                                 event.stop_propagation();
                                 if let Ok(mut current_count) = query.get_mut(state_entity) {

@@ -1,4 +1,5 @@
-use bevy::reflect::{FromReflect, Reflect};
+use bevy::{reflect::{FromReflect, Reflect} };
+use bevy::prelude::MouseButton;
 
 /// Controls how the cursor interacts on a given node
 #[derive(Debug, Reflect, FromReflect, Copy, Clone, PartialEq, Eq)]
@@ -19,12 +20,27 @@ impl Default for PointerEvents {
     }
 }
 
-#[derive(Default, Debug, Copy, Clone, PartialEq)]
+
+#[derive(   Debug, Copy, Clone, PartialEq)]
 pub struct CursorEvent {
     pub pressed: bool,
     pub just_pressed: bool,
     pub just_released: bool,
     pub position: (f32, f32),
+    pub mouse_button: MouseButton
+}
+
+
+impl Default for CursorEvent {
+    fn default() -> Self {
+        Self{ 
+            pressed: Default::default(),
+            just_pressed: Default::default(),
+            just_released: Default::default(),
+            position: Default::default(),
+            mouse_button: MouseButton::Left
+         }
+    }
 }
 
 /// An event created on scroll

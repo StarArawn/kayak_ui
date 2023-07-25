@@ -186,7 +186,7 @@ fn startup(
         move |In(_entity): In<Entity>,
               event: Res<KEvent>,
               mut active_color: ResMut<ActiveColor>| {
-            if let EventType::LeftClick(..) = event.event_type {
+            if let EventType::Click(..) = event.event_type {
                 active_color.index = (active_color.index + 1) % COLORS.len();
             }
         },

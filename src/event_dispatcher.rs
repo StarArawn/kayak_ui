@@ -2,6 +2,7 @@ use bevy::{
     prelude::{Component, Entity, KeyCode, Resource, World},
     utils::{HashMap, HashSet},
 };
+use bevy::prelude::MouseButton;
 
 use crate::{
     context::KayakRootContext,
@@ -85,9 +86,9 @@ impl EventDispatcher {
         }
     }
 
-    /// Returns whether the left mouse is currently pressed or not
+    /// Returns whether the mouse is currently pressed or not
     #[allow(dead_code)]
-    pub fn is_left_mouse_pressed(&self) -> bool {
+     pub fn is_left_mouse_pressed(&self) -> bool {
         self.is_left_mouse_pressed
     }
 
@@ -292,35 +293,49 @@ impl EventDispatcher {
                 self.execute_default(event, context, world);
             }
         }
+        
+        
+    
 
         // === Maintain Events === //
         // Events that need to be maintained without re-firing between event updates should be managed here
         for (index, events) in &self.previous_events {
-            // Mouse is currently pressed for this node
-            if self.is_left_mouse_pressed && events.contains(&EventType::MouseLeftDown(Default::default())) {
-                // Make sure this event isn't removed while mouse is still held down
-                Self::insert_event(
-                    &mut next_events,
-                    index,
-                    EventType::MouseLeftDown(Default::default()),
-                );
+            
+            let existing_mouse_down_event_option = events.get(  &EventType::MouseDown(CursorEvent::default() )  );
+            
+            if let Some(existing_mouse_down_event) = existing_mouse_down_event_option {
+                 
+                 if self.is_left_mouse_pressed  {
+                    // Make sure this event isn't removed while mouse is stil l held down
+                    Self::insert_event(
+                        &mut next_events,
+                        index,
+                        existing_mouse_down_event.clone(),
+                    );
+                }
+                
+                 if self.is_right_mouse_pressed  {
+                    // Make sure this event isn't removed while mouse is still held down
+                    Self::insert_event(
+                        &mut next_events,
+                        index,
+                        existing_mouse_down_event.clone(),
+                    );
+                }
+                
+                 if self.is_middle_mouse_pressed  {
+                    // Make sure this event isn't removed while mouse is still held down
+                    Self::insert_event(
+                        &mut next_events,
+                        index,
+                        existing_mouse_down_event.clone(),
+                    );
+                }
+                
+                
             }
-            if self.is_right_mouse_pressed && events.contains(&EventType::MouseRightDown(Default::default())) {
-                // Make sure this event isn't removed while mouse is still held down
-                Self::insert_event(
-                    &mut next_events,
-                    index,
-                    EventType::MouseRightDown(Default::default()),
-                );
-            }
-            if self.is_middle_mouse_pressed && events.contains(&EventType::MouseMiddleDown(Default::default())) {
-                // Make sure this event isn't removed while mouse is still held down
-                Self::insert_event(
-                    &mut next_events,
-                    index,
-                    EventType::MouseMiddleDown(Default::default()),
-                );
-            }
+            
+          
 
             // Mouse is currently within this node
             if events.contains(&EventType::MouseIn(Default::default()))
@@ -380,8 +395,23 @@ impl EventDispatcher {
                     // Reset next global mouse position
                     self.next_mouse_position = *point;
                 }
-
-                match input_event{
+                    
+                  
+                      
+                /*if matches!(input_event, InputEvent::MouseLeftPress) {
+                    // Reset next global mouse pressed
+                    self.next_left_mouse_pressed = true;
+                    break;
+                } else if matches!(input_event, InputEvent::MouseLeftRelease) {
+                    // Reset next global mouse pressed
+                    self.next_left_mouse_pressed = false;
+                    // Reset global cursor container
+                    self.has_cursor = None;
+                    break;
+                }*/
+                
+                
+                 match input_event{
                     InputEvent::MouseMoved(point) => {
                         self.next_mouse_position = *point;
                     },
@@ -407,7 +437,9 @@ impl EventDispatcher {
                         self.has_cursor = None;
                     },
                     _ => ()
-                }
+                 }
+                    
+                
             }
 
             // === Mouse Events === //
@@ -590,7 +622,7 @@ impl EventDispatcher {
         match input_event {
             InputEvent::MouseMoved(point) => {
                 if let Some(layout) = context.get_layout(&node) {
-                    let cursor_event = self.get_cursor_event(*point);
+                    let cursor_event = self.get_cursor_event(*point, MouseButton::Left );
                     let was_contained = layout.contains(&self.current_mouse_position);
                     let is_contained = layout.contains(point);
                     if !ignore_layout && was_contained != is_contained {
@@ -645,12 +677,13 @@ impl EventDispatcher {
             InputEvent::MouseLeftPress => {
                 if let Some(layout) = context.get_layout(&node) {
                     if ignore_layout || layout.contains(&self.current_mouse_position) {
-                        let cursor_event = self.get_cursor_event(self.current_mouse_position);
+                        let cursor_event = self.get_cursor_event(self.current_mouse_position,MouseButton::Left);
+                        // event_stream.push(Event::new(node.0, EventType::MouseDown(cursor_event)));
                         Self::update_state(
                             states,
                             (node, depth),
                             &layout,
-                            EventType::MouseLeftDown(cursor_event),
+                            EventType::MouseDown(cursor_event),
                         );
 
                         if world.get::<Focusable>(node.0).is_some() {
@@ -671,12 +704,12 @@ impl EventDispatcher {
             InputEvent::MouseRightPress => {
                 if let Some(layout) = context.get_layout(&node) {
                     if ignore_layout || layout.contains(&self.current_mouse_position) {
-                        let cursor_event = self.get_cursor_event(self.current_mouse_position);
+                        let cursor_event = self.get_cursor_event(self.current_mouse_position, MouseButton::Right );
                         Self::update_state(
                             states,
                             (node, depth),
                             &layout,
-                            EventType::MouseRightDown(cursor_event),
+                            EventType::MouseDown(cursor_event),
                         );
 
                         if world.get::<Focusable>(node.0).is_some() {
@@ -697,12 +730,12 @@ impl EventDispatcher {
             InputEvent::MouseMiddlePress => {
                 if let Some(layout) = context.get_layout(&node) {
                     if ignore_layout || layout.contains(&self.current_mouse_position) {
-                        let cursor_event = self.get_cursor_event(self.current_mouse_position);
+                        let cursor_event = self.get_cursor_event(self.current_mouse_position,  MouseButton::Middle );
                         Self::update_state(
                             states,
                             (node, depth),
                             &layout,
-                            EventType::MouseMiddleDown(cursor_event),
+                            EventType::MouseDown(cursor_event),
                         );
 
                         if world.get::<Focusable>(node.0).is_some() {
@@ -723,25 +756,26 @@ impl EventDispatcher {
             InputEvent::MouseLeftRelease => {
                 if let Some(layout) = context.get_layout(&node) {
                     if ignore_layout || layout.contains(&self.current_mouse_position) {
-                        let cursor_event = self.get_cursor_event(self.current_mouse_position);
+                        let cursor_event = self.get_cursor_event(self.current_mouse_position, MouseButton::Left  );
+                        // event_stream.push(Event::new(node.0, EventType::MouseUp(cursor_event)));
                         Self::update_state(
                             states,
                             (node, depth),
                             &layout,
-                            EventType::MouseLeftUp(cursor_event),
+                            EventType::MouseUp(cursor_event),
                         );
                         // self.last_clicked.set(node);
 
                         if Self::contains_event(
                             &self.previous_events,
                             &node,
-                            &EventType::MouseLeftDown(cursor_event),
+                             &EventType::MouseDown(cursor_event),
                         ) {
                             Self::update_state(
                                 states,
                                 (node, depth),
                                 &layout,
-                                EventType::LeftClick(cursor_event),
+                                EventType::Click(cursor_event),
                             );
                         }
                     }
@@ -750,24 +784,24 @@ impl EventDispatcher {
             InputEvent::MouseRightRelease => {
                 if let Some(layout) = context.get_layout(&node) {
                     if ignore_layout || layout.contains(&self.current_mouse_position) {
-                        let cursor_event = self.get_cursor_event(self.current_mouse_position);
+                        let cursor_event = self.get_cursor_event(self.current_mouse_position, MouseButton::Right );
                         Self::update_state(
                             states,
                             (node, depth),
                             &layout,
-                            EventType::MouseRightUp(cursor_event),
+                            EventType::MouseUp(cursor_event),
                         );
 
                         if Self::contains_event(
                             &self.previous_events,
                             &node,
-                            &EventType::MouseRightDown(cursor_event),
+                            &EventType::MouseDown(cursor_event),
                         ) {
                             Self::update_state(
                                 states,
                                 (node, depth),
                                 &layout,
-                                EventType::RightClick(cursor_event),
+                                EventType::Click(cursor_event),
                             );
                         }
                     }
@@ -776,24 +810,24 @@ impl EventDispatcher {
             InputEvent::MouseMiddleRelease => {
                 if let Some(layout) = context.get_layout(&node) {
                     if ignore_layout || layout.contains(&self.current_mouse_position) {
-                        let cursor_event = self.get_cursor_event(self.current_mouse_position);
+                        let cursor_event = self.get_cursor_event(self.current_mouse_position, MouseButton::Middle );
                         Self::update_state(
                             states,
                             (node, depth),
                             &layout,
-                            EventType::MouseMiddleUp(cursor_event),
+                            EventType::MouseUp(cursor_event),
                         );
 
                         if Self::contains_event(
                             &self.previous_events,
                             &node,
-                            &EventType::MouseMiddleDown(cursor_event),
+                            &EventType::MouseDown(cursor_event),
                         ) {
                             Self::update_state(
                                 states,
                                 (node, depth),
                                 &layout,
-                                EventType::MiddleClick(cursor_event),
+                                  EventType::Click(cursor_event),
                             );
                         }
                     }
@@ -832,7 +866,7 @@ impl EventDispatcher {
         pointer_events
     }
 
-    fn get_cursor_event(&self, position: (f32, f32)) -> CursorEvent {
+    fn get_cursor_event(&self, position: (f32, f32), mouse_button:MouseButton) -> CursorEvent {
         let change = (self.next_left_mouse_pressed != self.is_left_mouse_pressed) | (self.next_right_mouse_pressed != self.is_right_mouse_pressed);
         let pressed = self.next_left_mouse_pressed | self.next_right_mouse_pressed;
         CursorEvent {
@@ -840,6 +874,7 @@ impl EventDispatcher {
             pressed,
             just_pressed: change && pressed,
             just_released: change && !pressed,
+            mouse_button
         }
     }
 

@@ -77,10 +77,12 @@ type WidgetSystems = HashMap<
 ///
 /// fn main() {
 ///     App::new()
-///     .add_plugins(DefaultPlugins)
-///     .add_plugin(ContextPlugin)
-///     .add_plugin(KayakWidgets)
-///     .add_startup_system(setup);
+///     .add_plugins((
+///         DefaultPlugins,
+///         KayakContextPlugin,
+///         KayakWidgets
+///     ))
+///     .add_systems(Startup, setup);
 /// }
 /// ```
 #[derive(Component)]

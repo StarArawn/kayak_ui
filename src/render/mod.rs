@@ -156,7 +156,7 @@ pub fn update_opacity_layer_cameras(
                 WindowRef::Primary => primary_window.get_single().unwrap(),
             };
             if let Ok(camera_window) = windows.get(window_entity) {
-                opacity_layers.add_or_update(&camera_entity, &camera, camera_window, &mut images);
+                opacity_layers.add_or_update(&camera_entity, camera, camera_window, &mut images);
             }
         }
     }

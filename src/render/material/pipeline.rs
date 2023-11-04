@@ -28,10 +28,11 @@ use kayak_font::bevy::FontTextureCache;
 use std::hash::Hash;
 use std::marker::PhantomData;
 
+#[cfg(feature = "svg")]
+use crate::render::svg::RenderSvgs;
 use crate::render::{
     extract::UIExtractedView,
     opacity_layer::OpacityLayerManager,
-    svg::RenderSvgs,
     ui_pass::{TransparentOpacityUI, TransparentUI},
     unified::pipeline::{
         queue_quads_inner, DrawUIDraw, ExtractedQuad, ImageBindGroups, PreviousClip, PreviousIndex,
@@ -300,7 +301,7 @@ impl<P: PhaseItem, M: MaterialUI, const I: usize> RenderCommand<P> for SetMateri
 }
 
 pub fn queue_material_ui_quads<M: MaterialUI>(
-    render_svgs: Res<RenderSvgs>,
+    #[cfg(feature = "svg")] render_svgs: Res<RenderSvgs>,
     opacity_layers: Res<OpacityLayerManager>,
     mut commands: Commands,
     draw_functions: Res<DrawFunctions<TransparentUI>>,
@@ -391,6 +392,7 @@ pub fn queue_material_ui_quads<M: MaterialUI>(
                     &mut image_bind_groups,
                     &gpu_images,
                     &quad_pipeline,
+                    #[cfg(feature = "svg")]
                     &render_svgs,
                     &mut transparent_phase,
                     &mut opacity_transparent_phase,

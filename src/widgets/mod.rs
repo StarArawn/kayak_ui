@@ -22,17 +22,20 @@
 
 use bevy::prelude::*;
 
+#[cfg(feature = "svg")]
 mod accordion;
 mod app;
 mod background;
 mod button;
 mod clip;
 mod element;
+#[cfg(feature = "svg")]
 mod icons;
 mod image;
 mod modal;
 mod nine_patch;
 mod scroll;
+#[cfg(feature = "svg")]
 mod svg;
 mod text;
 mod text_box;
@@ -41,12 +44,14 @@ mod transition;
 mod window;
 mod window_context_provider;
 
+#[cfg(feature = "svg")]
 pub use accordion::*;
 pub use app::{KayakApp, KayakAppBundle};
 pub use background::{Background, BackgroundBundle};
 pub use button::{ButtonState, KButton, KButtonBundle};
 pub use clip::{Clip, ClipBundle};
 pub use element::{Element, ElementBundle};
+#[cfg(feature = "svg")]
 pub use icons::*;
 pub use image::{KImage, KImageBundle};
 pub use modal::{Modal, ModalBundle};
@@ -59,6 +64,7 @@ pub use scroll::{
         ScrollContext, ScrollContextProvider, ScrollContextProviderBundle, ScrollMode,
     },
 };
+#[cfg(feature = "svg")]
 pub use svg::{KSvg, KSvgBundle, Svg};
 pub use text::{TextProps, TextWidgetBundle};
 pub use text_box::{TextBoxBundle, TextBoxProps, TextBoxState};
@@ -83,6 +89,7 @@ use scroll::{
     scroll_bar::scroll_bar_render, scroll_box::scroll_box_render,
     scroll_content::scroll_content_render, scroll_context::scroll_context_render,
 };
+#[cfg(feature = "svg")]
 use svg::svg_render;
 use text::text_render;
 use text_box::text_box_render;
@@ -101,6 +108,7 @@ pub struct KayakWidgets;
 
 impl Plugin for KayakWidgets {
     fn build(&self, app: &mut bevy::prelude::App) {
+        #[cfg(feature = "svg")]
         app.add_plugins(icons::IconsPlugin);
         app.add_systems(
             PostUpdate,
@@ -114,6 +122,7 @@ pub struct KayakWidgetsContextPlugin;
 
 impl KayakUIPlugin for KayakWidgetsContextPlugin {
     fn build(&self, context: &mut KayakRootContext) {
+        #[cfg(feature = "svg")]
         context.add_plugin(AccordionPlugin);
         context.add_widget_data::<KayakApp, EmptyState>();
         context.add_widget_data::<KButton, ButtonState>();
@@ -125,6 +134,7 @@ impl KayakUIPlugin for KayakWidgetsContextPlugin {
         context.add_widget_data::<KImage, EmptyState>();
         context.add_widget_data::<TextureAtlasProps, EmptyState>();
         context.add_widget_data::<NinePatch, EmptyState>();
+        #[cfg(feature = "svg")]
         context.add_widget_data::<KSvg, EmptyState>();
         context.add_widget_data::<Element, EmptyState>();
         context.add_widget_data::<ScrollBarProps, EmptyState>();
@@ -181,6 +191,7 @@ impl KayakUIPlugin for KayakWidgetsContextPlugin {
             widget_update::<NinePatch, EmptyState>,
             nine_patch_render,
         );
+        #[cfg(feature = "svg")]
         context.add_widget_system(
             KSvg::default().get_name(),
             widget_update::<KSvg, EmptyState>,

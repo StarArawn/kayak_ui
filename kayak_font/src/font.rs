@@ -2,6 +2,7 @@ use std::collections::HashMap;
 
 #[cfg(feature = "bevy_renderer")]
 use bevy::{
+    asset::Asset,
     prelude::Handle,
     reflect::{TypePath, TypeUuid},
     render::texture::Image,
@@ -14,7 +15,7 @@ use crate::{
 };
 
 #[cfg(feature = "bevy_renderer")]
-#[derive(Debug, Clone, TypeUuid, TypePath, PartialEq)]
+#[derive(Asset, Debug, Clone, TypeUuid, TypePath, PartialEq)]
 #[uuid = "4fe4732c-6731-49bb-bafc-4690d636b848"]
 pub struct KayakFont {
     pub sdf: Sdf,

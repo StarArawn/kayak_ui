@@ -1,14 +1,18 @@
 use std::marker::PhantomData;
 
-use bevy::asset::HandleId;
+use bevy::asset::{AssetServer, HandleId};
 use bevy::ecs::query::ROQueryItem;
 use bevy::ecs::system::{SystemParam, SystemParamItem};
-use bevy::prelude::{Commands, Mesh, Rect, Resource, Vec3, With};
+use bevy::prelude::{Commands, Rect, Resource, With};
 use bevy::render::globals::{GlobalsBuffer, GlobalsUniform};
+
+#[cfg(feature = "svg")]
+use bevy::prelude::{Mesh, Vec3};
+#[cfg(feature = "svg")]
 use bevy::render::mesh::VertexAttributeValues;
+
 use bevy::render::render_phase::{
-    BatchedPhaseItem, DrawFunctionId, PhaseItem, RenderCommand, RenderCommandResult,
-    SetItemPipeline,
+    DrawFunctionId, PhaseItem, RenderCommand, RenderCommandResult, SetItemPipeline,
 };
 use bevy::render::render_resource::{
     CachedRenderPipelineId, DynamicUniformBuffer, ShaderType, SpecializedRenderPipeline,
@@ -40,19 +44,21 @@ use bevy::{
     },
     utils::HashMap,
 };
+#[cfg(feature = "svg")]
 use bevy_svg::prelude::Svg;
 use bytemuck::{Pod, Zeroable};
 use kayak_font::{bevy::FontTextureCache, KayakFont};
 
-use super::UNIFIED_SHADER_HANDLE;
 use crate::prelude::Corner;
 use crate::render::extract::{UIExtractedView, UIViewUniform, UIViewUniformOffset, UIViewUniforms};
 use crate::render::opacity_layer::OpacityLayerManager;
+#[cfg(feature = "svg")]
 use crate::render::svg::RenderSvgs;
 use crate::render::ui_pass::{TransparentOpacityUI, TransparentUI, TransparentUIGeneric};
 
 #[derive(Resource, Clone)]
 pub struct UnifiedPipeline {
+    pub unified_shader: Handle<Shader>,
     pub view_layout: BindGroupLayout,
     pub types_layout: BindGroupLayout,
     pub image_layout: BindGroupLayout,
@@ -87,6 +93,9 @@ pub struct UnifiedPipelineKey {
 impl FromWorld for UnifiedPipeline {
     fn from_world(world: &mut World) -> Self {
         let world = world.cell();
+        let asset_server = world.resource::<AssetServer>();
+        let unified_shader =
+            asset_server.load("embedded://kayak_ui/render/unified/shaders/shader.wgsl");
         let render_device = world.resource::<RenderDevice>();
 
         let view_layout = render_device.create_bind_group_layout(&BindGroupLayoutDescriptor {
@@ -235,6 +244,7 @@ impl FromWorld for UnifiedPipeline {
         });
 
         UnifiedPipeline {
+            unified_shader,
             view_layout,
             empty_font_texture,
             types_layout,
@@ -277,13 +287,13 @@ impl SpecializedRenderPipeline for UnifiedPipeline {
 
         RenderPipelineDescriptor {
             vertex: VertexState {
-                shader: UNIFIED_SHADER_HANDLE.typed::<Shader>(),
+                shader: self.unified_shader.clone(),
                 entry_point: "vertex".into(),
                 shader_defs: vec![],
                 buffers: vec![vertex_buffer_layout],
             },
             fragment: Some(FragmentState {
-                shader: UNIFIED_SHADER_HANDLE.typed::<Shader>(),
+                shader: self.unified_shader.clone(),
                 shader_defs: vec![],
                 entry_point: "fragment".into(),
                 targets: vec![Some(ColorTargetState {
@@ -361,6 +371,7 @@ pub struct ExtractedQuad {
     pub image: Option<Handle<Image>>,
     pub uv_min: Option<Vec2>,
     pub uv_max: Option<Vec2>,
+    #[cfg(feature = "svg")]
     pub svg_handle: (Option<Handle<Svg>>, Option<Color>),
     pub opacity_layer: u32,
 }
@@ -380,6 +391,7 @@ impl Default for ExtractedQuad {
             image: Default::default(),
             uv_min: Default::default(),
             uv_max: Default::default(),
+            #[cfg(feature = "svg")]
             svg_handle: Default::default(),
             opacity_layer: 0,
         }
@@ -569,6 +581,7 @@ pub struct PreviousIndex {
 
 #[derive(SystemParam)]
 pub struct QueueQuads<'w, 's> {
+    #[cfg(feature = "svg")]
     render_svgs: Res<'w, RenderSvgs>,
     opacity_layers: Res<'w, OpacityLayerManager>,
     commands: Commands<'w, 's>,
@@ -601,6 +614,7 @@ pub struct QueueQuads<'w, 's> {
 
 pub fn queue_quads(queue_quads: QueueQuads) {
     let QueueQuads {
+        #[cfg(feature = "svg")]
         render_svgs,
         opacity_layers,
         mut commands,
@@ -681,6 +695,7 @@ pub fn queue_quads(queue_quads: QueueQuads) {
                 &mut image_bind_groups,
                 &gpu_images,
                 &unified_pipeline,
+                #[cfg(feature = "svg")]
                 &render_svgs,
                 &mut transparent_phase,
                 &mut opacity_transparent_phase,
@@ -709,7 +724,7 @@ pub fn queue_quads_inner(
     image_bind_groups: &mut ImageBindGroups,
     gpu_images: &RenderAssets<Image>,
     unified_pipeline: &UnifiedPipeline,
-    render_svgs: &RenderSvgs,
+    #[cfg(feature = "svg")] render_svgs: &RenderSvgs,
     transparent_phase: &mut RenderPhase<TransparentUI>,
     opacity_transparent_phase: &mut RenderPhase<TransparentOpacityUI>,
     draw_opacity_quad: DrawFunctionId,
@@ -908,6 +923,7 @@ pub fn queue_quads_inner(
     let item_start = *index;
     let mut item_end = *index;
 
+    #[cfg(feature = "svg")]
     if let (Some(svg_handle), color) = (quad.svg_handle.0.as_ref(), quad.svg_handle.1.as_ref()) {
         if let Some((svg, mesh)) = render_svgs.get(svg_handle) {
             let new_height = (svg.view_box.h as f32 / svg.view_box.w as f32) * sprite_rect.size().x;
@@ -956,7 +972,12 @@ pub fn queue_quads_inner(
             *index += indices.len() as u32;
             item_end = *index;
         }
-    } else {
+    }
+    #[cfg(not(feature = "svg"))]
+    let no_svg = true;
+    #[cfg(feature = "svg")]
+    let no_svg = quad.svg_handle.0.is_some();
+    if no_svg {
         let color = quad.color.as_linear_rgba_f32();
 
         let uv_min = quad.uv_min.unwrap_or(Vec2::ZERO);
@@ -1096,7 +1117,7 @@ pub struct DrawUIDraw<T> {
     phantom: PhantomData<T>,
 }
 
-impl<T: PhaseItem + TransparentUIGeneric + BatchedPhaseItem> RenderCommand<T> for DrawUIDraw<T> {
+impl<T: PhaseItem + TransparentUIGeneric> RenderCommand<T> for DrawUIDraw<T> {
     type Param = (SRes<QuadMeta>, SRes<UnifiedPipeline>, SRes<ImageBindGroups>);
 
     type ViewWorldQuery = Read<UIExtractedView>;

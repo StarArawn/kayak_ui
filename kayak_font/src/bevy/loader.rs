@@ -1,28 +1,34 @@
 use crate::{ImageType, KayakFont, Sdf};
-use bevy::asset::{AssetLoader, AssetPath, BoxedFuture, LoadContext, LoadedAsset};
+use bevy::asset::{io::Reader, AssetLoader, BoxedFuture, LoadContext};
+use futures_lite::AsyncReadExt;
 
 #[derive(Default)]
 pub struct KayakFontLoader;
 
 impl AssetLoader for KayakFontLoader {
+    type Settings = ();
+    type Error = std::io::Error;
+    type Asset = KayakFont;
+
     fn load<'a>(
         &'a self,
-        bytes: &'a [u8],
+        reader: &'a mut Reader,
+        _settings: &'a Self::Settings,
         load_context: &'a mut LoadContext,
-    ) -> BoxedFuture<'a, Result<(), anyhow::Error>> {
+    ) -> BoxedFuture<'a, Result<Self::Asset, Self::Error>> {
         Box::pin(async move {
             let path = load_context.path();
             let path = path.with_extension("png");
-            let atlas_image_path = AssetPath::new(path, None);
+
+            let mut bytes = Vec::new();
+            reader.read_to_end(&mut bytes).await?;
+
             let font = KayakFont::new(
-                Sdf::from_bytes(bytes),
-                ImageType::Atlas(load_context.get_handle(atlas_image_path.clone())),
+                Sdf::from_bytes(&bytes),
+                ImageType::Atlas(load_context.load(path)),
             );
 
-            let asset = LoadedAsset::new(font).with_dependency(atlas_image_path);
-            load_context.set_default_asset(asset);
-
-            Ok(())
+            Ok(font)
         })
     }
 

@@ -4,7 +4,7 @@ use bevy::ecs::prelude::*;
 use bevy::prelude::{Color, Image};
 use bevy::render::render_asset::RenderAssets;
 use bevy::render::render_phase::{
-    BatchedPhaseItem, CachedRenderPipelinePhaseItem, DrawFunctionId, DrawFunctions, PhaseItem,
+    CachedRenderPipelinePhaseItem, DrawFunctionId, DrawFunctions, PhaseItem,
 };
 use bevy::render::render_resource::{CachedRenderPipelineId, RenderPassColorAttachment};
 use bevy::render::{
@@ -75,16 +75,6 @@ impl PhaseItem for TransparentUI {
     }
 }
 
-impl BatchedPhaseItem for TransparentUI {
-    fn batch_range(&self) -> &Option<Range<u32>> {
-        &self.batch_range
-    }
-
-    fn batch_range_mut(&mut self) -> &mut Option<Range<u32>> {
-        &mut self.batch_range
-    }
-}
-
 impl CachedRenderPipelinePhaseItem for TransparentUI {
     #[inline]
     fn cached_pipeline(&self) -> CachedRenderPipelineId {
@@ -137,16 +127,6 @@ impl PhaseItem for TransparentOpacityUI {
 
     fn entity(&self) -> Entity {
         self.entity
-    }
-}
-
-impl BatchedPhaseItem for TransparentOpacityUI {
-    fn batch_range(&self) -> &Option<Range<u32>> {
-        &self.batch_range
-    }
-
-    fn batch_range_mut(&mut self) -> &mut Option<Range<u32>> {
-        &mut self.batch_range
     }
 }
 

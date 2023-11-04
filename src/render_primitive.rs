@@ -1,12 +1,14 @@
 use bevy::prelude::*;
 use kayak_font::KayakFont;
 
+#[cfg(feature = "svg")]
+use crate::styles::StyleProp;
 use crate::{
     render::{
         font::FontMapping,
         unified::pipeline::{ExtractedQuad, ExtractedQuads, UIQuadType},
     },
-    styles::{Corner, KStyle, RenderCommand, StyleProp},
+    styles::{Corner, KStyle, RenderCommand},
 };
 
 pub trait RenderPrimitive {
@@ -206,6 +208,7 @@ impl RenderPrimitive for KStyle {
                     extracted_quads.quads.extend(nines);
                 }
             }
+            #[cfg(feature = "svg")]
             RenderCommand::Svg { handle } => {
                 let svgs = crate::render::svg::extract_svg(
                     camera_entity,

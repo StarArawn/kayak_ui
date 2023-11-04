@@ -4,7 +4,7 @@ use bevy::{
         camera::RenderTarget,
         render_asset::RenderAssets,
         render_graph::{RenderGraph, RunGraphOnViewNode},
-        render_phase::{batch_phase_system, sort_phase_system, DrawFunctions, RenderPhase},
+        render_phase::{DrawFunctions, RenderPhase},
         Extract, ExtractSchedule, Render, RenderApp, RenderSet,
     },
     window::{PrimaryWindow, Window, WindowRef},
@@ -28,6 +28,7 @@ pub mod material;
 pub(crate) mod nine_patch;
 mod opacity_layer;
 pub(crate) mod quad;
+#[cfg(feature = "svg")]
 pub(crate) mod svg;
 pub(crate) mod texture_atlas;
 mod ui_pass;
@@ -62,15 +63,6 @@ impl Plugin for BevyKayakUIRenderPlugin {
                 prepare_opacity_layers
                     .in_set(RenderSet::Queue)
                     .before(unified::pipeline::queue_quads),
-            )
-            .add_systems(
-                Render,
-                (
-                    batch_phase_system::<TransparentUI>.after(sort_phase_system::<TransparentUI>),
-                    batch_phase_system::<TransparentOpacityUI>
-                        .after(sort_phase_system::<TransparentOpacityUI>),
-                )
-                    .in_set(RenderSet::PhaseSort),
             );
 
         // let pass_node_ui = MainPassUINode::new(&mut render_app.world);

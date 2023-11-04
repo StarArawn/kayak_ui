@@ -1,12 +1,10 @@
 #![allow(clippy::needless_question_mark, clippy::question_mark)]
 use bevy::{
-    asset::{AssetLoader, LoadContext, LoadedAsset},
+    asset::{io::Reader, AssetLoader, LoadContext, LoadedAsset},
     render::render_resource::{Extent3d, TextureFormat},
     utils::{BoxedFuture, HashMap},
 };
-
-#[cfg(not(target_family = "wasm"))]
-use bevy::asset::FileAssetIo;
+use futures_lite::AsyncReadExt;
 
 use image::{EncodableLayout, RgbaImage};
 use nanoserde::DeJson;
@@ -27,11 +25,16 @@ pub struct Kttf {
 }
 
 impl AssetLoader for TTFLoader {
+    type Settings = ();
+    type Error = std::io::Error;
+    type Asset = KayakFont;
+
     fn load<'a>(
         &'a self,
-        bytes: &'a [u8],
+        reader: &'a mut Reader,
+        _settings: &'a Self::Settings,
         load_context: &'a mut LoadContext,
-    ) -> BoxedFuture<'a, Result<(), anyhow::Error>> {
+    ) -> BoxedFuture<'a, Result<Self::Asset, Self::Error>> {
         Box::pin(async move {
             #[cfg(not(target_family = "wasm"))]
             let asset_io = load_context

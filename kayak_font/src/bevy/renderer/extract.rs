@@ -1,7 +1,8 @@
 use crate::bevy::renderer::FontTextureCache;
 use crate::KayakFont;
 use bevy::prelude::{
-    AssetEvent, Assets, Commands, EventReader, Handle, Image, Local, Res, ResMut, Resource,
+    AssetEvent, AssetId, AssetServer, Assets, Commands, EventReader, Handle, Image, Local, Res,
+    ResMut, Resource,
 };
 use bevy::render::{
     render_resource::{TextureFormat, TextureUsages},
@@ -15,26 +16,28 @@ pub struct ExtractedFonts {
 }
 
 pub(crate) fn extract_fonts(
-    mut not_processed: Local<Vec<Handle<KayakFont>>>,
+    mut not_processed: Local<Vec<AssetId<KayakFont>>>,
     mut commands: Commands,
     font_assets: Extract<Res<Assets<KayakFont>>>,
     mut events: Extract<EventReader<AssetEvent<KayakFont>>>,
     textures: Extract<Res<Assets<Image>>>,
+    asset_server: Res<AssetServer>,
 ) {
     let mut extracted_fonts = ExtractedFonts { fonts: Vec::new() };
     let mut changed_assets = HashSet::default();
     let mut removed = Vec::new();
-    for event in events.iter() {
-        match event {
-            AssetEvent::Created { handle } => {
-                changed_assets.insert(handle.clone_weak());
+    for event in events.read() {
+        match *event {
+            AssetEvent::Added { id } => {
+                changed_assets.insert(id);
             }
-            AssetEvent::Modified { handle } => {
-                changed_assets.insert(handle.clone_weak());
+            AssetEvent::LoadedWithDependencies { id } => {}
+            AssetEvent::Modified { id } => {
+                changed_assets.insert(id);
             }
-            AssetEvent::Removed { handle } => {
-                if !changed_assets.remove(handle) {
-                    removed.push(handle.clone_weak());
+            AssetEvent::Removed { id } => {
+                if !changed_assets.remove(&id) {
+                    removed.push(id);
                 }
             }
         }
@@ -44,8 +47,8 @@ pub(crate) fn extract_fonts(
         changed_assets.insert(handle);
     }
 
-    for handle in changed_assets {
-        let font_asset = font_assets.get(&handle).unwrap();
+    for id in changed_assets {
+        let font_asset = font_assets.get(id).unwrap();
         if let Some(image) = textures.get(font_asset.image.get()) {
             if !image
                 .texture_descriptor
@@ -53,16 +56,18 @@ pub(crate) fn extract_fonts(
                 .contains(TextureUsages::COPY_SRC)
                 || image.texture_descriptor.format != TextureFormat::Rgba8Unorm
             {
-                not_processed.push(handle);
+                not_processed.push(id);
                 continue;
             }
         } else {
-            not_processed.push(handle);
+            not_processed.push(id);
             continue;
         }
 
         let font = font_asset.clone();
-        extracted_fonts.fonts.push((handle, font));
+        extracted_fonts
+            .fonts
+            .push((asset_server.get_id_handle(id).unwrap(), font));
     }
 
     commands.insert_resource(extracted_fonts);

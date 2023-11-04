@@ -1,17 +1,15 @@
 use bevy::{
-    prelude::{
-        AddAsset, Assets, Commands, HandleUntyped, IntoSystemConfigs, Plugin, Query, Res, ResMut,
-        Resource, With,
-    },
-    reflect::TypeUuid,
+    asset::embedded_asset,
+    prelude::{Commands, IntoSystemConfigs, Plugin, Query, Res, ResMut, Resource, With},
     render::{
         render_phase::AddRenderCommand,
-        render_resource::{Shader, SpecializedRenderPipelines},
+        render_resource::{SpecializedRenderPipelines},
         renderer::{RenderDevice, RenderQueue},
         Extract, ExtractSchedule, Render, RenderApp, RenderSet,
     },
     window::{PrimaryWindow, Window},
 };
+#[cfg(feature = "svg")]
 use bevy_svg::prelude::Svg;
 
 use crate::{
@@ -27,61 +25,37 @@ use self::pipeline::{
     ImageBindGroups, PreviousClip, PreviousIndex, QuadTypeOffsets,
 };
 
-use super::{svg::RenderSvgs, ui_pass::TransparentOpacityUI};
+#[cfg(feature = "svg")]
+use super::svg::RenderSvgs;
+use super::ui_pass::TransparentOpacityUI;
 
 pub mod pipeline;
 pub mod text;
 
-pub const UNIFIED_SHADER_HANDLE: HandleUntyped =
-    HandleUntyped::weak_from_u64(Shader::TYPE_UUID, 7604018236855288450);
-
-pub const UNIFIED_BINDINGS_HANDLE: HandleUntyped =
-    HandleUntyped::weak_from_u64(Shader::TYPE_UUID, 13885898746900949245);
-
-pub const SAMPLE_QUAD_HANDLE: HandleUntyped =
-    HandleUntyped::weak_from_u64(Shader::TYPE_UUID, 5975018398368429820);
-
-pub const VERTEX_OUTPUT_HANDLE: HandleUntyped =
-    HandleUntyped::weak_from_u64(Shader::TYPE_UUID, 8828896277688845893);
-
 pub struct UnifiedRenderPlugin;
 impl Plugin for UnifiedRenderPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
+        #[cfg(feature = "svg")]
         app.add_asset::<Svg>().add_plugins(text::TextRendererPlugin);
 
-        let mut shaders = app.world.get_resource_mut::<Assets<Shader>>().unwrap();
-        let bindings_include = Shader::from_wgsl(
-            include_str!("shaders/bindings.wgsl"),
-            "shaders/bindings.wgsl",
-        );
-        shaders.set_untracked(UNIFIED_BINDINGS_HANDLE, bindings_include);
-        let sample_quad_include = Shader::from_wgsl(
-            include_str!("shaders/sample_quad.wgsl"),
-            "shaders/sample_quad.wgsl",
-        );
-        shaders.set_untracked(SAMPLE_QUAD_HANDLE, sample_quad_include);
-        let vertex_output_include = Shader::from_wgsl(
-            include_str!("shaders/vertex_output.wgsl"),
-            "shaders/vertex_output.wgsl",
-        );
-        shaders.set_untracked(VERTEX_OUTPUT_HANDLE, vertex_output_include);
-        let unified_shader =
-            Shader::from_wgsl(include_str!("shaders/shader.wgsl"), "shaders/shader.wgsl");
-        shaders.set_untracked(UNIFIED_SHADER_HANDLE, unified_shader);
+        embedded_asset!(app, "shaders/bindings.wgsl");
+        embedded_asset!(app, "shaders/sample_quad.wgsl");
+        embedded_asset!(app, "shaders/vertex_output.wgsl");
+        embedded_asset!(app, "shaders/shader.wgsl");
 
         let render_app = app.sub_app_mut(RenderApp);
+        #[cfg(feature = "svg")]
+        render_app
+            .init_resource::<RenderSvgs>()
+            .add_systems(ExtractSchedule, super::svg::extract_svg_asset);
         render_app
             .init_resource::<QuadTypeOffsets>()
             .init_resource::<ExtractedQuads>()
             .init_resource::<ImageBindGroups>()
             .init_resource::<QuadMeta>()
-            .init_resource::<RenderSvgs>()
             .init_resource::<PreviousClip>()
             .init_resource::<PreviousIndex>()
-            .add_systems(
-                ExtractSchedule,
-                (super::svg::extract_svg_asset, extract_baseline),
-            )
+            .add_systems(ExtractSchedule, extract_baseline)
             .add_systems(
                 Render,
                 (

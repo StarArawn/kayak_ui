@@ -6,7 +6,7 @@ use std::sync::Arc;
 
 use bevy::{
     prelude::{Commands, Entity},
-    reflect::{FromReflect, Reflect, TypeUuid},
+    reflect::{Reflect, TypePath, TypeUuid},
     render::render_resource::{AsBindGroup, RenderPipelineDescriptor, ShaderRef},
 };
 
@@ -14,7 +14,9 @@ pub use key::*;
 pub use pipeline::*;
 pub use plugin::*;
 
-pub trait MaterialUI: AsBindGroup + Send + Sync + Clone + TypeUuid + Sized + 'static {
+pub trait MaterialUI:
+    AsBindGroup + Send + Sync + Clone + TypeUuid + TypePath + Sized + 'static
+{
     /// Returns this material's vertex shader. If [`ShaderRef::Default`] is returned, the default mesh vertex shader
     /// will be used.
     fn vertex_shader() -> ShaderRef {
@@ -33,7 +35,7 @@ pub trait MaterialUI: AsBindGroup + Send + Sync + Clone + TypeUuid + Sized + 'st
     fn specialize(descriptor: &mut RenderPipelineDescriptor, key: MaterialUIKey<Self>) {}
 }
 
-#[derive(Default, Clone, Reflect, FromReflect)]
+#[derive(Default, Clone, Reflect)]
 pub struct MaterialHandle {
     uuid: String,
     #[reflect(ignore)]

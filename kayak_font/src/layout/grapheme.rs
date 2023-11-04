@@ -1,11 +1,11 @@
 use std::cmp::Ordering;
 
-use bevy::reflect::{FromReflect, Reflect};
+use bevy::reflect::Reflect;
 
 /// A representation of a grapheme cluster, as defined by [Unicode UAX #29].
 ///
 /// [Unicode UAX #29]: https://unicode.org/reports/tr29/
-#[derive(Default, Debug, Reflect, FromReflect, Copy, Clone, PartialEq)]
+#[derive(Default, Debug, Reflect, Copy, Clone, PartialEq)]
 pub struct Grapheme {
     /// The index of the starting char within this grapheme, relative to the entire text content.
     pub char_index: usize,

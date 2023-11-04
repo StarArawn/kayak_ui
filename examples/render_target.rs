@@ -182,10 +182,8 @@ fn depsawn_ui(
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
-        .add_plugin(KayakContextPlugin)
-        .add_plugin(KayakWidgets)
-        .add_startup_system(startup)
-        .add_system(cube_rotator_system)
-        .add_system(depsawn_ui)
+        .add_plugins((KayakContextPlugin, KayakWidgets))
+        .add_systems(Startup, startup)
+        .add_systems(Update, (cube_rotator_system, depsawn_ui))
         .run()
 }

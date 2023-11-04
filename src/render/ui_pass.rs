@@ -8,7 +8,7 @@ use bevy::render::render_phase::{
 };
 use bevy::render::render_resource::{CachedRenderPipelineId, RenderPassColorAttachment};
 use bevy::render::{
-    render_graph::{Node, NodeRunError, RenderGraphContext, SlotInfo, SlotType},
+    render_graph::{Node, NodeRunError, RenderGraphContext},
     render_phase::RenderPhase,
     render_resource::{LoadOp, Operations, RenderPassDescriptor},
     renderer::RenderContext,
@@ -170,8 +170,6 @@ pub struct MainPassUINode {
 }
 
 impl MainPassUINode {
-    pub const IN_VIEW: &'static str = "view";
-
     pub fn new(world: &mut World) -> Self {
         Self {
             query: world.query_filtered(),
@@ -180,10 +178,6 @@ impl MainPassUINode {
 }
 
 impl Node for MainPassUINode {
-    fn input(&self) -> Vec<SlotInfo> {
-        vec![SlotInfo::new(MainPassUINode::IN_VIEW, SlotType::Entity)]
-    }
-
     fn update(&mut self, world: &mut World) {
         self.query.update_archetypes(world);
     }
@@ -194,7 +188,7 @@ impl Node for MainPassUINode {
         render_context: &mut RenderContext,
         world: &World,
     ) -> Result<(), NodeRunError> {
-        let view_entity = graph.get_input_entity(Self::IN_VIEW)?;
+        let view_entity = graph.view_entity();
         // adapted from bevy itself;
         // see: <https://github.com/bevyengine/bevy/commit/09a3d8abe062984479bf0e99fcc1508bb722baf6>
         let (transparent_phase, transparent_opacity_phase, target, _camera_ui) =

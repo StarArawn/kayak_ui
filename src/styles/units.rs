@@ -1,7 +1,7 @@
-use bevy::reflect::{FromReflect, Reflect};
+use bevy::reflect::Reflect;
 
 /// The layout type determines how nodes will be positioned when directed by the parent
-#[derive(Default, Debug, FromReflect, Reflect, Clone, Copy, PartialEq)]
+#[derive(Default, Debug, Reflect, Clone, Copy, PartialEq)]
 pub enum LayoutType {
     /// Stack child elements horizontally
     Row,
@@ -23,7 +23,7 @@ impl From<LayoutType> for morphorm::LayoutType {
 }
 
 /// The position type determines whether a node will be positioned in-line with its siblings or seperate
-#[derive(Default, Debug, Reflect, FromReflect, Clone, Copy, PartialEq)]
+#[derive(Default, Debug, Reflect, Clone, Copy, PartialEq)]
 pub enum KPositionType {
     /// Node is positioned relative to parent but ignores its siblings
     SelfDirected,
@@ -42,7 +42,7 @@ impl From<KPositionType> for morphorm::PositionType {
 }
 
 /// Units which describe spacing and size
-#[derive(Default, Debug, FromReflect, Reflect, Clone, Copy, PartialEq)]
+#[derive(Default, Debug, Reflect, Clone, Copy, PartialEq)]
 pub enum Units {
     /// A number of pixels
     Pixels(f32),

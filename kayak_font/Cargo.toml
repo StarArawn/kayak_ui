@@ -27,10 +27,10 @@ image = "0.24"
 # Provides UAX #14 line break segmentation
 xi-unicode = "0.3"
 
-bevy = { version = "0.10", optional = true, default-features = false, features = ["bevy_asset", "bevy_render", "bevy_core_pipeline"] }
+bevy = { version = "0.11", optional = true, default-features = false, features = ["bevy_asset", "bevy_render", "bevy_core_pipeline"] }
 
 [dev-dependencies]
-bevy = { version = "0.10" }
+bevy = { version = "0.11" }
 bytemuck = "1.12.0"
 
 [package.metadata.docs.rs]

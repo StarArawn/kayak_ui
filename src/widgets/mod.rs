@@ -101,13 +101,12 @@ pub struct KayakWidgets;
 
 impl Plugin for KayakWidgets {
     fn build(&self, app: &mut bevy::prelude::App) {
-        app.add_plugin(icons::IconsPlugin);
-        app.add_system(
-            transition::update_transitions
-                .after(update_widgets_sys)
-                .in_base_set(CoreSet::PostUpdate),
+        app.add_plugins(icons::IconsPlugin);
+        app.add_systems(
+            PostUpdate,
+            transition::update_transitions.after(update_widgets_sys),
         )
-        .add_system(text_box::cursor_animation_system);
+        .add_systems(Update, text_box::cursor_animation_system);
     }
 }
 

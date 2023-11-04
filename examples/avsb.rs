@@ -213,10 +213,12 @@ fn swap(input: Res<Input<KeyCode>>, mut query: Query<&mut AvsBState, Without<Pre
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins.set(ImagePlugin::default_nearest()))
-        .add_plugin(bevy_inspector_egui::quick::WorldInspectorPlugin::new())
-        .add_plugin(KayakContextPlugin)
-        .add_plugin(KayakWidgets)
-        .add_startup_system(startup)
-        .add_system(swap)
+        .add_plugins((
+            bevy_inspector_egui::quick::WorldInspectorPlugin::new(),
+            KayakContextPlugin,
+            KayakWidgets,
+        ))
+        .add_systems(Startup, startup)
+        .add_systems(Update, swap)
         .run()
 }

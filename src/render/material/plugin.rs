@@ -2,8 +2,8 @@ use bevy::{
     prelude::*,
     render::{
         extract_component::ExtractComponentPlugin, render_asset::PrepareAssetSet,
-        render_phase::AddRenderCommand, render_resource::SpecializedRenderPipelines, RenderApp,
-        RenderSet,
+        render_phase::AddRenderCommand, render_resource::SpecializedRenderPipelines, Render,
+        RenderApp, RenderSet,
     },
 };
 use std::hash::Hash;
@@ -35,25 +35,30 @@ where
 {
     fn build(&self, app: &mut App) {
         app.add_asset::<M>()
-            .add_plugin(ExtractComponentPlugin::<Handle<M>>::extract_visible());
+            .add_plugins(ExtractComponentPlugin::<Handle<M>>::extract_visible());
 
-        if let Ok(render_app) = app.get_sub_app_mut(RenderApp) {
-            render_app
-                .add_render_command::<TransparentUI, DrawMaterialUI<M>>()
-                .add_render_command::<TransparentOpacityUI, DrawMaterialUITransparent<M>>()
-                .init_resource::<MaterialUIPipeline<M>>()
-                .init_resource::<ExtractedMaterialsUI<M>>()
-                .init_resource::<RenderMaterialsUI<M>>()
-                .init_resource::<SpecializedRenderPipelines<MaterialUIPipeline<M>>>()
-                .add_system(extract_materials_ui::<M>.in_schedule(ExtractSchedule))
-                .add_systems((
+        app.sub_app_mut(RenderApp)
+            .add_render_command::<TransparentUI, DrawMaterialUI<M>>()
+            .add_render_command::<TransparentOpacityUI, DrawMaterialUITransparent<M>>()
+            .init_resource::<ExtractedMaterialsUI<M>>()
+            .init_resource::<RenderMaterialsUI<M>>()
+            .init_resource::<SpecializedRenderPipelines<MaterialUIPipeline<M>>>()
+            .add_systems(ExtractSchedule, extract_materials_ui::<M>)
+            .add_systems(
+                Render,
+                (
                     prepare_materials_ui::<M>
                         .in_set(RenderSet::Prepare)
                         .after(PrepareAssetSet::PreAssetPrepare),
                     queue_material_ui_quads::<M>
                         .in_set(RenderSet::Queue)
                         .after(crate::render::unified::pipeline::queue_quads),
-                ));
-        }
+                ),
+            );
+    }
+
+    fn finish(&self, app: &mut App) {
+        app.sub_app_mut(RenderApp)
+            .init_resource::<MaterialUIPipeline<M>>();
     }
 }

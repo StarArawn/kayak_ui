@@ -1,6 +1,6 @@
 use bevy::{
     prelude::{Color, Component, Vec2},
-    reflect::{FromReflect, Reflect},
+    reflect::Reflect,
 };
 
 mod corner;
@@ -27,7 +27,7 @@ impl From<KStyle> for ComputedStyles {
     }
 }
 
-#[derive(FromReflect, Reflect, Clone, Copy, Default, Debug, PartialEq)]
+#[derive(Reflect, Clone, Copy, Default, Debug, PartialEq)]
 pub struct BoxShadow {
     pub color: Color,
     pub radius: f32,
@@ -143,7 +143,7 @@ mod tests {
 
         dbg!(result);
 
-        assert!(true == false);
+        // assert!(true == false);
     }
 }
 

@@ -7,6 +7,7 @@ use bevy::{
             TextureView,
         },
         texture::BevyDefault,
+        view::ViewTarget,
     },
     utils::HashMap,
     window::Window,
@@ -22,14 +23,15 @@ impl OpacityLayerManager {
     pub(crate) fn add_or_update(
         &mut self,
         camera_entity: &Entity,
+        camera: &Camera,
         window: &Window,
         images: &mut Assets<Image>,
     ) {
         if let Some(opacity_camera) = self.camera_layers.get_mut(camera_entity) {
-            opacity_camera.update_images(window, images);
+            opacity_camera.update_images(window, camera, images);
         } else {
             self.camera_layers
-                .insert(*camera_entity, OpacityCamera::new(window, images));
+                .insert(*camera_entity, OpacityCamera::new(window, camera, images));
         }
     }
 }
@@ -44,8 +46,12 @@ pub const MAX_OPACITY_LAYERS: u32 = 5;
 
 impl OpacityCamera {
     /// Creates as new opacity layer render target manager
-    pub(crate) fn new(window: &Window, images: &mut Assets<Image>) -> Self {
-        let main_texture_format = TextureFormat::bevy_default();
+    pub(crate) fn new(window: &Window, camera: &Camera, images: &mut Assets<Image>) -> Self {
+        let main_texture_format = if camera.hdr {
+            ViewTarget::TEXTURE_FORMAT_HDR
+        } else {
+            TextureFormat::bevy_default()
+        };
 
         let mut layers = HashMap::default();
         for layer in 1..MAX_OPACITY_LAYERS {
@@ -82,8 +88,17 @@ impl OpacityCamera {
         }
     }
 
-    pub(crate) fn update_images(&mut self, window: &Window, images: &mut Assets<Image>) {
-        let main_texture_format = TextureFormat::bevy_default();
+    pub(crate) fn update_images(
+        &mut self,
+        window: &Window,
+        camera: &Camera,
+        images: &mut Assets<Image>,
+    ) {
+        let main_texture_format = if camera.hdr {
+            ViewTarget::TEXTURE_FORMAT_HDR
+        } else {
+            TextureFormat::bevy_default()
+        };
 
         let new_size = Extent3d {
             width: window.resolution.physical_width(),

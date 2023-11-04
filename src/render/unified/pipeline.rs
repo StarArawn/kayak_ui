@@ -87,7 +87,7 @@ pub struct UnifiedPipelineKey {
 impl FromWorld for UnifiedPipeline {
     fn from_world(world: &mut World) -> Self {
         let world = world.cell();
-        let render_device = world.get_resource::<RenderDevice>().unwrap();
+        let render_device = world.resource::<RenderDevice>();
 
         let view_layout = render_device.create_bind_group_layout(&BindGroupLayoutDescriptor {
             entries: &[

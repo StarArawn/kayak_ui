@@ -10,7 +10,7 @@ use bevy::{
         render_resource::{DynamicUniformBuffer, ShaderType},
         renderer::{RenderDevice, RenderQueue},
         view::ColorGrading,
-        Extract, ExtractSchedule, RenderApp, RenderSet,
+        Extract, ExtractSchedule, Render, RenderApp, RenderSet,
     },
     window::{PrimaryWindow, Window, WindowRef},
 };
@@ -28,15 +28,15 @@ impl Plugin for BevyKayakUIExtractPlugin {
         let render_app = app.sub_app_mut(RenderApp);
         render_app
             .init_resource::<UIViewUniforms>()
-            .add_system(extract.in_schedule(ExtractSchedule))
             .add_systems(
+                ExtractSchedule,
                 (
+                    extract,
                     extract_default_ui_camera_view::<Camera2d>,
                     extract_default_ui_camera_view::<Camera3d>,
-                )
-                    .in_schedule(ExtractSchedule),
+                ),
             )
-            .add_system(prepare_view_uniforms.in_set(RenderSet::Prepare));
+            .add_systems(Render, prepare_view_uniforms.in_set(RenderSet::Prepare));
     }
 }
 
@@ -144,6 +144,7 @@ pub struct UIViewUniforms {
 #[derive(Clone, ShaderType)]
 pub struct UIViewUniform {
     pub view_proj: Mat4,
+    pub unjittered_view_proj: Mat4,
     pub inverse_view_proj: Mat4,
     pub view: Mat4,
     pub inverse_view: Mat4,
@@ -153,6 +154,7 @@ pub struct UIViewUniform {
     // viewport(x_origin, y_origin, width, height)
     pub viewport: Vec4,
     pub color_grading: ColorGrading,
+    pub mip_bias: f32,
 }
 
 #[derive(Component, Debug)]
@@ -160,16 +162,31 @@ pub struct UIViewUniformOffset {
     pub offset: u32,
 }
 
-fn prepare_view_uniforms(
+use bevy::math::Vec4Swizzles;
+use bevy::render::camera::{MipBias, TemporalJitter};
+
+pub fn prepare_view_uniforms(
     mut commands: Commands,
     render_device: Res<RenderDevice>,
     render_queue: Res<RenderQueue>,
     mut view_uniforms: ResMut<UIViewUniforms>,
-    views: Query<(Entity, &UIExtractedView)>,
+    views: Query<(
+        Entity,
+        &UIExtractedView,
+        Option<&TemporalJitter>,
+        Option<&MipBias>,
+    )>,
 ) {
     view_uniforms.uniforms.clear();
-    for (entity, camera) in &views {
-        let projection = camera.projection;
+    for (entity, camera, temporal_jitter, mip_bias) in &views {
+        let viewport = camera.viewport.as_vec4();
+        let unjittered_projection = camera.projection;
+        let mut projection = unjittered_projection;
+
+        if let Some(temporal_jitter) = temporal_jitter {
+            temporal_jitter.jitter_projection(&mut projection, viewport.zw());
+        }
+
         let inverse_projection = projection.inverse();
         let view = camera.transform.compute_matrix();
         let inverse_view = view.inverse();
@@ -178,14 +195,16 @@ fn prepare_view_uniforms(
                 view_proj: camera
                     .view_projection
                     .unwrap_or_else(|| projection * inverse_view),
+                unjittered_view_proj: unjittered_projection * inverse_view,
                 inverse_view_proj: view * inverse_projection,
                 view,
                 inverse_view,
                 projection,
                 inverse_projection,
                 world_position: camera.transform.translation(),
-                viewport: camera.viewport.as_vec4(),
+                viewport,
                 color_grading: camera.color_grading,
+                mip_bias: mip_bias.unwrap_or(&MipBias(0.0)).0,
             }),
         };
         commands.entity(entity).insert(view_uniforms);

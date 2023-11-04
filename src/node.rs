@@ -1,7 +1,4 @@
-use bevy::{
-    prelude::{Component, Entity, Query, Reflect, ReflectComponent},
-    reflect::FromReflect,
-};
+use bevy::prelude::{Component, Entity, Query, Reflect, ReflectComponent};
 
 use crate::styles::{KStyle, StyleProp};
 
@@ -106,7 +103,7 @@ impl NodeBuilder {
     }
 }
 
-#[derive(Debug, Reflect, FromReflect, Clone, Copy, Hash, PartialEq, Eq)]
+#[derive(Debug, Reflect, Clone, Copy, Hash, PartialEq, Eq)]
 pub struct WrappedIndex(pub Entity);
 
 impl<'a> morphorm::Node<'a> for WrappedIndex {

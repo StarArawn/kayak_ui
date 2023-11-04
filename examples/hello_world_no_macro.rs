@@ -49,8 +49,7 @@ fn startup(
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
-        .add_plugin(KayakContextPlugin)
-        .add_plugin(KayakWidgets)
-        .add_startup_system(startup)
+        .add_plugins((KayakContextPlugin, KayakWidgets))
+        .add_systems(Startup, startup)
         .run()
 }

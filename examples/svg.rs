@@ -47,9 +47,11 @@ fn main() {
     App::new()
         .insert_resource(Msaa::Sample8)
         .add_plugins(DefaultPlugins.set(ImagePlugin::default_nearest()))
-        .add_plugin(KayakContextPlugin)
-        .add_plugin(KayakWidgets)
-        .add_plugin(bevy_svg::prelude::SvgPlugin)
-        .add_startup_system(startup)
+        .add_plugins((
+            KayakContextPlugin,
+            KayakWidgets,
+            bevy_svg::prelude::SvgPlugin,
+        ))
+        .add_systems(Startup, startup)
         .run()
 }

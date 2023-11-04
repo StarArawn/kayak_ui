@@ -1,6 +1,6 @@
-#import kayak_ui::bindings
-#import kayak_ui::sample_quad
-#import kayak_ui::vertex_output
+#import kayak_ui::bindings globals
+#import kayak_ui::sample_quad sample_quad
+#import kayak_ui::vertex_output VertexOutput
 
 fn hsv2rgb(c: vec3<f32>) -> vec3<f32>
 {

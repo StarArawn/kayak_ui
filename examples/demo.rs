@@ -70,9 +70,8 @@ fn update_resource(
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
-        .add_plugin(KayakContextPlugin)
-        .add_plugin(KayakWidgets)
-        .add_startup_system(startup)
-        .add_system(update_resource)
+        .add_plugins((KayakContextPlugin, KayakWidgets))
+        .add_systems(Startup, startup)
+        .add_systems(Update, update_resource)
         .run()
 }

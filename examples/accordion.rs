@@ -118,9 +118,8 @@ fn startup(
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins.set(ImagePlugin::default_nearest()))
-        .add_plugin(KayakContextPlugin)
-        .add_plugin(KayakWidgets)
+        .add_plugins((KayakContextPlugin, KayakWidgets))
         // .add_plugin(bevy_inspector_egui::quick::WorldInspectorPlugin::default())
-        .add_startup_system(startup)
+        .add_systems(Startup, startup)
         .run()
 }

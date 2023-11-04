@@ -1,4 +1,4 @@
-use bevy::prelude::{Added, Entity, Plugin, Query, ResMut};
+use bevy::prelude::{Added, Entity, Plugin, Query, ResMut, Update};
 
 mod extract;
 mod font_mapping;
@@ -14,7 +14,7 @@ pub struct TextRendererPlugin;
 impl Plugin for TextRendererPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
         app.init_resource::<FontMapping>()
-            .add_system(process_loaded_fonts);
+            .add_systems(Update, process_loaded_fonts);
     }
 }
 

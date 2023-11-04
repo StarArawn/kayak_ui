@@ -19,6 +19,6 @@ impl ExtractComponent for CameraUIKayak {
 pub struct KayakUICameraPlugin;
 impl Plugin for KayakUICameraPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
-        app.add_plugin(ExtractComponentPlugin::<CameraUIKayak>::default());
+        app.add_plugins(ExtractComponentPlugin::<CameraUIKayak>::default());
     }
 }

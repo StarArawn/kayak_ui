@@ -259,13 +259,16 @@ fn main() {
         .insert_resource(ClearColor(Color::rgb(0.0, 0.0, 0.0)))
         .insert_resource(ActiveColor { index: 0 })
         .add_plugins(DefaultPlugins)
-        .add_plugin(KayakContextPlugin)
-        .add_plugin(KayakWidgets)
-        .add_startup_system(startup)
-        .add_startup_system(world_setup)
-        .add_system(move_ghost_tile)
-        .add_system(set_active_tile_target)
-        .add_system(move_active_tile)
-        .add_system(on_color_change)
+        .add_plugins((KayakContextPlugin, KayakWidgets))
+        .add_systems(Startup, (startup, world_setup))
+        .add_systems(
+            Update,
+            (
+                move_ghost_tile,
+                set_active_tile_target,
+                move_active_tile,
+                on_color_change,
+            ),
+        )
         .run()
 }

@@ -1,18 +1,22 @@
 #define_import_path kayak_ui::sample_quad
 
+#import kayak_ui::bindings font_texture, font_sampler, image_texture, image_sampler, quad_type
+
+#import kayak_ui::vertex_output VertexOutput
+
 // Where P is the position in pixel space, B is the size of the box adn R is the radius of the current corner.
 fn sdRoundBox(p: vec2<f32>, b: vec2<f32>, r: f32) -> f32 {
     var q = abs(p) - b + r;
     return min(max(q.x, q.y), 0.0) + length(max(q, vec2<f32>(0.0))) - r;
 }
 
-fn median3(v: vec3<f32>) -> f32 {
+fn median_three(v: vec3<f32>) -> f32 {
     return max(min(v.x, v.y), min(max(v.x, v.y), v.z));
 }
 
 fn sample_sdf(coords: vec2<f32>, arr: i32, scale: f32) -> f32 {
     let sample = textureSample(font_texture, font_sampler, vec2(coords.xy), arr);
-    return median3(sample.rgb);
+    return median_three(sample.rgb);
 }
 
 fn range_curve(font_size: f32) -> f32 {

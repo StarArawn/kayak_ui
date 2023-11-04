@@ -44,10 +44,9 @@ fn second_sys(
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
-        .add_plugin(KayakContextPlugin)
-        .add_plugin(KayakWidgets)
+        .add_plugins((KayakContextPlugin, KayakWidgets))
         .add_state::<GameState>()
-        .add_system(first_sys.in_schedule(OnEnter(GameState::First)))
-        .add_system(second_sys.in_schedule(OnEnter(GameState::Second)))
+        .add_systems(OnEnter(GameState::First), first_sys)
+        .add_systems(OnEnter(GameState::Second), second_sys)
         .run();
 }

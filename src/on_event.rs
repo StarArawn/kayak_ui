@@ -62,7 +62,7 @@ impl OnEvent {
             world.insert_resource(focus_tree);
 
             system.run(entity, world);
-            system.apply_buffers(world);
+            system.apply_deferred(world);
 
             event_dispatcher_context = world.remove_resource::<EventDispatcherContext>().unwrap();
             event = world.remove_resource::<KEvent>().unwrap();

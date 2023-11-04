@@ -5,7 +5,6 @@ use bevy::{
         ButtonState,
     },
     prelude::*,
-    window::PrimaryWindow,
 };
 
 use crate::{
@@ -15,17 +14,6 @@ use crate::{
 };
 
 pub(crate) fn process_events(world: &mut World) {
-    // TODO: Rewrite an process events per window.
-    let window_size = if let Ok(window) = world
-        .query_filtered::<&Window, With<PrimaryWindow>>()
-        .get_single(world)
-    {
-        Vec2::new(window.width(), window.height())
-    } else {
-        log::warn!("Couldn't find primary window!");
-        return;
-    };
-
     let mut input_events = Vec::new();
 
     query_world::<
@@ -62,10 +50,7 @@ pub(crate) fn process_events(world: &mut World) {
                 .last()
             {
                 // Currently, we can only handle a single MouseMoved event at a time so everything but the last needs to be skipped
-                input_events.push(InputEvent::MouseMoved((
-                    event.position.x,
-                    window_size.y - event.position.y,
-                )));
+                input_events.push(InputEvent::MouseMoved(event.position.into()));
             }
 
             for event in custom_event_mouse_button.0.iter(&mouse_button_input_events) {
@@ -78,7 +63,13 @@ pub(crate) fn process_events(world: &mut World) {
                 }
             }
 
-            for MouseWheel { x, y, unit } in custom_event_mouse_wheel.0.iter(&mouse_wheel_events) {
+            for MouseWheel {
+                x,
+                y,
+                unit,
+                window: _,
+            } in custom_event_mouse_wheel.0.iter(&mouse_wheel_events)
+            {
                 input_events.push(InputEvent::Scroll {
                     dx: *x,
                     dy: *y,

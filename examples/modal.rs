@@ -1,7 +1,11 @@
-use bevy::{prelude::*, reflect::TypeUuid, render::render_resource::AsBindGroup};
+use bevy::{
+    prelude::*,
+    reflect::{TypePath, TypeUuid},
+    render::render_resource::AsBindGroup,
+};
 use kayak_ui::prelude::{widgets::*, *};
 
-#[derive(AsBindGroup, TypeUuid, Debug, Clone)]
+#[derive(AsBindGroup, TypeUuid, TypePath, Debug, Clone)]
 #[uuid = "94c4e6f9-6f10-422c-85ec-6d582d471afc"]
 pub struct MyUIMaterial {}
 impl MaterialUI for MyUIMaterial {
@@ -158,9 +162,11 @@ fn main() {
     App::new()
         .insert_resource(ClearColor(Color::rgb(0.0, 0.0, 0.0)))
         .add_plugins(DefaultPlugins)
-        .add_plugin(KayakContextPlugin)
-        .add_plugin(KayakWidgets)
-        .add_plugin(MaterialUIPlugin::<MyUIMaterial>::default())
-        .add_startup_system(startup)
+        .add_plugins((
+            KayakContextPlugin,
+            KayakWidgets,
+            MaterialUIPlugin::<MyUIMaterial>::default(),
+        ))
+        .add_systems(Startup, startup)
         .run()
 }

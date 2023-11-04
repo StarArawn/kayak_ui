@@ -1,11 +1,11 @@
 use std::ops::{Mul, MulAssign};
 
-use bevy::reflect::{FromReflect, Reflect};
+use bevy::reflect::Reflect;
 
 /// A struct for defining properties related to the edges of widgets
 ///
 /// This is useful for things like borders, padding, etc.
-#[derive(Debug, Default, Reflect, FromReflect, Copy, Clone, PartialEq, Eq)]
+#[derive(Debug, Default, Reflect, Copy, Clone, PartialEq, Eq)]
 pub struct Edge<T>
 where
     T: Copy + Default + PartialEq + Reflect,

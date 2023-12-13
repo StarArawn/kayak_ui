@@ -1,14 +1,10 @@
-use std::marker::PhantomData;
-
-use bevy::asset::HandleId;
 use bevy::ecs::query::ROQueryItem;
 use bevy::ecs::system::{SystemParam, SystemParamItem};
 use bevy::prelude::{Commands, Mesh, Rect, Resource, Vec3, With};
 use bevy::render::globals::{GlobalsBuffer, GlobalsUniform};
 use bevy::render::mesh::VertexAttributeValues;
 use bevy::render::render_phase::{
-    BatchedPhaseItem, DrawFunctionId, PhaseItem, RenderCommand, RenderCommandResult,
-    SetItemPipeline,
+    DrawFunctionId, PhaseItem, RenderCommand, RenderCommandResult, SetItemPipeline,
 };
 use bevy::render::render_resource::{
     CachedRenderPipelineId, DynamicUniformBuffer, ShaderType, SpecializedRenderPipeline,
@@ -23,17 +19,16 @@ use bevy::{
     render::{
         color::Color,
         render_asset::RenderAssets,
-        render_phase::{DrawFunctions, RenderPhase, TrackedRenderPass},
+        render_phase::{DrawFunctions, TrackedRenderPass},
         render_resource::{
-            BindGroup, BindGroupDescriptor, BindGroupEntry, BindGroupLayout,
-            BindGroupLayoutDescriptor, BindGroupLayoutEntry, BindingResource, BindingType,
-            BlendState, BufferBindingType, BufferSize, BufferUsages, BufferVec, ColorTargetState,
-            ColorWrites, Extent3d, FragmentState, FrontFace, MultisampleState, PipelineCache,
-            PolygonMode, PrimitiveState, PrimitiveTopology, RenderPipelineDescriptor,
-            SamplerBindingType, SamplerDescriptor, Shader, ShaderStages, TextureDescriptor,
-            TextureDimension, TextureFormat, TextureSampleType, TextureUsages,
-            TextureViewDescriptor, TextureViewDimension, VertexAttribute, VertexBufferLayout,
-            VertexFormat, VertexState, VertexStepMode,
+            BindGroup, BindGroupEntry, BindGroupLayout, BindGroupLayoutDescriptor,
+            BindGroupLayoutEntry, BindingResource, BindingType, BlendState, BufferBindingType,
+            BufferSize, BufferUsages, BufferVec, ColorTargetState, ColorWrites, Extent3d,
+            FragmentState, FrontFace, MultisampleState, PipelineCache, PolygonMode, PrimitiveState,
+            PrimitiveTopology, RenderPipelineDescriptor, SamplerBindingType, SamplerDescriptor,
+            ShaderStages, TextureDescriptor, TextureDimension, TextureFormat, TextureSampleType,
+            TextureUsages, TextureViewDescriptor, TextureViewDimension, VertexAttribute,
+            VertexBufferLayout, VertexFormat, VertexState, VertexStepMode,
         },
         renderer::{RenderDevice, RenderQueue},
         texture::{BevyDefault, GpuImage, Image},
@@ -43,13 +38,16 @@ use bevy::{
 use bevy_svg::prelude::Svg;
 use bytemuck::{Pod, Zeroable};
 use kayak_font::{bevy::FontTextureCache, KayakFont};
+use std::marker::PhantomData;
 
 use super::UNIFIED_SHADER_HANDLE;
 use crate::prelude::Corner;
 use crate::render::extract::{UIExtractedView, UIViewUniform, UIViewUniformOffset, UIViewUniforms};
 use crate::render::opacity_layer::OpacityLayerManager;
 use crate::render::svg::RenderSvgs;
-use crate::render::ui_pass::{TransparentOpacityUI, TransparentUI, TransparentUIGeneric};
+use crate::render::ui_pass::{
+    TransparentOpacityUI, TransparentUI, TransparentUIGeneric, UIRenderPhase,
+};
 
 #[derive(Resource, Clone)]
 pub struct UnifiedPipeline {
@@ -211,9 +209,10 @@ impl FromWorld for UnifiedPipeline {
             texture_format: TextureFormat::Rgba8UnormSrgb,
         };
 
-        let binding = render_device.create_bind_group(&BindGroupDescriptor {
-            label: Some("default_image_bind_group"),
-            entries: &[
+        let binding = render_device.create_bind_group(
+            Some("default_image_bind_group"),
+            &image_layout,
+            &[
                 BindGroupEntry {
                     binding: 0,
                     resource: BindingResource::TextureView(&image.texture_view),
@@ -231,8 +230,7 @@ impl FromWorld for UnifiedPipeline {
                     resource: BindingResource::Sampler(&empty_font_texture.sampler),
                 },
             ],
-            layout: &image_layout,
-        });
+        );
 
         UnifiedPipeline {
             view_layout,
@@ -277,13 +275,13 @@ impl SpecializedRenderPipeline for UnifiedPipeline {
 
         RenderPipelineDescriptor {
             vertex: VertexState {
-                shader: UNIFIED_SHADER_HANDLE.typed::<Shader>(),
+                shader: UNIFIED_SHADER_HANDLE,
                 entry_point: "vertex".into(),
                 shader_defs: vec![],
                 buffers: vec![vertex_buffer_layout],
             },
             fragment: Some(FragmentState {
-                shader: UNIFIED_SHADER_HANDLE.typed::<Shader>(),
+                shader: UNIFIED_SHADER_HANDLE,
                 shader_defs: vec![],
                 entry_point: "fragment".into(),
                 targets: vec![Some(ColorTargetState {
@@ -424,15 +422,131 @@ impl Default for QuadMeta {
     }
 }
 
-#[derive(Resource, Default)]
-pub struct ExtractedQuads {
-    pub quads: Vec<ExtractedQuad>,
+#[derive(Debug)]
+pub enum QuadOrMaterial {
+    Quad(ExtractedQuad),
+    Material(Entity),
 }
 
-#[derive(Debug, Component, PartialEq, Copy, Clone)]
+impl Default for QuadOrMaterial {
+    fn default() -> Self {
+        Self::Quad(ExtractedQuad::default())
+    }
+}
+
+#[derive(Resource, Default, Debug)]
+pub struct ExtractedQuads {
+    layers: Vec<ZLayer>,
+    current_layer: usize,
+    current_index: usize,
+    children: HashMap<usize, Vec<usize>>,
+    parents: HashMap<usize, usize>,
+}
+
+impl ExtractedQuads {
+    pub fn clear(&mut self) {
+        self.current_index = 0;
+        self.current_layer = 0;
+        self.layers.clear();
+        self.children.clear();
+        self.parents.clear();
+    }
+
+    pub fn push(&mut self, quad: QuadOrMaterial) {
+        let layer = self.layers.get_mut(self.current_layer).unwrap();
+        layer.quads.push(quad);
+    }
+
+    pub fn extend(&mut self, quads: Vec<QuadOrMaterial>) {
+        let layer = self.layers.get_mut(self.current_layer).unwrap();
+        layer.quads.extend(quads);
+    }
+    pub fn new_layer(&mut self, z_index: Option<f32>) {
+        let layer = ZLayer {
+            z: z_index
+                .map(|z| z)
+                .unwrap_or(0.0),
+            parent_id: self.current_layer,
+            ..Default::default()
+        };
+
+        self.current_index = self.layers.len();
+        if let Some(c) = self.children.get_mut(&self.current_layer) {
+            c.push(self.current_index);
+        }
+        self.parents.insert(self.current_index, self.current_layer);
+        self.layers.push(layer);
+        self.current_layer = self.current_index;
+        self.children.insert(self.current_index, vec![]);
+    }
+
+    pub fn pop_stack(&mut self) {
+        let layer = self.layers.get_mut(self.current_layer).unwrap();
+        self.current_layer = layer.parent_id;
+    }
+
+    pub fn resolve(&mut self, commands: &mut Commands) {
+        let mut stack = vec![0];
+
+        // let z = 0;
+        while !stack.is_empty() {
+            let layer_id = stack.pop().unwrap();
+            let parent_id = self.layers.get(layer_id).map(|l| l.parent_id).unwrap_or(0);
+            let parent_z = {
+                self
+                    .layers
+                    .get(self.parents.get(&parent_id).map(|id| *id).unwrap_or(0))
+                    .map(|l| l.z)
+                    .unwrap_or(0.0)
+            };
+            
+            let children = self.children.get(&layer_id).cloned().unwrap_or_default();
+            stack.extend(children);
+            let layer = &mut self.layers[layer_id];
+            let quad_count = layer.quads.len();
+            layer.z += parent_id as f32 + parent_z;
+            for (i, quad) in layer.quads.iter_mut().enumerate() {
+                let current_z = layer.z + ((((i + 1) as f32 / quad_count as f32) * 0.99));
+                if current_z == 16.495 {
+                    match quad { QuadOrMaterial::Quad(quad) => println!("quad: {:?}, rect: {:?}, z: {}, parent_id: {}, i: {}, quad_count: {}", quad.quad_type, quad.rect, current_z, parent_id, i, quad_count), _ => {} };
+                }
+                match quad {
+                    QuadOrMaterial::Material(entity) => {
+                        commands.entity(*entity).insert(MaterialZ(current_z));
+                    }
+                    QuadOrMaterial::Quad(quad) => {
+                        quad.z_index = current_z;
+                    }
+                }
+            }
+        }
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = &ExtractedQuad> + '_ {
+        self.layers
+            .iter()
+            .flat_map(|layer| &layer.quads)
+            .filter_map(|quad| match &quad {
+                QuadOrMaterial::Material(_) => None,
+                QuadOrMaterial::Quad(quad) => Some(quad),
+            })
+    }
+}
+
+#[derive(Component)]
+pub struct MaterialZ(pub f32);
+
+#[derive(Default, Debug)]
+pub struct ZLayer {
+    pub z: f32,
+    pub parent_id: usize,
+    pub quads: Vec<QuadOrMaterial>,
+}
+
+#[derive(Debug, Component, PartialEq, Clone)]
 pub struct QuadBatch {
-    pub image_handle_id: Option<HandleId>,
-    pub font_handle_id: Option<HandleId>,
+    pub image_handle_id: Option<Handle<Image>>,
+    pub font_handle_id: Option<Handle<KayakFont>>,
     pub quad_type: UIQuadType,
     pub type_id: u32,
     pub z_index: f32,
@@ -463,8 +577,10 @@ pub fn queue_ui_view_bind_groups(
         globals_buffer.buffer.binding(),
     ) {
         for entity in &views {
-            let view_bind_group = render_device.create_bind_group(&BindGroupDescriptor {
-                entries: &[
+            let view_bind_group = render_device.create_bind_group(
+                Some("ui_view_bind_group"),
+                &unified_pipeline.view_layout,
+                &[
                     BindGroupEntry {
                         binding: 0,
                         resource: view_binding.clone(),
@@ -474,9 +590,7 @@ pub fn queue_ui_view_bind_groups(
                         resource: globals.clone(),
                     },
                 ],
-                label: Some("ui_view_bind_group"),
-                layout: &unified_pipeline.view_layout,
-            });
+            );
             commands.entity(entity).insert(UIViewBindGroup {
                 value: view_bind_group,
             });
@@ -546,14 +660,14 @@ pub fn queue_quad_types(
         .write_buffer(&render_device, &render_queue);
 
     if let Some(type_binding) = quad_meta.types_buffer.binding() {
-        quad_meta.types_bind_group = Some(render_device.create_bind_group(&BindGroupDescriptor {
-            entries: &[BindGroupEntry {
+        quad_meta.types_bind_group = Some(render_device.create_bind_group(
+            Some("quad_type_bind_group"),
+            &quad_pipeline.types_layout,
+            &[BindGroupEntry {
                 binding: 0,
                 resource: type_binding,
             }],
-            label: Some("quad_type_bind_group"),
-            layout: &quad_pipeline.types_layout,
-        }));
+        ));
     }
 }
 
@@ -565,6 +679,7 @@ pub struct PreviousClip {
 #[derive(Resource, Default)]
 pub struct PreviousIndex {
     pub index: u32,
+    pub last_clip: Rect,
 }
 
 #[derive(SystemParam)]
@@ -575,18 +690,19 @@ pub struct QueueQuads<'w, 's> {
     draw_functions: Res<'w, DrawFunctions<TransparentUI>>,
     draw_functions_opacity: Res<'w, DrawFunctions<TransparentOpacityUI>>,
     render_device: Res<'w, RenderDevice>,
+    render_queue: Res<'w, RenderQueue>,
     quad_meta: ResMut<'w, QuadMeta>,
     quad_pipeline: Res<'w, UnifiedPipeline>,
     pipelines: ResMut<'w, SpecializedRenderPipelines<UnifiedPipeline>>,
     pipeline_cache: Res<'w, PipelineCache>,
-    extracted_quads: ResMut<'w, ExtractedQuads>,
+    extracted_quads: Res<'w, ExtractedQuads>,
     views: Query<
         'w,
         's,
         (
             Entity,
-            &'static mut RenderPhase<TransparentUI>,
-            &'static mut RenderPhase<TransparentOpacityUI>,
+            &'static mut UIRenderPhase<TransparentUI>,
+            &'static mut UIRenderPhase<TransparentOpacityUI>,
             &'static UIExtractedView,
         ),
     >,
@@ -597,6 +713,7 @@ pub struct QueueQuads<'w, 's> {
     quad_type_offsets: Res<'w, QuadTypeOffsets>,
     prev_clip: ResMut<'w, PreviousClip>,
     prev_index: ResMut<'w, PreviousIndex>,
+    view_uniforms: Res<'w, UIViewUniforms>,
 }
 
 pub fn queue_quads(queue_quads: QueueQuads) {
@@ -607,11 +724,12 @@ pub fn queue_quads(queue_quads: QueueQuads) {
         draw_functions,
         draw_functions_opacity,
         render_device,
+        render_queue,
         mut quad_meta,
         quad_pipeline,
         mut pipelines,
         pipeline_cache,
-        mut extracted_quads,
+        extracted_quads,
         mut views,
         mut image_bind_groups,
         unified_pipeline,
@@ -620,9 +738,18 @@ pub fn queue_quads(queue_quads: QueueQuads) {
         quad_type_offsets,
         mut prev_clip,
         mut prev_index,
+        view_uniforms,
     } = queue_quads;
 
-    let extracted_sprite_len = extracted_quads.quads.len();
+    if view_uniforms.uniforms.buffer().is_none() {
+        return;
+    }
+
+    let mut extracted_quads = extracted_quads.iter().collect::<Vec<_>>();
+
+    extracted_quads.sort_unstable_by(|a, b| a.z_index.partial_cmp(&b.z_index).unwrap());
+
+    let extracted_sprite_len = extracted_quads.len();
     // don't create buffers when there are no quads
     if extracted_sprite_len == 0 {
         return;
@@ -636,20 +763,22 @@ pub fn queue_quads(queue_quads: QueueQuads) {
 
     // Sort sprites by z for correct transparency and then by handle to improve batching
     // NOTE: This can be done independent of views by reasonably assuming that all 2D views look along the negative-z axis in world space
-    let extracted_quads = &mut extracted_quads.quads;
-    extracted_quads.sort_unstable_by(|a, b| a.z_index.partial_cmp(&b.z_index).unwrap());
-
     let mut current_batch = QuadBatch {
         image_handle_id: None,
         font_handle_id: None,
         quad_type: UIQuadType::None,
         type_id: quad_type_offsets.quad_type_offset,
-        z_index: -999.0,
+        z_index: 0.0,
     };
     let mut current_batch_entity = Entity::PLACEHOLDER;
 
     // Vertex buffer indices
     let mut index = 0;
+    let mut item_start = 0;
+    let mut item_end = 0;
+    let mut old_item_start = 0;
+    let mut current_clip = Rect::default();
+    let mut last_clip = Rect::default();
 
     let draw_quad = draw_functions.read().get_id::<DrawUI>().unwrap();
     let draw_opacity_quad = draw_functions_opacity
@@ -665,14 +794,13 @@ pub fn queue_quads(queue_quads: QueueQuads) {
         };
         let spec_pipeline = pipelines.specialize(&pipeline_cache, &quad_pipeline, key);
 
-        for quad in extracted_quads.iter_mut() {
+        let mut last_quad = ExtractedQuad::default();
+
+        for quad in extracted_quads.iter() {
             if quad.quad_type == UIQuadType::Clip {
                 prev_clip.rect = quad.rect;
             }
 
-            if prev_clip.rect.width() < 1.0 || prev_clip.rect.height() < 1.0 {
-                continue;
-            }
             queue_quads_inner(
                 &mut commands,
                 &render_device,
@@ -694,11 +822,57 @@ pub fn queue_quads(queue_quads: QueueQuads) {
                 &mut current_batch,
                 &mut current_batch_entity,
                 &mut index,
-            )
+                &mut item_start,
+                &mut item_end,
+                &last_quad,
+                &mut current_clip,
+                &mut old_item_start,
+                &mut last_clip,
+            );
+
+            last_quad = (*quad).clone();
+        }
+
+        if last_quad.quad_type != UIQuadType::Clip
+            && last_quad.quad_type != UIQuadType::OpacityLayer
+            && last_quad.quad_type != UIQuadType::Clip
+            && current_batch_entity != Entity::PLACEHOLDER
+        {
+            if last_quad.opacity_layer > 0 {
+                opacity_transparent_phase.add(TransparentOpacityUI {
+                    draw_function: draw_opacity_quad,
+                    pipeline: spec_pipeline,
+                    entity: current_batch_entity,
+                    sort_key: FloatOrd(last_quad.z_index),
+                    quad_type: last_quad.quad_type.clone(),
+                    type_index: last_quad.type_index,
+                    rect: last_clip,
+                    batch_range: Some(old_item_start..item_end),
+                    opacity_layer: last_quad.opacity_layer,
+                    dynamic_offset: None,
+                });
+            } else {
+                transparent_phase.add(TransparentUI {
+                    draw_function: draw_quad,
+                    pipeline: spec_pipeline,
+                    entity: current_batch_entity,
+                    sort_key: FloatOrd(last_quad.z_index),
+                    quad_type: last_quad.quad_type.clone(),
+                    type_index: last_quad.type_index,
+                    rect: last_clip,
+                    batch_range: Some(old_item_start..item_end),
+                    dynamic_offset: None,
+                });
+            }
         }
     }
 
+    quad_meta
+        .vertices
+        .write_buffer(&render_device, &render_queue);
+
     prev_index.index = index;
+    prev_index.last_clip = last_clip;
 }
 
 pub fn queue_quads_inner(
@@ -710,33 +884,38 @@ pub fn queue_quads_inner(
     gpu_images: &RenderAssets<Image>,
     unified_pipeline: &UnifiedPipeline,
     render_svgs: &RenderSvgs,
-    transparent_phase: &mut RenderPhase<TransparentUI>,
-    opacity_transparent_phase: &mut RenderPhase<TransparentOpacityUI>,
+    transparent_phase: &mut UIRenderPhase<TransparentUI>,
+    opacity_transparent_phase: &mut UIRenderPhase<TransparentOpacityUI>,
     draw_opacity_quad: DrawFunctionId,
     draw_quad: DrawFunctionId,
     spec_pipeline: CachedRenderPipelineId,
     quad_meta: &mut QuadMeta,
-    quad: &mut ExtractedQuad,
+    quad: &ExtractedQuad,
     camera_entity: Entity,
     quad_type_offsets: QuadTypeOffsets,
     current_batch: &mut QuadBatch,
     current_batch_entity: &mut Entity,
     index: &mut u32,
+    item_start: &mut u32,
+    item_end: &mut u32,
+    old_quad: &ExtractedQuad,
+    current_clip: &mut Rect,
+    old_item_start: &mut u32,
+    last_clip: &mut Rect,
 ) {
     if camera_entity != quad.camera_entity {
         return;
     }
-
-    match quad.quad_type {
-        UIQuadType::Quad => quad.type_index = quad_type_offsets.quad_type_offset,
-        UIQuadType::Text => quad.type_index = quad_type_offsets.text_type_offset,
-        UIQuadType::TextSubpixel => quad.type_index = quad_type_offsets.text_sub_pixel_type_offset,
-        UIQuadType::Image => quad.type_index = quad_type_offsets.image_type_offset,
-        UIQuadType::BoxShadow => quad.type_index = quad_type_offsets.box_shadow_type_offset,
-        UIQuadType::Clip => quad.type_index = 100000,
-        UIQuadType::None => quad.type_index = 100001,
-        UIQuadType::OpacityLayer => quad.type_index = 100002,
-        UIQuadType::DrawOpacityLayer => quad.type_index = quad_type_offsets.image_type_offset,
+    let quad_type_index = match quad.quad_type {
+        UIQuadType::Quad => quad_type_offsets.quad_type_offset,
+        UIQuadType::Text => quad_type_offsets.text_type_offset,
+        UIQuadType::TextSubpixel => quad_type_offsets.text_sub_pixel_type_offset,
+        UIQuadType::Image => quad_type_offsets.image_type_offset,
+        UIQuadType::BoxShadow => quad_type_offsets.box_shadow_type_offset,
+        UIQuadType::Clip => 100000,
+        UIQuadType::None => 100001,
+        UIQuadType::OpacityLayer => 100002,
+        UIQuadType::DrawOpacityLayer => quad_type_offsets.image_type_offset,
     };
 
     // Ignore opacity layers
@@ -744,26 +923,86 @@ pub fn queue_quads_inner(
         return;
     }
 
+    if quad.quad_type == UIQuadType::Clip {
+        // *last_clip = *current_clip;
+        *current_clip = quad.rect;
+    }
+
+    if current_clip.width() < 1.0 || current_clip.height() < 1.0 {
+        return;
+    }
     let mut new_batch = QuadBatch {
-        image_handle_id: quad.image.clone().map(HandleId::from),
-        font_handle_id: quad.font_handle.clone().map(HandleId::from),
+        image_handle_id: quad.image.clone(),
+        font_handle_id: quad.font_handle.clone(),
         quad_type: quad.quad_type,
-        type_id: quad.type_index,
-        z_index: 0.0, // z_index: quad.z_index,
+        type_id: quad_type_index,
+        // z_index: quad.z_index,
+        z_index: 0.0,
     };
+    let sprite_rect = quad.rect;
 
     if new_batch != *current_batch
-        || matches!(quad.quad_type, UIQuadType::Clip)
-        || matches!(quad.quad_type, UIQuadType::DrawOpacityLayer)
+        || old_quad.quad_type == UIQuadType::Clip
+        || matches!(new_batch.quad_type, UIQuadType::DrawOpacityLayer)
     {
+        if *current_batch_entity != Entity::PLACEHOLDER
+            && old_quad.quad_type != UIQuadType::Clip
+            && old_quad.quad_type != UIQuadType::OpacityLayer
+        {
+            // handle old batch
+            commands
+                .entity(*current_batch_entity)
+                .insert(current_batch.clone());
+        }
+
+        // batch ended insert transparent phase object:
+        if current_batch.quad_type != UIQuadType::Clip
+            && current_batch.quad_type != UIQuadType::OpacityLayer
+            && old_quad.quad_type != UIQuadType::Clip
+            && *current_batch_entity != Entity::PLACEHOLDER
+        {
+            if old_quad.opacity_layer > 0 {
+                opacity_transparent_phase.add(TransparentOpacityUI {
+                    draw_function: draw_opacity_quad,
+                    pipeline: spec_pipeline,
+                    entity: *current_batch_entity,
+                    sort_key: FloatOrd(old_quad.z_index),
+                    quad_type: old_quad.quad_type.clone(),
+                    type_index: old_quad.type_index,
+                    rect: *current_clip,
+                    batch_range: Some(*old_item_start..*item_end),
+                    opacity_layer: old_quad.opacity_layer,
+                    dynamic_offset: None,
+                });
+            } else {
+                transparent_phase.add(TransparentUI {
+                    draw_function: draw_quad,
+                    pipeline: spec_pipeline,
+                    entity: *current_batch_entity,
+                    sort_key: FloatOrd(old_quad.z_index),
+                    quad_type: old_quad.quad_type.clone(),
+                    type_index: old_quad.type_index,
+                    rect: *current_clip,
+                    batch_range: Some(*old_item_start..*item_end),
+                    dynamic_offset: None,
+                });
+            }
+
+            *item_start = *index;
+            *old_item_start = *item_end;
+            *last_clip = *current_clip;
+        }
+
         if let Some(image_handle) = quad.image.as_ref() {
             if let Some(gpu_image) = gpu_images.get(image_handle) {
                 image_bind_groups
                     .values
                     .entry(image_handle.clone_weak())
                     .or_insert_with(|| {
-                        render_device.create_bind_group(&BindGroupDescriptor {
-                            entries: &[
+                        render_device.create_bind_group(
+                            Some("ui_image_bind_group"),
+                            &unified_pipeline.image_layout,
+                            &[
                                 BindGroupEntry {
                                     binding: 0,
                                     resource: BindingResource::TextureView(&gpu_image.texture_view),
@@ -785,9 +1024,7 @@ pub fn queue_quads_inner(
                                     ),
                                 },
                             ],
-                            label: Some("ui_image_bind_group"),
-                            layout: &unified_pipeline.image_layout,
-                        })
+                        )
                     });
             } else {
                 // Skip unloaded texture.
@@ -797,13 +1034,15 @@ pub fn queue_quads_inner(
 
         if let Some(font_handle) = quad.font_handle.as_ref() {
             if let Some(gpu_image) = font_texture_cache.get_gpu_image(font_handle, gpu_images) {
-                new_batch.image_handle_id = Some(font_handle.id());
+                new_batch.font_handle_id = Some(font_handle.clone_weak());
                 image_bind_groups
                     .font_values
                     .entry(font_handle.clone_weak())
                     .or_insert_with(|| {
-                        render_device.create_bind_group(&BindGroupDescriptor {
-                            entries: &[
+                        render_device.create_bind_group(
+                            Some("ui_text_bind_group"),
+                            &unified_pipeline.image_layout,
+                            &[
                                 BindGroupEntry {
                                     binding: 0,
                                     resource: BindingResource::TextureView(
@@ -825,15 +1064,10 @@ pub fn queue_quads_inner(
                                     resource: BindingResource::Sampler(&gpu_image.sampler),
                                 },
                             ],
-                            label: Some("ui_text_bind_group"),
-                            layout: &unified_pipeline.image_layout,
-                        })
+                        )
                     });
             }
         }
-
-        // Start new batch
-        *current_batch = new_batch;
 
         if quad.quad_type == UIQuadType::DrawOpacityLayer {
             if let Some(layer) = opacity_layers.camera_layers.get(&camera_entity) {
@@ -860,8 +1094,10 @@ pub fn queue_quads_inner(
                     if new_image {
                         image_bind_groups.values.insert(
                             image_handle.clone_weak(),
-                            render_device.create_bind_group(&BindGroupDescriptor {
-                                entries: &[
+                            render_device.create_bind_group(
+                                Some("draw_opacity_layer_bind_group"),
+                                &unified_pipeline.image_layout,
+                                &[
                                     BindGroupEntry {
                                         binding: 0,
                                         resource: BindingResource::TextureView(
@@ -885,31 +1121,33 @@ pub fn queue_quads_inner(
                                         ),
                                     },
                                 ],
-                                label: Some("draw_opacity_layer_bind_group"),
-                                layout: &unified_pipeline.image_layout,
-                            }),
+                            ),
                         );
                     }
 
-                    current_batch.image_handle_id = Some(image_handle).map(HandleId::from);
+                    new_batch.image_handle_id = Some(image_handle.clone_weak());
                     // bevy::prelude::info!("Attaching opacity layer with index: {} with view: {:?}", quad.opacity_layer, gpu_image.texture_view);
                 } else {
                     return;
                 }
             }
-            quad.opacity_layer = 0;
         }
 
-        *current_batch_entity = commands.spawn(*current_batch).id();
-        // dbg!((current_batch_entity, current_batch, quad.rect));
+        // Start new batch
+        *current_batch = new_batch;
+        if current_batch.quad_type != UIQuadType::Clip
+            && current_batch.quad_type != UIQuadType::OpacityLayer
+        {
+            *current_batch_entity = commands.spawn(current_batch.clone()).id();
+        }
     }
 
-    let sprite_rect = quad.rect;
-    let item_start = *index;
-    let mut item_end = *index;
+    if matches!(current_batch.quad_type, UIQuadType::Clip) {
+        return;
+    }
 
     if let (Some(svg_handle), color) = (quad.svg_handle.0.as_ref(), quad.svg_handle.1.as_ref()) {
-        if let Some((svg, mesh)) = render_svgs.get(svg_handle) {
+        if let Some((svg, mesh)) = render_svgs.get(&svg_handle.id()) {
             let new_height = (svg.view_box.h as f32 / svg.view_box.w as f32) * sprite_rect.size().x;
             let svg_scale_x = sprite_rect.size().x / svg.view_box.w as f32;
             let svg_scale_y = new_height / svg.view_box.h as f32;
@@ -950,11 +1188,16 @@ pub fn queue_quads_inner(
                     position: final_position.into(),
                     color,
                     uv: [0.0; 4],
-                    pos_size: [0.0, 0.0, sprite_rect.size().x, sprite_rect.size().y],
+                    pos_size: [
+                        sprite_rect.min.x,
+                        sprite_rect.min.y,
+                        sprite_rect.size().x,
+                        new_height,
+                    ],
                 });
             }
             *index += indices.len() as u32;
-            item_end = *index;
+            *item_end = *index;
         }
     } else {
         let color = quad.color.as_linear_rgba_f32();
@@ -1005,56 +1248,29 @@ pub fn queue_quads_inner(
             Vec2::new(0.0, 1.0),
         ];
 
-        if !matches!(quad.quad_type, UIQuadType::Clip) {
-            for (index, vertex_index) in QUAD_INDICES.iter().enumerate() {
-                let vertex_position = QUAD_VERTEX_POSITIONS[*vertex_index];
-                let world = Mat4::from_scale_rotation_translation(
-                    sprite_rect.size().extend(1.0),
-                    Quat::default(),
-                    sprite_rect.min.extend(0.0),
-                );
-                let final_position = (world * vertex_position.extend(0.0).extend(1.0)).truncate();
-                quad_meta.vertices.push(QuadVertex {
-                    position: final_position.into(),
-                    color,
-                    uv: uvs[index],
-                    pos_size: [
-                        sprite_rect.min.x,
-                        sprite_rect.min.y,
-                        sprite_rect.size().x,
-                        sprite_rect.size().y,
-                    ],
-                });
-            }
-
-            *index += QUAD_INDICES.len() as u32;
-            item_end = *index;
+        for (index, vertex_index) in QUAD_INDICES.iter().enumerate() {
+            let vertex_position = QUAD_VERTEX_POSITIONS[*vertex_index];
+            let world = Mat4::from_scale_rotation_translation(
+                sprite_rect.size().extend(1.0),
+                Quat::default(),
+                sprite_rect.min.extend(0.0),
+            );
+            let final_position = (world * vertex_position.extend(0.0).extend(1.0)).truncate();
+            quad_meta.vertices.push(QuadVertex {
+                position: final_position.into(),
+                color,
+                uv: uvs[index],
+                pos_size: [
+                    sprite_rect.min.x,
+                    sprite_rect.min.y,
+                    sprite_rect.size().x,
+                    sprite_rect.size().y,
+                ],
+            });
         }
-    }
 
-    if quad.opacity_layer > 0 {
-        opacity_transparent_phase.add(TransparentOpacityUI {
-            draw_function: draw_opacity_quad,
-            pipeline: spec_pipeline,
-            entity: *current_batch_entity,
-            sort_key: FloatOrd(quad.z_index),
-            quad_type: quad.quad_type,
-            type_index: quad.type_index,
-            rect: sprite_rect,
-            batch_range: Some(item_start..item_end),
-            opacity_layer: quad.opacity_layer,
-        });
-    } else {
-        transparent_phase.add(TransparentUI {
-            draw_function: draw_quad,
-            pipeline: spec_pipeline,
-            entity: *current_batch_entity,
-            sort_key: FloatOrd(quad.z_index),
-            quad_type: quad.quad_type,
-            type_index: quad.type_index,
-            rect: sprite_rect,
-            batch_range: Some(item_start..item_end),
-        });
+        *index += QUAD_INDICES.len() as u32;
+        *item_end = *index;
     }
 }
 
@@ -1096,7 +1312,7 @@ pub struct DrawUIDraw<T> {
     phantom: PhantomData<T>,
 }
 
-impl<T: PhaseItem + TransparentUIGeneric + BatchedPhaseItem> RenderCommand<T> for DrawUIDraw<T> {
+impl<T: PhaseItem + TransparentUIGeneric> RenderCommand<T> for DrawUIDraw<T> {
     type Param = (SRes<QuadMeta>, SRes<UnifiedPipeline>, SRes<ImageBindGroups>);
 
     type ViewWorldQuery = Read<UIExtractedView>;
@@ -1112,20 +1328,16 @@ impl<T: PhaseItem + TransparentUIGeneric + BatchedPhaseItem> RenderCommand<T> fo
         let (quad_meta, unified_pipeline, image_bind_groups) = param;
 
         let quad_meta = quad_meta.into_inner();
+        let window_size = (view.viewport.z as f32, view.viewport.w as f32);
+        let rect = item.get_rect();
+        let x = rect.min.x as u32;
+        let y = rect.min.y as u32;
+        let mut width = rect.width() as u32;
+        let mut height = rect.height() as u32;
 
-        if item.get_quad_type() == UIQuadType::Clip {
-            let window_size = (view.viewport.z as f32, view.viewport.w as f32);
-            let rect = item.get_rect();
-            let x = rect.min.x as u32;
-            let y = rect.min.y as u32;
-            let mut width = rect.width() as u32;
-            let mut height = rect.height() as u32;
-
-            width = width.min(window_size.0 as u32);
-            height = height.min(window_size.1 as u32);
-            if width == 0 || height == 0 || x > window_size.0 as u32 || y > window_size.1 as u32 {
-                return RenderCommandResult::Success;
-            }
+        width = width.min(window_size.0 as u32);
+        height = height.min(window_size.1 as u32);
+        if !(width == 0 || height == 0 || x > window_size.0 as u32 || y > window_size.1 as u32) {
             if x + width >= window_size.0 as u32 {
                 width = window_size.0 as u32 - x;
             }
@@ -1133,10 +1345,10 @@ impl<T: PhaseItem + TransparentUIGeneric + BatchedPhaseItem> RenderCommand<T> fo
                 height = window_size.1 as u32 - y;
             }
             pass.set_scissor_rect(x, y, width, height);
-            return RenderCommandResult::Success;
         }
 
-        pass.set_vertex_buffer(0, quad_meta.vertices.buffer().unwrap().slice(..));
+        let vertices_slice = quad_meta.vertices.buffer().unwrap().slice(..);
+        pass.set_vertex_buffer(0, vertices_slice);
 
         pass.set_bind_group(
             2,
@@ -1145,36 +1357,25 @@ impl<T: PhaseItem + TransparentUIGeneric + BatchedPhaseItem> RenderCommand<T> fo
         );
 
         let unified_pipeline = unified_pipeline.into_inner();
-        // if let Some(font_handle) = batch.font_handle_id.as_ref() {
-        //     if let Some(image_bindings) = font_texture_cache
-        //         .into_inner()
-        //         .get_binding(&Handle::weak(*font_handle))
-        //     {
-        //         pass.set_bind_group(1, image_bindings, &[]);
-        //     } else {
-        //         pass.set_bind_group(1, &unified_pipeline.empty_font_texture.1, &[]);
-        //     }
-        // } else {
-        //     pass.set_bind_group(1, &unified_pipeline.empty_font_texture.1, &[]);
-        // }
 
+        let image_bind_groups = image_bind_groups.into_inner();
         if let Some(image_handle) = batch.image_handle_id.as_ref() {
-            let image_bind_groups = image_bind_groups.into_inner();
-            if let Some(bind_group) = image_bind_groups.values.get(&Handle::weak(*image_handle)) {
-                pass.set_bind_group(1, bind_group, &[]);
-            } else if let Some(bind_group) = image_bind_groups
-                .font_values
-                .get(&Handle::weak(*image_handle))
-            {
+            if let Some(bind_group) = image_bind_groups.values.get(image_handle) {
                 pass.set_bind_group(1, bind_group, &[]);
             } else {
                 pass.set_bind_group(1, &unified_pipeline.default_image.1, &[]);
             }
+        } else if let Some(bind_group) = batch
+            .font_handle_id
+            .as_ref()
+            .map(|h| image_bind_groups.font_values.get(h))
+            .flatten()
+        {
+            pass.set_bind_group(1, bind_group, &[]);
         } else {
             pass.set_bind_group(1, &unified_pipeline.default_image.1, &[]);
         }
-
-        pass.draw(item.batch_range().as_ref().unwrap().clone(), 0..1);
+        pass.draw(item.batch_range().clone(), 0..1);
 
         RenderCommandResult::Success
     }

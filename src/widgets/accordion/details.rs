@@ -65,7 +65,7 @@ pub fn render(
                         previous_y = layout.posy + layout.height;
                     }
                 }
-
+                
                 let transition_props = TransitionProps {
                     easing: TransitionEasing::QuadraticInOut,
                     reversing: !context.is_open(accordion.index),

@@ -107,7 +107,7 @@ fn startup(
             <WindowContextProviderBundle>
                 <WindowBundle
                     window={KWindow {
-                        title: "State Example Window".into(),
+                        title: "State Example Window 1".into(),
                         draggable: true,
                         initial_position: Vec2::new(10.0, 10.0),
                         size: Vec2::new(300.0, 250.0),
@@ -118,7 +118,7 @@ fn startup(
                 </WindowBundle>
                 <WindowBundle
                     window={KWindow {
-                        title: "State Example Window".into(),
+                        title: "State Example Window 2".into(),
                         draggable: true,
                         initial_position: Vec2::new(500.0, 10.0),
                         size: Vec2::new(300.0, 250.0),

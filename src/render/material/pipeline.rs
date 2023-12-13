@@ -10,7 +10,7 @@ use bevy::{
     render::{
         render_asset::RenderAssets,
         render_phase::{
-            DrawFunctions, PhaseItem, RenderCommand, RenderCommandResult, RenderPhase,
+            DrawFunctions, PhaseItem, RenderCommand, RenderCommandResult,
             SetItemPipeline, TrackedRenderPass,
         },
         render_resource::{
@@ -18,11 +18,11 @@ use bevy::{
             RenderPipelineDescriptor, ShaderRef, SpecializedRenderPipeline,
             SpecializedRenderPipelines,
         },
-        renderer::RenderDevice,
+        renderer::{RenderDevice, RenderQueue},
         texture::FallbackImage,
         Extract,
     },
-    utils::{HashMap, HashSet},
+    utils::{HashMap, HashSet, FloatOrd},
 };
 use kayak_font::bevy::FontTextureCache;
 use std::hash::Hash;
@@ -32,7 +32,7 @@ use crate::render::{
     extract::UIExtractedView,
     opacity_layer::OpacityLayerManager,
     svg::RenderSvgs,
-    ui_pass::{TransparentOpacityUI, TransparentUI},
+    ui_pass::{TransparentOpacityUI, TransparentUI, UIRenderPhase},
     unified::pipeline::{
         queue_quads_inner, DrawUIDraw, ExtractedQuad, ImageBindGroups, PreviousClip, PreviousIndex,
         QuadBatch, QuadMeta, QuadTypeOffsets, SetUIViewBindGroup, UIQuadType, UnifiedPipeline,
@@ -117,15 +117,15 @@ impl<M: MaterialUI> FromWorld for MaterialUIPipeline<M> {
 
 /// Data prepared for a [`MaterialUI`] instance.
 pub struct PreparedMaterialUI<T: MaterialUI> {
-    pub bindings: Vec<OwnedBindingResource>,
+    pub bindings: Vec<(u32, OwnedBindingResource)>,
     pub bind_group: BindGroup,
     pub key: T::Data,
 }
 
 #[derive(Resource)]
 pub struct ExtractedMaterialsUI<M: MaterialUI> {
-    extracted: Vec<(Handle<M>, M)>,
-    removed: Vec<Handle<M>>,
+    extracted: Vec<(AssetId<M>, M)>,
+    removed: Vec<AssetId<M>>,
 }
 
 impl<M: MaterialUI> Default for ExtractedMaterialsUI<M> {
@@ -139,7 +139,7 @@ impl<M: MaterialUI> Default for ExtractedMaterialsUI<M> {
 
 /// Stores all prepared representations of [`MaterialUI`] assets for as long as they exist.
 #[derive(Resource, Deref, DerefMut)]
-pub struct RenderMaterialsUI<T: MaterialUI>(HashMap<Handle<T>, PreparedMaterialUI<T>>);
+pub struct RenderMaterialsUI<T: MaterialUI>(HashMap<AssetId<T>, PreparedMaterialUI<T>>);
 
 impl<T: MaterialUI> Default for RenderMaterialsUI<T> {
     fn default() -> Self {
@@ -156,21 +156,21 @@ pub fn extract_materials_ui<M: MaterialUI>(
 ) {
     let mut changed_assets = HashSet::default();
     let mut removed = Vec::new();
-    for event in events.iter() {
+    for event in events.read() {
         match event {
-            AssetEvent::Created { handle } | AssetEvent::Modified { handle } => {
-                changed_assets.insert(handle.clone_weak());
+            AssetEvent::Added { id } | AssetEvent::LoadedWithDependencies { id } | AssetEvent::Modified { id } => {
+                changed_assets.insert(*id);
             }
-            AssetEvent::Removed { handle } => {
-                changed_assets.remove(handle);
-                removed.push(handle.clone_weak());
+            AssetEvent::Removed { id } => {
+                changed_assets.remove(id);
+                removed.push(*id);
             }
         }
     }
 
     let mut extracted_assets = Vec::new();
     for handle in changed_assets.drain() {
-        if let Some(asset) = assets.get(&handle) {
+        if let Some(asset) = assets.get(handle) {
             extracted_assets.push((handle, asset.clone()));
         }
     }
@@ -183,7 +183,7 @@ pub fn extract_materials_ui<M: MaterialUI>(
 
 /// All [`MaterialUI`] values of a given type that should be prepared next frame.
 pub struct PrepareNextFrameMaterials<M: MaterialUI> {
-    assets: Vec<(Handle<M>, M)>,
+    assets: Vec<(AssetId<M>, M)>,
 }
 
 impl<M: MaterialUI> Default for PrepareNextFrameMaterials<M> {
@@ -293,7 +293,8 @@ impl<P: PhaseItem, M: MaterialUI, const I: usize> RenderCommand<P> for SetMateri
         materials: SystemParamItem<'w, '_, Self::Param>,
         pass: &mut TrackedRenderPass<'w>,
     ) -> RenderCommandResult {
-        let material2d = materials.into_inner().get(material2d_handle).unwrap();
+        let asset_id: AssetId<M> = material2d_handle.clone_weak().into();
+        let material2d = materials.into_inner().get(&asset_id).unwrap();
         pass.set_bind_group(I, &material2d.bind_group, &[]);
         RenderCommandResult::Success
     }
@@ -306,6 +307,7 @@ pub fn queue_material_ui_quads<M: MaterialUI>(
     draw_functions: Res<DrawFunctions<TransparentUI>>,
     draw_functions_opacity: Res<DrawFunctions<TransparentOpacityUI>>,
     render_device: Res<RenderDevice>,
+    render_queue: Res<RenderQueue>,
     mut quad_meta: ResMut<QuadMeta>,
     quad_pipeline: Res<UnifiedPipeline>,
     materialui_pipeline: Res<MaterialUIPipeline<M>>,
@@ -314,8 +316,8 @@ pub fn queue_material_ui_quads<M: MaterialUI>(
     mut extracted_quads: Query<(&'static mut ExtractedQuad, &'static Handle<M>)>,
     mut views: Query<(
         Entity,
-        &'static mut RenderPhase<TransparentUI>,
-        &'static mut RenderPhase<TransparentOpacityUI>,
+        &'static mut UIRenderPhase<TransparentUI>,
+        &'static mut UIRenderPhase<TransparentOpacityUI>,
         &'static UIExtractedView,
     )>,
     mut image_bind_groups: ResMut<ImageBindGroups>,
@@ -348,6 +350,11 @@ pub fn queue_material_ui_quads<M: MaterialUI>(
 
     // Vertex buffer indices
     let mut index = prev_index.index;
+    let mut item_start = prev_index.index;
+    let mut item_end = prev_index.index;
+    let mut old_item_start = prev_index.index;
+    let mut current_clip = prev_index.last_clip;
+    let mut last_clip = prev_index.last_clip;
 
     // let mut previous_clip_rect = Rect::default();
 
@@ -364,8 +371,13 @@ pub fn queue_material_ui_quads<M: MaterialUI>(
             hdr: view.hdr,
         };
 
+        let mut last_quad = ExtractedQuad::default();
+
+        let mut pipeline_id = None;
+
         for (mut quad, material_handle) in extracted_quads.iter_mut() {
-            if let Some(materialui) = render_materials.get(material_handle) {
+            let asset_id: AssetId<M> = material_handle.clone_weak().into();
+            if let Some(materialui) = render_materials.get(&asset_id) {
                 if quad.quad_type == UIQuadType::Clip {
                     prev_clip.rect = quad.rect;
                 }
@@ -373,15 +385,15 @@ pub fn queue_material_ui_quads<M: MaterialUI>(
                 if prev_clip.rect.width() < 1.0 || prev_clip.rect.height() < 1.0 {
                     continue;
                 }
-
-                let pipeline_id = pipelines.specialize(
+                
+                pipeline_id = Some(pipelines.specialize(
                     &pipeline_cache,
                     &materialui_pipeline,
                     MaterialUIKey {
                         unified_key: key,
                         bind_group_data: materialui.key.clone(),
                     },
-                );
+                ));
 
                 queue_quads_inner(
                     &mut commands,
@@ -396,7 +408,7 @@ pub fn queue_material_ui_quads<M: MaterialUI>(
                     &mut opacity_transparent_phase,
                     draw_opacity_quad,
                     draw_quad,
-                    pipeline_id,
+                    pipeline_id.unwrap(),
                     &mut quad_meta,
                     &mut quad,
                     camera_entity,
@@ -404,14 +416,55 @@ pub fn queue_material_ui_quads<M: MaterialUI>(
                     &mut current_batch,
                     &mut current_batch_entity,
                     &mut index,
+                    &mut item_start,
+                    &mut item_end,
+                    &last_quad,
+                    &mut current_clip,
+                    &mut old_item_start,
+                    &mut last_clip,
                 );
 
                 if current_batch_entity != Entity::PLACEHOLDER {
-                    commands
-                        .entity(current_batch_entity)
-                        .insert(material_handle.clone_weak());
+                    commands.entity(current_batch_entity).insert(material_handle.clone_weak());
+                }
+
+                last_quad = quad.clone();
+            }
+        }
+
+        if let Some(pipeline) = pipeline_id {
+            if last_quad.quad_type != UIQuadType::Clip && last_quad.quad_type != UIQuadType::OpacityLayer && last_quad.quad_type != UIQuadType::Clip && current_batch_entity != Entity::PLACEHOLDER {
+                // handle old batch
+                commands.entity(current_batch_entity).insert(current_batch.clone());
+                if last_quad.opacity_layer > 0 {
+                    opacity_transparent_phase.add(TransparentOpacityUI {
+                        draw_function: draw_opacity_quad,
+                        pipeline,
+                        entity: current_batch_entity,
+                        sort_key: FloatOrd(last_quad.z_index),
+                        quad_type: last_quad.quad_type.clone(),
+                        type_index: last_quad.type_index,
+                        rect: last_clip,
+                        batch_range: Some(old_item_start..item_end),
+                        opacity_layer: last_quad.opacity_layer,
+                        dynamic_offset: None,
+                    });
+                } else {
+                    transparent_phase.add(TransparentUI {
+                        draw_function: draw_quad,
+                        pipeline,
+                        entity: current_batch_entity,
+                        sort_key: FloatOrd(last_quad.z_index),
+                        quad_type: last_quad.quad_type.clone(),
+                        type_index: last_quad.type_index,
+                        rect: last_clip,
+                        batch_range:  Some(old_item_start..item_end),
+                        dynamic_offset: None,
+                    });
                 }
             }
         }
     }
+
+    quad_meta.vertices.write_buffer(&render_device, &render_queue);
 }

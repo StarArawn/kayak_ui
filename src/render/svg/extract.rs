@@ -22,4 +22,5 @@ pub fn extract_svg(
         opacity_layer,
         ..Default::default()
     }]
+
 }

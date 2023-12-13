@@ -1,16 +1,15 @@
 use bevy::{
     prelude::{
-        AddAsset, Assets, Commands, HandleUntyped, IntoSystemConfigs, Plugin, Query, Res, ResMut,
+        Commands, IntoSystemConfigs, Plugin, Query, Res, ResMut,
         Resource, With,
     },
-    reflect::TypeUuid,
     render::{
         render_phase::AddRenderCommand,
         render_resource::{Shader, SpecializedRenderPipelines},
         renderer::{RenderDevice, RenderQueue},
         Extract, ExtractSchedule, Render, RenderApp, RenderSet,
     },
-    window::{PrimaryWindow, Window},
+    window::{PrimaryWindow, Window}, asset::{Handle, load_internal_asset, AssetApp},
 };
 use bevy_svg::prelude::Svg;
 
@@ -32,45 +31,54 @@ use super::{svg::RenderSvgs, ui_pass::TransparentOpacityUI};
 pub mod pipeline;
 pub mod text;
 
-pub const UNIFIED_SHADER_HANDLE: HandleUntyped =
-    HandleUntyped::weak_from_u64(Shader::TYPE_UUID, 7604018236855288450);
+pub const UNIFIED_SHADER_HANDLE: Handle<Shader> =
+Handle::weak_from_u128(7604018236855288450);
 
-pub const UNIFIED_BINDINGS_HANDLE: HandleUntyped =
-    HandleUntyped::weak_from_u64(Shader::TYPE_UUID, 13885898746900949245);
+pub const UNIFIED_BINDINGS_HANDLE: Handle<Shader> =
+Handle::weak_from_u128(13885898746900949245);
 
-pub const SAMPLE_QUAD_HANDLE: HandleUntyped =
-    HandleUntyped::weak_from_u64(Shader::TYPE_UUID, 5975018398368429820);
+pub const SAMPLE_QUAD_HANDLE: Handle<Shader> =
+Handle::weak_from_u128(5975018398368429820);
 
-pub const VERTEX_OUTPUT_HANDLE: HandleUntyped =
-    HandleUntyped::weak_from_u64(Shader::TYPE_UUID, 8828896277688845893);
+pub const VERTEX_OUTPUT_HANDLE: Handle<Shader> =
+Handle::weak_from_u128(8828896277688845893);
 
 pub struct UnifiedRenderPlugin;
 impl Plugin for UnifiedRenderPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
-        app.add_asset::<Svg>().add_plugins(text::TextRendererPlugin);
+        app.init_asset::<Svg>().add_plugins(text::TextRendererPlugin);
 
-        let mut shaders = app.world.get_resource_mut::<Assets<Shader>>().unwrap();
-        let bindings_include = Shader::from_wgsl(
-            include_str!("shaders/bindings.wgsl"),
+        load_internal_asset!(
+            app,
+            UNIFIED_BINDINGS_HANDLE,
             "shaders/bindings.wgsl",
+            Shader::from_wgsl
         );
-        shaders.set_untracked(UNIFIED_BINDINGS_HANDLE, bindings_include);
-        let sample_quad_include = Shader::from_wgsl(
-            include_str!("shaders/sample_quad.wgsl"),
+        load_internal_asset!(
+            app,
+            SAMPLE_QUAD_HANDLE,
             "shaders/sample_quad.wgsl",
+            Shader::from_wgsl
         );
-        shaders.set_untracked(SAMPLE_QUAD_HANDLE, sample_quad_include);
-        let vertex_output_include = Shader::from_wgsl(
-            include_str!("shaders/vertex_output.wgsl"),
+        load_internal_asset!(
+            app,
+            VERTEX_OUTPUT_HANDLE,
             "shaders/vertex_output.wgsl",
+            Shader::from_wgsl
         );
-        shaders.set_untracked(VERTEX_OUTPUT_HANDLE, vertex_output_include);
-        let unified_shader =
-            Shader::from_wgsl(include_str!("shaders/shader.wgsl"), "shaders/shader.wgsl");
-        shaders.set_untracked(UNIFIED_SHADER_HANDLE, unified_shader);
+        load_internal_asset!(
+            app,
+            UNIFIED_SHADER_HANDLE,
+            "shaders/shader.wgsl",
+            Shader::from_wgsl
+        );
+    }
 
+    fn finish(&self, app: &mut bevy::prelude::App) {
         let render_app = app.sub_app_mut(RenderApp);
         render_app
+            .init_resource::<UnifiedPipeline>()
+            .init_resource::<SpecializedRenderPipelines<UnifiedPipeline>>()
             .init_resource::<QuadTypeOffsets>()
             .init_resource::<ExtractedQuads>()
             .init_resource::<ImageBindGroups>()
@@ -91,16 +99,10 @@ impl Plugin for UnifiedRenderPlugin {
                     .chain()
                     .in_set(RenderSet::Queue),
             )
-            .add_systems(Render, queue_vertices.in_set(RenderSet::QueueFlush));
+            .add_systems(Render, queue_vertices.in_set(RenderSet::QueueMeshes));
 
         render_app.add_render_command::<TransparentUI, DrawUI>();
         render_app.add_render_command::<TransparentOpacityUI, DrawUITransparent>();
-    }
-
-    fn finish(&self, app: &mut bevy::prelude::App) {
-        app.sub_app_mut(RenderApp)
-            .init_resource::<UnifiedPipeline>()
-            .init_resource::<SpecializedRenderPipelines<UnifiedPipeline>>();
     }
 }
 

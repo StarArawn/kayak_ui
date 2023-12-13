@@ -1,7 +1,7 @@
 use crate::{ImageType, KayakFont, Sdf};
 use bevy::{
     math::Vec2,
-    prelude::{Handle, Res, Resource},
+    prelude::{Res, Resource},
     render::{
         render_asset::RenderAssets,
         render_resource::{
@@ -13,7 +13,7 @@ use bevy::{
         renderer::{RenderDevice, RenderQueue},
         texture::{GpuImage, Image},
     },
-    utils::HashMap,
+    utils::HashMap, asset::Handle,
 };
 
 pub trait FontRenderingPipeline {
@@ -88,7 +88,7 @@ impl FontTextureCache {
                     Self::create_from_atlas(
                         &mut self.images,
                         &font.sdf,
-                        kayak_font_handle.clone_weak(),
+                        kayak_font_handle.clone(),
                         device,
                         queue,
                         atlas_texture,
@@ -99,7 +99,7 @@ impl FontTextureCache {
                 }
             }
             if !was_processed {
-                self.new_fonts.push(kayak_font_handle.clone_weak());
+                self.new_fonts.push(kayak_font_handle.clone());
             }
         }
     }
@@ -223,7 +223,7 @@ impl FontTextureCache {
     ) {
         Self::create_texture(
             images,
-            font_handle.clone_weak(),
+            font_handle.clone(),
             (size.x as u32, size.y as u32),
             device,
             TextureFormat::Rgba8Unorm,

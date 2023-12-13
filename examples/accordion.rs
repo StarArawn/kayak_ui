@@ -31,24 +31,24 @@ fn startup(
                 <ScrollContextProviderBundle>
                     <ScrollBoxBundle>
                         <AccordionContextBundle accordion={AccordionContextProvider { allow_only_one: true, ..Default::default() }}>
-                            <AccordionSummaryBundle>
-                                <TextWidgetBundle
-                                    text={TextProps {
-                                        content: "Accordion 1".into(),
-                                        size: 18.0,
-                                        ..Default::default()
-                                    }}
-                                />
-                            </AccordionSummaryBundle>
-                            <AccordionDetailsBundle>
-                                <TextWidgetBundle
-                                    text={TextProps {
-                                        content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse malesuada lacus ex, sit amet blandit leo lobortis eget.".into(),
-                                        size: 14.0,
-                                        ..Default::default()
-                                    }}
-                                />
-                            </AccordionDetailsBundle>
+                            // <AccordionSummaryBundle>
+                            //     <TextWidgetBundle
+                            //         text={TextProps {
+                            //             content: "Accordion 1".into(),
+                            //             size: 18.0,
+                            //             ..Default::default()
+                            //         }}
+                            //     />
+                            // </AccordionSummaryBundle>
+                            // <AccordionDetailsBundle>
+                            //     <TextWidgetBundle
+                            //         text={TextProps {
+                            //             content: "1".into(), //"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse malesuada lacus ex, sit amet blandit leo lobortis eget.".into(),
+                            //             size: 14.0,
+                            //             ..Default::default()
+                            //         }}
+                            //     />
+                            // </AccordionDetailsBundle>
                             <AccordionSummaryBundle accordion={AccordionSummary { index: 1 }}>
                                 <TextWidgetBundle
                                     text={TextProps {
@@ -61,7 +61,7 @@ fn startup(
                             <AccordionDetailsBundle accordion={AccordionDetails { index: 1 }}>
                                 <TextWidgetBundle
                                     text={TextProps {
-                                        content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse malesuada lacus ex, sit amet blandit leo lobortis eget.".into(),
+                                        content: "2".into(), //"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse malesuada lacus ex, sit amet blandit leo lobortis eget.".into(),
                                         size: 14.0,
                                         ..Default::default()
                                     }}
@@ -87,24 +87,24 @@ fn startup(
                                     }}
                                 />
                             </AccordionDetailsBundle>
-                            <AccordionSummaryBundle accordion={AccordionSummary { index: 2 }}>
-                                <TextWidgetBundle
-                                    text={TextProps {
-                                        content: "Accordion 3".into(),
-                                        size: 18.0,
-                                        ..Default::default()
-                                    }}
-                                />
-                            </AccordionSummaryBundle>
-                            <AccordionDetailsBundle accordion={AccordionDetails { index: 2 }}>
-                                <TextWidgetBundle
-                                    text={TextProps {
-                                        content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse malesuada lacus ex, sit amet blandit leo lobortis eget. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse malesuada lacus ex, sit amet blandit leo lobortis eget. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse malesuada lacus ex, sit amet blandit leo lobortis eget.".into(),
-                                        size: 14.0,
-                                        ..Default::default()
-                                    }}
-                                />
-                            </AccordionDetailsBundle>
+                            // <AccordionSummaryBundle accordion={AccordionSummary { index: 2 }}>
+                            //     <TextWidgetBundle
+                            //         text={TextProps {
+                            //             content: "Accordion 3".into(),
+                            //             size: 18.0,
+                            //             ..Default::default()
+                            //         }}
+                            //     />
+                            // </AccordionSummaryBundle>
+                            // <AccordionDetailsBundle accordion={AccordionDetails { index: 2 }}>
+                            //     <TextWidgetBundle
+                            //         text={TextProps {
+                            //             content: "3".into(), //"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse malesuada lacus ex, sit amet blandit leo lobortis eget. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse malesuada lacus ex, sit amet blandit leo lobortis eget. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse malesuada lacus ex, sit amet blandit leo lobortis eget.".into(),
+                            //             size: 14.0,
+                            //             ..Default::default()
+                            //         }}
+                            //     />
+                            // </AccordionDetailsBundle>
                         </AccordionContextBundle>
                     </ScrollBoxBundle>
                 </ScrollContextProviderBundle>

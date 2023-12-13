@@ -6,8 +6,8 @@ use std::sync::Arc;
 
 use bevy::{
     prelude::{Commands, Entity},
-    reflect::{Reflect, TypePath, TypeUuid},
-    render::render_resource::{AsBindGroup, RenderPipelineDescriptor, ShaderRef},
+    reflect::Reflect,
+    render::render_resource::{AsBindGroup, RenderPipelineDescriptor, ShaderRef}, asset::Asset,
 };
 
 pub use key::*;
@@ -15,7 +15,7 @@ pub use pipeline::*;
 pub use plugin::*;
 
 pub trait MaterialUI:
-    AsBindGroup + Send + Sync + Clone + TypeUuid + TypePath + Sized + 'static
+    AsBindGroup + Send + Sync + Clone + Asset + Sized
 {
     /// Returns this material's vertex shader. If [`ShaderRef::Default`] is returned, the default mesh vertex shader
     /// will be used.

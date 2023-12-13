@@ -46,14 +46,14 @@ pub(crate) fn process_events(world: &mut World) {
         )| {
             if let Some(event) = custom_event_reader_cursor
                 .0
-                .iter(&cursor_moved_events)
+                .read(&cursor_moved_events)
                 .last()
             {
                 // Currently, we can only handle a single MouseMoved event at a time so everything but the last needs to be skipped
                 input_events.push(InputEvent::MouseMoved(event.position.into()));
             }
 
-            for event in custom_event_mouse_button.0.iter(&mouse_button_input_events) {
+            for event in custom_event_mouse_button.0.read(&mouse_button_input_events) {
                 if let MouseButton::Left = event.button {
                     if event.state == ButtonState::Pressed {
                         input_events.push(InputEvent::MouseLeftPress);
@@ -68,7 +68,7 @@ pub(crate) fn process_events(world: &mut World) {
                 y,
                 unit,
                 window: _,
-            } in custom_event_mouse_wheel.0.iter(&mouse_wheel_events)
+            } in custom_event_mouse_wheel.0.read(&mouse_wheel_events)
             {
                 input_events.push(InputEvent::Scroll {
                     dx: *x,
@@ -77,11 +77,11 @@ pub(crate) fn process_events(world: &mut World) {
                 })
             }
 
-            for event in custom_event_char_input.0.iter(&char_input_events) {
+            for event in custom_event_char_input.0.read(&char_input_events) {
                 input_events.push(InputEvent::CharEvent { c: event.char });
             }
 
-            for event in custom_event_keyboard.0.iter(&keyboard_input_events) {
+            for event in custom_event_keyboard.0.read(&keyboard_input_events) {
                 if let Some(key_code) = event.key_code {
                     input_events.push(InputEvent::Keyboard {
                         key: key_code,

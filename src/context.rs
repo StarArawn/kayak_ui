@@ -25,7 +25,7 @@ use crate::{
     prelude::KayakWidgetContext,
     render::{
         font::FontMapping,
-        unified::pipeline::{ExtractedQuad, ExtractedQuads, UIQuadType},
+        unified::pipeline::{ExtractedQuad, ExtractedQuads, UIQuadType, QuadOrMaterial},
         MAX_OPACITY_LAYERS,
     },
     render_primitive::RenderPrimitive,
@@ -380,7 +380,7 @@ impl KayakRootContext {
         }
 
         if let Ok(mut layout_cache) = self.layout_cache.try_write() {
-            recurse_node_tree_to_build_primitives(
+            recurse_node_tree_to_build_primitives2(
                 commands,
                 camera_entity,
                 dpi,
@@ -393,8 +393,6 @@ impl KayakRootContext {
                 images,
                 extracted_quads,
                 node_tree.root_node.unwrap(),
-                0.0,
-                0.0,
                 None,
                 0,
                 0,
@@ -405,7 +403,7 @@ impl KayakRootContext {
 
 pub const UI_Z_STEP: f32 = 0.001;
 
-fn recurse_node_tree_to_build_primitives(
+fn recurse_node_tree_to_build_primitives2(
     commands: &mut Commands,
     camera_entity: Entity,
     dpi: f32,
@@ -418,45 +416,25 @@ fn recurse_node_tree_to_build_primitives(
     images: &Assets<Image>,
     extracted_quads: &mut ExtractedQuads,
     current_node: WrappedIndex,
-    _parent_global_z: f32,
-    mut current_global_z: f32,
     mut prev_clip: Option<ExtractedQuad>,
     mut current_opacity_layer: u32,
     mut total_opacity_layers: u32,
-) -> (usize, f32, u32) {
+) -> u32 {
     let mut opacity = None;
-    let mut child_count = 0;
+
     if let Ok(node) = nodes.get(current_node.0) {
         // Skip rendering completely transparent objects.
         if node.opacity < 0.001 {
-            return (0, current_global_z, total_opacity_layers);
+            return total_opacity_layers;
         }
-        current_global_z += UI_Z_STEP + if node.z <= 0.0 { 0.0 } else { node.z };
-        // Set opacity layer on render primitive
 
-        // let mut new_z_index = main_z_index;
-        let new_z = current_global_z; // - parent_global_z;
-
-        let layout = if let Some(layout) = layout_cache.rect.get_mut(&current_node) {
-            log::trace!(
-                "z_index is {} and node.z is {} for: {}-{}",
-                new_z,
-                node.z,
-                widget_names.get(current_node.0).unwrap().0,
-                current_node.0.index(),
-            );
-            layout.z_index = new_z;
-
-            // new_z_index += if node.z <= 0.0 { 0.0 } else { node.z };
-
-            *layout
-        } else {
+        let Some(layout) = layout_cache.rect.get_mut(&current_node) else {
             log::warn!(
                 "No layout for node: {}-{}",
                 widget_names.get(current_node.0).unwrap().0,
                 current_node.0.index()
             );
-            Rect::default()
+            return total_opacity_layers;
         };
 
         let new_clip = node.resolved_styles.extract(
@@ -476,37 +454,39 @@ fn recurse_node_tree_to_build_primitives(
         if node.opacity < 1.0 {
             // If we've hit max opacity layer capacity skip rendering.
             if total_opacity_layers + 1 >= MAX_OPACITY_LAYERS {
-                return (0, current_global_z, total_opacity_layers);
+                return total_opacity_layers;
             }
 
             // Add in an opacity layer
             total_opacity_layers += 1;
-            extracted_quads.quads.push(ExtractedQuad {
+            extracted_quads.new_layer(None);
+            extracted_quads.push(QuadOrMaterial::Quad(ExtractedQuad {
                 camera_entity,
-                z_index: layout.z_index,
                 quad_type: UIQuadType::OpacityLayer,
                 opacity_layer: total_opacity_layers,
                 ..Default::default()
-            });
+            }));
             opacity = Some((node.opacity, total_opacity_layers));
             current_opacity_layer = total_opacity_layers;
-        }
-
-        // let _indent = "  ".repeat(depth);
-        // if new_clip.is_some() {
-        // println!("{} [{:?} current_global_z: {}, z: {}, x: {}, y: {}, width: {}, height: {}]", _indent, extracted_quads.quads.last().unwrap_or(&ExtractedQuad::default()).quad_type, current_global_z, layout.z_index, layout.posx, layout.posy, layout.width, layout.height);
-        // }
+        } else if node.z > 0.0 { // Handle cases where a user defines a z value.
+            extracted_quads.new_layer(Some(node.z));   
+        } 
+        // Else do nothing.
 
         prev_clip = match &new_clip {
             Some(new_clip) => Some(new_clip.clone()),
             None => prev_clip.clone(),
         };
+
+        // Loop through children recursively. 
         if node_tree.children.contains_key(&current_node) {
-            let current_parent_global_z = current_global_z;
             let children = node_tree.children.get(&current_node).unwrap();
-            for child in children {
-                let (new_child_count, new_global_z, new_total_opacity_layers) =
-                    recurse_node_tree_to_build_primitives(
+            // let parent_clip = prev_clip.clone();
+            extracted_quads.new_layer(if node.z > 0.0 { Some(node.z) } else { None });
+            for (i, child) in children.iter().enumerate() {
+                extracted_quads.new_layer(Some(i as f32));
+                let new_total_opacity_layers =
+                    recurse_node_tree_to_build_primitives2(
                         commands,
                         camera_entity,
                         dpi,
@@ -519,26 +499,27 @@ fn recurse_node_tree_to_build_primitives(
                         images,
                         extracted_quads,
                         *child,
-                        current_parent_global_z,
-                        current_global_z,
                         prev_clip.clone(),
                         current_opacity_layer,
                         total_opacity_layers,
                     );
-                current_global_z = new_global_z;
-                child_count += new_child_count;
+                    
                 total_opacity_layers = new_total_opacity_layers;
-
+                
                 // Between each child node we need to reset the clip.
                 if let Some(prev_clip) = &prev_clip {
-                    current_global_z += UI_Z_STEP * 2.0; // * child_count as f32;
-                    extracted_quads.quads.push(ExtractedQuad {
-                        z_index: current_global_z,
+                    extracted_quads.push(QuadOrMaterial::Quad(ExtractedQuad {
+                        // rect: bevy::prelude::Rect {
+                        //     min: Vec2::splat(0.0),
+                        //     max: Vec2::splat(4000.0),
+                        // },
                         ..prev_clip.clone()
-                    });
-                    // println!("{}   [previous_clip, z: {}, x: {}, y: {}, width: {}, height: {}", _indent, current_global_z, layout.posx, layout.posy, layout.width, layout.height);
+                    }));
                 }
+
+                extracted_quads.pop_stack();
             }
+            extracted_quads.pop_stack();
         } else {
             log::trace!(
                 "No children for node: {}-{}",
@@ -546,6 +527,32 @@ fn recurse_node_tree_to_build_primitives(
                 current_node.0.index()
             );
         }
+
+        // When an opacity layer has been added all of its children are drawn to the same render target.
+        // After we need to draw the render target for that opacity layer to the screen.
+        if let Some((opacity, opacity_layer)) = opacity {
+            // First pop the stack to go back up the z tree
+            extracted_quads.pop_stack();
+            let root_node_layout = layout_cache
+                .rect
+                .get(&node_tree.root_node.unwrap())
+                .unwrap();
+            extracted_quads.push(QuadOrMaterial::Quad(ExtractedQuad {
+                camera_entity,
+                color: Color::rgba(1.0, 1.0, 1.0, opacity),
+                opacity_layer,
+                quad_type: UIQuadType::DrawOpacityLayer,
+                rect: bevy::prelude::Rect {
+                    min: Vec2::new(root_node_layout.posx, root_node_layout.posy),
+                    max: Vec2::new(
+                        root_node_layout.posx + root_node_layout.width,
+                        root_node_layout.posy + root_node_layout.height,
+                    ),
+                },
+                ..Default::default()
+            }));
+        }
+
     } else {
         log::error!(
             "No render node: {}-{} > {}-{}",
@@ -570,33 +577,203 @@ fn recurse_node_tree_to_build_primitives(
         );
     }
 
-    // When an opacity layer has been added all of its children are drawn to the same render target.
-    // After we need to draw the render target for that opacity layer to the screen.
-    if let Some((opacity, opacity_layer)) = opacity {
-        let root_node_layout = layout_cache
-            .rect
-            .get(&node_tree.root_node.unwrap())
-            .unwrap();
-        current_global_z += UI_Z_STEP * 2.0;
-        extracted_quads.quads.push(ExtractedQuad {
-            camera_entity,
-            z_index: current_global_z,
-            color: Color::rgba(1.0, 1.0, 1.0, opacity),
-            opacity_layer,
-            quad_type: UIQuadType::DrawOpacityLayer,
-            rect: bevy::prelude::Rect {
-                min: Vec2::new(root_node_layout.posx, root_node_layout.posy),
-                max: Vec2::new(
-                    root_node_layout.posx + root_node_layout.width,
-                    root_node_layout.posy + root_node_layout.height,
-                ),
-            },
-            ..Default::default()
-        });
-    }
-
-    (child_count + 1, current_global_z, total_opacity_layers)
+    total_opacity_layers
 }
+
+// fn recurse_node_tree_to_build_primitives(
+//     commands: &mut Commands,
+//     camera_entity: Entity,
+//     dpi: f32,
+//     node_tree: &Tree,
+//     layout_cache: &mut LayoutCache,
+//     nodes: &Query<&crate::node::Node>,
+//     widget_names: &Query<&WidgetName>,
+//     fonts: &Assets<KayakFont>,
+//     font_mapping: &FontMapping,
+//     images: &Assets<Image>,
+//     extracted_quads: &mut ExtractedQuads,
+//     current_node: WrappedIndex,
+//     total_nodes: usize,
+//     current_global_z: &mut u32,
+//     parent_z: f32,
+//     mut prev_clip: Option<ExtractedQuad>,
+//     mut current_opacity_layer: u32,
+//     mut total_opacity_layers: u32,
+//     depth: u32,
+// ) -> (f32, u32) {
+//     let mut total_child_z = parent_z;
+//     let mut opacity = None;
+//     if let Ok(node) = nodes.get(current_node.0) {
+//         // Skip rendering completely transparent objects.
+//         if node.opacity < 0.001 {
+//             return (parent_z, total_opacity_layers);
+//         }
+//         *current_global_z += 1;
+//         // Set opacity layer on render primitive
+
+//         let layout = if let Some(layout) = layout_cache.rect.get_mut(&current_node) {
+//             log::trace!(
+//                 "z_index is {} and node.z is {} for: {}-{}",
+//                 &current_global_z,
+//                 node.z,
+//                 widget_names.get(current_node.0).unwrap().0,
+//                 current_node.0.index(),
+//             );
+//             layout.z_index = total_child_z + (1.0 / total_nodes as f32) + if node.z <= 0.0 { 0.0 } else { node.z };
+//             total_child_z += 1.0 / total_nodes as f32;
+
+//             *layout
+//         } else {
+//             log::warn!(
+//                 "No layout for node: {}-{}",
+//                 widget_names.get(current_node.0).unwrap().0,
+//                 current_node.0.index()
+//             );
+//             Rect::default()
+//         };
+
+//         let total_extracted = extracted_quads.quads.len();
+//         let new_clip = node.resolved_styles.extract(
+//             commands,
+//             &layout,
+//             current_opacity_layer,
+//             extracted_quads,
+//             camera_entity,
+//             fonts,
+//             font_mapping,
+//             images,
+//             dpi,
+//             prev_clip.clone(),
+//             total_nodes,
+//         );
+
+//         // Only spawn an opacity layer if we have an opacity greater than zero or less than one.
+//         if node.opacity < 1.0 {
+//             // If we've hit max opacity layer capacity skip rendering.
+//             if total_opacity_layers + 1 >= MAX_OPACITY_LAYERS {
+//                 return (total_child_z, total_opacity_layers);
+//             }
+
+//             // Add in an opacity layer
+//             total_opacity_layers += 1;
+//             extracted_quads.quads.push(ExtractedQuad {
+//                 camera_entity,
+//                 z_index: layout.z_index,
+//                 quad_type: UIQuadType::OpacityLayer,
+//                 opacity_layer: total_opacity_layers,
+//                 ..Default::default()
+//             });
+//             opacity = Some((node.opacity, total_opacity_layers));
+//             current_opacity_layer = total_opacity_layers;
+//         }
+
+//         let _indent = "  ".repeat(depth as usize);
+//         if new_clip.is_some() || extracted_quads.quads.len() > total_extracted {
+//             println!("{}[{:?} nodez: {}, current_global_z: {}, z: {}, x: {}, y: {}, width: {}, height: {}]", _indent, extracted_quads.quads.last().unwrap_or(&ExtractedQuad::default()).quad_type, node.z, current_global_z, layout.z_index, layout.posx, layout.posy, layout.width, layout.height);
+//         }
+
+//         prev_clip = match &new_clip {
+//             Some(new_clip) => Some(new_clip.clone()),
+//             None => prev_clip.clone(),
+//         };
+//         if node_tree.children.contains_key(&current_node) {
+//             let children = node_tree.children.get(&current_node).unwrap();
+//             for child in children.iter() {
+//                 let (child_z, new_total_opacity_layers) =
+//                     recurse_node_tree_to_build_primitives(
+//                         commands,
+//                         camera_entity,
+//                         dpi,
+//                         node_tree,
+//                         layout_cache,
+//                         nodes,
+//                         widget_names,
+//                         fonts,
+//                         font_mapping,
+//                         images,
+//                         extracted_quads,
+//                         *child,
+//                         total_nodes,
+//                         current_global_z,
+//                         total_child_z,
+//                         prev_clip.clone(),
+//                         current_opacity_layer,
+//                         total_opacity_layers,
+//                         depth + 1
+//                     );
+//                 total_opacity_layers = new_total_opacity_layers;
+
+//                 //Reset Z-indices between children
+//                 // *current_global_z += 1;
+//                 total_child_z += child_z;
+
+//                 // Between each child node we need to reset the clip.
+//                 if let Some(prev_clip) = &prev_clip {
+//                     let z_index = extracted_quads.quads.last().unwrap().z_index + (1.0 / (total_nodes as f32 * 2.0));
+//                     println!("{}  [previous_clip, current_global_z: {}, z: {}, x: {}, y: {}, width: {}, height: {}]", _indent, current_global_z, z_index, prev_clip.rect.min.x, prev_clip.rect.min.y, prev_clip.rect.width(), prev_clip.rect.height());
+//                     extracted_quads.quads.push(ExtractedQuad {
+//                         z_index,
+//                         ..prev_clip.clone()
+//                     });
+//                 }
+//             }
+//         } else {
+//             log::trace!(
+//                 "No children for node: {}-{}",
+//                 widget_names.get(current_node.0).unwrap().0,
+//                 current_node.0.index()
+//             );
+//         }
+//     } else {
+//         log::error!(
+//             "No render node: {}-{} > {}-{}",
+//             node_tree
+//                 .get_parent(current_node)
+//                 .map(|v| v.0.index() as i32)
+//                 .unwrap_or(-1),
+//             widget_names
+//                 .get(
+//                     node_tree
+//                         .get_parent(current_node)
+//                         .map(|v| v.0)
+//                         .unwrap_or(Entity::from_raw(0))
+//                 )
+//                 .map(|v| v.0.clone())
+//                 .unwrap_or_else(|_| "None".into()),
+//             widget_names
+//                 .get(current_node.0)
+//                 .map(|v| v.0.clone())
+//                 .unwrap_or_else(|_| "None".into()),
+//             current_node.0.index()
+//         );
+//     }
+
+//     // When an opacity layer has been added all of its children are drawn to the same render target.
+//     // After we need to draw the render target for that opacity layer to the screen.
+//     if let Some((opacity, opacity_layer)) = opacity {
+//         let root_node_layout = layout_cache
+//             .rect
+//             .get(&node_tree.root_node.unwrap())
+//             .unwrap();
+//         extracted_quads.quads.push(ExtractedQuad {
+//             camera_entity,
+//             z_index: extracted_quads.quads.last().unwrap().z_index + (1.0 / (total_nodes as f32 * 2.0)),
+//             color: Color::rgba(1.0, 1.0, 1.0, opacity),
+//             opacity_layer,
+//             quad_type: UIQuadType::DrawOpacityLayer,
+//             rect: bevy::prelude::Rect {
+//                 min: Vec2::new(root_node_layout.posx, root_node_layout.posy),
+//                 max: Vec2::new(
+//                     root_node_layout.posx + root_node_layout.width,
+//                     root_node_layout.posy + root_node_layout.height,
+//                 ),
+//             },
+//             ..Default::default()
+//         });
+//     }
+
+//     (total_child_z, total_opacity_layers)
+// }
 
 /// Updates the widgets
 pub fn update_widgets_sys(world: &mut World) {
@@ -1009,7 +1186,7 @@ fn update_widgets(
                         }
 
                         // Mark nodes left as dirty.
-                        for child in widget_context.child_iter(*entity) {
+                        for child in widget_context.down_iter_at(*entity, true) {
                             if let Some(mut entity_commands) = world.get_entity_mut(child.0) {
                                 entity_commands.insert(DirtyNode);
                             }

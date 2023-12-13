@@ -2,8 +2,9 @@ use std::collections::HashMap;
 
 #[cfg(feature = "bevy_renderer")]
 use bevy::{
+    prelude::*,
     prelude::Handle,
-    reflect::{TypePath, TypeUuid},
+    reflect::TypePath,
     render::texture::Image,
 };
 use unicode_segmentation::UnicodeSegmentation;
@@ -14,8 +15,7 @@ use crate::{
 };
 
 #[cfg(feature = "bevy_renderer")]
-#[derive(Debug, Clone, TypeUuid, TypePath, PartialEq)]
-#[uuid = "4fe4732c-6731-49bb-bafc-4690d636b848"]
+#[derive(Debug, Clone, TypePath, PartialEq, Asset)]
 pub struct KayakFont {
     pub sdf: Sdf,
     pub image: ImageType,

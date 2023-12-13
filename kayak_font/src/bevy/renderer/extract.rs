@@ -1,5 +1,6 @@
 use crate::bevy::renderer::FontTextureCache;
 use crate::KayakFont;
+use bevy::asset::AssetServer;
 use bevy::prelude::{
     AssetEvent, Assets, Commands, EventReader, Handle, Image, Local, Res, ResMut, Resource,
 };
@@ -20,22 +21,30 @@ pub(crate) fn extract_fonts(
     font_assets: Extract<Res<Assets<KayakFont>>>,
     mut events: Extract<EventReader<AssetEvent<KayakFont>>>,
     textures: Extract<Res<Assets<Image>>>,
+    asset_server: Res<AssetServer>,
 ) {
     let mut extracted_fonts = ExtractedFonts { fonts: Vec::new() };
     let mut changed_assets = HashSet::default();
     let mut removed = Vec::new();
-    for event in events.iter() {
+    for event in events.read() {
         match event {
-            AssetEvent::Created { handle } => {
-                changed_assets.insert(handle.clone_weak());
+            AssetEvent::Added { id } => {
+                let id = asset_server.get_id_handle(*id).unwrap();
+                changed_assets.insert(id.clone_weak());
             }
-            AssetEvent::Modified { handle } => {
-                changed_assets.insert(handle.clone_weak());
+            AssetEvent::Modified { id } => {
+                let id = asset_server.get_id_handle(*id).unwrap();
+                changed_assets.insert(id.clone_weak());
             }
-            AssetEvent::Removed { handle } => {
-                if !changed_assets.remove(handle) {
-                    removed.push(handle.clone_weak());
+            AssetEvent::Removed { id } => {
+                let id = asset_server.get_id_handle(*id).unwrap();
+                if !changed_assets.remove(&id) {
+                    removed.push(id.clone_weak());
                 }
+            }
+            AssetEvent::LoadedWithDependencies { id } => {
+                let id = asset_server.get_id_handle(*id).unwrap();
+                changed_assets.insert(id.clone_weak());
             }
         }
     }

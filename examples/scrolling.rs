@@ -13,13 +13,13 @@ fn startup(
         .spawn((Camera2dBundle::default(), CameraUIKayak))
         .id();
 
-    let font_asset = asset_server.load("roboto.kayak_font");
+    let font_asset = asset_server.load("roboto.kttf");
     font_mapping.set_default(font_asset.clone());
 
     // You can force the entire font to use subpixel rendering.
     // Note: The subpixel settings on the text widget or render command
     // will be ignored if this setting is used.
-    font_mapping.force_subpixel(&font_asset);
+    // font_mapping.force_subpixel(&font_asset);
 
     let mut widget_context = KayakRootContext::new(camera_entity);
     widget_context.add_plugin(KayakWidgetsContextPlugin);

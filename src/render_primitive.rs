@@ -4,7 +4,7 @@ use kayak_font::KayakFont;
 use crate::{
     render::{
         font::FontMapping,
-        unified::pipeline::{ExtractedQuad, ExtractedQuads, UIQuadType},
+        unified::pipeline::{ExtractedQuad, ExtractedQuads, UIQuadType, QuadOrMaterial},
     },
     styles::{Corner, KStyle, RenderCommand, StyleProp},
 };
@@ -57,7 +57,9 @@ impl RenderPrimitive for KStyle {
                     }
                 }
 
-                let extracted = ExtractedQuad {
+                // println!("New Clip: {:?}", (rect, layout.z_index));
+
+                let extracted: ExtractedQuad = ExtractedQuad {
                     camera_entity,
                     rect,
                     color: Color::default(),
@@ -73,12 +75,10 @@ impl RenderPrimitive for KStyle {
                     opacity_layer,
                     ..Default::default()
                 };
-                if let Some(material) = material {
-                    let id = commands.spawn(extracted).id();
-                    material.run(commands, id);
-                    return None;
+                if let Some(_material) = material {
+                    panic!("Materials not supported on clips right now.");
                 } else {
-                    extracted_quads.quads.push(extracted.clone());
+                    extracted_quads.push(QuadOrMaterial::Quad(extracted.clone()));
                     return Some(extracted);
                 }
             }
@@ -102,10 +102,11 @@ impl RenderPrimitive for KStyle {
                     for extracted in quads {
                         let id = commands.spawn(extracted).id();
                         material.run(commands, id);
+                        extracted_quads.push(QuadOrMaterial::Material(id));
                     }
                     return None;
                 } else {
-                    extracted_quads.quads.extend(quads);
+                    extracted_quads.extend(quads.into_iter().map(|q| QuadOrMaterial::Quad(q)).collect::<Vec<_>>());
                 }
             }
             RenderCommand::Text {
@@ -135,10 +136,11 @@ impl RenderPrimitive for KStyle {
                     for extracted in text {
                         let id = commands.spawn(extracted).id();
                         material.run(commands, id);
+                        extracted_quads.push(QuadOrMaterial::Material(id));
                     }
                     return None;
                 } else {
-                    extracted_quads.quads.extend(text);
+                    extracted_quads.extend(text.into_iter().map(|q| QuadOrMaterial::Quad(q)).collect::<Vec<_>>());
                 }
             }
             RenderCommand::Image { handle } => {
@@ -158,7 +160,7 @@ impl RenderPrimitive for KStyle {
                     }
                     return None;
                 } else {
-                    extracted_quads.quads.extend(images);
+                    extracted_quads.extend(images.into_iter().map(|q| QuadOrMaterial::Quad(q)).collect::<Vec<_>>());
                 }
             }
             RenderCommand::TextureAtlas {
@@ -180,10 +182,11 @@ impl RenderPrimitive for KStyle {
                     for extracted in atlases {
                         let id = commands.spawn(extracted).id();
                         material.run(commands, id);
+                        extracted_quads.push(QuadOrMaterial::Material(id));
                     }
                     return None;
                 } else {
-                    extracted_quads.quads.extend(atlases);
+                    extracted_quads.extend(atlases.into_iter().map(|q| QuadOrMaterial::Quad(q)).collect::<Vec<_>>());
                 }
             }
             RenderCommand::NinePatch { border, handle } => {
@@ -200,10 +203,11 @@ impl RenderPrimitive for KStyle {
                     for extracted in nines {
                         let id = commands.spawn(extracted).id();
                         material.run(commands, id);
+                        extracted_quads.push(QuadOrMaterial::Material(id));
                     }
                     return None;
                 } else {
-                    extracted_quads.quads.extend(nines);
+                    extracted_quads.extend(nines.into_iter().map(|q| QuadOrMaterial::Quad(q)).collect::<Vec<_>>());
                 }
             }
             RenderCommand::Svg { handle } => {
@@ -222,10 +226,11 @@ impl RenderPrimitive for KStyle {
                     for extracted in svgs {
                         let id = commands.spawn(extracted).id();
                         material.run(commands, id);
+                        extracted_quads.push(QuadOrMaterial::Material(id));
                     }
                     return None;
                 } else {
-                    extracted_quads.quads.extend(svgs);
+                    extracted_quads.extend(svgs.into_iter().map(|q| QuadOrMaterial::Quad(q)).collect::<Vec<_>>());
                 }
             }
             _ => {}

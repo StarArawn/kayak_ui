@@ -17,7 +17,7 @@ pub fn update_window_size(
     // handle resize events. latest events are handled first because we only want to resize each
     // window once
     for event in window_resized_events
-        .iter()
+        .read()
         .collect::<Vec<_>>()
         .iter()
         .rev()
@@ -32,7 +32,7 @@ pub fn update_window_size(
     // handle resize events. latest events are handled first because we only want to resize each
     // window once
     for event in window_created_events
-        .iter()
+        .read()
         .collect::<Vec<_>>()
         .iter()
         .rev()

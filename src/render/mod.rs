@@ -4,7 +4,7 @@ use bevy::{
         camera::RenderTarget,
         render_asset::RenderAssets,
         render_graph::{RenderGraph, RunGraphOnViewNode},
-        render_phase::{batch_phase_system, sort_phase_system, DrawFunctions, RenderPhase},
+        render_phase::DrawFunctions,
         Extract, ExtractSchedule, Render, RenderApp, RenderSet,
     },
     window::{PrimaryWindow, Window, WindowRef},
@@ -18,7 +18,7 @@ use crate::{
 use self::{
     extract::BevyKayakUIExtractPlugin,
     opacity_layer::OpacityLayerManager,
-    ui_pass::{TransparentOpacityUI, TransparentUI},
+    ui_pass::{TransparentOpacityUI, TransparentUI, UIRenderPhase, sort_ui_phase_system},
 };
 
 mod extract;
@@ -52,6 +52,14 @@ impl Plugin for BevyKayakUIRenderPlugin {
         app.init_resource::<OpacityLayerManager>()
             .add_systems(Update, update_opacity_layer_cameras);
 
+        app.add_plugins((
+            font::TextRendererPlugin,
+            UnifiedRenderPlugin,
+            BevyKayakUIExtractPlugin,
+        ));
+    }
+
+    fn finish(&self, app: &mut App) {
         let render_app = app.sub_app_mut(RenderApp);
         render_app
             .init_resource::<DrawFunctions<TransparentUI>>()
@@ -66,21 +74,11 @@ impl Plugin for BevyKayakUIRenderPlugin {
             .add_systems(
                 Render,
                 (
-                    batch_phase_system::<TransparentUI>.after(sort_phase_system::<TransparentUI>),
-                    batch_phase_system::<TransparentOpacityUI>
-                        .after(sort_phase_system::<TransparentOpacityUI>),
+                    sort_ui_phase_system::<TransparentUI>,
+                    sort_ui_phase_system::<TransparentOpacityUI>,
                 )
                     .in_set(RenderSet::PhaseSort),
             );
-
-        // let pass_node_ui = MainPassUINode::new(&mut render_app.world);
-        // let mut graph = render_app.world.get_resource_mut::<RenderGraph>().unwrap();
-
-        // let mut draw_ui_graph = RenderGraph::default();
-        // draw_ui_graph.add_node(draw_ui_graph::node::MAIN_PASS, pass_node_ui);
-        // graph.add_sub_graph(draw_ui_graph::NAME, draw_ui_graph);
-
-        // // graph.add_node_edge(MAIN_PASS, draw_ui_graph::NAME).unwrap();
 
         // Render graph
         let ui_graph_2d = get_ui_graph(render_app);
@@ -126,12 +124,6 @@ impl Plugin for BevyKayakUIRenderPlugin {
                 bevy::core_pipeline::core_3d::graph::node::UPSCALING,
             );
         }
-
-        app.add_plugins((
-            font::TextRendererPlugin,
-            UnifiedRenderPlugin,
-            BevyKayakUIExtractPlugin,
-        ));
     }
 }
 
@@ -171,8 +163,8 @@ pub fn extract_core_pipeline_camera_phases(
         if camera.is_active {
             commands
                 .get_or_spawn(entity)
-                .insert(RenderPhase::<TransparentOpacityUI>::default())
-                .insert(RenderPhase::<TransparentUI>::default());
+                .insert(UIRenderPhase::<TransparentOpacityUI>::default())
+                .insert(UIRenderPhase::<TransparentUI>::default());
         }
     }
 

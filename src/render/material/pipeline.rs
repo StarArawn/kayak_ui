@@ -36,7 +36,7 @@ use crate::render::{
     unified::pipeline::{
         queue_quads_inner, DrawUIDraw, ExtractedQuad, ImageBindGroups, PreviousClip, PreviousIndex,
         QuadBatch, QuadMeta, QuadTypeOffsets, SetUIViewBindGroup, UIQuadType, UnifiedPipeline,
-        UnifiedPipelineKey,
+        UnifiedPipelineKey, MaterialZ,
     },
 };
 
@@ -313,7 +313,7 @@ pub fn queue_material_ui_quads<M: MaterialUI>(
     materialui_pipeline: Res<MaterialUIPipeline<M>>,
     mut pipelines: ResMut<SpecializedRenderPipelines<MaterialUIPipeline<M>>>,
     pipeline_cache: ResMut<PipelineCache>,
-    mut extracted_quads: Query<(&'static mut ExtractedQuad, &'static Handle<M>)>,
+    mut extracted_quads: Query<(&'static mut ExtractedQuad, &'static Handle<M>, &'static MaterialZ)>,
     mut views: Query<(
         Entity,
         &'static mut UIRenderPhase<TransparentUI>,
@@ -374,7 +374,7 @@ pub fn queue_material_ui_quads<M: MaterialUI>(
         let mut last_quad = ExtractedQuad::default();
         let mut pipeline_id = None;
 
-        for (mut quad, material_handle) in extracted_quads.iter_mut() {
+        for (mut quad, material_handle, material_z) in extracted_quads.iter_mut() {
             let asset_id: AssetId<M> = material_handle.clone_weak().into();
             if let Some(materialui) = render_materials.get(&asset_id) {
                 if quad.quad_type == UIQuadType::Clip {
@@ -393,6 +393,8 @@ pub fn queue_material_ui_quads<M: MaterialUI>(
                         bind_group_data: materialui.key.clone(),
                     },
                 ));
+
+                quad.z_index = material_z.0;
 
                 queue_quads_inner(
                     &mut commands,

@@ -346,6 +346,22 @@ pub enum UIQuadType {
     None,
 }
 
+impl UIQuadType {
+    pub fn get_type_index(&self, quad_type_offsets: &QuadTypeOffsets) -> u32 {
+        match self {
+            UIQuadType::Quad => quad_type_offsets.quad_type_offset,
+            UIQuadType::Text => quad_type_offsets.text_type_offset,
+            UIQuadType::TextSubpixel => quad_type_offsets.text_sub_pixel_type_offset,
+            UIQuadType::Image => quad_type_offsets.image_type_offset,
+            UIQuadType::BoxShadow => quad_type_offsets.box_shadow_type_offset,
+            UIQuadType::Clip => 100000,
+            UIQuadType::None => 100001,
+            UIQuadType::OpacityLayer => 100002,
+            UIQuadType::DrawOpacityLayer => quad_type_offsets.image_type_offset,
+        }
+    }
+}
+
 #[derive(Debug, Component, Clone)]
 pub struct ExtractedQuad {
     pub org_entity: Entity,
@@ -968,7 +984,7 @@ pub fn queue_quads(queue_quads: QueueQuads) {
                     entity: current_batch_entity,
                     sort_key: FloatOrd(last_quad.z_index),
                     quad_type: last_quad.quad_type.clone(),
-                    type_index: last_quad.type_index,
+                    type_index: last_quad.quad_type.get_type_index(&quad_type_offsets),
                     rect: last_clip,
                     batch_range: Some(old_item_start..item_end),
                     opacity_layer: last_quad.opacity_layer,
@@ -981,7 +997,7 @@ pub fn queue_quads(queue_quads: QueueQuads) {
                     entity: current_batch_entity,
                     sort_key: FloatOrd(last_quad.z_index),
                     quad_type: last_quad.quad_type.clone(),
-                    type_index: last_quad.type_index,
+                    type_index: last_quad.quad_type.get_type_index(&quad_type_offsets),
                     rect: last_clip,
                     batch_range: Some(old_item_start..item_end),
                     dynamic_offset: None,
@@ -1025,31 +1041,20 @@ pub fn queue_quads_inner(
     current_clip: &mut Rect,
     old_item_start: &mut u32,
     last_clip: &mut Rect,
-) -> u32 {
-    let quad_type_index = match quad.quad_type {
-        UIQuadType::Quad => quad_type_offsets.quad_type_offset,
-        UIQuadType::Text => quad_type_offsets.text_type_offset,
-        UIQuadType::TextSubpixel => quad_type_offsets.text_sub_pixel_type_offset,
-        UIQuadType::Image => quad_type_offsets.image_type_offset,
-        UIQuadType::BoxShadow => quad_type_offsets.box_shadow_type_offset,
-        UIQuadType::Clip => 100000,
-        UIQuadType::None => 100001,
-        UIQuadType::OpacityLayer => 100002,
-        UIQuadType::DrawOpacityLayer => quad_type_offsets.image_type_offset,
-    };
+){
     if camera_entity != quad.camera_entity {
-        return quad_type_index;
+        return;
     }
 
     // Ignore opacity layers
     if quad.quad_type == UIQuadType::OpacityLayer || quad.quad_type == UIQuadType::None {
-        return quad_type_index;
+        return;
     }
 
     if (current_clip.width() < 1.0 || current_clip.height() < 1.0)
         && quad.quad_type != UIQuadType::Clip
     {
-        return quad_type_index;
+        return;
     }
 
     if quad.quad_type == UIQuadType::Clip {
@@ -1061,7 +1066,7 @@ pub fn queue_quads_inner(
         image_handle_id: quad.image.clone(),
         font_handle_id: quad.font_handle.clone(),
         quad_type: quad.quad_type,
-        type_id: quad_type_index,
+        type_id: quad.quad_type.get_type_index(&quad_type_offsets),
         z_index: quad.z_index,
         // z_index: 0.0,
     };
@@ -1154,7 +1159,7 @@ pub fn queue_quads_inner(
                     });
             } else {
                 // Skip unloaded texture.
-                return quad_type_index;
+                return;
             }
         }
 
@@ -1254,7 +1259,7 @@ pub fn queue_quads_inner(
                     new_batch.image_handle_id = Some(image_handle.clone_weak());
                     // bevy::prelude::info!("Attaching opacity layer with index: {} with view: {:?}", quad.opacity_layer, gpu_image.texture_view);
                 } else {
-                    return quad_type_index;
+                    return;
                 }
             }
         }
@@ -1270,7 +1275,7 @@ pub fn queue_quads_inner(
     }
 
     if matches!(current_batch.quad_type, UIQuadType::Clip) {
-        return quad_type_index;
+        return;
     }
 
     if let (Some(svg_handle), color) = (quad.svg_handle.0.as_ref(), quad.svg_handle.1.as_ref()) {
@@ -1400,7 +1405,7 @@ pub fn queue_quads_inner(
         *item_end = *index;
     }
 
-    return current_batch.type_id;
+    return;
 }
 
 pub type DrawUI = (

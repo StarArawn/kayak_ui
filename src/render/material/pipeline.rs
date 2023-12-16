@@ -324,7 +324,7 @@ pub fn queue_material_ui_quads<M: MaterialUI>(
     (
         gpu_images,
         font_texture_cache,
-        quad_types_offsets,
+        quad_type_offsets,
         render_materials,
         mut prev_clip,
         prev_index,
@@ -343,7 +343,7 @@ pub fn queue_material_ui_quads<M: MaterialUI>(
         image_handle_id: None,
         font_handle_id: None,
         quad_type: UIQuadType::None,
-        type_id: quad_types_offsets.quad_type_offset,
+        type_id: quad_type_offsets.quad_type_offset,
         z_index: -999.0,
     };
     let mut current_batch_entity = Entity::PLACEHOLDER;
@@ -372,7 +372,6 @@ pub fn queue_material_ui_quads<M: MaterialUI>(
         };
 
         let mut last_quad = ExtractedQuad::default();
-        let mut last_type_id = 0;
         let mut pipeline_id = None;
 
         for (mut quad, material_handle) in extracted_quads.iter_mut() {
@@ -395,7 +394,7 @@ pub fn queue_material_ui_quads<M: MaterialUI>(
                     },
                 ));
 
-                last_type_id = queue_quads_inner(
+                queue_quads_inner(
                     &mut commands,
                     &render_device,
                     &font_texture_cache,
@@ -412,7 +411,7 @@ pub fn queue_material_ui_quads<M: MaterialUI>(
                     &mut quad_meta,
                     &mut quad,
                     camera_entity,
-                    *quad_types_offsets,
+                    *quad_type_offsets,
                     &mut current_batch,
                     &mut current_batch_entity,
                     &mut index,
@@ -443,7 +442,7 @@ pub fn queue_material_ui_quads<M: MaterialUI>(
                         entity: current_batch_entity,
                         sort_key: FloatOrd(last_quad.z_index),
                         quad_type: last_quad.quad_type.clone(),
-                        type_index: last_type_id,
+                        type_index: last_quad.quad_type.get_type_index(&quad_type_offsets),
                         rect: last_clip,
                         batch_range: Some(old_item_start..item_end),
                         opacity_layer: last_quad.opacity_layer,
@@ -456,7 +455,7 @@ pub fn queue_material_ui_quads<M: MaterialUI>(
                         entity: current_batch_entity,
                         sort_key: FloatOrd(last_quad.z_index),
                         quad_type: last_quad.quad_type.clone(),
-                        type_index: last_type_id,
+                        type_index: last_quad.quad_type.get_type_index(&quad_type_offsets),
                         rect: last_clip,
                         batch_range:  Some(old_item_start..item_end),
                         dynamic_offset: None,

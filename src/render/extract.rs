@@ -15,7 +15,7 @@ use bevy::{
 };
 use kayak_font::KayakFont;
 
-use super::{font::FontMapping, ui_pass::{TransparentUI, UIRenderPhase}, unified::pipeline::{ExtractedQuads, UIQuadType}};
+use super::{font::FontMapping, ui_pass::{TransparentUI, UIRenderPhase}, unified::pipeline::ExtractedQuads};
 
 // mod nine_patch;
 // mod texture_atlas;
@@ -80,28 +80,28 @@ pub fn extract(
             &images,
             &mut extracted_quads,
         );
+        // Resolve extracted quads
+        if let Ok(mut layout_cache) = context.layout_cache.try_write() {
+            extracted_quads.resolve(&mut commands, &mut layout_cache);
+            // extracted_quads.debug();
+        }
     }
 
-    // Resolve extracted quads
-    extracted_quads.resolve(&mut commands);
 
-    // let mut extracted = extracted_quads.iter().map(|e| (e.quad_type, e.z_index, e.rect)).collect::<Vec<_>>();
+    // let mut extracted = extracted_quads.iter().map(|e| (e.quad_type, e.z_index, e.rect, e.c)).collect::<Vec<_>>();
 
     // extracted.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap());
-
-    // let mut last_type = UIQuadType::Clip;
-    // for (qt, z, r) in extracted.iter() {
-    //     if !(last_type == UIQuadType::Text && *qt == UIQuadType::Text) { 
+    // dbg!("Start");
+    // let mut last_type = super::unified::pipeline::UIQuadType::Clip;
+    // for (qt, z, r, c) in extracted.iter() {
+    //     // if !(last_type == super::unified::pipeline::UIQuadType::Text && *qt == super::unified::pipeline::UIQuadType::Text) {
+    //     if *qt == super::unified::pipeline::UIQuadType::Text {
+    //         println!("qt: {:?}, c: {}, z: {}, r: {:?}", qt, c, z, r);
+    //     } else { 
     //         println!("qt: {:?}, z: {}, r: {:?}", qt, z, r);
     //     }
     //     last_type = *qt;
     // }
-
-    // extracted_quads.quads.sort_unstable_by(|a, b| a.z_index.partial_cmp(&b.z_index).unwrap());
-
-    // dbg!("Start");
-    // dbg!(extracted_quads.quads.iter().map(|quad| (quad.quad_type, quad.z_index, (quad.rect.width(), quad.rect.height()))).collect::<Vec<_>>());
-    // dbg!("End");
 }
 
 const UI_CAMERA_TRANSFORM_OFFSET: f32 = -0.1;

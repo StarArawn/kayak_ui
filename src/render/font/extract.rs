@@ -65,6 +65,7 @@ pub fn extract_texts(
             uv_max: None,
             uv_min: None,
             opacity_layer,
+            c: glyph_rect.content,
             ..Default::default()
         });
     }

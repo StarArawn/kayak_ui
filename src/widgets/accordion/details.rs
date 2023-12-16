@@ -69,7 +69,7 @@ pub fn render(
                 let transition_props = TransitionProps {
                     easing: TransitionEasing::QuadraticInOut,
                     reversing: !context.is_open(accordion.index),
-                    timeout: 500.0,
+                    timeout: 200.0,
                     looping: false,
                     style_a: KStyle {
                         height: Units::Pixels(0.0).into(),

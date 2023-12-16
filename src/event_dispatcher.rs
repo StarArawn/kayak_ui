@@ -225,7 +225,6 @@ impl EventDispatcher {
                         let mut event_dispatcher_context = EventDispatcherContext {
                             cursor_capture: self.cursor_capture,
                         };
-
                         (event_dispatcher_context, node_event) = on_event.try_call(
                             event_dispatcher_context,
                             context.widget_state.clone(),
@@ -751,7 +750,7 @@ impl EventDispatcher {
         should_update |= layout.z_index >= state.best_z_index;
 
         if should_update {
-            // dbg!(node.0.id(), layout.z_index);
+            // dbg!(node.0, layout.z_index);
             state.best_match = Some(node);
             state.best_z_index = layout.z_index;
             state.best_depth = depth;

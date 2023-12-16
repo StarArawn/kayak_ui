@@ -12,6 +12,7 @@ use crate::{
 pub trait RenderPrimitive {
     fn extract(
         &self,
+        current_node: Entity,
         commands: &mut Commands,
         layout: &crate::layout::Rect,
         opacity_layer: u32,
@@ -28,6 +29,7 @@ pub trait RenderPrimitive {
 impl RenderPrimitive for KStyle {
     fn extract(
         &self,
+        current_node: Entity,
         commands: &mut Commands,
         layout: &crate::layout::Rect,
         opacity_layer: u32,
@@ -60,6 +62,7 @@ impl RenderPrimitive for KStyle {
                 // println!("New Clip: {:?}", (rect, layout.z_index));
 
                 let extracted: ExtractedQuad = ExtractedQuad {
+                    org_entity: current_node,
                     camera_entity,
                     rect,
                     color: Color::default(),
@@ -87,7 +90,7 @@ impl RenderPrimitive for KStyle {
                 let border_radius = self.border_radius.resolve();
                 let border = self.border.resolve();
                 let box_shadow = self.box_shadow.resolve();
-                let quads = crate::render::quad::extract_quads(
+                let mut quads = crate::render::quad::extract_quads(
                     camera_entity,
                     background_color,
                     border_color,
@@ -98,6 +101,11 @@ impl RenderPrimitive for KStyle {
                     box_shadow,
                     1.0,
                 );
+
+                for quad in quads.iter_mut() {
+                    quad.org_entity = current_node;
+                }
+
                 if let Some(material) = material {
                     for extracted in quads {
                         let id = commands.spawn(extracted).id();
@@ -145,7 +153,7 @@ impl RenderPrimitive for KStyle {
             }
             RenderCommand::Image { handle } => {
                 let border_radius = self.border_radius.resolve();
-                let images = crate::render::image::extract_images(
+                let mut images = crate::render::image::extract_images(
                     camera_entity,
                     border_radius,
                     *layout,
@@ -153,6 +161,9 @@ impl RenderPrimitive for KStyle {
                     opacity_layer,
                     dpi,
                 );
+                for image in images.iter_mut() {
+                    image.org_entity = current_node;
+                }
                 if let Some(material) = material {
                     for extracted in images {
                         let id = commands.spawn(extracted).id();
@@ -168,7 +179,7 @@ impl RenderPrimitive for KStyle {
                 size,
                 handle,
             } => {
-                let atlases = crate::render::texture_atlas::extract_texture_atlas(
+                let mut atlases = crate::render::texture_atlas::extract_texture_atlas(
                     camera_entity,
                     size,
                     position,
@@ -178,6 +189,9 @@ impl RenderPrimitive for KStyle {
                     images,
                     dpi,
                 );
+                for atlas in atlases.iter_mut() {
+                    atlas.org_entity = current_node;
+                }
                 if let Some(material) = material {
                     for extracted in atlases {
                         let id = commands.spawn(extracted).id();
@@ -190,7 +204,7 @@ impl RenderPrimitive for KStyle {
                 }
             }
             RenderCommand::NinePatch { border, handle } => {
-                let nines = crate::render::nine_patch::extract_nine_patch(
+                let mut nines = crate::render::nine_patch::extract_nine_patch(
                     camera_entity,
                     *layout,
                     handle,
@@ -199,6 +213,9 @@ impl RenderPrimitive for KStyle {
                     images,
                     dpi,
                 );
+                for nine in nines.iter_mut() {
+                    nine.org_entity = current_node;
+                }
                 if let Some(material) = material {
                     for extracted in nines {
                         let id = commands.spawn(extracted).id();
@@ -211,7 +228,7 @@ impl RenderPrimitive for KStyle {
                 }
             }
             RenderCommand::Svg { handle } => {
-                let svgs = crate::render::svg::extract_svg(
+                let mut svgs = crate::render::svg::extract_svg(
                     camera_entity,
                     handle,
                     *layout,
@@ -222,6 +239,9 @@ impl RenderPrimitive for KStyle {
                     opacity_layer,
                     dpi,
                 );
+                for svg in svgs.iter_mut() {
+                    svg.org_entity = current_node;
+                }
                 if let Some(material) = material {
                     for extracted in svgs {
                         let id = commands.spawn(extracted).id();

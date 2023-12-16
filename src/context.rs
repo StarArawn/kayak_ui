@@ -379,6 +379,8 @@ impl KayakRootContext {
             return;
         }
 
+        let mut prev_clip = None;
+
         if let Ok(mut layout_cache) = self.layout_cache.try_write() {
             recurse_node_tree_to_build_primitives2(
                 commands,
@@ -393,7 +395,7 @@ impl KayakRootContext {
                 images,
                 extracted_quads,
                 node_tree.root_node.unwrap(),
-                None,
+                &mut prev_clip,
                 0,
                 0,
             );
@@ -416,7 +418,7 @@ fn recurse_node_tree_to_build_primitives2(
     images: &Assets<Image>,
     extracted_quads: &mut ExtractedQuads,
     current_node: WrappedIndex,
-    mut prev_clip: Option<ExtractedQuad>,
+    mut prev_clip: &mut Option<ExtractedQuad>,
     mut current_opacity_layer: u32,
     mut total_opacity_layers: u32,
 ) -> u32 {
@@ -438,6 +440,7 @@ fn recurse_node_tree_to_build_primitives2(
         };
 
         let new_clip = node.resolved_styles.extract(
+            current_node.0,
             commands,
             &layout,
             current_opacity_layer,
@@ -468,23 +471,23 @@ fn recurse_node_tree_to_build_primitives2(
             }));
             opacity = Some((node.opacity, total_opacity_layers));
             current_opacity_layer = total_opacity_layers;
-        } else if node.z > 0.0 { // Handle cases where a user defines a z value.
-            extracted_quads.new_layer(Some(node.z));   
-        } 
-        // Else do nothing.
+        }
 
-        prev_clip = match &new_clip {
+        // Else do nothing.
+        *prev_clip = match &new_clip {
             Some(new_clip) => Some(new_clip.clone()),
             None => prev_clip.clone(),
         };
 
+        let parent_clip = prev_clip.clone();
+
         // Loop through children recursively. 
         if node_tree.children.contains_key(&current_node) {
             let children = node_tree.children.get(&current_node).unwrap();
-            // let parent_clip = prev_clip.clone();
             extracted_quads.new_layer(if node.z > 0.0 { Some(node.z) } else { None });
-            for (i, child) in children.iter().enumerate() {
-                extracted_quads.new_layer(Some(i as f32));
+            let mut i = 0;
+            for child in children.iter() {
+                extracted_quads.new_layer(None);
                 let new_total_opacity_layers =
                     recurse_node_tree_to_build_primitives2(
                         commands,
@@ -499,24 +502,28 @@ fn recurse_node_tree_to_build_primitives2(
                         images,
                         extracted_quads,
                         *child,
-                        prev_clip.clone(),
+                        prev_clip,
                         current_opacity_layer,
                         total_opacity_layers,
                     );
                     
                 total_opacity_layers = new_total_opacity_layers;
-                
-                // Between each child node we need to reset the clip.
-                if let Some(prev_clip) = &prev_clip {
-                    extracted_quads.push(QuadOrMaterial::Quad(ExtractedQuad {
-                        // rect: bevy::prelude::Rect {
-                        //     min: Vec2::splat(0.0),
-                        //     max: Vec2::splat(4000.0),
-                        // },
-                        ..prev_clip.clone()
-                    }));
-                }
+                i += 1;
+                extracted_quads.pop_stack();
 
+                // // Between each child node we need to reset the clip.
+                extracted_quads.new_layer(None);
+                if let (Some(parent_clip), Some(prev_clip)) = (&parent_clip, &prev_clip) {
+                    // if prev_clip.rect != parent_clip.rect {
+                        extracted_quads.push(QuadOrMaterial::Quad(ExtractedQuad {
+                            // rect: bevy::prelude::Rect {
+                            //     min: Vec2::splat(0.0),
+                            //     max: Vec2::splat(4000.0),
+                            // },
+                            ..parent_clip.clone()
+                        }));
+                    // }
+                }
                 extracted_quads.pop_stack();
             }
             extracted_quads.pop_stack();
@@ -528,11 +535,13 @@ fn recurse_node_tree_to_build_primitives2(
             );
         }
 
+        *prev_clip = parent_clip.clone();
+
         // When an opacity layer has been added all of its children are drawn to the same render target.
         // After we need to draw the render target for that opacity layer to the screen.
         if let Some((opacity, opacity_layer)) = opacity {
+            extracted_quads.new_layer(if node.z > 0.0 { Some(node.z) } else { None });
             // First pop the stack to go back up the z tree
-            extracted_quads.pop_stack();
             let root_node_layout = layout_cache
                 .rect
                 .get(&node_tree.root_node.unwrap())
@@ -551,6 +560,7 @@ fn recurse_node_tree_to_build_primitives2(
                 },
                 ..Default::default()
             }));
+            extracted_quads.pop_stack()
         }
 
     } else {

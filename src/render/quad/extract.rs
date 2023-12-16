@@ -22,7 +22,7 @@ pub fn extract_quads(
 
     let mut extracted_quads = vec![];
 
-    for box_shadow in box_shadow.iter() {
+    for box_shadow in box_shadow.iter().rev() {
         let half_spread = box_shadow.spread;
         let radius = box_shadow.radius * 3.0;
         let pos: Vec2 = Vec2::new(layout.posx, layout.posy) + box_shadow.offset;

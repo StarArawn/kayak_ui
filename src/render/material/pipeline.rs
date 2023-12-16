@@ -372,7 +372,7 @@ pub fn queue_material_ui_quads<M: MaterialUI>(
         };
 
         let mut last_quad = ExtractedQuad::default();
-
+        let mut last_type_id = 0;
         let mut pipeline_id = None;
 
         for (mut quad, material_handle) in extracted_quads.iter_mut() {
@@ -395,7 +395,7 @@ pub fn queue_material_ui_quads<M: MaterialUI>(
                     },
                 ));
 
-                queue_quads_inner(
+                last_type_id = queue_quads_inner(
                     &mut commands,
                     &render_device,
                     &font_texture_cache,
@@ -443,7 +443,7 @@ pub fn queue_material_ui_quads<M: MaterialUI>(
                         entity: current_batch_entity,
                         sort_key: FloatOrd(last_quad.z_index),
                         quad_type: last_quad.quad_type.clone(),
-                        type_index: last_quad.type_index,
+                        type_index: last_type_id,
                         rect: last_clip,
                         batch_range: Some(old_item_start..item_end),
                         opacity_layer: last_quad.opacity_layer,
@@ -456,7 +456,7 @@ pub fn queue_material_ui_quads<M: MaterialUI>(
                         entity: current_batch_entity,
                         sort_key: FloatOrd(last_quad.z_index),
                         quad_type: last_quad.quad_type.clone(),
-                        type_index: last_quad.type_index,
+                        type_index: last_type_id,
                         rect: last_clip,
                         batch_range:  Some(old_item_start..item_end),
                         dynamic_offset: None,

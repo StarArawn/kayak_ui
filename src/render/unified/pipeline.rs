@@ -41,6 +41,7 @@ use kayak_font::{bevy::FontTextureCache, KayakFont};
 use std::marker::PhantomData;
 
 use super::UNIFIED_SHADER_HANDLE;
+use crate::layout::LayoutCache;
 use crate::prelude::Corner;
 use crate::render::extract::{UIExtractedView, UIViewUniform, UIViewUniformOffset, UIViewUniforms};
 use crate::render::opacity_layer::OpacityLayerManager;
@@ -347,6 +348,7 @@ pub enum UIQuadType {
 
 #[derive(Debug, Component, Clone)]
 pub struct ExtractedQuad {
+    pub org_entity: Entity,
     pub camera_entity: Entity,
     pub rect: Rect,
     pub color: Color,
@@ -361,12 +363,14 @@ pub struct ExtractedQuad {
     pub uv_max: Option<Vec2>,
     pub svg_handle: (Option<Handle<Svg>>, Option<Color>),
     pub opacity_layer: u32,
+    pub c: char,
 }
 
 impl Default for ExtractedQuad {
     fn default() -> Self {
         Self {
-            camera_entity: Entity::from_raw(0),
+            org_entity: Entity::PLACEHOLDER,
+            camera_entity: Entity::PLACEHOLDER,
             rect: Default::default(),
             color: Default::default(),
             char_id: Default::default(),
@@ -380,6 +384,7 @@ impl Default for ExtractedQuad {
             uv_max: Default::default(),
             svg_handle: Default::default(),
             opacity_layer: 0,
+            c: ' ',
         }
     }
 }
@@ -463,7 +468,7 @@ impl ExtractedQuads {
     }
     pub fn new_layer(&mut self, z_index: Option<f32>) {
         let layer = ZLayer {
-            z: z_index
+            custom_z: z_index
                 .map(|z| z)
                 .unwrap_or(0.0),
             parent_id: self.current_layer,
@@ -485,10 +490,49 @@ impl ExtractedQuads {
         self.current_layer = layer.parent_id;
     }
 
-    pub fn resolve(&mut self, commands: &mut Commands) {
+    pub(crate) fn resolve(&mut self, commands: &mut Commands, layout_cache: &mut LayoutCache) {
         let mut stack = vec![0];
 
-        // let z = 0;
+        let mut z = 0.0;
+        while !stack.is_empty() {
+            let layer_id = stack.pop().unwrap();
+            let parent_id = self.layers.get(layer_id).map(|l| l.parent_id).unwrap();
+            let parent_z = {
+                self
+                    .layers
+                    .get(parent_id)
+                    .map(|l| l.custom_z)
+                    .unwrap_or(0.0)
+            };
+            let children = self.children.get(&layer_id).cloned().unwrap_or_default();
+            stack.extend(children);
+            let layer = &mut self.layers[layer_id];
+            let quad_count = layer.quads.len();
+            layer.z = (layer_id.max(parent_id) as f32) + parent_z + layer.custom_z;
+            layer.custom_z = if layer.custom_z > 0.0 { layer.custom_z } else { parent_z };
+            for (i, quad) in layer.quads.iter_mut().enumerate() {
+                let current_z = layer.z + ((((i + 1) as f32 / quad_count as f32) * 0.999));
+                match quad {
+                    QuadOrMaterial::Material(entity) => {
+                        commands.entity(*entity).insert(MaterialZ(current_z));
+                    }
+                    QuadOrMaterial::Quad(quad) => {
+                        quad.z_index = current_z;
+                        if quad.org_entity != Entity::PLACEHOLDER {
+                            if let Some(layout) = layout_cache.rect.get_mut(&crate::node::WrappedIndex(quad.org_entity)) {
+                                layout.z_index = quad.z_index;
+                            }
+                        }
+                    }
+                }
+            }
+            z += 1.0;
+        }
+    }
+
+    pub fn debug(&self) {
+        let mut items = vec![];
+        let mut stack = vec![0];
         while !stack.is_empty() {
             let layer_id = stack.pop().unwrap();
             let parent_id = self.layers.get(layer_id).map(|l| l.parent_id).unwrap_or(0);
@@ -499,26 +543,36 @@ impl ExtractedQuads {
                     .map(|l| l.z)
                     .unwrap_or(0.0)
             };
-            
             let children = self.children.get(&layer_id).cloned().unwrap_or_default();
             stack.extend(children);
-            let layer = &mut self.layers[layer_id];
-            let quad_count = layer.quads.len();
-            layer.z += parent_id as f32 + parent_z;
-            for (i, quad) in layer.quads.iter_mut().enumerate() {
-                let current_z = layer.z + ((((i + 1) as f32 / quad_count as f32) * 0.99));
-                if current_z == 16.495 {
-                    match quad { QuadOrMaterial::Quad(quad) => println!("quad: {:?}, rect: {:?}, z: {}, parent_id: {}, i: {}, quad_count: {}", quad.quad_type, quad.rect, current_z, parent_id, i, quad_count), _ => {} };
-                }
-                match quad {
-                    QuadOrMaterial::Material(entity) => {
-                        commands.entity(*entity).insert(MaterialZ(current_z));
-                    }
-                    QuadOrMaterial::Quad(quad) => {
-                        quad.z_index = current_z;
+            let layer = &self.layers[layer_id];
+
+            let qt = layer.quads.first().map(|q| match q { QuadOrMaterial::Quad(q) => q.quad_type, _ => UIQuadType::None}).unwrap_or(UIQuadType::None);
+            let rect = layer.quads.first().map(|q| match q { QuadOrMaterial::Quad(q) => q.rect, _ => Rect::default()}).unwrap_or(Rect::default());
+            if qt != UIQuadType::None {
+                // items.push((layer.z, format!("{}type: {:?}, layer_id: {}, parent_id: {}, parent_z: {}, z: {}, rect: {:?}", " ".repeat(parent_id + 1), qt, layer_id, parent_id, parent_z, layer.z, rect)));
+            }
+            if !layer.quads.is_empty() {
+                // println!("{}Quads:", " ".repeat(parent_id + 1));
+                let mut last_type = UIQuadType::None;
+                for quad in layer.quads.iter() {
+                    match quad {
+                        QuadOrMaterial::Quad(q) => {
+                            if last_type != q.quad_type {
+                                items.push((q.z_index, format!("{}Q: {:?}, c: {}, rect: {:?}, z: {}", " ".repeat(parent_id + 1), q.quad_type, q.c, q.rect, q.z_index)));
+                                last_type = q.quad_type;
+                            }
+                        }
+                        _ => {}
                     }
                 }
             }
+        }
+
+        items.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap());
+
+        for (_, item) in items.iter() {
+            println!("{}", item);
         }
     }
 
@@ -539,6 +593,7 @@ pub struct MaterialZ(pub f32);
 #[derive(Default, Debug)]
 pub struct ZLayer {
     pub z: f32,
+    pub custom_z: f32,
     pub parent_id: usize,
     pub quads: Vec<QuadOrMaterial>,
 }
@@ -749,6 +804,14 @@ pub fn queue_quads(queue_quads: QueueQuads) {
 
     extracted_quads.sort_unstable_by(|a, b| a.z_index.partial_cmp(&b.z_index).unwrap());
 
+    // let mut last_type = UIQuadType::None;
+    // for (t, z, rect) in extracted_quads.iter().map(|q| (q.quad_type, q.z_index, q.rect)) {
+    //     if !(t == UIQuadType::Text && last_type == UIQuadType::Text) {
+    //         println!("type: {:?}, z: {}, rect: {:?}", t, z, rect);
+    //         last_type = t;
+    //     }
+    // }
+
     let extracted_sprite_len = extracted_quads.len();
     // don't create buffers when there are no quads
     if extracted_sprite_len == 0 {
@@ -838,7 +901,7 @@ pub fn queue_quads(queue_quads: QueueQuads) {
             && last_quad.quad_type != UIQuadType::Clip
             && current_batch_entity != Entity::PLACEHOLDER
         {
-            if last_quad.opacity_layer > 0 {
+            if last_quad.opacity_layer > 0 && last_quad.quad_type != UIQuadType::DrawOpacityLayer {
                 opacity_transparent_phase.add(TransparentOpacityUI {
                     draw_function: draw_opacity_quad,
                     pipeline: spec_pipeline,
@@ -902,10 +965,7 @@ pub fn queue_quads_inner(
     current_clip: &mut Rect,
     old_item_start: &mut u32,
     last_clip: &mut Rect,
-) {
-    if camera_entity != quad.camera_entity {
-        return;
-    }
+) -> u32 {
     let quad_type_index = match quad.quad_type {
         UIQuadType::Quad => quad_type_offsets.quad_type_offset,
         UIQuadType::Text => quad_type_offsets.text_type_offset,
@@ -917,10 +977,17 @@ pub fn queue_quads_inner(
         UIQuadType::OpacityLayer => 100002,
         UIQuadType::DrawOpacityLayer => quad_type_offsets.image_type_offset,
     };
+    if camera_entity != quad.camera_entity {
+        return quad_type_index;
+    }
 
     // Ignore opacity layers
     if quad.quad_type == UIQuadType::OpacityLayer || quad.quad_type == UIQuadType::None {
-        return;
+        return quad_type_index;
+    }
+
+    if (current_clip.width() < 1.0 || current_clip.height() < 1.0) && quad.quad_type != UIQuadType::Clip {
+        return quad_type_index;
     }
 
     if quad.quad_type == UIQuadType::Clip {
@@ -928,21 +995,20 @@ pub fn queue_quads_inner(
         *current_clip = quad.rect;
     }
 
-    if current_clip.width() < 1.0 || current_clip.height() < 1.0 {
-        return;
-    }
     let mut new_batch = QuadBatch {
         image_handle_id: quad.image.clone(),
         font_handle_id: quad.font_handle.clone(),
         quad_type: quad.quad_type,
         type_id: quad_type_index,
-        // z_index: quad.z_index,
-        z_index: 0.0,
+        z_index: quad.z_index,
+        // z_index: 0.0,
     };
     let sprite_rect = quad.rect;
 
-    if new_batch != *current_batch
+    if (new_batch != *current_batch
+        && current_batch.quad_type != quad.quad_type)
         || old_quad.quad_type == UIQuadType::Clip
+        || quad.quad_type == UIQuadType::Clip
         || matches!(new_batch.quad_type, UIQuadType::DrawOpacityLayer)
     {
         if *current_batch_entity != Entity::PLACEHOLDER
@@ -961,14 +1027,14 @@ pub fn queue_quads_inner(
             && old_quad.quad_type != UIQuadType::Clip
             && *current_batch_entity != Entity::PLACEHOLDER
         {
-            if old_quad.opacity_layer > 0 {
+            if old_quad.opacity_layer > 0 && old_quad.quad_type != UIQuadType::DrawOpacityLayer {
                 opacity_transparent_phase.add(TransparentOpacityUI {
                     draw_function: draw_opacity_quad,
                     pipeline: spec_pipeline,
                     entity: *current_batch_entity,
                     sort_key: FloatOrd(old_quad.z_index),
                     quad_type: old_quad.quad_type.clone(),
-                    type_index: old_quad.type_index,
+                    type_index: current_batch.type_id,
                     rect: *current_clip,
                     batch_range: Some(*old_item_start..*item_end),
                     opacity_layer: old_quad.opacity_layer,
@@ -981,8 +1047,8 @@ pub fn queue_quads_inner(
                     entity: *current_batch_entity,
                     sort_key: FloatOrd(old_quad.z_index),
                     quad_type: old_quad.quad_type.clone(),
-                    type_index: old_quad.type_index,
-                    rect: *current_clip,
+                    type_index: current_batch.type_id,
+                    rect: *last_clip,
                     batch_range: Some(*old_item_start..*item_end),
                     dynamic_offset: None,
                 });
@@ -990,7 +1056,6 @@ pub fn queue_quads_inner(
 
             *item_start = *index;
             *old_item_start = *item_end;
-            *last_clip = *current_clip;
         }
 
         if let Some(image_handle) = quad.image.as_ref() {
@@ -1028,7 +1093,7 @@ pub fn queue_quads_inner(
                     });
             } else {
                 // Skip unloaded texture.
-                return;
+                return quad_type_index;
             }
         }
 
@@ -1128,13 +1193,14 @@ pub fn queue_quads_inner(
                     new_batch.image_handle_id = Some(image_handle.clone_weak());
                     // bevy::prelude::info!("Attaching opacity layer with index: {} with view: {:?}", quad.opacity_layer, gpu_image.texture_view);
                 } else {
-                    return;
+                    return quad_type_index;
                 }
             }
         }
 
         // Start new batch
         *current_batch = new_batch;
+        *last_clip = *current_clip;
         if current_batch.quad_type != UIQuadType::Clip
             && current_batch.quad_type != UIQuadType::OpacityLayer
         {
@@ -1143,7 +1209,7 @@ pub fn queue_quads_inner(
     }
 
     if matches!(current_batch.quad_type, UIQuadType::Clip) {
-        return;
+        return quad_type_index;
     }
 
     if let (Some(svg_handle), color) = (quad.svg_handle.0.as_ref(), quad.svg_handle.1.as_ref()) {
@@ -1272,6 +1338,8 @@ pub fn queue_quads_inner(
         *index += QUAD_INDICES.len() as u32;
         *item_end = *index;
     }
+
+    return current_batch.type_id;
 }
 
 pub type DrawUI = (
@@ -1353,7 +1421,7 @@ impl<T: PhaseItem + TransparentUIGeneric> RenderCommand<T> for DrawUIDraw<T> {
         pass.set_bind_group(
             2,
             quad_meta.types_bind_group.as_ref().unwrap(),
-            &[batch.type_id],
+            &[item.get_type_index()],
         );
 
         let unified_pipeline = unified_pipeline.into_inner();

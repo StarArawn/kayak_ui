@@ -7,7 +7,7 @@ use crate::{
 };
 
 /// An event type sent to widgets
-#[derive(Resource, Clone)]
+#[derive(Resource, Clone, Debug)]
 pub struct KEvent {
     /// The node targeted by this event
     pub target: Entity,

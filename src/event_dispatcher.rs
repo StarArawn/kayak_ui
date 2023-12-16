@@ -745,14 +745,16 @@ impl EventDispatcher {
         let (node, depth) = tree_node;
         // Node is at or above best depth and is at or above best z-level
 
-        let mut should_update = depth >= state.best_depth && layout.z_index >= state.best_z_index;
+        let z_index = layout.z_index.unwrap_or(0.0);
+
+        let mut should_update = depth >= state.best_depth && z_index >= state.best_z_index;
         // OR node is above best z-level
-        should_update |= layout.z_index >= state.best_z_index;
+        should_update |= z_index >= state.best_z_index;
 
         if should_update {
             // dbg!(node.0, layout.z_index);
             state.best_match = Some(node);
-            state.best_z_index = layout.z_index;
+            state.best_z_index = z_index;
             state.best_depth = depth;
         }
     }

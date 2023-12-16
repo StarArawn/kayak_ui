@@ -38,7 +38,6 @@ pub fn extract_quads(
                     + half_spread,
             },
             color: box_shadow.color,
-            z_index: layout.z_index,
             quad_type: UIQuadType::BoxShadow,
             border_radius: Corner {
                 top_left: border_radius.top_left,
@@ -63,7 +62,6 @@ pub fn extract_quads(
                 max: Vec2::new(layout.posx + (layout.width), layout.posy + (layout.height)) * dpi,
             },
             color: border_color,
-            z_index: layout.z_index,
             quad_type: UIQuadType::Quad,
             border_radius,
             opacity_layer,
@@ -81,7 +79,6 @@ pub fn extract_quads(
             ),
         },
         color: background_color,
-        z_index: layout.z_index,
         quad_type: UIQuadType::Quad,
         border_radius,
         opacity_layer,

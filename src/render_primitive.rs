@@ -67,7 +67,6 @@ impl RenderPrimitive for KStyle {
                     rect,
                     color: Color::default(),
                     char_id: 0,
-                    z_index: layout.z_index,
                     font_handle: None,
                     quad_type: UIQuadType::Clip,
                     type_index: 0,
@@ -253,7 +252,17 @@ impl RenderPrimitive for KStyle {
                     extracted_quads.extend(svgs.into_iter().map(|q| QuadOrMaterial::Quad(q)).collect::<Vec<_>>());
                 }
             }
-            _ => {}
+            _ => {
+                // We need to extract here in any case because we need to apply z-values correctly
+                // TODO: Probably should just rewrite the z stuff to work in a seperate pass from rendering extractions
+                // Like: Tree Update > Morphorm Layouting > Z index Calc > Extract
+                extracted_quads.push(QuadOrMaterial::Quad(ExtractedQuad {
+                    org_entity: current_node,
+                    camera_entity,
+                    quad_type: UIQuadType::None,
+                    ..Default::default()
+                }));
+            }
         }
 
         None

@@ -42,7 +42,7 @@ use std::marker::PhantomData;
 
 use super::UNIFIED_SHADER_HANDLE;
 use crate::layout::LayoutCache;
-use crate::prelude::Corner;
+use crate::prelude::{Corner, Tree};
 use crate::render::extract::{UIExtractedView, UIViewUniform, UIViewUniformOffset, UIViewUniforms};
 use crate::render::opacity_layer::OpacityLayerManager;
 use crate::render::svg::RenderSvgs;
@@ -433,6 +433,15 @@ pub enum QuadOrMaterial {
     Material(Entity),
 }
 
+impl QuadOrMaterial {
+    pub fn get_entity(&self) -> Entity {
+        match self {
+            QuadOrMaterial::Material(entity) => *entity,
+            QuadOrMaterial::Quad(quad) => quad.org_entity,
+        }
+    }
+}
+
 impl Default for QuadOrMaterial {
     fn default() -> Self {
         Self::Quad(ExtractedQuad::default())
@@ -468,9 +477,7 @@ impl ExtractedQuads {
     }
     pub fn new_layer(&mut self, z_index: Option<f32>) {
         let layer = ZLayer {
-            custom_z: z_index
-                .map(|z| z)
-                .unwrap_or(0.0),
+            custom_z: z_index.map(|z| z).unwrap_or(0.0),
             parent_id: self.current_layer,
             ..Default::default()
         };
@@ -490,7 +497,12 @@ impl ExtractedQuads {
         self.current_layer = layer.parent_id;
     }
 
-    pub(crate) fn resolve(&mut self, commands: &mut Commands, layout_cache: &mut LayoutCache) {
+    pub(crate) fn resolve(
+        &mut self,
+        commands: &mut Commands,
+        layout_cache: &mut LayoutCache,
+        tree: &Tree,
+    ) {
         let mut stack = vec![0];
 
         let mut z = 0.0;
@@ -498,8 +510,7 @@ impl ExtractedQuads {
             let layer_id = stack.pop().unwrap();
             let parent_id = self.layers.get(layer_id).map(|l| l.parent_id).unwrap();
             let parent_z = {
-                self
-                    .layers
+                self.layers
                     .get(parent_id)
                     .map(|l| l.custom_z)
                     .unwrap_or(0.0)
@@ -509,9 +520,13 @@ impl ExtractedQuads {
             let layer = &mut self.layers[layer_id];
             let quad_count = layer.quads.len();
             layer.z = (layer_id.max(parent_id) as f32) + parent_z + layer.custom_z;
-            layer.custom_z = if layer.custom_z > 0.0 { layer.custom_z } else { parent_z };
+            layer.custom_z = if layer.custom_z > 0.0 {
+                layer.custom_z
+            } else {
+                parent_z
+            };
             for (i, quad) in layer.quads.iter_mut().enumerate() {
-                let current_z = layer.z + ((((i + 1) as f32 / quad_count as f32) * 0.999));
+                let current_z = layer.z + (((i + 1) as f32 / quad_count as f32) * 0.999);
                 match quad {
                     QuadOrMaterial::Material(entity) => {
                         commands.entity(*entity).insert(MaterialZ(current_z));
@@ -519,12 +534,31 @@ impl ExtractedQuads {
                     QuadOrMaterial::Quad(quad) => {
                         quad.z_index = current_z;
                         if quad.org_entity != Entity::PLACEHOLDER {
-                            if let Some(layout) = layout_cache.rect.get_mut(&crate::node::WrappedIndex(quad.org_entity)) {
-                                layout.z_index = quad.z_index;
+                            if let Some(layout) = layout_cache
+                                .rect
+                                .get_mut(&crate::node::WrappedIndex(quad.org_entity))
+                            {
+                                layout.z_index = Some(quad.z_index);
                             }
                         }
                     }
                 }
+
+                // Propagate z up the tree until we hit a parent with a Z value set.
+                // let mut has_z = false;
+                // let mut current_node = WrappedIndex(quad.get_entity());
+                // while !has_z {
+                //     if let Some(parent) = tree.get_parent(current_node) {
+                //         if let Some(layout) = layout_cache.rect.get_mut(&parent) {
+                //             if layout.z_index.is_none() {
+                //                 layout.z_index = Some(current_z);
+                //                 current_node = parent;
+                //                 continue;
+                //             }
+                //         }
+                //     }
+                //     has_z = true;
+                // }
             }
             z += 1.0;
         }
@@ -537,8 +571,7 @@ impl ExtractedQuads {
             let layer_id = stack.pop().unwrap();
             let parent_id = self.layers.get(layer_id).map(|l| l.parent_id).unwrap_or(0);
             let parent_z = {
-                self
-                    .layers
+                self.layers
                     .get(self.parents.get(&parent_id).map(|id| *id).unwrap_or(0))
                     .map(|l| l.z)
                     .unwrap_or(0.0)
@@ -547,8 +580,22 @@ impl ExtractedQuads {
             stack.extend(children);
             let layer = &self.layers[layer_id];
 
-            let qt = layer.quads.first().map(|q| match q { QuadOrMaterial::Quad(q) => q.quad_type, _ => UIQuadType::None}).unwrap_or(UIQuadType::None);
-            let rect = layer.quads.first().map(|q| match q { QuadOrMaterial::Quad(q) => q.rect, _ => Rect::default()}).unwrap_or(Rect::default());
+            let qt = layer
+                .quads
+                .first()
+                .map(|q| match q {
+                    QuadOrMaterial::Quad(q) => q.quad_type,
+                    _ => UIQuadType::None,
+                })
+                .unwrap_or(UIQuadType::None);
+            let rect = layer
+                .quads
+                .first()
+                .map(|q| match q {
+                    QuadOrMaterial::Quad(q) => q.rect,
+                    _ => Rect::default(),
+                })
+                .unwrap_or(Rect::default());
             if qt != UIQuadType::None {
                 // items.push((layer.z, format!("{}type: {:?}, layer_id: {}, parent_id: {}, parent_z: {}, z: {}, rect: {:?}", " ".repeat(parent_id + 1), qt, layer_id, parent_id, parent_z, layer.z, rect)));
             }
@@ -559,7 +606,17 @@ impl ExtractedQuads {
                     match quad {
                         QuadOrMaterial::Quad(q) => {
                             if last_type != q.quad_type {
-                                items.push((q.z_index, format!("{}Q: {:?}, c: {}, rect: {:?}, z: {}", " ".repeat(parent_id + 1), q.quad_type, q.c, q.rect, q.z_index)));
+                                items.push((
+                                    q.z_index,
+                                    format!(
+                                        "{}Q: {:?}, c: {}, rect: {:?}, z: {}",
+                                        " ".repeat(parent_id + 1),
+                                        q.quad_type,
+                                        q.c,
+                                        q.rect,
+                                        q.z_index
+                                    ),
+                                ));
                                 last_type = q.quad_type;
                             }
                         }
@@ -582,7 +639,10 @@ impl ExtractedQuads {
             .flat_map(|layer| &layer.quads)
             .filter_map(|quad| match &quad {
                 QuadOrMaterial::Material(_) => None,
-                QuadOrMaterial::Quad(quad) => Some(quad),
+                QuadOrMaterial::Quad(quad) => match quad.quad_type {
+                    UIQuadType::None => None,
+                    _ => Some(quad),
+                },
             })
     }
 }
@@ -986,7 +1046,9 @@ pub fn queue_quads_inner(
         return quad_type_index;
     }
 
-    if (current_clip.width() < 1.0 || current_clip.height() < 1.0) && quad.quad_type != UIQuadType::Clip {
+    if (current_clip.width() < 1.0 || current_clip.height() < 1.0)
+        && quad.quad_type != UIQuadType::Clip
+    {
         return quad_type_index;
     }
 
@@ -1005,8 +1067,7 @@ pub fn queue_quads_inner(
     };
     let sprite_rect = quad.rect;
 
-    if (new_batch != *current_batch
-        && current_batch.quad_type != quad.quad_type)
+    if (new_batch != *current_batch && current_batch.quad_type != quad.quad_type)
         || old_quad.quad_type == UIQuadType::Clip
         || quad.quad_type == UIQuadType::Clip
         || matches!(new_batch.quad_type, UIQuadType::DrawOpacityLayer)

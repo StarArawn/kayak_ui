@@ -16,7 +16,7 @@ pub struct Rect {
     pub posy: f32,
     pub width: f32,
     pub height: f32,
-    pub z_index: f32,
+    pub z_index: Option<f32>,
 }
 
 impl Rect {
@@ -433,7 +433,7 @@ impl From<Layout> for Rect {
             posy: layout.y,
             width: layout.width,
             height: layout.height,
-            z_index: layout.z,
+            z_index: None,
         }
     }
 }
@@ -445,7 +445,7 @@ impl From<Rect> for Layout {
             height: rect.height,
             x: rect.posx,
             y: rect.posy,
-            z: rect.z_index,
+            z: rect.z_index.unwrap_or(0.0),
         }
     }
 }

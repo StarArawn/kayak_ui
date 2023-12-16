@@ -180,7 +180,7 @@ pub fn text_box_render(
 
             let cloned_on_change = on_change.clone();
 
-            let on_event = OnEvent::new(
+            *on_event = OnEvent::new(
                 move |In(_entity): In<Entity>,
                       mut event: ResMut<KEvent>,
                       font_assets: Res<Assets<KayakFont>>,
@@ -337,8 +337,7 @@ pub fn text_box_render(
 
             let parent_id = Some(entity);
             rsx! {
-                <BackgroundBundle id={"background_event"} styles={background_styles} on_event={on_event}>
-                    {commands.entity(background_event).insert(Focusable);}
+                <BackgroundBundle id={"background_event"} styles={background_styles}>
                     <ClipBundle styles={KStyle {
                         height: Units::Pixels(26.0).into(),
                         padding_left: StyleProp::Value(Units::Stretch(0.0)),

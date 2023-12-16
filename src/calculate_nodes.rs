@@ -188,7 +188,7 @@ pub fn calculate_nodes(
                             posy: 0.0,
                             width,
                             height,
-                            z_index: 0.0,
+                            z_index: None,
                         },
                     );
                 }

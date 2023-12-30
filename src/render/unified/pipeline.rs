@@ -977,6 +977,10 @@ pub fn queue_quads(queue_quads: QueueQuads) {
             && last_quad.quad_type != UIQuadType::Clip
             && current_batch_entity != Entity::PLACEHOLDER
         {
+            commands
+                .entity(current_batch_entity)
+                .insert(current_batch.clone());
+
             if last_quad.opacity_layer > 0 && last_quad.quad_type != UIQuadType::DrawOpacityLayer {
                 opacity_transparent_phase.add(TransparentOpacityUI {
                     draw_function: draw_opacity_quad,
@@ -1072,7 +1076,7 @@ pub fn queue_quads_inner(
     };
     let sprite_rect = quad.rect;
 
-    if (new_batch != *current_batch && current_batch.quad_type != quad.quad_type)
+    if (new_batch != *current_batch || current_batch.quad_type != quad.quad_type)
         || old_quad.quad_type == UIQuadType::Clip
         || quad.quad_type == UIQuadType::Clip
         || matches!(new_batch.quad_type, UIQuadType::DrawOpacityLayer)

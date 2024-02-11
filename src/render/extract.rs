@@ -85,10 +85,8 @@ pub fn extract(
             &mut extracted_quads,
         );
         // Resolve extracted quads
-        if let (Ok(mut layout_cache), Ok(tree)) =
-            (context.layout_cache.try_write(), context.tree.try_read())
-        {
-            extracted_quads.resolve(&mut commands, &mut layout_cache, &tree);
+        if let Ok(mut layout_cache) = context.layout_cache.try_write() {
+            extracted_quads.resolve(&mut commands, &mut layout_cache);
             // extracted_quads.debug();
         }
     }

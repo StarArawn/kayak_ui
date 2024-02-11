@@ -42,7 +42,7 @@ use std::marker::PhantomData;
 
 use super::UNIFIED_SHADER_HANDLE;
 use crate::layout::LayoutCache;
-use crate::prelude::{Corner, Tree};
+use crate::prelude::Corner;
 use crate::render::extract::{UIExtractedView, UIViewUniform, UIViewUniformOffset, UIViewUniforms};
 use crate::render::opacity_layer::OpacityLayerManager;
 use crate::render::svg::RenderSvgs;
@@ -493,7 +493,7 @@ impl ExtractedQuads {
     }
     pub fn new_layer(&mut self, z_index: Option<f32>) {
         let layer = ZLayer {
-            custom_z: z_index.map(|z| z).unwrap_or(0.0),
+            custom_z: z_index.unwrap_or(0.0),
             parent_id: self.current_layer,
             ..Default::default()
         };
@@ -513,15 +513,10 @@ impl ExtractedQuads {
         self.current_layer = layer.parent_id;
     }
 
-    pub(crate) fn resolve(
-        &mut self,
-        commands: &mut Commands,
-        layout_cache: &mut LayoutCache,
-        tree: &Tree,
-    ) {
+    pub(crate) fn resolve(&mut self, commands: &mut Commands, layout_cache: &mut LayoutCache) {
         let mut stack = vec![0];
 
-        let mut z = 0.0;
+        #[allow(clippy::manual_while_let_some)]
         while !stack.is_empty() {
             let layer_id = stack.pop().unwrap();
             let parent_id = self.layers.get(layer_id).map(|l| l.parent_id).unwrap();
@@ -576,22 +571,22 @@ impl ExtractedQuads {
                 //     has_z = true;
                 // }
             }
-            z += 1.0;
         }
     }
 
     pub fn debug(&self) {
         let mut items = vec![];
         let mut stack = vec![0];
+        #[allow(clippy::manual_while_let_some)]
         while !stack.is_empty() {
             let layer_id = stack.pop().unwrap();
             let parent_id = self.layers.get(layer_id).map(|l| l.parent_id).unwrap_or(0);
-            let parent_z = {
-                self.layers
-                    .get(self.parents.get(&parent_id).map(|id| *id).unwrap_or(0))
-                    .map(|l| l.z)
-                    .unwrap_or(0.0)
-            };
+            // let parent_z = {
+            //     self.layers
+            //         .get(self.parents.get(&parent_id).map(|id| *id).unwrap_or(0))
+            //         .map(|l| l.z)
+            //         .unwrap_or(0.0)
+            // };
             let children = self.children.get(&layer_id).cloned().unwrap_or_default();
             stack.extend(children);
             let layer = &self.layers[layer_id];
@@ -604,14 +599,14 @@ impl ExtractedQuads {
                     _ => UIQuadType::None,
                 })
                 .unwrap_or(UIQuadType::None);
-            let rect = layer
-                .quads
-                .first()
-                .map(|q| match q {
-                    QuadOrMaterial::Quad(q) => q.rect,
-                    _ => Rect::default(),
-                })
-                .unwrap_or(Rect::default());
+            // let rect = layer
+            //     .quads
+            //     .first()
+            //     .map(|q| match q {
+            //         QuadOrMaterial::Quad(q) => q.rect,
+            //         _ => Rect::default(),
+            //     })
+            //     .unwrap_or(Rect::default());
             if qt != UIQuadType::None {
                 // items.push((layer.z, format!("{}type: {:?}, layer_id: {}, parent_id: {}, parent_z: {}, z: {}, rect: {:?}", " ".repeat(parent_id + 1), qt, layer_id, parent_id, parent_z, layer.z, rect)));
             }
@@ -619,6 +614,7 @@ impl ExtractedQuads {
                 // println!("{}Quads:", " ".repeat(parent_id + 1));
                 let mut last_type = UIQuadType::None;
                 for quad in layer.quads.iter() {
+                    #[allow(clippy::single_match)]
                     match quad {
                         QuadOrMaterial::Quad(q) => {
                             if last_type != q.quad_type {
@@ -972,6 +968,7 @@ pub fn queue_quads(queue_quads: QueueQuads) {
             last_quad = (*quad).clone();
         }
 
+        #[allow(clippy::nonminimal_bool)]
         if last_quad.quad_type != UIQuadType::Clip
             && last_quad.quad_type != UIQuadType::OpacityLayer
             && last_quad.quad_type != UIQuadType::Clip
@@ -987,7 +984,7 @@ pub fn queue_quads(queue_quads: QueueQuads) {
                     pipeline: spec_pipeline,
                     entity: current_batch_entity,
                     sort_key: FloatOrd(last_quad.z_index),
-                    quad_type: last_quad.quad_type.clone(),
+                    quad_type: last_quad.quad_type,
                     type_index: last_quad.quad_type.get_type_index(&quad_type_offsets),
                     rect: last_clip,
                     batch_range: Some(old_item_start..item_end),
@@ -1000,7 +997,7 @@ pub fn queue_quads(queue_quads: QueueQuads) {
                     pipeline: spec_pipeline,
                     entity: current_batch_entity,
                     sort_key: FloatOrd(last_quad.z_index),
-                    quad_type: last_quad.quad_type.clone(),
+                    quad_type: last_quad.quad_type,
                     type_index: last_quad.quad_type.get_type_index(&quad_type_offsets),
                     rect: last_clip,
                     batch_range: Some(old_item_start..item_end),
@@ -1103,7 +1100,7 @@ pub fn queue_quads_inner(
                     pipeline: spec_pipeline,
                     entity: *current_batch_entity,
                     sort_key: FloatOrd(old_quad.z_index),
-                    quad_type: old_quad.quad_type.clone(),
+                    quad_type: old_quad.quad_type,
                     type_index: current_batch.type_id,
                     rect: *current_clip,
                     batch_range: Some(*old_item_start..*item_end),
@@ -1116,7 +1113,7 @@ pub fn queue_quads_inner(
                     pipeline: spec_pipeline,
                     entity: *current_batch_entity,
                     sort_key: FloatOrd(old_quad.z_index),
-                    quad_type: old_quad.quad_type.clone(),
+                    quad_type: old_quad.quad_type,
                     type_index: current_batch.type_id,
                     rect: *last_clip,
                     batch_range: Some(*old_item_start..*item_end),
@@ -1408,8 +1405,6 @@ pub fn queue_quads_inner(
         *index += QUAD_INDICES.len() as u32;
         *item_end = *index;
     }
-
-    return;
 }
 
 pub type DrawUI = (
@@ -1506,8 +1501,7 @@ impl<T: PhaseItem + TransparentUIGeneric> RenderCommand<T> for DrawUIDraw<T> {
         } else if let Some(bind_group) = batch
             .font_handle_id
             .as_ref()
-            .map(|h| image_bind_groups.font_values.get(h))
-            .flatten()
+            .and_then(|h| image_bind_groups.font_values.get(h))
         {
             pass.set_bind_group(1, bind_group, &[]);
         } else {

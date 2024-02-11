@@ -35,7 +35,7 @@ impl Default for ElementBundle {
             computed_styles: ComputedStyles::default(),
             children: Default::default(),
             on_event: OnEvent::default(),
-            widget_name: Element::default().get_name(),
+            widget_name: Element.get_name(),
         }
     }
 }

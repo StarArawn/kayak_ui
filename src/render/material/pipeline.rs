@@ -417,7 +417,7 @@ pub fn queue_material_ui_quads<M: MaterialUI>(
                     draw_quad,
                     pipeline_id.unwrap(),
                     &mut quad_meta,
-                    &mut quad,
+                    &quad,
                     camera_entity,
                     *quad_type_offsets,
                     &mut current_batch,
@@ -442,6 +442,7 @@ pub fn queue_material_ui_quads<M: MaterialUI>(
         }
 
         if let Some(pipeline) = pipeline_id {
+            #[allow(clippy::nonminimal_bool)]
             if last_quad.quad_type != UIQuadType::Clip
                 && last_quad.quad_type != UIQuadType::OpacityLayer
                 && last_quad.quad_type != UIQuadType::Clip
@@ -457,7 +458,7 @@ pub fn queue_material_ui_quads<M: MaterialUI>(
                         pipeline,
                         entity: current_batch_entity,
                         sort_key: FloatOrd(last_quad.z_index),
-                        quad_type: last_quad.quad_type.clone(),
+                        quad_type: last_quad.quad_type,
                         type_index: last_quad.quad_type.get_type_index(&quad_type_offsets),
                         rect: last_clip,
                         batch_range: Some(old_item_start..item_end),
@@ -470,7 +471,7 @@ pub fn queue_material_ui_quads<M: MaterialUI>(
                         pipeline,
                         entity: current_batch_entity,
                         sort_key: FloatOrd(last_quad.z_index),
-                        quad_type: last_quad.quad_type.clone(),
+                        quad_type: last_quad.quad_type,
                         type_index: last_quad.quad_type.get_type_index(&quad_type_offsets),
                         rect: last_clip,
                         batch_range: Some(old_item_start..item_end),

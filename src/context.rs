@@ -418,7 +418,7 @@ fn recurse_node_tree_to_build_primitives2(
     images: &Assets<Image>,
     extracted_quads: &mut ExtractedQuads,
     current_node: WrappedIndex,
-    mut prev_clip: &mut Option<ExtractedQuad>,
+    prev_clip: &mut Option<ExtractedQuad>,
     mut current_opacity_layer: u32,
     mut total_opacity_layers: u32,
 ) -> u32 {
@@ -442,7 +442,7 @@ fn recurse_node_tree_to_build_primitives2(
         let new_clip = node.resolved_styles.extract(
             current_node.0,
             commands,
-            &layout,
+            layout,
             current_opacity_layer,
             extracted_quads,
             camera_entity,
@@ -485,7 +485,6 @@ fn recurse_node_tree_to_build_primitives2(
         if node_tree.children.contains_key(&current_node) {
             let children = node_tree.children.get(&current_node).unwrap();
             extracted_quads.new_layer(if node.z > 0.0 { Some(node.z) } else { None });
-            let mut i = 0;
             for child in children.iter() {
                 extracted_quads.new_layer(None);
                 let new_total_opacity_layers = recurse_node_tree_to_build_primitives2(
@@ -507,12 +506,11 @@ fn recurse_node_tree_to_build_primitives2(
                 );
 
                 total_opacity_layers = new_total_opacity_layers;
-                i += 1;
                 extracted_quads.pop_stack();
 
                 // // Between each child node we need to reset the clip.
                 extracted_quads.new_layer(None);
-                if let (Some(parent_clip), Some(prev_clip)) = (&parent_clip, &prev_clip) {
+                if let Some(parent_clip) = &parent_clip {
                     // if prev_clip.rect != parent_clip.rect {
                     extracted_quads.push(QuadOrMaterial::Quad(ExtractedQuad {
                         // rect: bevy::prelude::Rect {

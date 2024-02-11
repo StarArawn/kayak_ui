@@ -116,7 +116,7 @@ impl RenderPrimitive for KStyle {
                     extracted_quads.extend(
                         quads
                             .into_iter()
-                            .map(|q| QuadOrMaterial::Quad(q))
+                            .map(QuadOrMaterial::Quad)
                             .collect::<Vec<_>>(),
                     );
                 }
@@ -154,7 +154,7 @@ impl RenderPrimitive for KStyle {
                 } else {
                     extracted_quads.extend(
                         text.into_iter()
-                            .map(|q| QuadOrMaterial::Quad(q))
+                            .map(QuadOrMaterial::Quad)
                             .collect::<Vec<_>>(),
                     );
                 }
@@ -182,7 +182,7 @@ impl RenderPrimitive for KStyle {
                     extracted_quads.extend(
                         images
                             .into_iter()
-                            .map(|q| QuadOrMaterial::Quad(q))
+                            .map(QuadOrMaterial::Quad)
                             .collect::<Vec<_>>(),
                     );
                 }
@@ -216,7 +216,7 @@ impl RenderPrimitive for KStyle {
                     extracted_quads.extend(
                         atlases
                             .into_iter()
-                            .map(|q| QuadOrMaterial::Quad(q))
+                            .map(QuadOrMaterial::Quad)
                             .collect::<Vec<_>>(),
                     );
                 }
@@ -245,7 +245,7 @@ impl RenderPrimitive for KStyle {
                     extracted_quads.extend(
                         nines
                             .into_iter()
-                            .map(|q| QuadOrMaterial::Quad(q))
+                            .map(QuadOrMaterial::Quad)
                             .collect::<Vec<_>>(),
                     );
                 }
@@ -275,7 +275,7 @@ impl RenderPrimitive for KStyle {
                 } else {
                     extracted_quads.extend(
                         svgs.into_iter()
-                            .map(|q| QuadOrMaterial::Quad(q))
+                            .map(QuadOrMaterial::Quad)
                             .collect::<Vec<_>>(),
                     );
                 }

@@ -218,7 +218,6 @@ impl AssetLoader for TTFLoader {
 
             let image_bytes = match cache_image {
                 Ok(cache_image) => {
-                    let cache_image = cache_image;
                     let image = image::load_from_memory(&cache_image).unwrap();
                     image.as_bytes().to_vec()
                 }

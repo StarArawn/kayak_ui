@@ -135,7 +135,7 @@ impl KayakUIPlugin for KayakWidgetsContextPlugin {
         context.add_widget_data::<TransitionProps, TransitionState>();
         context.add_widget_data::<Modal, TransitionState>();
 
-        context.add_widget_system(KayakApp::default().get_name(), app_update, app_render);
+        context.add_widget_system(KayakApp.get_name(), app_update, app_render);
         context.add_widget_system(
             KButton::default().get_name(),
             widget_update::<KButton, ButtonState>,
@@ -147,7 +147,7 @@ impl KayakUIPlugin for KayakWidgetsContextPlugin {
             text_render,
         );
         context.add_widget_system(
-            WindowContextProvider::default().get_name(),
+            WindowContextProvider.get_name(),
             widget_update::<WindowContextProvider, EmptyState>,
             window_context_render,
         );
@@ -157,12 +157,12 @@ impl KayakUIPlugin for KayakWidgetsContextPlugin {
             window_render,
         );
         context.add_widget_system(
-            Background::default().get_name(),
+            Background.get_name(),
             widget_update::<Background, EmptyState>,
             background_render,
         );
         context.add_widget_system(
-            Clip::default().get_name(),
+            Clip.get_name(),
             widget_update::<Clip, EmptyState>,
             clip_render,
         );
@@ -187,7 +187,7 @@ impl KayakUIPlugin for KayakWidgetsContextPlugin {
             svg_render,
         );
         context.add_widget_system(
-            Element::default().get_name(),
+            Element.get_name(),
             widget_update::<Element, EmptyState>,
             element_render,
         );
@@ -197,7 +197,7 @@ impl KayakUIPlugin for KayakWidgetsContextPlugin {
             scroll_bar_render,
         );
         context.add_widget_system(
-            ScrollContentProps::default().get_name(),
+            ScrollContentProps.get_name(),
             widget_update_with_context::<ScrollContentProps, EmptyState, ScrollContext>,
             scroll_content_render,
         );

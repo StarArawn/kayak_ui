@@ -30,11 +30,11 @@ pub struct ClipBundle {
 impl Default for ClipBundle {
     fn default() -> Self {
         Self {
-            clip: Clip::default(),
+            clip: Clip,
             styles: KStyle::default(),
             computed_styles: ComputedStyles::default(),
             children: KChildren::default(),
-            widget_name: Clip::default().get_name(),
+            widget_name: Clip.get_name(),
         }
     }
 }

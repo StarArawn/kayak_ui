@@ -25,8 +25,8 @@ fancy-regex = "0.11.0"
 indexmap = "1.9"
 instant = "0.1"
 interpolation = { version = "0.2" }
-kayak_font = { path = "./kayak_font", version = "0.4" }
-kayak_ui_macros = { path = "./kayak_ui_macros", version = "0.4" }
+kayak_font = { path = "./kayak_font", version = "0.5" }
+kayak_ui_macros = { path = "./kayak_ui_macros", version = "0.5" }
 log = "0.4"
 morphorm = "0.3"
 reorder = "2.1"

@@ -2,7 +2,7 @@ use crate::KayakFont;
 use bevy::asset::AssetServer;
 use bevy::prelude::{AssetEvent, Assets, EventReader, Handle, Image, Local, Res, ResMut};
 use bevy::render::render_resource::{TextureFormat, TextureUsages};
-use bevy::render::texture::{ImageSamplerDescriptor, ImageFilterMode, ImageSampler};
+use bevy::render::texture::{ImageFilterMode, ImageSampler, ImageSamplerDescriptor};
 
 pub fn init_font_texture(
     mut not_processed: Local<Vec<Handle<KayakFont>>>,

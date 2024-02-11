@@ -1,5 +1,6 @@
 use crate::{ImageType, KayakFont, Sdf};
 use bevy::{
+    asset::Handle,
     math::Vec2,
     prelude::{Res, Resource},
     render::{
@@ -13,7 +14,7 @@ use bevy::{
         renderer::{RenderDevice, RenderQueue},
         texture::{GpuImage, Image},
     },
-    utils::HashMap, asset::Handle,
+    utils::HashMap,
 };
 
 pub trait FontRenderingPipeline {

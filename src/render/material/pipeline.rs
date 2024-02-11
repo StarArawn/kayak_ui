@@ -10,8 +10,8 @@ use bevy::{
     render::{
         render_asset::RenderAssets,
         render_phase::{
-            DrawFunctions, PhaseItem, RenderCommand, RenderCommandResult,
-            SetItemPipeline, TrackedRenderPass,
+            DrawFunctions, PhaseItem, RenderCommand, RenderCommandResult, SetItemPipeline,
+            TrackedRenderPass,
         },
         render_resource::{
             AsBindGroupError, BindGroup, BindGroupLayout, OwnedBindingResource, PipelineCache,
@@ -22,7 +22,7 @@ use bevy::{
         texture::FallbackImage,
         Extract,
     },
-    utils::{HashMap, HashSet, FloatOrd},
+    utils::{FloatOrd, HashMap, HashSet},
 };
 use kayak_font::bevy::FontTextureCache;
 use std::hash::Hash;
@@ -34,9 +34,9 @@ use crate::render::{
     svg::RenderSvgs,
     ui_pass::{TransparentOpacityUI, TransparentUI, UIRenderPhase},
     unified::pipeline::{
-        queue_quads_inner, DrawUIDraw, ExtractedQuad, ImageBindGroups, PreviousClip, PreviousIndex,
-        QuadBatch, QuadMeta, QuadTypeOffsets, SetUIViewBindGroup, UIQuadType, UnifiedPipeline,
-        UnifiedPipelineKey, MaterialZ,
+        queue_quads_inner, DrawUIDraw, ExtractedQuad, ImageBindGroups, MaterialZ, PreviousClip,
+        PreviousIndex, QuadBatch, QuadMeta, QuadTypeOffsets, SetUIViewBindGroup, UIQuadType,
+        UnifiedPipeline, UnifiedPipelineKey,
     },
 };
 
@@ -158,7 +158,9 @@ pub fn extract_materials_ui<M: MaterialUI>(
     let mut removed = Vec::new();
     for event in events.read() {
         match event {
-            AssetEvent::Added { id } | AssetEvent::LoadedWithDependencies { id } | AssetEvent::Modified { id } => {
+            AssetEvent::Added { id }
+            | AssetEvent::LoadedWithDependencies { id }
+            | AssetEvent::Modified { id } => {
                 changed_assets.insert(*id);
             }
             AssetEvent::Removed { id } => {
@@ -313,7 +315,11 @@ pub fn queue_material_ui_quads<M: MaterialUI>(
     materialui_pipeline: Res<MaterialUIPipeline<M>>,
     mut pipelines: ResMut<SpecializedRenderPipelines<MaterialUIPipeline<M>>>,
     pipeline_cache: ResMut<PipelineCache>,
-    mut extracted_quads: Query<(&'static mut ExtractedQuad, &'static Handle<M>, &'static MaterialZ)>,
+    mut extracted_quads: Query<(
+        &'static mut ExtractedQuad,
+        &'static Handle<M>,
+        &'static MaterialZ,
+    )>,
     mut views: Query<(
         Entity,
         &'static mut UIRenderPhase<TransparentUI>,
@@ -384,7 +390,7 @@ pub fn queue_material_ui_quads<M: MaterialUI>(
                 if prev_clip.rect.width() < 1.0 || prev_clip.rect.height() < 1.0 {
                     continue;
                 }
-                
+
                 pipeline_id = Some(pipelines.specialize(
                     &pipeline_cache,
                     &materialui_pipeline,
@@ -426,7 +432,9 @@ pub fn queue_material_ui_quads<M: MaterialUI>(
                 );
 
                 if current_batch_entity != Entity::PLACEHOLDER {
-                    commands.entity(current_batch_entity).insert(material_handle.clone_weak());
+                    commands
+                        .entity(current_batch_entity)
+                        .insert(material_handle.clone_weak());
                 }
 
                 last_quad = quad.clone();
@@ -434,9 +442,15 @@ pub fn queue_material_ui_quads<M: MaterialUI>(
         }
 
         if let Some(pipeline) = pipeline_id {
-            if last_quad.quad_type != UIQuadType::Clip && last_quad.quad_type != UIQuadType::OpacityLayer && last_quad.quad_type != UIQuadType::Clip && current_batch_entity != Entity::PLACEHOLDER {
+            if last_quad.quad_type != UIQuadType::Clip
+                && last_quad.quad_type != UIQuadType::OpacityLayer
+                && last_quad.quad_type != UIQuadType::Clip
+                && current_batch_entity != Entity::PLACEHOLDER
+            {
                 // handle old batch
-                commands.entity(current_batch_entity).insert(current_batch.clone());
+                commands
+                    .entity(current_batch_entity)
+                    .insert(current_batch.clone());
                 if last_quad.opacity_layer > 0 {
                     opacity_transparent_phase.add(TransparentOpacityUI {
                         draw_function: draw_opacity_quad,
@@ -459,7 +473,7 @@ pub fn queue_material_ui_quads<M: MaterialUI>(
                         quad_type: last_quad.quad_type.clone(),
                         type_index: last_quad.quad_type.get_type_index(&quad_type_offsets),
                         rect: last_clip,
-                        batch_range:  Some(old_item_start..item_end),
+                        batch_range: Some(old_item_start..item_end),
                         dynamic_offset: None,
                     });
                 }
@@ -467,5 +481,7 @@ pub fn queue_material_ui_quads<M: MaterialUI>(
         }
     }
 
-    quad_meta.vertices.write_buffer(&render_device, &render_queue);
+    quad_meta
+        .vertices
+        .write_buffer(&render_device, &render_queue);
 }

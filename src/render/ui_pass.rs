@@ -13,8 +13,8 @@ use bevy::render::{
     renderer::RenderContext,
     view::{ExtractedView, ViewTarget},
 };
-use bevy::utils::FloatOrd;
 use bevy::utils::nonmax::NonMaxU32;
+use bevy::utils::FloatOrd;
 
 use crate::CameraUIKayak;
 
@@ -100,7 +100,6 @@ impl CachedRenderPipelinePhaseItem for TransparentUI {
     }
 }
 
-
 #[derive(Debug)]
 pub struct TransparentOpacityUI {
     pub sort_key: FloatOrd,
@@ -149,7 +148,7 @@ impl PhaseItem for TransparentOpacityUI {
     fn entity(&self) -> Entity {
         self.entity
     }
-    
+
     fn batch_range(&self) -> &Range<u32> {
         self.batch_range.as_ref().unwrap()
     }
@@ -354,7 +353,9 @@ impl<I: PhaseItem + std::fmt::Debug> UIRenderPhase<I> {
 }
 
 /// This system sorts the [`PhaseItem`]s of all [`RenderPhase`]s of this type.
-pub fn sort_ui_phase_system<I: PhaseItem + std::fmt::Debug>(mut render_phases: Query<&mut UIRenderPhase<I>>) {
+pub fn sort_ui_phase_system<I: PhaseItem + std::fmt::Debug>(
+    mut render_phases: Query<&mut UIRenderPhase<I>>,
+) {
     for mut phase in &mut render_phases {
         phase.sort();
     }

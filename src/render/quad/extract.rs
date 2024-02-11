@@ -69,7 +69,7 @@ pub fn extract_quads(
         });
     }
 
-   extracted_quads.push(ExtractedQuad {
+    extracted_quads.push(ExtractedQuad {
         camera_entity,
         rect: Rect {
             min: Vec2::new(layout.posx + border.left, layout.posy + border.top),

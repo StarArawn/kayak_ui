@@ -20,7 +20,9 @@ pub fn extract_svg_asset(
     let mut changed_assets = HashSet::default();
     for event in events.read() {
         match event {
-            AssetEvent::Added { id } | AssetEvent::Modified { id } | AssetEvent::LoadedWithDependencies { id } => {
+            AssetEvent::Added { id }
+            | AssetEvent::Modified { id }
+            | AssetEvent::LoadedWithDependencies { id } => {
                 changed_assets.insert(*id);
             }
             AssetEvent::Removed { id } => {

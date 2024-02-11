@@ -1,5 +1,5 @@
 use crate::{ImageType, KayakFont, Sdf};
-use bevy::asset::{AssetLoader, AssetPath, BoxedFuture, LoadContext, io::Reader, AsyncReadExt};
+use bevy::asset::{io::Reader, AssetLoader, AssetPath, AsyncReadExt, BoxedFuture, LoadContext};
 
 #[derive(Default)]
 pub struct KayakFontLoader;
@@ -25,10 +25,7 @@ impl AssetLoader for KayakFontLoader {
 
             let mut bytes = vec![];
             let _ = reader.read_to_end(&mut bytes).await;
-            let font = KayakFont::new(
-                Sdf::from_bytes(&bytes),
-                ImageType::Atlas(image_handle),
-            );
+            let font = KayakFont::new(Sdf::from_bytes(&bytes), ImageType::Atlas(image_handle));
 
             Ok(font)
         })

@@ -1,15 +1,13 @@
 use bevy::{
-    prelude::{
-        Commands, IntoSystemConfigs, Plugin, Query, Res, ResMut,
-        Resource, With,
-    },
+    asset::{load_internal_asset, AssetApp, Handle},
+    prelude::{Commands, IntoSystemConfigs, Plugin, Query, Res, ResMut, Resource, With},
     render::{
         render_phase::AddRenderCommand,
         render_resource::{Shader, SpecializedRenderPipelines},
         renderer::{RenderDevice, RenderQueue},
         Extract, ExtractSchedule, Render, RenderApp, RenderSet,
     },
-    window::{PrimaryWindow, Window}, asset::{Handle, load_internal_asset, AssetApp},
+    window::{PrimaryWindow, Window},
 };
 use bevy_svg::prelude::Svg;
 
@@ -31,22 +29,19 @@ use super::{svg::RenderSvgs, ui_pass::TransparentOpacityUI};
 pub mod pipeline;
 pub mod text;
 
-pub const UNIFIED_SHADER_HANDLE: Handle<Shader> =
-Handle::weak_from_u128(7604018236855288450);
+pub const UNIFIED_SHADER_HANDLE: Handle<Shader> = Handle::weak_from_u128(7604018236855288450);
 
-pub const UNIFIED_BINDINGS_HANDLE: Handle<Shader> =
-Handle::weak_from_u128(13885898746900949245);
+pub const UNIFIED_BINDINGS_HANDLE: Handle<Shader> = Handle::weak_from_u128(13885898746900949245);
 
-pub const SAMPLE_QUAD_HANDLE: Handle<Shader> =
-Handle::weak_from_u128(5975018398368429820);
+pub const SAMPLE_QUAD_HANDLE: Handle<Shader> = Handle::weak_from_u128(5975018398368429820);
 
-pub const VERTEX_OUTPUT_HANDLE: Handle<Shader> =
-Handle::weak_from_u128(8828896277688845893);
+pub const VERTEX_OUTPUT_HANDLE: Handle<Shader> = Handle::weak_from_u128(8828896277688845893);
 
 pub struct UnifiedRenderPlugin;
 impl Plugin for UnifiedRenderPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
-        app.init_asset::<Svg>().add_plugins(text::TextRendererPlugin);
+        app.init_asset::<Svg>()
+            .add_plugins(text::TextRendererPlugin);
 
         load_internal_asset!(
             app,

@@ -15,7 +15,11 @@ use bevy::{
 };
 use kayak_font::KayakFont;
 
-use super::{font::FontMapping, ui_pass::{TransparentUI, UIRenderPhase}, unified::pipeline::ExtractedQuads};
+use super::{
+    font::FontMapping,
+    ui_pass::{TransparentUI, UIRenderPhase},
+    unified::pipeline::ExtractedQuads,
+};
 
 // mod nine_patch;
 // mod texture_atlas;
@@ -81,12 +85,13 @@ pub fn extract(
             &mut extracted_quads,
         );
         // Resolve extracted quads
-        if let (Ok(mut layout_cache), Ok(tree)) = (context.layout_cache.try_write(), context.tree.try_read()) {
+        if let (Ok(mut layout_cache), Ok(tree)) =
+            (context.layout_cache.try_write(), context.tree.try_read())
+        {
             extracted_quads.resolve(&mut commands, &mut layout_cache, &tree);
             // extracted_quads.debug();
         }
     }
-
 
     // let mut extracted = extracted_quads.iter().map(|e| (e.quad_type, e.z_index, e.rect, e.c)).collect::<Vec<_>>();
 
@@ -97,7 +102,7 @@ pub fn extract(
     //     // if !(last_type == super::unified::pipeline::UIQuadType::Text && *qt == super::unified::pipeline::UIQuadType::Text) {
     //     if *qt == super::unified::pipeline::UIQuadType::Text {
     //         println!("qt: {:?}, c: {}, z: {}, r: {:?}", qt, c, z, r);
-    //     } else { 
+    //     } else {
     //         println!("qt: {:?}, z: {}, r: {:?}", qt, z, r);
     //     }
     //     last_type = *qt;

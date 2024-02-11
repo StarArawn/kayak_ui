@@ -1045,7 +1045,7 @@ pub fn queue_quads_inner(
     current_clip: &mut Rect,
     old_item_start: &mut u32,
     last_clip: &mut Rect,
-){
+) {
     if camera_entity != quad.camera_entity {
         return;
     }

@@ -1,12 +1,7 @@
 use std::collections::HashMap;
 
 #[cfg(feature = "bevy_renderer")]
-use bevy::{
-    prelude::*,
-    prelude::Handle,
-    reflect::TypePath,
-    render::texture::Image,
-};
+use bevy::{prelude::Handle, prelude::*, reflect::TypePath, render::texture::Image};
 use unicode_segmentation::UnicodeSegmentation;
 
 use crate::utility::{BreakableWord, MISSING, SPACE};

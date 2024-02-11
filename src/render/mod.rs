@@ -18,7 +18,7 @@ use crate::{
 use self::{
     extract::BevyKayakUIExtractPlugin,
     opacity_layer::OpacityLayerManager,
-    ui_pass::{TransparentOpacityUI, TransparentUI, UIRenderPhase, sort_ui_phase_system},
+    ui_pass::{sort_ui_phase_system, TransparentOpacityUI, TransparentUI, UIRenderPhase},
 };
 
 mod extract;

@@ -1,6 +1,9 @@
 #![allow(clippy::needless_question_mark, clippy::question_mark)]
 use bevy::{
-    asset::{AssetLoader, LoadContext, io::{Reader, AssetSourceBuilders}, AsyncReadExt, AssetServer},
+    asset::{
+        io::{AssetSourceBuilders, Reader},
+        AssetLoader, AssetServer, AsyncReadExt, LoadContext,
+    },
     render::render_resource::{Extent3d, TextureFormat},
     utils::{BoxedFuture, HashMap},
 };
@@ -59,7 +62,10 @@ impl AssetLoader for TTFLoader {
                 u32::from_str_radix(kttf.char_range_start.trim_start_matches("0x"), 16).unwrap();
             let char_range_end =
                 u32::from_str_radix(kttf.char_range_end.trim_start_matches("0x"), 16).unwrap();
-            let font_bytes = load_context.read_asset_bytes(kttf.file.clone()).await.unwrap();
+            let font_bytes = load_context
+                .read_asset_bytes(kttf.file.clone())
+                .await
+                .unwrap();
 
             let mut cache_path = std::path::PathBuf::from(load_context.path());
             let file_name = load_context
@@ -217,21 +223,29 @@ impl AssetLoader for TTFLoader {
                     image.as_bytes().to_vec()
                 }
                 Err(_) => {
-                    #[cfg(not(target_family = "wasm"))] {
+                    #[cfg(not(target_family = "wasm"))]
+                    {
                         let mut sources = AssetSourceBuilders::default();
-                        sources.init_default_source(
-                            "assets",
-                            None,
+                        sources.init_default_source("assets", None);
+                        let fake_server = AssetServer::new(
+                            sources.build_sources(false, false),
+                            bevy::asset::AssetServerMode::Unprocessed,
+                            false,
                         );
-                        let fake_server = AssetServer::new(sources.build_sources(false, false), bevy::asset::AssetServerMode::Unprocessed, false);
-                        let writer = fake_server.get_source(load_context.asset_path().source().clone()).unwrap().writer().unwrap();
+                        let writer = fake_server
+                            .get_source(load_context.asset_path().source().clone())
+                            .unwrap()
+                            .writer()
+                            .unwrap();
                         let mut cursor = std::io::Cursor::new(Vec::new());
                         image_builder
                             .write_to(&mut cursor, image::ImageOutputFormat::Png)
                             .unwrap();
 
-                        writer.write_bytes(cache_path.as_path(), cursor.get_ref()).await.unwrap();
-
+                        writer
+                            .write_bytes(cache_path.as_path(), cursor.get_ref())
+                            .await
+                            .unwrap();
                     }
                     image_builder.as_bytes().to_vec()
                 }
@@ -254,8 +268,9 @@ impl AssetLoader for TTFLoader {
             image.reinterpret_stacked_2d_as_array(char_count);
             let labeled_asset = load_context.begin_labeled_asset();
             let loaded_image_asset = labeled_asset.finish(image, None);
-            let image_asset = load_context.add_loaded_labeled_asset("font_image", loaded_image_asset);
-            
+            let image_asset =
+                load_context.add_loaded_labeled_asset("font_image", loaded_image_asset);
+
             let font = KayakFont::new(sdf, ImageType::Array(image_asset));
 
             Ok(font)

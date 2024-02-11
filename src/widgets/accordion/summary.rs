@@ -13,8 +13,7 @@ use crate::{
     },
     widget::Widget,
     widgets::{
-        BackgroundBundle, ElementBundle, KSvg, KSvgBundle, EXPAND_LESS_HANDLE,
-        EXPAND_MORE_HANDLE,
+        BackgroundBundle, ElementBundle, KSvg, KSvgBundle, EXPAND_LESS_HANDLE, EXPAND_MORE_HANDLE,
     },
 };
 

@@ -4,7 +4,7 @@ use kayak_font::KayakFont;
 use crate::{
     render::{
         font::FontMapping,
-        unified::pipeline::{ExtractedQuad, ExtractedQuads, UIQuadType, QuadOrMaterial},
+        unified::pipeline::{ExtractedQuad, ExtractedQuads, QuadOrMaterial, UIQuadType},
     },
     styles::{Corner, KStyle, RenderCommand, StyleProp},
 };
@@ -113,7 +113,12 @@ impl RenderPrimitive for KStyle {
                     }
                     return None;
                 } else {
-                    extracted_quads.extend(quads.into_iter().map(|q| QuadOrMaterial::Quad(q)).collect::<Vec<_>>());
+                    extracted_quads.extend(
+                        quads
+                            .into_iter()
+                            .map(|q| QuadOrMaterial::Quad(q))
+                            .collect::<Vec<_>>(),
+                    );
                 }
             }
             RenderCommand::Text {
@@ -147,7 +152,11 @@ impl RenderPrimitive for KStyle {
                     }
                     return None;
                 } else {
-                    extracted_quads.extend(text.into_iter().map(|q| QuadOrMaterial::Quad(q)).collect::<Vec<_>>());
+                    extracted_quads.extend(
+                        text.into_iter()
+                            .map(|q| QuadOrMaterial::Quad(q))
+                            .collect::<Vec<_>>(),
+                    );
                 }
             }
             RenderCommand::Image { handle } => {
@@ -170,7 +179,12 @@ impl RenderPrimitive for KStyle {
                     }
                     return None;
                 } else {
-                    extracted_quads.extend(images.into_iter().map(|q| QuadOrMaterial::Quad(q)).collect::<Vec<_>>());
+                    extracted_quads.extend(
+                        images
+                            .into_iter()
+                            .map(|q| QuadOrMaterial::Quad(q))
+                            .collect::<Vec<_>>(),
+                    );
                 }
             }
             RenderCommand::TextureAtlas {
@@ -199,7 +213,12 @@ impl RenderPrimitive for KStyle {
                     }
                     return None;
                 } else {
-                    extracted_quads.extend(atlases.into_iter().map(|q| QuadOrMaterial::Quad(q)).collect::<Vec<_>>());
+                    extracted_quads.extend(
+                        atlases
+                            .into_iter()
+                            .map(|q| QuadOrMaterial::Quad(q))
+                            .collect::<Vec<_>>(),
+                    );
                 }
             }
             RenderCommand::NinePatch { border, handle } => {
@@ -223,7 +242,12 @@ impl RenderPrimitive for KStyle {
                     }
                     return None;
                 } else {
-                    extracted_quads.extend(nines.into_iter().map(|q| QuadOrMaterial::Quad(q)).collect::<Vec<_>>());
+                    extracted_quads.extend(
+                        nines
+                            .into_iter()
+                            .map(|q| QuadOrMaterial::Quad(q))
+                            .collect::<Vec<_>>(),
+                    );
                 }
             }
             RenderCommand::Svg { handle } => {
@@ -249,7 +273,11 @@ impl RenderPrimitive for KStyle {
                     }
                     return None;
                 } else {
-                    extracted_quads.extend(svgs.into_iter().map(|q| QuadOrMaterial::Quad(q)).collect::<Vec<_>>());
+                    extracted_quads.extend(
+                        svgs.into_iter()
+                            .map(|q| QuadOrMaterial::Quad(q))
+                            .collect::<Vec<_>>(),
+                    );
                 }
             }
             _ => {

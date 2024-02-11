@@ -1,8 +1,4 @@
-use bevy::{
-    prelude::*,
-    reflect::TypePath,
-    render::render_resource::AsBindGroup,
-};
+use bevy::{prelude::*, reflect::TypePath, render::render_resource::AsBindGroup};
 use kayak_ui::{
     prelude::{widgets::*, *},
     CameraUIKayak,

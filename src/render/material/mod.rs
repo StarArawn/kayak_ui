@@ -5,18 +5,17 @@ mod plugin;
 use std::sync::Arc;
 
 use bevy::{
+    asset::Asset,
     prelude::{Commands, Entity},
     reflect::Reflect,
-    render::render_resource::{AsBindGroup, RenderPipelineDescriptor, ShaderRef}, asset::Asset,
+    render::render_resource::{AsBindGroup, RenderPipelineDescriptor, ShaderRef},
 };
 
 pub use key::*;
 pub use pipeline::*;
 pub use plugin::*;
 
-pub trait MaterialUI:
-    AsBindGroup + Send + Sync + Clone + Asset + Sized
-{
+pub trait MaterialUI: AsBindGroup + Send + Sync + Clone + Asset + Sized {
     /// Returns this material's vertex shader. If [`ShaderRef::Default`] is returned, the default mesh vertex shader
     /// will be used.
     fn vertex_shader() -> ShaderRef {

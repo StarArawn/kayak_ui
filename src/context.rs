@@ -25,7 +25,7 @@ use crate::{
     prelude::KayakWidgetContext,
     render::{
         font::FontMapping,
-        unified::pipeline::{ExtractedQuad, ExtractedQuads, UIQuadType, QuadOrMaterial},
+        unified::pipeline::{ExtractedQuad, ExtractedQuads, QuadOrMaterial, UIQuadType},
         MAX_OPACITY_LAYERS,
     },
     render_primitive::RenderPrimitive,
@@ -481,32 +481,31 @@ fn recurse_node_tree_to_build_primitives2(
 
         let parent_clip = prev_clip.clone();
 
-        // Loop through children recursively. 
+        // Loop through children recursively.
         if node_tree.children.contains_key(&current_node) {
             let children = node_tree.children.get(&current_node).unwrap();
             extracted_quads.new_layer(if node.z > 0.0 { Some(node.z) } else { None });
             let mut i = 0;
             for child in children.iter() {
                 extracted_quads.new_layer(None);
-                let new_total_opacity_layers =
-                    recurse_node_tree_to_build_primitives2(
-                        commands,
-                        camera_entity,
-                        dpi,
-                        node_tree,
-                        layout_cache,
-                        nodes,
-                        widget_names,
-                        fonts,
-                        font_mapping,
-                        images,
-                        extracted_quads,
-                        *child,
-                        prev_clip,
-                        current_opacity_layer,
-                        total_opacity_layers,
-                    );
-                    
+                let new_total_opacity_layers = recurse_node_tree_to_build_primitives2(
+                    commands,
+                    camera_entity,
+                    dpi,
+                    node_tree,
+                    layout_cache,
+                    nodes,
+                    widget_names,
+                    fonts,
+                    font_mapping,
+                    images,
+                    extracted_quads,
+                    *child,
+                    prev_clip,
+                    current_opacity_layer,
+                    total_opacity_layers,
+                );
+
                 total_opacity_layers = new_total_opacity_layers;
                 i += 1;
                 extracted_quads.pop_stack();
@@ -515,13 +514,13 @@ fn recurse_node_tree_to_build_primitives2(
                 extracted_quads.new_layer(None);
                 if let (Some(parent_clip), Some(prev_clip)) = (&parent_clip, &prev_clip) {
                     // if prev_clip.rect != parent_clip.rect {
-                        extracted_quads.push(QuadOrMaterial::Quad(ExtractedQuad {
-                            // rect: bevy::prelude::Rect {
-                            //     min: Vec2::splat(0.0),
-                            //     max: Vec2::splat(4000.0),
-                            // },
-                            ..parent_clip.clone()
-                        }));
+                    extracted_quads.push(QuadOrMaterial::Quad(ExtractedQuad {
+                        // rect: bevy::prelude::Rect {
+                        //     min: Vec2::splat(0.0),
+                        //     max: Vec2::splat(4000.0),
+                        // },
+                        ..parent_clip.clone()
+                    }));
                     // }
                 }
                 extracted_quads.pop_stack();
@@ -562,7 +561,6 @@ fn recurse_node_tree_to_build_primitives2(
             }));
             extracted_quads.pop_stack()
         }
-
     } else {
         log::error!(
             "No render node: {}-{} > {}-{}",

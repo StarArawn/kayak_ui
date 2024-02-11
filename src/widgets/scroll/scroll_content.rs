@@ -36,7 +36,7 @@ impl Default for ScrollContentBundle {
             computed_styles: ComputedStyles::default(),
             children: Default::default(),
             on_layout: Default::default(),
-            widget_name: ScrollContentProps::default().get_name(),
+            widget_name: ScrollContentProps.get_name(),
         }
     }
 }

@@ -4,7 +4,7 @@ use kayak_font::KayakFont;
 use crate::{
     render::{
         font::FontMapping,
-        unified::pipeline::{ExtractedQuad, ExtractedQuads, UIQuadType},
+        unified::pipeline::{ExtractedQuad, ExtractedQuads, QuadOrMaterial, UIQuadType},
     },
     styles::{Corner, KStyle, RenderCommand, StyleProp},
 };
@@ -12,6 +12,7 @@ use crate::{
 pub trait RenderPrimitive {
     fn extract(
         &self,
+        current_node: Entity,
         commands: &mut Commands,
         layout: &crate::layout::Rect,
         opacity_layer: u32,
@@ -28,6 +29,7 @@ pub trait RenderPrimitive {
 impl RenderPrimitive for KStyle {
     fn extract(
         &self,
+        current_node: Entity,
         commands: &mut Commands,
         layout: &crate::layout::Rect,
         opacity_layer: u32,
@@ -57,12 +59,14 @@ impl RenderPrimitive for KStyle {
                     }
                 }
 
-                let extracted = ExtractedQuad {
+                // println!("New Clip: {:?}", (rect, layout.z_index));
+
+                let extracted: ExtractedQuad = ExtractedQuad {
+                    org_entity: current_node,
                     camera_entity,
                     rect,
                     color: Color::default(),
                     char_id: 0,
-                    z_index: layout.z_index,
                     font_handle: None,
                     quad_type: UIQuadType::Clip,
                     type_index: 0,
@@ -73,12 +77,10 @@ impl RenderPrimitive for KStyle {
                     opacity_layer,
                     ..Default::default()
                 };
-                if let Some(material) = material {
-                    let id = commands.spawn(extracted).id();
-                    material.run(commands, id);
-                    return None;
+                if let Some(_material) = material {
+                    panic!("Materials not supported on clips right now.");
                 } else {
-                    extracted_quads.quads.push(extracted.clone());
+                    extracted_quads.push(QuadOrMaterial::Quad(extracted.clone()));
                     return Some(extracted);
                 }
             }
@@ -87,7 +89,7 @@ impl RenderPrimitive for KStyle {
                 let border_radius = self.border_radius.resolve();
                 let border = self.border.resolve();
                 let box_shadow = self.box_shadow.resolve();
-                let quads = crate::render::quad::extract_quads(
+                let mut quads = crate::render::quad::extract_quads(
                     camera_entity,
                     background_color,
                     border_color,
@@ -98,14 +100,25 @@ impl RenderPrimitive for KStyle {
                     box_shadow,
                     1.0,
                 );
+
+                for quad in quads.iter_mut() {
+                    quad.org_entity = current_node;
+                }
+
                 if let Some(material) = material {
                     for extracted in quads {
                         let id = commands.spawn(extracted).id();
                         material.run(commands, id);
+                        extracted_quads.push(QuadOrMaterial::Material(id));
                     }
                     return None;
                 } else {
-                    extracted_quads.quads.extend(quads);
+                    extracted_quads.extend(
+                        quads
+                            .into_iter()
+                            .map(QuadOrMaterial::Quad)
+                            .collect::<Vec<_>>(),
+                    );
                 }
             }
             RenderCommand::Text {
@@ -135,15 +148,20 @@ impl RenderPrimitive for KStyle {
                     for extracted in text {
                         let id = commands.spawn(extracted).id();
                         material.run(commands, id);
+                        extracted_quads.push(QuadOrMaterial::Material(id));
                     }
                     return None;
                 } else {
-                    extracted_quads.quads.extend(text);
+                    extracted_quads.extend(
+                        text.into_iter()
+                            .map(QuadOrMaterial::Quad)
+                            .collect::<Vec<_>>(),
+                    );
                 }
             }
             RenderCommand::Image { handle } => {
                 let border_radius = self.border_radius.resolve();
-                let images = crate::render::image::extract_images(
+                let mut images = crate::render::image::extract_images(
                     camera_entity,
                     border_radius,
                     *layout,
@@ -151,6 +169,9 @@ impl RenderPrimitive for KStyle {
                     opacity_layer,
                     dpi,
                 );
+                for image in images.iter_mut() {
+                    image.org_entity = current_node;
+                }
                 if let Some(material) = material {
                     for extracted in images {
                         let id = commands.spawn(extracted).id();
@@ -158,7 +179,12 @@ impl RenderPrimitive for KStyle {
                     }
                     return None;
                 } else {
-                    extracted_quads.quads.extend(images);
+                    extracted_quads.extend(
+                        images
+                            .into_iter()
+                            .map(QuadOrMaterial::Quad)
+                            .collect::<Vec<_>>(),
+                    );
                 }
             }
             RenderCommand::TextureAtlas {
@@ -166,7 +192,7 @@ impl RenderPrimitive for KStyle {
                 size,
                 handle,
             } => {
-                let atlases = crate::render::texture_atlas::extract_texture_atlas(
+                let mut atlases = crate::render::texture_atlas::extract_texture_atlas(
                     camera_entity,
                     size,
                     position,
@@ -176,18 +202,27 @@ impl RenderPrimitive for KStyle {
                     images,
                     dpi,
                 );
+                for atlas in atlases.iter_mut() {
+                    atlas.org_entity = current_node;
+                }
                 if let Some(material) = material {
                     for extracted in atlases {
                         let id = commands.spawn(extracted).id();
                         material.run(commands, id);
+                        extracted_quads.push(QuadOrMaterial::Material(id));
                     }
                     return None;
                 } else {
-                    extracted_quads.quads.extend(atlases);
+                    extracted_quads.extend(
+                        atlases
+                            .into_iter()
+                            .map(QuadOrMaterial::Quad)
+                            .collect::<Vec<_>>(),
+                    );
                 }
             }
             RenderCommand::NinePatch { border, handle } => {
-                let nines = crate::render::nine_patch::extract_nine_patch(
+                let mut nines = crate::render::nine_patch::extract_nine_patch(
                     camera_entity,
                     *layout,
                     handle,
@@ -196,18 +231,27 @@ impl RenderPrimitive for KStyle {
                     images,
                     dpi,
                 );
+                for nine in nines.iter_mut() {
+                    nine.org_entity = current_node;
+                }
                 if let Some(material) = material {
                     for extracted in nines {
                         let id = commands.spawn(extracted).id();
                         material.run(commands, id);
+                        extracted_quads.push(QuadOrMaterial::Material(id));
                     }
                     return None;
                 } else {
-                    extracted_quads.quads.extend(nines);
+                    extracted_quads.extend(
+                        nines
+                            .into_iter()
+                            .map(QuadOrMaterial::Quad)
+                            .collect::<Vec<_>>(),
+                    );
                 }
             }
             RenderCommand::Svg { handle } => {
-                let svgs = crate::render::svg::extract_svg(
+                let mut svgs = crate::render::svg::extract_svg(
                     camera_entity,
                     handle,
                     *layout,
@@ -218,17 +262,35 @@ impl RenderPrimitive for KStyle {
                     opacity_layer,
                     dpi,
                 );
+                for svg in svgs.iter_mut() {
+                    svg.org_entity = current_node;
+                }
                 if let Some(material) = material {
                     for extracted in svgs {
                         let id = commands.spawn(extracted).id();
                         material.run(commands, id);
+                        extracted_quads.push(QuadOrMaterial::Material(id));
                     }
                     return None;
                 } else {
-                    extracted_quads.quads.extend(svgs);
+                    extracted_quads.extend(
+                        svgs.into_iter()
+                            .map(QuadOrMaterial::Quad)
+                            .collect::<Vec<_>>(),
+                    );
                 }
             }
-            _ => {}
+            _ => {
+                // We need to extract here in any case because we need to apply z-values correctly
+                // TODO: Probably should just rewrite the z stuff to work in a seperate pass from rendering extractions
+                // Like: Tree Update > Morphorm Layouting > Z index Calc > Extract
+                extracted_quads.push(QuadOrMaterial::Quad(ExtractedQuad {
+                    org_entity: current_node,
+                    camera_entity,
+                    quad_type: UIQuadType::None,
+                    ..Default::default()
+                }));
+            }
         }
 
         None

@@ -20,7 +20,7 @@ pub struct TodoInputBundle {
 impl Default for TodoInputBundle {
     fn default() -> Self {
         Self {
-            widget: TodoInputProps::default(),
+            widget: TodoInputProps,
             focusable: Default::default(),
             styles: KStyle::default(),
             computed_styles: ComputedStyles(KStyle {
@@ -31,7 +31,7 @@ impl Default for TodoInputBundle {
                 bottom: StyleProp::Value(Units::Pixels(20.0)),
                 ..KStyle::default()
             }),
-            widget_name: TodoInputProps::default().get_name(),
+            widget_name: TodoInputProps.get_name(),
         }
     }
 }

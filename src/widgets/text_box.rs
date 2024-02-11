@@ -337,7 +337,7 @@ pub fn text_box_render(
 
             let parent_id = Some(entity);
             rsx! {
-                <BackgroundBundle styles={background_styles}>
+                <BackgroundBundle id={"background_event"} styles={background_styles}>
                     <ClipBundle styles={KStyle {
                         height: Units::Pixels(26.0).into(),
                         padding_left: StyleProp::Value(Units::Stretch(0.0)),

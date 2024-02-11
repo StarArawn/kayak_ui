@@ -1,16 +1,14 @@
 use std::path::{Path, PathBuf};
 
 use bevy::{
-    prelude::{Assets, HandleUntyped, Mesh, Plugin},
-    reflect::TypeUuid,
+    asset::Handle,
+    prelude::{Assets, Mesh, Plugin},
 };
 use bevy_svg::prelude::Svg;
 
-pub const EXPAND_LESS_HANDLE: HandleUntyped =
-    HandleUntyped::weak_from_u64(Svg::TYPE_UUID, 4238701051302568451);
+pub const EXPAND_LESS_HANDLE: Handle<Svg> = Handle::weak_from_u128(4238701051302568451);
 
-pub const EXPAND_MORE_HANDLE: HandleUntyped =
-    HandleUntyped::weak_from_u64(Svg::TYPE_UUID, 9116091369991258337);
+pub const EXPAND_MORE_HANDLE: Handle<Svg> = Handle::weak_from_u128(9116091369991258337);
 
 pub struct IconsPlugin;
 impl Plugin for IconsPlugin {
@@ -27,7 +25,7 @@ impl Plugin for IconsPlugin {
         expand_more.mesh = meshes.add(expand_more.tessellate());
 
         let mut svgs = app.world.get_resource_mut::<Assets<Svg>>().unwrap();
-        svgs.set_untracked(EXPAND_LESS_HANDLE, expand_less);
-        svgs.set_untracked(EXPAND_MORE_HANDLE, expand_more);
+        svgs.insert(EXPAND_LESS_HANDLE, expand_less);
+        svgs.insert(EXPAND_MORE_HANDLE, expand_more);
     }
 }

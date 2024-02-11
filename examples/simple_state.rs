@@ -22,10 +22,10 @@ struct CurrentCountBundle {
 impl Default for CurrentCountBundle {
     fn default() -> Self {
         Self {
-            count: CurrentCount::default(),
+            count: CurrentCount,
             styles: KStyle::default(),
             computed_styles: ComputedStyles::default(),
-            widget_name: CurrentCount::default().get_name(),
+            widget_name: CurrentCount.get_name(),
         }
     }
 }
@@ -98,7 +98,7 @@ fn startup(
     let parent_id = None;
     widget_context.add_widget_data::<CurrentCount, CurrentCountState>();
     widget_context.add_widget_system(
-        CurrentCount::default().get_name(),
+        CurrentCount.get_name(),
         widget_update::<CurrentCount, CurrentCountState>,
         current_count_render,
     );
@@ -107,7 +107,7 @@ fn startup(
             <WindowContextProviderBundle>
                 <WindowBundle
                     window={KWindow {
-                        title: "State Example Window".into(),
+                        title: "State Example Window 1".into(),
                         draggable: true,
                         initial_position: Vec2::new(10.0, 10.0),
                         size: Vec2::new(300.0, 250.0),
@@ -118,7 +118,7 @@ fn startup(
                 </WindowBundle>
                 <WindowBundle
                     window={KWindow {
-                        title: "State Example Window".into(),
+                        title: "State Example Window 2".into(),
                         draggable: true,
                         initial_position: Vec2::new(500.0, 10.0),
                         size: Vec2::new(300.0, 250.0),

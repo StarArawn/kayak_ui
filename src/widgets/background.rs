@@ -38,7 +38,7 @@ impl Default for BackgroundBundle {
             computed_styles: Default::default(),
             children: Default::default(),
             on_event: Default::default(),
-            widget_name: Background::default().get_name(),
+            widget_name: Background.get_name(),
         }
     }
 }

@@ -1,15 +1,10 @@
-use bevy::{
-    prelude::*,
-    reflect::{TypePath, TypeUuid},
-    render::render_resource::AsBindGroup,
-};
+use bevy::{prelude::*, reflect::TypePath, render::render_resource::AsBindGroup};
 use kayak_ui::{
     prelude::{widgets::*, *},
     CameraUIKayak,
 };
 
-#[derive(AsBindGroup, TypeUuid, TypePath, Debug, Clone)]
-#[uuid = "94c4e6f9-6f10-422c-85ec-6d582d471afc"]
+#[derive(AsBindGroup, Asset, TypePath, Debug, Clone)]
 pub struct MyUIMaterial {}
 impl MaterialUI for MyUIMaterial {
     fn fragment_shader() -> bevy::render::render_resource::ShaderRef {

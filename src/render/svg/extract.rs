@@ -17,7 +17,6 @@ pub fn extract_svg(
             min: Vec2::new(layout.posx, layout.posy),
             max: Vec2::new(layout.posx + layout.width, layout.posy + layout.height),
         },
-        z_index: layout.z_index,
         svg_handle: (Some(handle), background_color),
         opacity_layer,
         ..Default::default()

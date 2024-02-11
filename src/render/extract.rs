@@ -6,7 +6,6 @@ use crate::{
 use bevy::{
     prelude::*,
     render::{
-        render_phase::RenderPhase,
         render_resource::{DynamicUniformBuffer, ShaderType},
         renderer::{RenderDevice, RenderQueue},
         view::ColorGrading,
@@ -16,7 +15,11 @@ use bevy::{
 };
 use kayak_font::KayakFont;
 
-use super::{font::FontMapping, ui_pass::TransparentUI, unified::pipeline::ExtractedQuads};
+use super::{
+    font::FontMapping,
+    ui_pass::{TransparentUI, UIRenderPhase},
+    unified::pipeline::ExtractedQuads,
+};
 
 // mod nine_patch;
 // mod texture_atlas;
@@ -52,7 +55,8 @@ pub fn extract(
     cameras: Extract<Query<&Camera>>,
     mut extracted_quads: ResMut<ExtractedQuads>,
 ) {
-    extracted_quads.quads.clear();
+    extracted_quads.clear();
+    extracted_quads.new_layer(None);
 
     for (_entity, context) in context_query.iter() {
         let dpi = if let Ok(camera) = cameras.get(context.camera_entity) {
@@ -80,7 +84,27 @@ pub fn extract(
             &images,
             &mut extracted_quads,
         );
+        // Resolve extracted quads
+        if let Ok(mut layout_cache) = context.layout_cache.try_write() {
+            extracted_quads.resolve(&mut commands, &mut layout_cache);
+            // extracted_quads.debug();
+        }
     }
+
+    // let mut extracted = extracted_quads.iter().map(|e| (e.quad_type, e.z_index, e.rect, e.c)).collect::<Vec<_>>();
+
+    // extracted.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap());
+    // dbg!("Start");
+    // let mut last_type = super::unified::pipeline::UIQuadType::Clip;
+    // for (qt, z, r, c) in extracted.iter() {
+    //     // if !(last_type == super::unified::pipeline::UIQuadType::Text && *qt == super::unified::pipeline::UIQuadType::Text) {
+    //     if *qt == super::unified::pipeline::UIQuadType::Text {
+    //         println!("qt: {:?}, c: {}, z: {}, r: {:?}", qt, c, z, r);
+    //     } else {
+    //         println!("qt: {:?}, z: {}, r: {:?}", qt, z, r);
+    //     }
+    //     last_type = *qt;
+    // }
 }
 
 const UI_CAMERA_TRANSFORM_OFFSET: f32 = -0.1;
@@ -104,7 +128,7 @@ pub fn extract_default_ui_camera_view<T: Component>(
     query: Extract<Query<(Entity, &Camera, &CameraUIKayak), With<T>>>,
 ) {
     for (entity, camera, _camera_ui) in &query {
-        if let (Some(logical_size), Some((physical_origin, _)), Some(physical_size)) = (
+        if let (Some(logical_size), Some(physical_origin), Some(physical_size)) = (
             camera.logical_viewport_size(),
             camera.physical_viewport_rect(),
             camera.physical_viewport_size(),
@@ -122,15 +146,15 @@ pub fn extract_default_ui_camera_view<T: Component>(
                     ),
                     hdr: camera.hdr,
                     viewport: UVec4::new(
-                        physical_origin.x,
-                        physical_origin.y,
+                        physical_origin.min.x,
+                        physical_origin.min.y,
                         physical_size.x,
                         physical_size.y,
                     ),
                     view_projection: None,
                     color_grading: ColorGrading::default(),
                 },
-                RenderPhase::<TransparentUI>::default(),
+                UIRenderPhase::<TransparentUI>::default(),
             ));
         }
     }
@@ -151,8 +175,8 @@ pub struct UIViewUniform {
     pub projection: Mat4,
     pub inverse_projection: Mat4,
     pub world_position: Vec3,
-    // viewport(x_origin, y_origin, width, height)
     pub viewport: Vec4,
+    pub frustum: [Vec4; 6],
     pub color_grading: ColorGrading,
     pub mip_bias: f32,
 }
@@ -190,6 +214,10 @@ pub fn prepare_view_uniforms(
         let inverse_projection = projection.inverse();
         let view = camera.transform.compute_matrix();
         let inverse_view = view.inverse();
+
+        // Map Frustum type to shader array<vec4<f32>, 6>
+        let frustum = [Vec4::ZERO; 6];
+
         let view_uniforms = UIViewUniformOffset {
             offset: view_uniforms.uniforms.push(UIViewUniform {
                 view_proj: camera
@@ -205,6 +233,7 @@ pub fn prepare_view_uniforms(
                 viewport,
                 color_grading: camera.color_grading,
                 mip_bias: mip_bias.unwrap_or(&MipBias(0.0)).0,
+                frustum,
             }),
         };
         commands.entity(entity).insert(view_uniforms);

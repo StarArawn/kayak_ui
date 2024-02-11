@@ -86,7 +86,7 @@ fn move_ghost_tile(
     camera_transform: Query<&GlobalTransform, With<WorldCamera>>,
     window: Query<&Window, With<PrimaryWindow>>,
 ) {
-    for _ in cursor_moved.iter() {
+    for _ in cursor_moved.read() {
         if !event_context.single().contains_cursor() {
             let world_pos = cursor_to_world(window.single(), camera_transform.single());
             let tile_pos = world_to_tile(world_pos);
@@ -144,6 +144,7 @@ fn cursor_to_world(window: &Window, camera_transform: &GlobalTransform) -> Vec2 
 
     let mut pos = window.cursor_position().unwrap_or_default();
     pos -= size / 2.0;
+    pos.y = -pos.y;
 
     let point = camera_transform.compute_matrix() * pos.extend(0.0).extend(1.0);
     point.xy()

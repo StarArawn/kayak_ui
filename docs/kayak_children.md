@@ -60,18 +60,18 @@ Process:
 So for our same example above with(a, b, c, d). Our tree looks like:
 
 ```
-├── A
-|   └── B
-|       └── D    
-|           └── C
+├── A 1
+|   └── B 2
+|       └── D 4    
+|           └── C 3
 ```
 
 Our ordered tree looks like:
 ```
-├── A
-|   ├── B
-|       └── D    
-|   └── C       
+├── A 1
+|   ├── B 2
+|       └── D 4   
+|   └── C 3      
 ```
 
 Now with a lack of closures we only need to clone, copy, or move data when we specifically need to. When we re-render the tree a second time we look at our ordered tree first to see if we have a matching entity in the slot we are trying to render to.
@@ -80,4 +80,4 @@ This sounds easy in practice but there are also some big cons:
 
 Cons:
 - Complexity increased.
-- Can cause issues if your tree and ordered tree get out of sync.s
+- Can cause issues if your tree and ordered tree get out of sync.

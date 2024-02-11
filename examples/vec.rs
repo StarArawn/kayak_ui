@@ -12,7 +12,7 @@ fn my_widget_1_update(
 ) -> bool {
     if query.get(entity).is_ok() {
         let parent_id = Some(entity);
-        let data = vec![
+        let data = [
             "Text 1", "Text 2", "Text 3", "Text 4", "Text 5", "Text 6", "Text 7", "Text 8",
             "Text 9", "Text 10",
         ];

@@ -145,7 +145,7 @@ impl Default for ThemeSelectorBundle {
                 padding_bottom: Units::Pixels(40.0).into(),
                 ..Default::default()
             },
-            widget_name: ThemeSelector::default().get_name(),
+            widget_name: ThemeSelector.get_name(),
         }
     }
 }
@@ -342,7 +342,7 @@ fn startup(
         update_theme_button,
     );
     widget_context.add_widget_system(
-        ThemeSelector::default().get_name(),
+        ThemeSelector.get_name(),
         widget_update_with_context::<ThemeSelector, EmptyState, Theme>,
         update_theme_selector,
     );

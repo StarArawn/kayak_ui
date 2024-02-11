@@ -13,8 +13,7 @@ use crate::{
     },
     widget::Widget,
     widgets::{
-        BackgroundBundle, ElementBundle, KSvg, KSvgBundle, Svg, EXPAND_LESS_HANDLE,
-        EXPAND_MORE_HANDLE,
+        BackgroundBundle, ElementBundle, KSvg, KSvgBundle, EXPAND_LESS_HANDLE, EXPAND_MORE_HANDLE,
     },
 };
 
@@ -124,7 +123,7 @@ pub fn render(
                                                 top: Units::Pixels(-10.0).into(),
                                                 ..Default::default()
                                             }}
-                                            svg={KSvg(EXPAND_LESS_HANDLE.typed::<Svg>())}
+                                            svg={KSvg(EXPAND_LESS_HANDLE)}
                                         />
                                     }
                                 } else {
@@ -138,7 +137,7 @@ pub fn render(
                                                 top: Units::Pixels(-10.0).into(),
                                                 ..Default::default()
                                             }}
-                                            svg={KSvg(EXPAND_MORE_HANDLE.typed::<Svg>())}
+                                            svg={KSvg(EXPAND_MORE_HANDLE)}
                                         />
                                     }
                                 }

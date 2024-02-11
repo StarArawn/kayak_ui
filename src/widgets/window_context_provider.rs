@@ -60,7 +60,7 @@ impl Default for WindowContextProviderBundle {
         Self {
             context_provider: Default::default(),
             children: Default::default(),
-            widget_name: WindowContextProvider::default().get_name(),
+            widget_name: WindowContextProvider.get_name(),
         }
     }
 }

@@ -39,7 +39,7 @@ pub fn calculate_nodes(
         }
 
         let mut dirty_entities = query.iter().collect::<Vec<_>>();
-        dirty_entities.sort_by(|a, b| a.index().partial_cmp(&b.index()).unwrap());
+        dirty_entities.sort_unstable_by(|a, b| a.index().partial_cmp(&b.index()).unwrap());
 
         for dirty_entity in dirty_entities {
             let dirty_entity = WrappedIndex(dirty_entity);
@@ -188,7 +188,7 @@ pub fn calculate_nodes(
                             posy: 0.0,
                             width,
                             height,
-                            z_index: 0.0,
+                            z_index: None,
                         },
                     );
                 }

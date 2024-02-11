@@ -21,9 +21,9 @@ struct MyWidgetBundle {
 impl Default for MyWidgetBundle {
     fn default() -> Self {
         Self {
-            count: MyWidget::default(),
+            count: MyWidget,
             styles: KStyle::default(),
-            widget_name: MyWidget::default().get_name(),
+            widget_name: MyWidget.get_name(),
         }
     }
 }
@@ -115,7 +115,7 @@ fn startup(
     let parent_id = None;
     widget_context.add_widget_data::<MyWidget, MyWidgetState>();
     widget_context.add_widget_system(
-        MyWidget::default().get_name(),
+        MyWidget.get_name(),
         widget_update::<MyWidget, MyWidgetState>,
         my_widget_render,
     );

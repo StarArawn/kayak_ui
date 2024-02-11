@@ -70,7 +70,7 @@ impl OpacityCamera {
                     mip_level_count: 1,
                     sample_count: 1,
                     usage: TextureUsages::TEXTURE_BINDING
-                        | TextureUsages::COPY_DST
+                        | TextureUsages::COPY_SRC
                         | TextureUsages::RENDER_ATTACHMENT,
                     view_formats: &[],
                 },
@@ -107,7 +107,7 @@ impl OpacityCamera {
         };
         for (size, layer_handle) in self.layers.values_mut() {
             if *size != new_size {
-                let layer_image = images.get_mut(layer_handle).unwrap();
+                let layer_image = images.get_mut(layer_handle.clone_weak()).unwrap();
                 layer_image.texture_descriptor.format = main_texture_format;
                 layer_image.resize(new_size);
                 *size = new_size;

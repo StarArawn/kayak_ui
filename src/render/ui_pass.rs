@@ -4,16 +4,16 @@ use bevy::ecs::prelude::*;
 use bevy::prelude::{Color, Image};
 use bevy::render::render_asset::RenderAssets;
 use bevy::render::render_phase::{
-    BatchedPhaseItem, CachedRenderPipelinePhaseItem, DrawFunctionId, DrawFunctions, PhaseItem,
+    CachedRenderPipelinePhaseItem, DrawFunctionId, DrawFunctions, PhaseItem, TrackedRenderPass,
 };
 use bevy::render::render_resource::{CachedRenderPipelineId, RenderPassColorAttachment};
 use bevy::render::{
     render_graph::{Node, NodeRunError, RenderGraphContext},
-    render_phase::RenderPhase,
     render_resource::{LoadOp, Operations, RenderPassDescriptor},
     renderer::RenderContext,
     view::{ExtractedView, ViewTarget},
 };
+use bevy::utils::nonmax::NonMaxU32;
 use bevy::utils::FloatOrd;
 
 use crate::CameraUIKayak;
@@ -28,6 +28,7 @@ pub trait TransparentUIGeneric {
     fn get_type_index(&self) -> u32;
 }
 
+#[derive(Debug)]
 pub struct TransparentUI {
     pub sort_key: FloatOrd,
     pub entity: Entity,
@@ -37,6 +38,7 @@ pub struct TransparentUI {
     pub rect: bevy::math::Rect,
     pub type_index: u32,
     pub batch_range: Option<Range<u32>>,
+    pub dynamic_offset: Option<NonMaxU32>,
 }
 
 impl TransparentUIGeneric for TransparentUI {
@@ -73,15 +75,21 @@ impl PhaseItem for TransparentUI {
     fn entity(&self) -> Entity {
         self.entity
     }
-}
 
-impl BatchedPhaseItem for TransparentUI {
-    fn batch_range(&self) -> &Option<Range<u32>> {
-        &self.batch_range
+    fn batch_range(&self) -> &Range<u32> {
+        self.batch_range.as_ref().unwrap()
     }
 
-    fn batch_range_mut(&mut self) -> &mut Option<Range<u32>> {
-        &mut self.batch_range
+    fn batch_range_mut(&mut self) -> &mut Range<u32> {
+        self.batch_range.as_mut().unwrap()
+    }
+
+    fn dynamic_offset(&self) -> Option<bevy::utils::nonmax::NonMaxU32> {
+        self.dynamic_offset
+    }
+
+    fn dynamic_offset_mut(&mut self) -> &mut Option<bevy::utils::nonmax::NonMaxU32> {
+        &mut self.dynamic_offset
     }
 }
 
@@ -92,6 +100,7 @@ impl CachedRenderPipelinePhaseItem for TransparentUI {
     }
 }
 
+#[derive(Debug)]
 pub struct TransparentOpacityUI {
     pub sort_key: FloatOrd,
     pub entity: Entity,
@@ -102,6 +111,7 @@ pub struct TransparentOpacityUI {
     pub type_index: u32,
     pub batch_range: Option<Range<u32>>,
     pub opacity_layer: u32,
+    pub dynamic_offset: Option<NonMaxU32>,
 }
 
 impl TransparentUIGeneric for TransparentOpacityUI {
@@ -138,15 +148,21 @@ impl PhaseItem for TransparentOpacityUI {
     fn entity(&self) -> Entity {
         self.entity
     }
-}
 
-impl BatchedPhaseItem for TransparentOpacityUI {
-    fn batch_range(&self) -> &Option<Range<u32>> {
-        &self.batch_range
+    fn batch_range(&self) -> &Range<u32> {
+        self.batch_range.as_ref().unwrap()
     }
 
-    fn batch_range_mut(&mut self) -> &mut Option<Range<u32>> {
-        &mut self.batch_range
+    fn batch_range_mut(&mut self) -> &mut Range<u32> {
+        self.batch_range.as_mut().unwrap()
+    }
+
+    fn dynamic_offset(&self) -> Option<bevy::utils::nonmax::NonMaxU32> {
+        self.dynamic_offset
+    }
+
+    fn dynamic_offset_mut(&mut self) -> &mut Option<bevy::utils::nonmax::NonMaxU32> {
+        &mut self.dynamic_offset
     }
 }
 
@@ -160,8 +176,8 @@ impl CachedRenderPipelinePhaseItem for TransparentOpacityUI {
 pub struct MainPassUINode {
     query: QueryState<
         (
-            &'static RenderPhase<TransparentUI>,
-            &'static RenderPhase<TransparentOpacityUI>,
+            &'static UIRenderPhase<TransparentUI>,
+            &'static UIRenderPhase<TransparentOpacityUI>,
             &'static ViewTarget,
             &'static CameraUIKayak,
         ),
@@ -255,5 +271,92 @@ impl Node for MainPassUINode {
         }
 
         Ok(())
+    }
+}
+
+use std::slice::SliceIndex;
+
+/// A collection of all rendering instructions, that will be executed by the GPU, for a
+/// single render phase for a single view.
+///
+/// Each view (camera, or shadow-casting light, etc.) can have one or multiple render phases.
+/// They are used to queue entities for rendering.
+/// Multiple phases might be required due to different sorting/batching behaviors
+/// (e.g. opaque: front to back, transparent: back to front) or because one phase depends on
+/// the rendered texture of the previous phase (e.g. for screen-space reflections).
+/// All [`PhaseItem`]s are then rendered using a single [`TrackedRenderPass`].
+/// The render pass might be reused for multiple phases to reduce GPU overhead.
+#[derive(Component, Debug)]
+pub struct UIRenderPhase<I: PhaseItem> {
+    pub items: Vec<I>,
+}
+
+impl<I: PhaseItem + std::fmt::Debug> Default for UIRenderPhase<I> {
+    fn default() -> Self {
+        Self { items: Vec::new() }
+    }
+}
+
+impl<I: PhaseItem + std::fmt::Debug> UIRenderPhase<I> {
+    /// Adds a [`PhaseItem`] to this render phase.
+    #[inline]
+    pub fn add(&mut self, item: I) {
+        self.items.push(item);
+    }
+
+    /// Sorts all of its [`PhaseItem`]s.
+    pub fn sort(&mut self) {
+        I::sort(&mut self.items);
+    }
+
+    /// An [`Iterator`] through the associated [`Entity`] for each [`PhaseItem`] in order.
+    #[inline]
+    pub fn iter_entities(&'_ self) -> impl Iterator<Item = Entity> + '_ {
+        self.items.iter().map(|item| item.entity())
+    }
+
+    /// Renders all of its [`PhaseItem`]s using their corresponding draw functions.
+    pub fn render<'w>(
+        &self,
+        render_pass: &mut TrackedRenderPass<'w>,
+        world: &'w World,
+        view: Entity,
+    ) {
+        self.render_range(render_pass, world, view, ..);
+    }
+
+    /// Renders all [`PhaseItem`]s in the provided `range` (based on their index in `self.items`) using their corresponding draw functions.
+    pub fn render_range<'w>(
+        &self,
+        render_pass: &mut TrackedRenderPass<'w>,
+        world: &'w World,
+        view: Entity,
+        range: impl SliceIndex<[I], Output = [I]>,
+    ) {
+        let items = self
+            .items
+            .get(range)
+            .expect("`Range` provided to `render_range()` is out of bounds");
+
+        let draw_functions = world.resource::<DrawFunctions<I>>();
+        let mut draw_functions = draw_functions.write();
+        draw_functions.prepare(world);
+
+        let mut index = 0;
+        while index < items.len() {
+            let item = &items[index];
+            let draw_function = draw_functions.get_mut(item.draw_function()).unwrap();
+            draw_function.draw(world, render_pass, view, item);
+            index += 1;
+        }
+    }
+}
+
+/// This system sorts the [`PhaseItem`]s of all [`RenderPhase`]s of this type.
+pub fn sort_ui_phase_system<I: PhaseItem + std::fmt::Debug>(
+    mut render_phases: Query<&mut UIRenderPhase<I>>,
+) {
+    for mut phase in &mut render_phases {
+        phase.sort();
     }
 }

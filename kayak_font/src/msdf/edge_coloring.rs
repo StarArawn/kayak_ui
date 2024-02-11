@@ -88,7 +88,7 @@ pub fn simple(shape: &mut Shape, angle_threshold: f64, mut seed: usize) {
                 edges[i].set_color(EdgeColor::WHITE);
             }
         } else if corners.len() == 1 {
-            let mut colors = vec![EdgeColor::WHITE, EdgeColor::WHITE, EdgeColor::BLACK];
+            let mut colors = [EdgeColor::WHITE, EdgeColor::WHITE, EdgeColor::BLACK];
             switch_color(&mut colors[0], &mut seed, EdgeColor::BLACK);
             colors[2] = colors[0];
             switch_color(&mut colors[2], &mut seed, EdgeColor::BLACK);
@@ -202,7 +202,7 @@ pub fn ink_trap(shape: &mut Shape, angle_threshold: f64, mut seed: usize) {
                 edge.set_color(EdgeColor::WHITE);
             }
         } else if corners.len() == 1 {
-            let mut colors = vec![EdgeColor::WHITE, EdgeColor::WHITE, EdgeColor::BLACK];
+            let mut colors = [EdgeColor::WHITE, EdgeColor::WHITE, EdgeColor::BLACK];
             switch_color(&mut colors[0], &mut seed, EdgeColor::BLACK);
             colors[2] = colors[0];
             switch_color(&mut colors[2], &mut seed, EdgeColor::BLACK);

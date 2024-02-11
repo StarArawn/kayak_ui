@@ -53,7 +53,6 @@ pub fn extract_texts(
             },
             color,
             char_id: font.get_char_id(glyph_rect.content).unwrap(),
-            z_index: layout.z_index,
             quad_type: if subpixel || forced {
                 UIQuadType::TextSubpixel
             } else {
@@ -65,6 +64,7 @@ pub fn extract_texts(
             uv_max: None,
             uv_min: None,
             opacity_layer,
+            c: glyph_rect.content,
             ..Default::default()
         });
     }

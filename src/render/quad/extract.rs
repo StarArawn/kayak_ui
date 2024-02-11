@@ -20,27 +20,9 @@ pub fn extract_quads(
 ) -> Vec<ExtractedQuad> {
     border *= dpi;
 
-    let mut extracted_quads = vec![ExtractedQuad {
-        camera_entity,
-        rect: Rect {
-            min: Vec2::new(layout.posx + border.left, layout.posy + border.top),
-            max: Vec2::new(
-                (layout.posx + (layout.width * dpi)) - border.right,
-                (layout.posy + (layout.height * dpi)) - border.bottom,
-            ),
-        },
-        color: background_color,
-        z_index: layout.z_index,
-        quad_type: UIQuadType::Quad,
-        border_radius,
-        opacity_layer,
-        ..Default::default()
-    }];
+    let mut extracted_quads = vec![];
 
-    let count = box_shadow.len();
-    let mut z = 0.0;
-    for (i, box_shadow) in box_shadow.iter().enumerate() {
-        z = ((i + 1) as f32 / (count + 1) as f32) * 0.0001;
+    for box_shadow in box_shadow.iter().rev() {
         let half_spread = box_shadow.spread;
         let radius = box_shadow.radius * 3.0;
         let pos: Vec2 = Vec2::new(layout.posx, layout.posy) + box_shadow.offset;
@@ -56,7 +38,6 @@ pub fn extract_quads(
                     + half_spread,
             },
             color: box_shadow.color,
-            z_index: layout.z_index - z,
             quad_type: UIQuadType::BoxShadow,
             border_radius: Corner {
                 top_left: border_radius.top_left,
@@ -81,13 +62,28 @@ pub fn extract_quads(
                 max: Vec2::new(layout.posx + (layout.width), layout.posy + (layout.height)) * dpi,
             },
             color: border_color,
-            z_index: layout.z_index - (z + 0.0001),
             quad_type: UIQuadType::Quad,
             border_radius,
             opacity_layer,
             ..Default::default()
         });
     }
+
+    extracted_quads.push(ExtractedQuad {
+        camera_entity,
+        rect: Rect {
+            min: Vec2::new(layout.posx + border.left, layout.posy + border.top),
+            max: Vec2::new(
+                (layout.posx + (layout.width * dpi)) - border.right,
+                (layout.posy + (layout.height * dpi)) - border.bottom,
+            ),
+        },
+        color: background_color,
+        quad_type: UIQuadType::Quad,
+        border_radius,
+        opacity_layer,
+        ..Default::default()
+    });
 
     extracted_quads
 }

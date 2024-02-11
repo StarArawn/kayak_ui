@@ -180,7 +180,7 @@ fn main() {
             KayakContextPlugin,
             KayakWidgets,
             LogDiagnosticsPlugin::default(),
-            FrameTimeDiagnosticsPlugin::default(),
+            FrameTimeDiagnosticsPlugin,
         ))
         .add_systems(Startup, startup)
         .run()

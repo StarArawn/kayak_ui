@@ -65,12 +65,12 @@ fn startup(
     widget_context.add_widget_data::<TodoInputProps, EmptyState>();
 
     widget_context.add_widget_system(
-        TodoItemsProps::default().get_name(),
+        TodoItemsProps.get_name(),
         widget_update_with_resource::<TodoItemsProps, EmptyState>,
         render_todo_items,
     );
     widget_context.add_widget_system(
-        TodoInputProps::default().get_name(),
+        TodoInputProps.get_name(),
         widget_update_with_resource::<TodoInputProps, EmptyState>,
         render_todo_input,
     );

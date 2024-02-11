@@ -1,17 +1,20 @@
 use crate::KayakFont;
+use bevy::asset::AssetServer;
 use bevy::prelude::{AssetEvent, Assets, EventReader, Handle, Image, Local, Res, ResMut};
-use bevy::render::render_resource::{FilterMode, SamplerDescriptor, TextureFormat, TextureUsages};
-use bevy::render::texture::ImageSampler;
+use bevy::render::render_resource::{TextureFormat, TextureUsages};
+use bevy::render::texture::{ImageFilterMode, ImageSampler, ImageSamplerDescriptor};
 
 pub fn init_font_texture(
     mut not_processed: Local<Vec<Handle<KayakFont>>>,
     mut font_events: EventReader<AssetEvent<KayakFont>>,
     mut images: ResMut<Assets<Image>>,
     fonts: Res<Assets<KayakFont>>,
+    asset_server: Res<AssetServer>,
 ) {
     // quick and dirty, run this for all textures anytime a texture is created.
-    for event in font_events.iter() {
-        if let AssetEvent::Created { handle } = event {
+    for event in font_events.read() {
+        if let AssetEvent::Added { id } = event {
+            let handle = asset_server.get_id_handle(*id).unwrap();
             not_processed.push(handle.clone_weak());
         }
     }
@@ -21,11 +24,10 @@ pub fn init_font_texture(
         if let Some(font) = fonts.get(&font_handle) {
             if let Some(texture) = images.get_mut(font.image.get()) {
                 texture.texture_descriptor.format = TextureFormat::Rgba8Unorm;
-                texture.sampler_descriptor = ImageSampler::Descriptor(SamplerDescriptor {
-                    label: Some("Present Sampler"),
-                    mag_filter: FilterMode::Linear,
-                    min_filter: FilterMode::Linear,
-
+                texture.sampler = ImageSampler::Descriptor(ImageSamplerDescriptor {
+                    label: Some("Present Sampler".into()),
+                    mag_filter: ImageFilterMode::Linear,
+                    min_filter: ImageFilterMode::Linear,
                     ..Default::default()
                 });
                 texture.texture_descriptor.usage = TextureUsages::TEXTURE_BINDING

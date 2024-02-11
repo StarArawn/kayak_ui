@@ -1,7 +1,7 @@
 use bevy::{
     prelude::*,
     render::{
-        extract_component::ExtractComponentPlugin, render_asset::PrepareAssetSet,
+        extract_component::ExtractComponentPlugin, render_asset::prepare_assets,
         render_phase::AddRenderCommand, render_resource::SpecializedRenderPipelines, Render,
         RenderApp, RenderSet,
     },
@@ -34,10 +34,13 @@ where
     M::Data: PartialEq + Eq + Hash + Clone,
 {
     fn build(&self, app: &mut App) {
-        app.add_asset::<M>()
+        app.init_asset::<M>()
             .add_plugins(ExtractComponentPlugin::<Handle<M>>::extract_visible());
+    }
 
+    fn finish(&self, app: &mut App) {
         app.sub_app_mut(RenderApp)
+            .init_resource::<MaterialUIPipeline<M>>()
             .add_render_command::<TransparentUI, DrawMaterialUI<M>>()
             .add_render_command::<TransparentOpacityUI, DrawMaterialUITransparent<M>>()
             .init_resource::<ExtractedMaterialsUI<M>>()
@@ -49,16 +52,11 @@ where
                 (
                     prepare_materials_ui::<M>
                         .in_set(RenderSet::Prepare)
-                        .after(PrepareAssetSet::PreAssetPrepare),
+                        .after(prepare_assets::<Image>),
                     queue_material_ui_quads::<M>
                         .in_set(RenderSet::Queue)
                         .after(crate::render::unified::pipeline::queue_quads),
                 ),
             );
-    }
-
-    fn finish(&self, app: &mut App) {
-        app.sub_app_mut(RenderApp)
-            .init_resource::<MaterialUIPipeline<M>>();
     }
 }

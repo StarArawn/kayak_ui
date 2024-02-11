@@ -43,7 +43,7 @@ fn startup(
                             <AccordionDetailsBundle>
                                 <TextWidgetBundle
                                     text={TextProps {
-                                        content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse malesuada lacus ex, sit amet blandit leo lobortis eget.".into(),
+                                        content: "1".into(), //"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse malesuada lacus ex, sit amet blandit leo lobortis eget.".into(),
                                         size: 14.0,
                                         ..Default::default()
                                     }}
@@ -61,7 +61,7 @@ fn startup(
                             <AccordionDetailsBundle accordion={AccordionDetails { index: 1 }}>
                                 <TextWidgetBundle
                                     text={TextProps {
-                                        content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse malesuada lacus ex, sit amet blandit leo lobortis eget.".into(),
+                                        content: "2".into(), //"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse malesuada lacus ex, sit amet blandit leo lobortis eget.".into(),
                                         size: 14.0,
                                         ..Default::default()
                                     }}
@@ -99,7 +99,7 @@ fn startup(
                             <AccordionDetailsBundle accordion={AccordionDetails { index: 2 }}>
                                 <TextWidgetBundle
                                     text={TextProps {
-                                        content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse malesuada lacus ex, sit amet blandit leo lobortis eget. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse malesuada lacus ex, sit amet blandit leo lobortis eget. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse malesuada lacus ex, sit amet blandit leo lobortis eget.".into(),
+                                        content: "3".into(), //"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse malesuada lacus ex, sit amet blandit leo lobortis eget. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse malesuada lacus ex, sit amet blandit leo lobortis eget. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse malesuada lacus ex, sit amet blandit leo lobortis eget.".into(),
                                         size: 14.0,
                                         ..Default::default()
                                     }}

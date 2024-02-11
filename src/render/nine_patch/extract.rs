@@ -43,7 +43,6 @@ pub fn extract_nine_patch(
         },
         color: Color::WHITE,
         char_id: 0,
-        z_index: layout.z_index,
         font_handle: None,
         quad_type: UIQuadType::Image,
         type_index: 0,

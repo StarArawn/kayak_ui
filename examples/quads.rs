@@ -137,7 +137,7 @@ fn main() {
         .add_plugins(DefaultPlugins)
         .add_plugins((
             LogDiagnosticsPlugin::default(),
-            FrameTimeDiagnosticsPlugin::default(),
+            FrameTimeDiagnosticsPlugin,
             KayakContextPlugin,
             KayakWidgets,
         ))

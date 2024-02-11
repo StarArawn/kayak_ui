@@ -22,10 +22,10 @@ struct CurrentCountBundle {
 impl Default for CurrentCountBundle {
     fn default() -> Self {
         Self {
-            count: CurrentCount::default(),
+            count: CurrentCount,
             styles: KStyle::default(),
             computed_styles: ComputedStyles::default(),
-            widget_name: CurrentCount::default().get_name(),
+            widget_name: CurrentCount.get_name(),
         }
     }
 }
@@ -187,7 +187,7 @@ fn startup(
 
     widget_context.add_widget_data::<CurrentCount, CurrentCountState>();
     widget_context.add_widget_system(
-        CurrentCount::default().get_name(),
+        CurrentCount.get_name(),
         widget_update::<CurrentCount, CurrentCountState>,
         current_count_render,
     );

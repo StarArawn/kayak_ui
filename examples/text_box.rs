@@ -24,7 +24,7 @@ impl Default for TextBoxExampleBundle {
         Self {
             text_box_example: Default::default(),
             styles: Default::default(),
-            widget_name: TextBoxExample::default().get_name(),
+            widget_name: TextBoxExample.get_name(),
         }
     }
 }
@@ -100,7 +100,7 @@ fn startup(
 
     widget_context.add_widget_data::<TextBoxExample, TextBoxExampleState>();
     widget_context.add_widget_system(
-        TextBoxExample::default().get_name(),
+        TextBoxExample.get_name(),
         widget_update::<TextBoxExample, TextBoxExampleState>,
         update_text_box_example,
     );

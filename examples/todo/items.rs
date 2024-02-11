@@ -19,7 +19,7 @@ pub struct TodoItemsBundle {
 impl Default for TodoItemsBundle {
     fn default() -> Self {
         Self {
-            widget: TodoItemsProps::default(),
+            widget: TodoItemsProps,
             styles: KStyle::default(),
             computed_styles: ComputedStyles(KStyle {
                 render_command: StyleProp::Value(RenderCommand::Layout),
@@ -27,7 +27,7 @@ impl Default for TodoItemsBundle {
                 width: StyleProp::Value(Units::Stretch(1.0)),
                 ..KStyle::default()
             }),
-            widget_name: TodoItemsProps::default().get_name(),
+            widget_name: TodoItemsProps.get_name(),
         }
     }
 }

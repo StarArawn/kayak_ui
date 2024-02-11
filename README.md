@@ -50,13 +50,15 @@ Kayak UI is in the very early stages of development. Important features are miss
 Use bevy `0.10`! Make sure the version of Kayak you are using uses the same version of bevy.
 
 ```rust
-kayak_ui = "0.4"
-bevy = "0.10"
+kayak_ui = "0.5"
+bevy = "0.12"
 ```
 
 |bevy|kayak_ui|
 |---|---|
 |`main`|`bevy-track`|
+|0.12|0.5|
+|0.11.x|skipped|
 |0.10.x|0.4|
 |0.10.x|0.3|
 |0.9|0.2|

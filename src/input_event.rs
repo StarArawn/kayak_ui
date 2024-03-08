@@ -12,7 +12,7 @@ pub enum InputEvent {
     /// An event that occurs when the user scrolls
     Scroll { dx: f32, dy: f32, is_line: bool },
     /// An event that occurs when the user types in a character
-    CharEvent { c: char },
+    CharEvent { c: smol_str::SmolStr },
     /// An event that occurs when the user presses or releases a key
     Keyboard { key: KeyCode, is_pressed: bool },
 }

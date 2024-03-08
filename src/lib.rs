@@ -53,8 +53,8 @@ pub mod prelude {
     pub use crate::on_change::OnChange;
     pub use crate::on_event::OnEvent;
     pub use crate::on_layout::OnLayout;
-    pub use crate::render::draw_ui_graph;
     pub use crate::render::font::FontMapping;
+    pub use crate::render::{DrawUiGraph, KayakUiPass};
     pub use crate::styles::*;
     pub use crate::tree::*;
     pub use crate::widget::*;

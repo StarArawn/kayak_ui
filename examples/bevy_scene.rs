@@ -38,7 +38,7 @@ struct WorldCamera;
 /// to filter out clicks that occur over the UI
 fn set_active_tile_target(
     mut tile: Query<&mut ActiveTile>,
-    cursor: Res<Input<MouseButton>>,
+    cursor: Res<ButtonInput<MouseButton>>,
     event_context: Query<&EventDispatcher, With<GameUI>>,
     camera_transform: Query<&GlobalTransform, With<WorldCamera>>,
     window: Query<&Window, With<PrimaryWindow>>,

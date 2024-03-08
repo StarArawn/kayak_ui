@@ -217,7 +217,7 @@ impl EventDispatcher {
                 };
 
                 // --- Update State --- //
-                Self::insert_event(&mut next_events, &index, node_event.event_type);
+                Self::insert_event(&mut next_events, &index, node_event.event_type.clone());
 
                 // --- Call Event --- //
                 if let Some(mut entity) = world.get_entity_mut(index.0) {
@@ -450,7 +450,7 @@ impl EventDispatcher {
             // These events are ones that require a specific target and need the tree to be evaluated before selecting the best match
             for (event_type, state) in states {
                 if let Some(node) = state.best_match {
-                    event_stream.push(KEvent::new(node.0, event_type));
+                    event_stream.push(KEvent::new(node.0, event_type.clone()));
 
                     match event_type {
                         EventType::Focus => {
@@ -692,9 +692,10 @@ impl EventDispatcher {
         let mut event_stream = Vec::new();
         if let Some(current_focus) = focus_tree.current() {
             match input_event {
-                InputEvent::CharEvent { c } => {
-                    event_stream.push(KEvent::new(current_focus, EventType::CharInput { c: *c }))
-                }
+                InputEvent::CharEvent { c } => event_stream.push(KEvent::new(
+                    current_focus,
+                    EventType::CharInput { c: c.clone() },
+                )),
                 InputEvent::Keyboard { key, is_pressed } => {
                     // === Modifers === //
                     match key {

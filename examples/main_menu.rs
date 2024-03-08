@@ -22,7 +22,7 @@ impl Default for MenuButtonBundle {
             button: Default::default(),
             styles: KStyle {
                 bottom: Units::Pixels(20.0).into(),
-                cursor: KCursorIcon(CursorIcon::Hand).into(),
+                cursor: KCursorIcon(CursorIcon::Pointer).into(),
                 ..Default::default()
             },
             on_event: OnEvent::default(),

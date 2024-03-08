@@ -219,7 +219,7 @@ pub fn prepare_view_uniforms(
         let frustum = [Vec4::ZERO; 6];
 
         let view_uniforms = UIViewUniformOffset {
-            offset: view_uniforms.uniforms.push(UIViewUniform {
+            offset: view_uniforms.uniforms.push(&UIViewUniform {
                 view_proj: camera
                     .view_projection
                     .unwrap_or_else(|| projection * inverse_view),

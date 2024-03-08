@@ -57,7 +57,7 @@ fn startup(mut commands: Commands) {
 // Note this example shows prop changing not state changing which is quite different.
 // For state changes please see simple_state example.
 fn update_resource(
-    keyboard_input: Res<Input<KeyCode>>,
+    keyboard_input: Res<ButtonInput<KeyCode>>,
     mut query: Query<&mut MyWidget, Without<PreviousWidget>>,
 ) {
     if keyboard_input.just_pressed(KeyCode::Space) {

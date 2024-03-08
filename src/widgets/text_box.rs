@@ -188,7 +188,7 @@ pub fn text_box_render(
                       mut state_query: Query<&mut TextBoxState>| {
                     match event.event_type {
                         EventType::KeyDown(key_event) => {
-                            if key_event.key() == KeyCode::Right {
+                            if key_event.key() == KeyCode::ArrowRight {
                                 if let Ok(mut state) = state_query.get_mut(state_entity) {
                                     if state.cursor_position < state.graphemes.len() {
                                         state.cursor_position += 1;
@@ -201,7 +201,7 @@ pub fn text_box_render(
                                     );
                                 }
                             }
-                            if key_event.key() == KeyCode::Left {
+                            if key_event.key() == KeyCode::ArrowLeft {
                                 if let Ok(mut state) = state_query.get_mut(state_entity) {
                                     if state.cursor_position > 0 {
                                         state.cursor_position -= 1;
@@ -215,30 +215,33 @@ pub fn text_box_render(
                                 }
                             }
                         }
-                        EventType::CharInput { c } => {
+                        EventType::CharInput { ref c } => {
                             if let Ok(mut state) = state_query.get_mut(state_entity) {
                                 let cloned_on_change = cloned_on_change.clone();
                                 if !state.focused {
                                     return;
                                 }
                                 let cursor_pos = state.cursor_position;
-                                if is_backspace(c) {
-                                    if !state.current_value.is_empty() {
-                                        let char_pos: usize = state.graphemes[0..cursor_pos - 1]
+                                for c in c.chars() {
+                                    if is_backspace(c) {
+                                        if !state.current_value.is_empty() {
+                                            let char_pos: usize = state.graphemes
+                                                [0..cursor_pos - 1]
+                                                .iter()
+                                                .map(|g| g.len())
+                                                .sum();
+                                            state.current_value.remove(char_pos);
+                                            state.cursor_position -= 1;
+                                        }
+                                    } else if !c.is_control() {
+                                        let char_pos: usize = state.graphemes[0..cursor_pos]
                                             .iter()
                                             .map(|g| g.len())
                                             .sum();
-                                        state.current_value.remove(char_pos);
-                                        state.cursor_position -= 1;
-                                    }
-                                } else if !c.is_control() {
-                                    let char_pos: usize = state.graphemes[0..cursor_pos]
-                                        .iter()
-                                        .map(|g| g.len())
-                                        .sum();
-                                    state.current_value.insert(char_pos, c);
+                                        state.current_value.insert(char_pos, c);
 
-                                    state.cursor_position += 1;
+                                        state.cursor_position += 1;
+                                    }
                                 }
 
                                 // Update graphemes

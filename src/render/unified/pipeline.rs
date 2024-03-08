@@ -1,8 +1,8 @@
 use bevy::ecs::query::ROQueryItem;
 use bevy::ecs::system::{SystemParam, SystemParamItem};
+use bevy::prelude::{Commands, Rect, Resource, With};
 #[cfg(feature = "svg")]
 use bevy::prelude::{Mesh, Vec3};
-use bevy::prelude::{Commands, Rect, Resource, With};
 use bevy::render::globals::{GlobalsBuffer, GlobalsUniform};
 #[cfg(feature = "svg")]
 use bevy::render::mesh::VertexAttributeValues;
@@ -24,14 +24,14 @@ use bevy::{
         render_asset::RenderAssets,
         render_phase::{DrawFunctions, TrackedRenderPass},
         render_resource::{
-            BindGroup, BindGroupEntry, BindGroupLayout, BindGroupLayoutDescriptor,
-            BindGroupLayoutEntry, BindingResource, BindingType, BlendState, BufferBindingType,
-            BufferSize, BufferUsages, BufferVec, ColorTargetState, ColorWrites, Extent3d,
-            FragmentState, FrontFace, MultisampleState, PipelineCache, PolygonMode, PrimitiveState,
-            PrimitiveTopology, RenderPipelineDescriptor, SamplerBindingType, SamplerDescriptor,
-            ShaderStages, TextureDescriptor, TextureDimension, TextureFormat, TextureSampleType,
-            TextureUsages, TextureViewDescriptor, TextureViewDimension, VertexAttribute,
-            VertexBufferLayout, VertexFormat, VertexState, VertexStepMode,
+            BindGroup, BindGroupEntry, BindGroupLayout, BindGroupLayoutEntry, BindingResource,
+            BindingType, BlendState, BufferBindingType, BufferSize, BufferUsages, BufferVec,
+            ColorTargetState, ColorWrites, Extent3d, FragmentState, FrontFace, MultisampleState,
+            PipelineCache, PolygonMode, PrimitiveState, PrimitiveTopology,
+            RenderPipelineDescriptor, SamplerBindingType, SamplerDescriptor, ShaderStages,
+            TextureDescriptor, TextureDimension, TextureFormat, TextureSampleType, TextureUsages,
+            TextureViewDescriptor, TextureViewDimension, VertexAttribute, VertexBufferLayout,
+            VertexFormat, VertexState, VertexStepMode,
         },
         renderer::{RenderDevice, RenderQueue},
         texture::{BevyDefault, GpuImage, Image},
@@ -93,8 +93,9 @@ impl FromWorld for UnifiedPipeline {
         let world = world.cell();
         let render_device = world.resource::<RenderDevice>();
 
-        let view_layout = render_device.create_bind_group_layout(&BindGroupLayoutDescriptor {
-            entries: &[
+        let view_layout = render_device.create_bind_group_layout(
+            "ui_view_layout",
+            &[
                 BindGroupLayoutEntry {
                     binding: 0,
                     visibility: ShaderStages::VERTEX | ShaderStages::FRAGMENT,
@@ -116,11 +117,11 @@ impl FromWorld for UnifiedPipeline {
                     count: None,
                 },
             ],
-            label: Some("ui_view_layout"),
-        });
+        );
 
-        let types_layout = render_device.create_bind_group_layout(&BindGroupLayoutDescriptor {
-            entries: &[BindGroupLayoutEntry {
+        let types_layout = render_device.create_bind_group_layout(
+            "ui_types_layout",
+            &[BindGroupLayoutEntry {
                 binding: 0,
                 visibility: ShaderStages::VERTEX | ShaderStages::FRAGMENT,
                 ty: BindingType::Buffer {
@@ -132,11 +133,11 @@ impl FromWorld for UnifiedPipeline {
                 },
                 count: None,
             }],
-            label: Some("ui_types_layout"),
-        });
+        );
 
-        let image_layout = render_device.create_bind_group_layout(&BindGroupLayoutDescriptor {
-            entries: &[
+        let image_layout = render_device.create_bind_group_layout(
+            "image_layout",
+            &[
                 BindGroupLayoutEntry {
                     binding: 0,
                     visibility: ShaderStages::FRAGMENT,
@@ -170,8 +171,7 @@ impl FromWorld for UnifiedPipeline {
                     count: None,
                 },
             ],
-            label: Some("image_layout"),
-        });
+        );
 
         let empty_font_texture = FontTextureCache::get_empty(&render_device);
 
@@ -750,31 +750,31 @@ pub fn queue_quad_types(
 ) {
     quad_meta.types_buffer.clear();
     // sprite_meta.types_buffer.reserve(2, &render_device);
-    let quad_type_offset = quad_meta.types_buffer.push(QuadType {
+    let quad_type_offset = quad_meta.types_buffer.push(&QuadType {
         t: 0,
         _padding_1: 0,
         _padding_2: 0,
         _padding_3: 0,
     });
-    let text_sub_pixel_type_offset = quad_meta.types_buffer.push(QuadType {
+    let text_sub_pixel_type_offset = quad_meta.types_buffer.push(&QuadType {
         t: 1,
         _padding_1: 0,
         _padding_2: 0,
         _padding_3: 0,
     });
-    let text_type_offset = quad_meta.types_buffer.push(QuadType {
+    let text_type_offset = quad_meta.types_buffer.push(&QuadType {
         t: 2,
         _padding_1: 0,
         _padding_2: 0,
         _padding_3: 0,
     });
-    let image_type_offset = quad_meta.types_buffer.push(QuadType {
+    let image_type_offset = quad_meta.types_buffer.push(&QuadType {
         t: 3,
         _padding_1: 0,
         _padding_2: 0,
         _padding_3: 0,
     });
-    let box_shadow_type_offset = quad_meta.types_buffer.push(QuadType {
+    let box_shadow_type_offset = quad_meta.types_buffer.push(&QuadType {
         t: 4,
         _padding_1: 0,
         _padding_2: 0,
@@ -1436,14 +1436,14 @@ pub struct SetUIViewBindGroup<T, const I: usize> {
 }
 impl<T: PhaseItem, const I: usize> RenderCommand<T> for SetUIViewBindGroup<T, I> {
     type Param = ();
-    type ViewWorldQuery = (Read<UIViewUniformOffset>, Read<UIViewBindGroup>);
-    type ItemWorldQuery = ();
+    type ViewQuery = (Read<UIViewUniformOffset>, Read<UIViewBindGroup>);
+    type ItemQuery = ();
 
     #[inline]
     fn render<'w>(
         _item: &T,
-        (view_uniform, ui_view_bind_group): ROQueryItem<'w, Self::ViewWorldQuery>,
-        _: (),
+        (view_uniform, ui_view_bind_group): ROQueryItem<'w, Self::ViewQuery>,
+        _: Option<()>,
         _: SystemParamItem<'w, '_, Self::Param>,
         pass: &mut TrackedRenderPass<'w>,
     ) -> RenderCommandResult {
@@ -1460,16 +1460,19 @@ pub struct DrawUIDraw<T> {
 impl<T: PhaseItem + TransparentUIGeneric> RenderCommand<T> for DrawUIDraw<T> {
     type Param = (SRes<QuadMeta>, SRes<UnifiedPipeline>, SRes<ImageBindGroups>);
 
-    type ViewWorldQuery = Read<UIExtractedView>;
-    type ItemWorldQuery = Read<QuadBatch>;
+    type ViewQuery = Read<UIExtractedView>;
+    type ItemQuery = Read<QuadBatch>;
 
     fn render<'w>(
         item: &T,
-        view: bevy::ecs::query::ROQueryItem<'w, Self::ViewWorldQuery>,
-        batch: bevy::ecs::query::ROQueryItem<'w, Self::ItemWorldQuery>,
+        view: bevy::ecs::query::ROQueryItem<'w, Self::ViewQuery>,
+        batch: Option<bevy::ecs::query::ROQueryItem<'w, Self::ItemQuery>>,
         param: bevy::ecs::system::SystemParamItem<'w, '_, Self::Param>,
         pass: &mut TrackedRenderPass<'w>,
     ) -> RenderCommandResult {
+        let Some(batch) = batch else {
+            return RenderCommandResult::Failure;
+        };
         let (quad_meta, unified_pipeline, image_bind_groups) = param;
 
         let quad_meta = quad_meta.into_inner();

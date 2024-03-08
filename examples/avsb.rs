@@ -202,7 +202,10 @@ fn startup(
     commands.spawn((widget_context, EventDispatcher::default()));
 }
 
-fn swap(input: Res<Input<KeyCode>>, mut query: Query<&mut AvsBState, Without<PreviousWidget>>) {
+fn swap(
+    input: Res<ButtonInput<KeyCode>>,
+    mut query: Query<&mut AvsBState, Without<PreviousWidget>>,
+) {
     if input.just_pressed(KeyCode::Space) {
         for mut avsb in query.iter_mut() {
             avsb.is_a = !avsb.is_a;

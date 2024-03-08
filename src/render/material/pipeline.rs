@@ -169,6 +169,7 @@ pub fn extract_materials_ui<M: MaterialUI>(
                 changed_assets.remove(id);
                 removed.push(*id);
             }
+            AssetEvent::Unused { id: _ } => {}
         }
     }
 
@@ -286,17 +287,20 @@ pub type DrawMaterialUITransparent<M> = (
 pub struct SetMaterialBindGroup<M: MaterialUI, const I: usize>(PhantomData<M>);
 impl<P: PhaseItem, M: MaterialUI, const I: usize> RenderCommand<P> for SetMaterialBindGroup<M, I> {
     type Param = SRes<RenderMaterialsUI<M>>;
-    type ViewWorldQuery = ();
-    type ItemWorldQuery = Read<Handle<M>>;
+    type ViewQuery = ();
+    type ItemQuery = Read<Handle<M>>;
 
     #[inline]
     fn render<'w>(
         _item: &P,
         _view: (),
-        material2d_handle: ROQueryItem<'_, Self::ItemWorldQuery>,
+        material2d_handle: Option<ROQueryItem<'_, Self::ItemQuery>>,
         materials: SystemParamItem<'w, '_, Self::Param>,
         pass: &mut TrackedRenderPass<'w>,
     ) -> RenderCommandResult {
+        let Some(material2d_handle) = material2d_handle else {
+            return RenderCommandResult::Failure;
+        };
         let asset_id: AssetId<M> = material2d_handle.clone_weak().into();
         let material2d = materials.into_inner().get(&asset_id).unwrap();
         pass.set_bind_group(I, &material2d.bind_group, &[]);

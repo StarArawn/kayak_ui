@@ -83,7 +83,7 @@ pub fn button_render(
                     font_size: StyleProp::Value(font_size),
                     height: StyleProp::Value(height),
                     width: Units::Stretch(1.0).into(),
-                    cursor: StyleProp::Value(KCursorIcon(CursorIcon::Hand)),
+                    cursor: StyleProp::Value(KCursorIcon(CursorIcon::Pointer)),
                     ..Default::default()
                 })
                 .into();

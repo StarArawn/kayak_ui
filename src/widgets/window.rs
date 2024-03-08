@@ -188,7 +188,7 @@ pub fn window_render(
                     <BackgroundBundle
                         id={"title_bar_entity"}
                         styles={KStyle {
-                            cursor: StyleProp::Value(KCursorIcon(CursorIcon::Hand)),
+                            cursor: StyleProp::Value(KCursorIcon(CursorIcon::Pointer)),
                             render_command: StyleProp::Value(RenderCommand::Quad),
                             background_color: StyleProp::Value(Color::rgba(0.188, 0.203, 0.274, 1.0)),
                             border_radius: Corner::all(10.0).into(),

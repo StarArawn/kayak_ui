@@ -781,7 +781,7 @@ fn hsv_to_rgb(from: &Vec3) -> Color {
 
     res += Vec4::new(m, m, m, 0.0);
 
-    Color::from(res)
+    Color::rgba_from_array(res)
 }
 
 fn hsv_lerp(from: &Color, to: &Color, amount: f32) -> Color {

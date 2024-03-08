@@ -14,13 +14,13 @@ exclude = ["assets/*", "screenshots/*", "book"]
 members = ["kayak_ui_macros", "kayak_font"]
 
 [features]
-svg = ["dep:bevy_svg"]
+svg = [] #["dep:bevy_svg"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 bevy = { version = "0.12", default-features = false, features = ["bevy_render", "bevy_asset", "bevy_winit", "bevy_core_pipeline"] }
-bevy_svg = { version="0.12", default-features = false, optional = true }
+# bevy_svg = { version="0.12", default-features = false, optional = true }
 bitflags = "1.3.2"
 bytemuck = "1.12"
 dashmap = "5.4"
@@ -53,11 +53,17 @@ path = "examples/todo/todo.rs"
 [[example]]
 name = "svg"
 path = "examples/svg.rs"
+test = false
+doc = false
+bench = false
 required-features = ["svg"]
 
 [[example]]
 name = "accordion"
 path = "examples/accordion.rs"
+test = false
+doc = false
+bench = false
 required-features = ["svg"]
 
 [package.metadata.docs.rs]

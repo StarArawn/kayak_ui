@@ -2,6 +2,7 @@ use bevy::{
     prelude::{Handle, Image, Vec2},
     reflect::Reflect,
 };
+#[cfg(feature = "svg")]
 use bevy_svg::prelude::Svg;
 use kayak_font::{Alignment, TextLayout, TextProperties};
 
@@ -34,6 +35,7 @@ pub enum RenderCommand {
         border: Edge<f32>,
         handle: Handle<Image>,
     },
+    #[cfg(feature = "svg")]
     Svg {
         handle: Handle<Svg>,
     },

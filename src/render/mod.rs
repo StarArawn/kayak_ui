@@ -28,6 +28,7 @@ pub mod material;
 pub(crate) mod nine_patch;
 mod opacity_layer;
 pub(crate) mod quad;
+#[cfg(feature = "svg")]
 pub(crate) mod svg;
 pub(crate) mod texture_atlas;
 mod ui_pass;

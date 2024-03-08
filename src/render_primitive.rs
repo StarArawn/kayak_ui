@@ -6,8 +6,10 @@ use crate::{
         font::FontMapping,
         unified::pipeline::{ExtractedQuad, ExtractedQuads, QuadOrMaterial, UIQuadType},
     },
-    styles::{Corner, KStyle, RenderCommand, StyleProp},
+    styles::{Corner, KStyle, RenderCommand}
 };
+#[cfg(feature = "svg")]
+use crate::styles::{StyleProp};
 
 pub trait RenderPrimitive {
     fn extract(
@@ -250,6 +252,7 @@ impl RenderPrimitive for KStyle {
                     );
                 }
             }
+            #[cfg(feature = "svg")]
             RenderCommand::Svg { handle } => {
                 let mut svgs = crate::render::svg::extract_svg(
                     camera_entity,

@@ -1,5 +1,7 @@
+#[cfg(feature = "svg")]
+use bevy::prelude::AssetApp;
 use bevy::{
-    asset::{load_internal_asset, AssetApp, Handle},
+    asset::{load_internal_asset, Handle},
     prelude::{Commands, IntoSystemConfigs, Plugin, Query, Res, ResMut, Resource, With},
     render::{
         render_phase::AddRenderCommand,
@@ -9,6 +11,7 @@ use bevy::{
     },
     window::{PrimaryWindow, Window},
 };
+#[cfg(feature = "svg")]
 use bevy_svg::prelude::Svg;
 
 use crate::{
@@ -24,7 +27,9 @@ use self::pipeline::{
     ImageBindGroups, PreviousClip, PreviousIndex, QuadTypeOffsets,
 };
 
-use super::{svg::RenderSvgs, ui_pass::TransparentOpacityUI};
+#[cfg(feature = "svg")]
+use super::svg::RenderSvgs;
+use super::ui_pass::TransparentOpacityUI;
 
 pub mod pipeline;
 pub mod text;
@@ -40,8 +45,9 @@ pub const VERTEX_OUTPUT_HANDLE: Handle<Shader> = Handle::weak_from_u128(88288962
 pub struct UnifiedRenderPlugin;
 impl Plugin for UnifiedRenderPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
-        app.init_asset::<Svg>()
-            .add_plugins(text::TextRendererPlugin);
+        #[cfg(feature = "svg")]
+        app.init_asset::<Svg>();
+        app.add_plugins(text::TextRendererPlugin);
 
         load_internal_asset!(
             app,
@@ -77,13 +83,19 @@ impl Plugin for UnifiedRenderPlugin {
             .init_resource::<QuadTypeOffsets>()
             .init_resource::<ExtractedQuads>()
             .init_resource::<ImageBindGroups>()
-            .init_resource::<QuadMeta>()
-            .init_resource::<RenderSvgs>()
+            .init_resource::<QuadMeta>();
+        #[cfg(feature = "svg")]
+        render_app.init_resource::<RenderSvgs>();
+        render_app
             .init_resource::<PreviousClip>()
             .init_resource::<PreviousIndex>()
             .add_systems(
                 ExtractSchedule,
-                (super::svg::extract_svg_asset, extract_baseline),
+                (
+                    #[cfg(feature = "svg")]
+                    super::svg::extract_svg_asset,
+                    extract_baseline,
+                ),
             )
             .add_systems(
                 Render,

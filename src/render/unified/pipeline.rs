@@ -1,7 +1,10 @@
 use bevy::ecs::query::ROQueryItem;
 use bevy::ecs::system::{SystemParam, SystemParamItem};
-use bevy::prelude::{Commands, Mesh, Rect, Resource, Vec3, With};
+#[cfg(feature = "svg")]
+use bevy::prelude::{Mesh, Vec3};
+use bevy::prelude::{Commands, Rect, Resource, With};
 use bevy::render::globals::{GlobalsBuffer, GlobalsUniform};
+#[cfg(feature = "svg")]
 use bevy::render::mesh::VertexAttributeValues;
 use bevy::render::render_phase::{
     DrawFunctionId, PhaseItem, RenderCommand, RenderCommandResult, SetItemPipeline,
@@ -35,6 +38,7 @@ use bevy::{
     },
     utils::HashMap,
 };
+#[cfg(feature = "svg")]
 use bevy_svg::prelude::Svg;
 use bytemuck::{Pod, Zeroable};
 use kayak_font::{bevy::FontTextureCache, KayakFont};
@@ -45,6 +49,7 @@ use crate::layout::LayoutCache;
 use crate::prelude::Corner;
 use crate::render::extract::{UIExtractedView, UIViewUniform, UIViewUniformOffset, UIViewUniforms};
 use crate::render::opacity_layer::OpacityLayerManager;
+#[cfg(feature = "svg")]
 use crate::render::svg::RenderSvgs;
 use crate::render::ui_pass::{
     TransparentOpacityUI, TransparentUI, TransparentUIGeneric, UIRenderPhase,
@@ -377,6 +382,7 @@ pub struct ExtractedQuad {
     pub image: Option<Handle<Image>>,
     pub uv_min: Option<Vec2>,
     pub uv_max: Option<Vec2>,
+    #[cfg(feature = "svg")]
     pub svg_handle: (Option<Handle<Svg>>, Option<Color>),
     pub opacity_layer: u32,
     pub c: char,
@@ -398,6 +404,7 @@ impl Default for ExtractedQuad {
             image: Default::default(),
             uv_min: Default::default(),
             uv_max: Default::default(),
+            #[cfg(feature = "svg")]
             svg_handle: Default::default(),
             opacity_layer: 0,
             c: ' ',
@@ -811,6 +818,7 @@ pub struct PreviousIndex {
 
 #[derive(SystemParam)]
 pub struct QueueQuads<'w, 's> {
+    #[cfg(feature = "svg")]
     render_svgs: Res<'w, RenderSvgs>,
     opacity_layers: Res<'w, OpacityLayerManager>,
     commands: Commands<'w, 's>,
@@ -845,6 +853,7 @@ pub struct QueueQuads<'w, 's> {
 
 pub fn queue_quads(queue_quads: QueueQuads) {
     let QueueQuads {
+        #[cfg(feature = "svg")]
         render_svgs,
         opacity_layers,
         mut commands,
@@ -944,6 +953,7 @@ pub fn queue_quads(queue_quads: QueueQuads) {
                 &mut image_bind_groups,
                 &gpu_images,
                 &unified_pipeline,
+                #[cfg(feature = "svg")]
                 &render_svgs,
                 &mut transparent_phase,
                 &mut opacity_transparent_phase,
@@ -1023,7 +1033,7 @@ pub fn queue_quads_inner(
     image_bind_groups: &mut ImageBindGroups,
     gpu_images: &RenderAssets<Image>,
     unified_pipeline: &UnifiedPipeline,
-    render_svgs: &RenderSvgs,
+    #[cfg(feature = "svg")] render_svgs: &RenderSvgs,
     transparent_phase: &mut UIRenderPhase<TransparentUI>,
     opacity_transparent_phase: &mut UIRenderPhase<TransparentOpacityUI>,
     draw_opacity_quad: DrawFunctionId,
@@ -1279,6 +1289,7 @@ pub fn queue_quads_inner(
         return;
     }
 
+    #[cfg(feature = "svg")]
     if let (Some(svg_handle), color) = (quad.svg_handle.0.as_ref(), quad.svg_handle.1.as_ref()) {
         if let Some((svg, mesh)) = render_svgs.get(&svg_handle.id()) {
             let new_height = (svg.view_box.h as f32 / svg.view_box.w as f32) * sprite_rect.size().x;
@@ -1332,79 +1343,80 @@ pub fn queue_quads_inner(
             *index += indices.len() as u32;
             *item_end = *index;
         }
-    } else {
-        let color = quad.color.as_linear_rgba_f32();
-
-        let uv_min = quad.uv_min.unwrap_or(Vec2::ZERO);
-        let uv_max = quad.uv_max.unwrap_or(Vec2::ONE);
-
-        let bottom_left = Vec4::new(
-            uv_min.x,
-            uv_min.y,
-            quad.char_id as f32,
-            quad.border_radius.bottom_left,
-        );
-        let top_left = Vec4::new(
-            uv_min.x,
-            uv_max.y,
-            quad.char_id as f32,
-            quad.border_radius.top_left,
-        );
-        let top_right = Vec4::new(
-            uv_max.x,
-            uv_max.y,
-            quad.char_id as f32,
-            quad.border_radius.top_right,
-        );
-        let bottom_right = Vec4::new(
-            uv_max.x,
-            uv_min.y,
-            quad.char_id as f32,
-            quad.border_radius.bottom_right,
-        );
-
-        let uvs: [[f32; 4]; 6] = [
-            top_left.into(),
-            bottom_right.into(),
-            bottom_left.into(),
-            top_left.into(),
-            top_right.into(),
-            bottom_right.into(),
-        ];
-
-        const QUAD_INDICES: [usize; 6] = [0, 2, 3, 0, 1, 2];
-
-        const QUAD_VERTEX_POSITIONS: [Vec2; 4] = [
-            Vec2::new(0.0, 0.0),
-            Vec2::new(1.0, 0.0),
-            Vec2::new(1.0, 1.0),
-            Vec2::new(0.0, 1.0),
-        ];
-
-        for (index, vertex_index) in QUAD_INDICES.iter().enumerate() {
-            let vertex_position = QUAD_VERTEX_POSITIONS[*vertex_index];
-            let world = Mat4::from_scale_rotation_translation(
-                sprite_rect.size().extend(1.0),
-                Quat::default(),
-                sprite_rect.min.extend(0.0),
-            );
-            let final_position = (world * vertex_position.extend(0.0).extend(1.0)).truncate();
-            quad_meta.vertices.push(QuadVertex {
-                position: final_position.into(),
-                color,
-                uv: uvs[index],
-                pos_size: [
-                    sprite_rect.min.x,
-                    sprite_rect.min.y,
-                    sprite_rect.size().x,
-                    sprite_rect.size().y,
-                ],
-            });
-        }
-
-        *index += QUAD_INDICES.len() as u32;
-        *item_end = *index;
+        return;
     }
+
+    let color = quad.color.as_linear_rgba_f32();
+
+    let uv_min = quad.uv_min.unwrap_or(Vec2::ZERO);
+    let uv_max = quad.uv_max.unwrap_or(Vec2::ONE);
+
+    let bottom_left = Vec4::new(
+        uv_min.x,
+        uv_min.y,
+        quad.char_id as f32,
+        quad.border_radius.bottom_left,
+    );
+    let top_left = Vec4::new(
+        uv_min.x,
+        uv_max.y,
+        quad.char_id as f32,
+        quad.border_radius.top_left,
+    );
+    let top_right = Vec4::new(
+        uv_max.x,
+        uv_max.y,
+        quad.char_id as f32,
+        quad.border_radius.top_right,
+    );
+    let bottom_right = Vec4::new(
+        uv_max.x,
+        uv_min.y,
+        quad.char_id as f32,
+        quad.border_radius.bottom_right,
+    );
+
+    let uvs: [[f32; 4]; 6] = [
+        top_left.into(),
+        bottom_right.into(),
+        bottom_left.into(),
+        top_left.into(),
+        top_right.into(),
+        bottom_right.into(),
+    ];
+
+    const QUAD_INDICES: [usize; 6] = [0, 2, 3, 0, 1, 2];
+
+    const QUAD_VERTEX_POSITIONS: [Vec2; 4] = [
+        Vec2::new(0.0, 0.0),
+        Vec2::new(1.0, 0.0),
+        Vec2::new(1.0, 1.0),
+        Vec2::new(0.0, 1.0),
+    ];
+
+    for (index, vertex_index) in QUAD_INDICES.iter().enumerate() {
+        let vertex_position = QUAD_VERTEX_POSITIONS[*vertex_index];
+        let world = Mat4::from_scale_rotation_translation(
+            sprite_rect.size().extend(1.0),
+            Quat::default(),
+            sprite_rect.min.extend(0.0),
+        );
+        let final_position = (world * vertex_position.extend(0.0).extend(1.0)).truncate();
+        quad_meta.vertices.push(QuadVertex {
+            position: final_position.into(),
+            color,
+            uv: uvs[index],
+            pos_size: [
+                sprite_rect.min.x,
+                sprite_rect.min.y,
+                sprite_rect.size().x,
+                sprite_rect.size().y,
+            ],
+        });
+    }
+
+    *index += QUAD_INDICES.len() as u32;
+    *item_end = *index;
 }
 
 pub type DrawUI = (

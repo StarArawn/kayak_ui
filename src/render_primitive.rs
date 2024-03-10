@@ -1,15 +1,15 @@
 use bevy::prelude::*;
 use kayak_font::KayakFont;
 
+#[cfg(feature = "svg")]
+use crate::styles::StyleProp;
 use crate::{
     render::{
         font::FontMapping,
         unified::pipeline::{ExtractedQuad, ExtractedQuads, QuadOrMaterial, UIQuadType},
     },
-    styles::{Corner, KStyle, RenderCommand}
+    styles::{Corner, KStyle, RenderCommand},
 };
-#[cfg(feature = "svg")]
-use crate::styles::{StyleProp};
 
 pub trait RenderPrimitive {
     fn extract(

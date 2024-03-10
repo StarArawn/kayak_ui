@@ -122,7 +122,7 @@ pub fn extract_baseline(
     window_size: Extract<Res<WindowSize>>,
 ) {
     let dpi = if let Ok(window) = windows.get_single() {
-        window.scale_factor() as f32
+        window.scale_factor()
     } else {
         1.0
     };

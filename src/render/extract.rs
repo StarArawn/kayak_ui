@@ -62,7 +62,7 @@ pub fn extract(
         let dpi = if let Ok(camera) = cameras.get(context.camera_entity) {
             if let bevy::render::camera::RenderTarget::Window(WindowRef::Primary) = &camera.target {
                 if let Ok(window) = primary_window.get_single() {
-                    window.scale_factor() as f32
+                    window.scale_factor()
                 } else {
                     1.0
                 }

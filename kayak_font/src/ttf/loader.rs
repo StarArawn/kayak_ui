@@ -62,12 +62,14 @@ impl AssetLoader for TTFLoader {
                 u32::from_str_radix(kttf.char_range_start.trim_start_matches("0x"), 16).unwrap();
             let char_range_end =
                 u32::from_str_radix(kttf.char_range_end.trim_start_matches("0x"), 16).unwrap();
+
+            let mut cache_path = std::path::PathBuf::from(load_context.path());
+            cache_path.set_file_name(kttf.file.clone());
             let font_bytes = load_context
-                .read_asset_bytes(kttf.file.clone())
+                .read_asset_bytes(cache_path.clone())
                 .await
                 .unwrap();
 
-            let mut cache_path = std::path::PathBuf::from(load_context.path());
             let file_name = load_context
                 .path()
                 .file_name()

@@ -25,7 +25,7 @@ impl Default for NinePatch {
         Self {
             handle: Default::default(),
             border: Default::default(),
-            scale: 1.0
+            scale: 1.0,
         }
     }
 }

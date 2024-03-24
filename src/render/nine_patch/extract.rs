@@ -13,6 +13,7 @@ pub fn extract_nine_patch(
     layout: crate::layout::Rect,
     handle: Handle<Image>,
     border: Edge<f32>,
+    scale: f32,
     opacity_layer: u32,
     images: &Assets<Image>,
     dpi: f32,
@@ -28,8 +29,8 @@ pub fn extract_nine_patch(
     let image_size = image
         .map(|i| {
             Vec2::new(
-                i.texture_descriptor.size.width as f32,
-                i.texture_descriptor.size.height as f32,
+                i.texture_descriptor.size.width as f32 * scale,
+                i.texture_descriptor.size.height as f32 * scale,
             )
         })
         .unwrap()

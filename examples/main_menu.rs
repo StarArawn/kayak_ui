@@ -78,6 +78,7 @@ fn menu_button_render(
                 nine_patch={NinePatch {
                     handle: button_image_handle,
                     border: Edge::all(10.0),
+                    ..default()
                 }}
                 styles={KStyle {
                     width: Units::Stretch(1.0).into(),
@@ -162,6 +163,7 @@ fn startup(
                 nine_patch={NinePatch {
                     handle: panel1_image,
                     border: Edge::all(25.0),
+                    ..default()
                 }}
                 styles={KStyle {
                     width: Units::Pixels(350.0).into(),

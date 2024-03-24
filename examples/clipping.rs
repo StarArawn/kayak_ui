@@ -44,6 +44,7 @@ Lorem ipsum dolor sit amet, consectetur adipiscing elit. Cras sed tellus neque. 
                 nine_patch={NinePatch {
                     handle: image,
                     border: Edge::all(30.0),
+                    ..default()
                 }}
                 styles={nine_patch_styles}
             >

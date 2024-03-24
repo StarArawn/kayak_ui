@@ -223,12 +223,17 @@ impl RenderPrimitive for KStyle {
                     );
                 }
             }
-            RenderCommand::NinePatch { border, handle } => {
+            RenderCommand::NinePatch {
+                border,
+                handle,
+                scale,
+            } => {
                 let mut nines = crate::render::nine_patch::extract_nine_patch(
                     camera_entity,
                     *layout,
                     handle,
                     border,
+                    scale,
                     opacity_layer,
                     images,
                     dpi,

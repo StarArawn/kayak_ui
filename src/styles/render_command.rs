@@ -34,6 +34,7 @@ pub enum RenderCommand {
     NinePatch {
         border: Edge<f32>,
         handle: Handle<Image>,
+        scale: f32,
     },
     #[cfg(feature = "svg")]
     Svg {

@@ -9,12 +9,25 @@ use crate::{
     widget::Widget,
 };
 
-#[derive(Component, PartialEq, Clone, Default, Debug)]
+#[derive(Component, PartialEq, Clone, Debug)]
 pub struct NinePatch {
     /// The handle to image
     pub handle: Handle<Image>,
     /// The size of each edge (in pixels)
     pub border: Edge<f32>,
+    /// Scale of the nine patch
+    /// defaults to 1.0
+    pub scale: f32,
+}
+
+impl Default for NinePatch {
+    fn default() -> Self {
+        Self {
+            handle: Default::default(),
+            border: Default::default(),
+            scale: 1.0
+        }
+    }
 }
 
 impl Widget for NinePatch {}
@@ -83,6 +96,7 @@ pub fn nine_patch_render(
                 render_command: RenderCommand::NinePatch {
                     border: nine_patch.border,
                     handle: nine_patch.handle.clone_weak(),
+                    scale: nine_patch.scale,
                 }
                 .into(),
                 ..Default::default()

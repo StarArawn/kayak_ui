@@ -45,6 +45,7 @@ fn startup(
                 nine_patch={NinePatch {
                     handle: image,
                     border: Edge::all(15.0),
+                    ..Default::default()
                 }}
                 styles={KStyle {
                     width: StyleProp::Value(Units::Pixels(512.0)),

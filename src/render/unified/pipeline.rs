@@ -1,7 +1,10 @@
 use bevy::ecs::query::ROQueryItem;
 use bevy::ecs::system::{SystemParam, SystemParamItem};
-use bevy::prelude::{Commands, Mesh, Rect, Resource, Vec3, With};
+use bevy::prelude::{Commands, Rect, Resource, With};
+#[cfg(feature = "svg")]
+use bevy::prelude::{Mesh, Vec3};
 use bevy::render::globals::{GlobalsBuffer, GlobalsUniform};
+#[cfg(feature = "svg")]
 use bevy::render::mesh::VertexAttributeValues;
 use bevy::render::render_phase::{
     DrawFunctionId, PhaseItem, RenderCommand, RenderCommandResult, SetItemPipeline,
@@ -21,20 +24,21 @@ use bevy::{
         render_asset::RenderAssets,
         render_phase::{DrawFunctions, TrackedRenderPass},
         render_resource::{
-            BindGroup, BindGroupEntry, BindGroupLayout, BindGroupLayoutDescriptor,
-            BindGroupLayoutEntry, BindingResource, BindingType, BlendState, BufferBindingType,
-            BufferSize, BufferUsages, BufferVec, ColorTargetState, ColorWrites, Extent3d,
-            FragmentState, FrontFace, MultisampleState, PipelineCache, PolygonMode, PrimitiveState,
-            PrimitiveTopology, RenderPipelineDescriptor, SamplerBindingType, SamplerDescriptor,
-            ShaderStages, TextureDescriptor, TextureDimension, TextureFormat, TextureSampleType,
-            TextureUsages, TextureViewDescriptor, TextureViewDimension, VertexAttribute,
-            VertexBufferLayout, VertexFormat, VertexState, VertexStepMode,
+            BindGroup, BindGroupEntry, BindGroupLayout, BindGroupLayoutEntry, BindingResource,
+            BindingType, BlendState, BufferBindingType, BufferSize, BufferUsages, BufferVec,
+            ColorTargetState, ColorWrites, Extent3d, FragmentState, FrontFace, MultisampleState,
+            PipelineCache, PolygonMode, PrimitiveState, PrimitiveTopology,
+            RenderPipelineDescriptor, SamplerBindingType, SamplerDescriptor, ShaderStages,
+            TextureDescriptor, TextureDimension, TextureFormat, TextureSampleType, TextureUsages,
+            TextureViewDescriptor, TextureViewDimension, VertexAttribute, VertexBufferLayout,
+            VertexFormat, VertexState, VertexStepMode,
         },
         renderer::{RenderDevice, RenderQueue},
         texture::{BevyDefault, GpuImage, Image},
     },
     utils::HashMap,
 };
+#[cfg(feature = "svg")]
 use bevy_svg::prelude::Svg;
 use bytemuck::{Pod, Zeroable};
 use kayak_font::{bevy::FontTextureCache, KayakFont};
@@ -45,6 +49,7 @@ use crate::layout::LayoutCache;
 use crate::prelude::Corner;
 use crate::render::extract::{UIExtractedView, UIViewUniform, UIViewUniformOffset, UIViewUniforms};
 use crate::render::opacity_layer::OpacityLayerManager;
+#[cfg(feature = "svg")]
 use crate::render::svg::RenderSvgs;
 use crate::render::ui_pass::{
     TransparentOpacityUI, TransparentUI, TransparentUIGeneric, UIRenderPhase,
@@ -88,8 +93,9 @@ impl FromWorld for UnifiedPipeline {
         let world = world.cell();
         let render_device = world.resource::<RenderDevice>();
 
-        let view_layout = render_device.create_bind_group_layout(&BindGroupLayoutDescriptor {
-            entries: &[
+        let view_layout = render_device.create_bind_group_layout(
+            "ui_view_layout",
+            &[
                 BindGroupLayoutEntry {
                     binding: 0,
                     visibility: ShaderStages::VERTEX | ShaderStages::FRAGMENT,
@@ -111,11 +117,11 @@ impl FromWorld for UnifiedPipeline {
                     count: None,
                 },
             ],
-            label: Some("ui_view_layout"),
-        });
+        );
 
-        let types_layout = render_device.create_bind_group_layout(&BindGroupLayoutDescriptor {
-            entries: &[BindGroupLayoutEntry {
+        let types_layout = render_device.create_bind_group_layout(
+            "ui_types_layout",
+            &[BindGroupLayoutEntry {
                 binding: 0,
                 visibility: ShaderStages::VERTEX | ShaderStages::FRAGMENT,
                 ty: BindingType::Buffer {
@@ -127,11 +133,11 @@ impl FromWorld for UnifiedPipeline {
                 },
                 count: None,
             }],
-            label: Some("ui_types_layout"),
-        });
+        );
 
-        let image_layout = render_device.create_bind_group_layout(&BindGroupLayoutDescriptor {
-            entries: &[
+        let image_layout = render_device.create_bind_group_layout(
+            "image_layout",
+            &[
                 BindGroupLayoutEntry {
                     binding: 0,
                     visibility: ShaderStages::FRAGMENT,
@@ -165,8 +171,7 @@ impl FromWorld for UnifiedPipeline {
                     count: None,
                 },
             ],
-            label: Some("image_layout"),
-        });
+        );
 
         let empty_font_texture = FontTextureCache::get_empty(&render_device);
 
@@ -377,6 +382,7 @@ pub struct ExtractedQuad {
     pub image: Option<Handle<Image>>,
     pub uv_min: Option<Vec2>,
     pub uv_max: Option<Vec2>,
+    #[cfg(feature = "svg")]
     pub svg_handle: (Option<Handle<Svg>>, Option<Color>),
     pub opacity_layer: u32,
     pub c: char,
@@ -398,6 +404,7 @@ impl Default for ExtractedQuad {
             image: Default::default(),
             uv_min: Default::default(),
             uv_max: Default::default(),
+            #[cfg(feature = "svg")]
             svg_handle: Default::default(),
             opacity_layer: 0,
             c: ' ',
@@ -743,31 +750,31 @@ pub fn queue_quad_types(
 ) {
     quad_meta.types_buffer.clear();
     // sprite_meta.types_buffer.reserve(2, &render_device);
-    let quad_type_offset = quad_meta.types_buffer.push(QuadType {
+    let quad_type_offset = quad_meta.types_buffer.push(&QuadType {
         t: 0,
         _padding_1: 0,
         _padding_2: 0,
         _padding_3: 0,
     });
-    let text_sub_pixel_type_offset = quad_meta.types_buffer.push(QuadType {
+    let text_sub_pixel_type_offset = quad_meta.types_buffer.push(&QuadType {
         t: 1,
         _padding_1: 0,
         _padding_2: 0,
         _padding_3: 0,
     });
-    let text_type_offset = quad_meta.types_buffer.push(QuadType {
+    let text_type_offset = quad_meta.types_buffer.push(&QuadType {
         t: 2,
         _padding_1: 0,
         _padding_2: 0,
         _padding_3: 0,
     });
-    let image_type_offset = quad_meta.types_buffer.push(QuadType {
+    let image_type_offset = quad_meta.types_buffer.push(&QuadType {
         t: 3,
         _padding_1: 0,
         _padding_2: 0,
         _padding_3: 0,
     });
-    let box_shadow_type_offset = quad_meta.types_buffer.push(QuadType {
+    let box_shadow_type_offset = quad_meta.types_buffer.push(&QuadType {
         t: 4,
         _padding_1: 0,
         _padding_2: 0,
@@ -811,6 +818,7 @@ pub struct PreviousIndex {
 
 #[derive(SystemParam)]
 pub struct QueueQuads<'w, 's> {
+    #[cfg(feature = "svg")]
     render_svgs: Res<'w, RenderSvgs>,
     opacity_layers: Res<'w, OpacityLayerManager>,
     commands: Commands<'w, 's>,
@@ -845,6 +853,7 @@ pub struct QueueQuads<'w, 's> {
 
 pub fn queue_quads(queue_quads: QueueQuads) {
     let QueueQuads {
+        #[cfg(feature = "svg")]
         render_svgs,
         opacity_layers,
         mut commands,
@@ -944,6 +953,7 @@ pub fn queue_quads(queue_quads: QueueQuads) {
                 &mut image_bind_groups,
                 &gpu_images,
                 &unified_pipeline,
+                #[cfg(feature = "svg")]
                 &render_svgs,
                 &mut transparent_phase,
                 &mut opacity_transparent_phase,
@@ -1023,7 +1033,7 @@ pub fn queue_quads_inner(
     image_bind_groups: &mut ImageBindGroups,
     gpu_images: &RenderAssets<Image>,
     unified_pipeline: &UnifiedPipeline,
-    render_svgs: &RenderSvgs,
+    #[cfg(feature = "svg")] render_svgs: &RenderSvgs,
     transparent_phase: &mut UIRenderPhase<TransparentUI>,
     opacity_transparent_phase: &mut UIRenderPhase<TransparentOpacityUI>,
     draw_opacity_quad: DrawFunctionId,
@@ -1279,6 +1289,7 @@ pub fn queue_quads_inner(
         return;
     }
 
+    #[cfg(feature = "svg")]
     if let (Some(svg_handle), color) = (quad.svg_handle.0.as_ref(), quad.svg_handle.1.as_ref()) {
         if let Some((svg, mesh)) = render_svgs.get(&svg_handle.id()) {
             let new_height = (svg.view_box.h as f32 / svg.view_box.w as f32) * sprite_rect.size().x;
@@ -1332,79 +1343,80 @@ pub fn queue_quads_inner(
             *index += indices.len() as u32;
             *item_end = *index;
         }
-    } else {
-        let color = quad.color.as_linear_rgba_f32();
-
-        let uv_min = quad.uv_min.unwrap_or(Vec2::ZERO);
-        let uv_max = quad.uv_max.unwrap_or(Vec2::ONE);
-
-        let bottom_left = Vec4::new(
-            uv_min.x,
-            uv_min.y,
-            quad.char_id as f32,
-            quad.border_radius.bottom_left,
-        );
-        let top_left = Vec4::new(
-            uv_min.x,
-            uv_max.y,
-            quad.char_id as f32,
-            quad.border_radius.top_left,
-        );
-        let top_right = Vec4::new(
-            uv_max.x,
-            uv_max.y,
-            quad.char_id as f32,
-            quad.border_radius.top_right,
-        );
-        let bottom_right = Vec4::new(
-            uv_max.x,
-            uv_min.y,
-            quad.char_id as f32,
-            quad.border_radius.bottom_right,
-        );
-
-        let uvs: [[f32; 4]; 6] = [
-            top_left.into(),
-            bottom_right.into(),
-            bottom_left.into(),
-            top_left.into(),
-            top_right.into(),
-            bottom_right.into(),
-        ];
-
-        const QUAD_INDICES: [usize; 6] = [0, 2, 3, 0, 1, 2];
-
-        const QUAD_VERTEX_POSITIONS: [Vec2; 4] = [
-            Vec2::new(0.0, 0.0),
-            Vec2::new(1.0, 0.0),
-            Vec2::new(1.0, 1.0),
-            Vec2::new(0.0, 1.0),
-        ];
-
-        for (index, vertex_index) in QUAD_INDICES.iter().enumerate() {
-            let vertex_position = QUAD_VERTEX_POSITIONS[*vertex_index];
-            let world = Mat4::from_scale_rotation_translation(
-                sprite_rect.size().extend(1.0),
-                Quat::default(),
-                sprite_rect.min.extend(0.0),
-            );
-            let final_position = (world * vertex_position.extend(0.0).extend(1.0)).truncate();
-            quad_meta.vertices.push(QuadVertex {
-                position: final_position.into(),
-                color,
-                uv: uvs[index],
-                pos_size: [
-                    sprite_rect.min.x,
-                    sprite_rect.min.y,
-                    sprite_rect.size().x,
-                    sprite_rect.size().y,
-                ],
-            });
-        }
-
-        *index += QUAD_INDICES.len() as u32;
-        *item_end = *index;
+        return;
     }
+
+    let color = quad.color.as_linear_rgba_f32();
+
+    let uv_min = quad.uv_min.unwrap_or(Vec2::ZERO);
+    let uv_max = quad.uv_max.unwrap_or(Vec2::ONE);
+
+    let bottom_left = Vec4::new(
+        uv_min.x,
+        uv_min.y,
+        quad.char_id as f32,
+        quad.border_radius.bottom_left,
+    );
+    let top_left = Vec4::new(
+        uv_min.x,
+        uv_max.y,
+        quad.char_id as f32,
+        quad.border_radius.top_left,
+    );
+    let top_right = Vec4::new(
+        uv_max.x,
+        uv_max.y,
+        quad.char_id as f32,
+        quad.border_radius.top_right,
+    );
+    let bottom_right = Vec4::new(
+        uv_max.x,
+        uv_min.y,
+        quad.char_id as f32,
+        quad.border_radius.bottom_right,
+    );
+
+    let uvs: [[f32; 4]; 6] = [
+        top_left.into(),
+        bottom_right.into(),
+        bottom_left.into(),
+        top_left.into(),
+        top_right.into(),
+        bottom_right.into(),
+    ];
+
+    const QUAD_INDICES: [usize; 6] = [0, 2, 3, 0, 1, 2];
+
+    const QUAD_VERTEX_POSITIONS: [Vec2; 4] = [
+        Vec2::new(0.0, 0.0),
+        Vec2::new(1.0, 0.0),
+        Vec2::new(1.0, 1.0),
+        Vec2::new(0.0, 1.0),
+    ];
+
+    for (index, vertex_index) in QUAD_INDICES.iter().enumerate() {
+        let vertex_position = QUAD_VERTEX_POSITIONS[*vertex_index];
+        let world = Mat4::from_scale_rotation_translation(
+            sprite_rect.size().extend(1.0),
+            Quat::default(),
+            sprite_rect.min.extend(0.0),
+        );
+        let final_position = (world * vertex_position.extend(0.0).extend(1.0)).truncate();
+        quad_meta.vertices.push(QuadVertex {
+            position: final_position.into(),
+            color,
+            uv: uvs[index],
+            pos_size: [
+                sprite_rect.min.x,
+                sprite_rect.min.y,
+                sprite_rect.size().x,
+                sprite_rect.size().y,
+            ],
+        });
+    }
+
+    *index += QUAD_INDICES.len() as u32;
+    *item_end = *index;
 }
 
 pub type DrawUI = (
@@ -1424,14 +1436,14 @@ pub struct SetUIViewBindGroup<T, const I: usize> {
 }
 impl<T: PhaseItem, const I: usize> RenderCommand<T> for SetUIViewBindGroup<T, I> {
     type Param = ();
-    type ViewWorldQuery = (Read<UIViewUniformOffset>, Read<UIViewBindGroup>);
-    type ItemWorldQuery = ();
+    type ViewQuery = (Read<UIViewUniformOffset>, Read<UIViewBindGroup>);
+    type ItemQuery = ();
 
     #[inline]
     fn render<'w>(
         _item: &T,
-        (view_uniform, ui_view_bind_group): ROQueryItem<'w, Self::ViewWorldQuery>,
-        _: (),
+        (view_uniform, ui_view_bind_group): ROQueryItem<'w, Self::ViewQuery>,
+        _: Option<()>,
         _: SystemParamItem<'w, '_, Self::Param>,
         pass: &mut TrackedRenderPass<'w>,
     ) -> RenderCommandResult {
@@ -1448,16 +1460,19 @@ pub struct DrawUIDraw<T> {
 impl<T: PhaseItem + TransparentUIGeneric> RenderCommand<T> for DrawUIDraw<T> {
     type Param = (SRes<QuadMeta>, SRes<UnifiedPipeline>, SRes<ImageBindGroups>);
 
-    type ViewWorldQuery = Read<UIExtractedView>;
-    type ItemWorldQuery = Read<QuadBatch>;
+    type ViewQuery = Read<UIExtractedView>;
+    type ItemQuery = Read<QuadBatch>;
 
     fn render<'w>(
         item: &T,
-        view: bevy::ecs::query::ROQueryItem<'w, Self::ViewWorldQuery>,
-        batch: bevy::ecs::query::ROQueryItem<'w, Self::ItemWorldQuery>,
+        view: bevy::ecs::query::ROQueryItem<'w, Self::ViewQuery>,
+        batch: Option<bevy::ecs::query::ROQueryItem<'w, Self::ItemQuery>>,
         param: bevy::ecs::system::SystemParamItem<'w, '_, Self::Param>,
         pass: &mut TrackedRenderPass<'w>,
     ) -> RenderCommandResult {
+        let Some(batch) = batch else {
+            return RenderCommandResult::Failure;
+        };
         let (quad_meta, unified_pipeline, image_bind_groups) = param;
 
         let quad_meta = quad_meta.into_inner();

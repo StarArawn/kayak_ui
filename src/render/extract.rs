@@ -62,7 +62,7 @@ pub fn extract(
         let dpi = if let Ok(camera) = cameras.get(context.camera_entity) {
             if let bevy::render::camera::RenderTarget::Window(WindowRef::Primary) = &camera.target {
                 if let Ok(window) = primary_window.get_single() {
-                    window.scale_factor() as f32
+                    window.scale_factor()
                 } else {
                     1.0
                 }
@@ -219,7 +219,7 @@ pub fn prepare_view_uniforms(
         let frustum = [Vec4::ZERO; 6];
 
         let view_uniforms = UIViewUniformOffset {
-            offset: view_uniforms.uniforms.push(UIViewUniform {
+            offset: view_uniforms.uniforms.push(&UIViewUniform {
                 view_proj: camera
                     .view_projection
                     .unwrap_or_else(|| projection * inverse_view),

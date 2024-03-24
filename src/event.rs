@@ -55,8 +55,8 @@ impl KEvent {
         Self {
             target,
             current_target: target,
-            event_type,
             should_propagate: event_type.propagates(),
+            event_type,
             default_prevented: false,
             on_change_systems: Vec::new(),
         }
@@ -108,7 +108,7 @@ impl KEvent {
 /// __Note:__ This type implements `PartialEq` and `Hash` in a way that only considers the variant itself,
 /// not the underlying data. If full comparisons are needed, they should be done with the inner data or
 /// with a custom wrapper.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 pub enum EventType {
     /// An event that occurs when the user clicks a widget
     Click(CursorEvent),
@@ -129,7 +129,7 @@ pub enum EventType {
     /// An event that occurs when a widget loses focus
     Blur,
     /// An event that occurs when the user types in a character within a _focused_ widget
-    CharInput { c: char },
+    CharInput { c: smol_str::SmolStr },
     /// An event that occurs when the user releases a key within a _focused_ widget
     KeyUp(KeyboardEvent),
     /// An event that occurs when the user presses a key down within a _focused_ widget

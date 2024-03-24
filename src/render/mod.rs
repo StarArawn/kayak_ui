@@ -3,7 +3,7 @@ use bevy::{
     render::{
         camera::RenderTarget,
         render_asset::RenderAssets,
-        render_graph::{RenderGraph, RunGraphOnViewNode},
+        render_graph::{RenderGraph, RenderLabel, RenderSubGraph, RunGraphOnViewNode},
         render_phase::DrawFunctions,
         Extract, ExtractSchedule, Render, RenderApp, RenderSet,
     },
@@ -28,6 +28,7 @@ pub mod material;
 pub(crate) mod nine_patch;
 mod opacity_layer;
 pub(crate) mod quad;
+#[cfg(feature = "svg")]
 pub(crate) mod svg;
 pub(crate) mod texture_atlas;
 mod ui_pass;
@@ -35,12 +36,11 @@ pub mod unified;
 
 pub use opacity_layer::MAX_OPACITY_LAYERS;
 
-pub mod draw_ui_graph {
-    pub const NAME: &str = "kayak_draw_ui";
-    pub mod node {
-        pub const MAIN_PASS: &str = "kayak_ui_pass";
-    }
-}
+#[derive(Debug, Hash, PartialEq, Eq, Clone, RenderSubGraph)]
+pub struct DrawUiGraph;
+
+#[derive(Debug, Hash, PartialEq, Eq, Clone, RenderLabel)]
+pub struct KayakUiPass;
 
 /// The default Kayak UI rendering plugin.
 /// Use this to render the UI.
@@ -85,43 +85,39 @@ impl Plugin for BevyKayakUIRenderPlugin {
         let ui_graph_3d = get_ui_graph(render_app);
         let mut graph = render_app.world.resource_mut::<RenderGraph>();
 
-        if let Some(graph_2d) = graph.get_sub_graph_mut(bevy::core_pipeline::core_2d::graph::NAME) {
-            graph_2d.add_sub_graph(draw_ui_graph::NAME, ui_graph_2d);
-            graph_2d.add_node(
-                draw_ui_graph::node::MAIN_PASS,
-                RunGraphOnViewNode::new(draw_ui_graph::NAME),
+        if let Some(graph_2d) = graph.get_sub_graph_mut(bevy::core_pipeline::core_2d::graph::Core2d)
+        {
+            graph_2d.add_sub_graph(DrawUiGraph, ui_graph_2d);
+            graph_2d.add_node(KayakUiPass, RunGraphOnViewNode::new(DrawUiGraph));
+            graph_2d.add_node_edge(
+                bevy::core_pipeline::core_2d::graph::Node2d::MainPass,
+                KayakUiPass,
             );
             graph_2d.add_node_edge(
-                bevy::core_pipeline::core_2d::graph::node::MAIN_PASS,
-                draw_ui_graph::node::MAIN_PASS,
+                bevy::core_pipeline::core_2d::graph::Node2d::Tonemapping,
+                KayakUiPass,
             );
             graph_2d.add_node_edge(
-                bevy::core_pipeline::core_2d::graph::node::TONEMAPPING,
-                draw_ui_graph::node::MAIN_PASS,
-            );
-            graph_2d.add_node_edge(
-                draw_ui_graph::node::MAIN_PASS,
-                bevy::core_pipeline::core_2d::graph::node::UPSCALING,
+                KayakUiPass,
+                bevy::core_pipeline::core_2d::graph::Node2d::Upscaling,
             );
         }
 
-        if let Some(graph_3d) = graph.get_sub_graph_mut(bevy::core_pipeline::core_3d::graph::NAME) {
-            graph_3d.add_sub_graph(draw_ui_graph::NAME, ui_graph_3d);
-            graph_3d.add_node(
-                draw_ui_graph::node::MAIN_PASS,
-                RunGraphOnViewNode::new(draw_ui_graph::NAME),
+        if let Some(graph_3d) = graph.get_sub_graph_mut(bevy::core_pipeline::core_3d::graph::Core3d)
+        {
+            graph_3d.add_sub_graph(DrawUiGraph, ui_graph_3d);
+            graph_3d.add_node(KayakUiPass, RunGraphOnViewNode::new(DrawUiGraph));
+            graph_3d.add_node_edge(
+                bevy::core_pipeline::core_3d::graph::Node3d::EndMainPass,
+                KayakUiPass,
             );
             graph_3d.add_node_edge(
-                bevy::core_pipeline::core_3d::graph::node::END_MAIN_PASS,
-                draw_ui_graph::node::MAIN_PASS,
+                bevy::core_pipeline::core_3d::graph::Node3d::Tonemapping,
+                KayakUiPass,
             );
             graph_3d.add_node_edge(
-                bevy::core_pipeline::core_3d::graph::node::TONEMAPPING,
-                draw_ui_graph::node::MAIN_PASS,
-            );
-            graph_3d.add_node_edge(
-                draw_ui_graph::node::MAIN_PASS,
-                bevy::core_pipeline::core_3d::graph::node::UPSCALING,
+                KayakUiPass,
+                bevy::core_pipeline::core_3d::graph::Node3d::Upscaling,
             );
         }
     }
@@ -130,7 +126,7 @@ impl Plugin for BevyKayakUIRenderPlugin {
 fn get_ui_graph(render_app: &mut App) -> RenderGraph {
     let ui_pass_node = MainPassUINode::new(&mut render_app.world);
     let mut ui_graph = RenderGraph::default();
-    ui_graph.add_node(draw_ui_graph::node::MAIN_PASS, ui_pass_node);
+    ui_graph.add_node(KayakUiPass, ui_pass_node);
     ui_graph
 }
 

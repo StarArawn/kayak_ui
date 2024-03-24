@@ -235,10 +235,11 @@ impl Node for MainPassUINode {
                             resolve_target: None,
                             ops: Operations {
                                 load: LoadOp::Clear(Color::rgba(0.0, 0.0, 0.0, 0.0).into()),
-                                store: true,
+                                store: bevy::render::render_resource::StoreOp::Store,
                             },
                         })],
                         depth_stencil_attachment: None,
+                        ..Default::default()
                     };
 
                     let mut tracked_pass =
@@ -260,11 +261,9 @@ impl Node for MainPassUINode {
         {
             let pass_descriptor = RenderPassDescriptor {
                 label: Some("main_transparent_pass_UI"),
-                color_attachments: &[Some(target.get_unsampled_color_attachment(Operations {
-                    load: LoadOp::Load,
-                    store: true,
-                }))],
+                color_attachments: &[Some(target.get_unsampled_color_attachment())],
                 depth_stencil_attachment: None,
+                ..Default::default()
             };
             let mut tracked_pass = render_context.begin_tracked_render_pass(pass_descriptor);
             transparent_phase.render(&mut tracked_pass, world, view_entity);

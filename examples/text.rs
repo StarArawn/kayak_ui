@@ -100,7 +100,7 @@ fn startup(
     commands.spawn((widget_context, EventDispatcher::default()));
 }
 
-fn update_resource(keyboard_input: Res<Input<KeyCode>>, mut my_resource: ResMut<MyResource>) {
+fn update_resource(keyboard_input: Res<ButtonInput<KeyCode>>, mut my_resource: ResMut<MyResource>) {
     if keyboard_input.just_pressed(KeyCode::Space) {
         my_resource.0 += 1;
     }

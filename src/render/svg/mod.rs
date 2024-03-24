@@ -29,6 +29,7 @@ pub fn extract_svg_asset(
                 changed_assets.remove(id);
                 render_assets.remove(id);
             }
+            _ => {}
         }
     }
 

@@ -28,10 +28,12 @@ use kayak_font::bevy::FontTextureCache;
 use std::hash::Hash;
 use std::marker::PhantomData;
 
+#[cfg(feature = "svg")]
+use crate::render::svg::RenderSvgs;
+
 use crate::render::{
     extract::UIExtractedView,
     opacity_layer::OpacityLayerManager,
-    svg::RenderSvgs,
     ui_pass::{TransparentOpacityUI, TransparentUI, UIRenderPhase},
     unified::pipeline::{
         queue_quads_inner, DrawUIDraw, ExtractedQuad, ImageBindGroups, MaterialZ, PreviousClip,
@@ -167,6 +169,7 @@ pub fn extract_materials_ui<M: MaterialUI>(
                 changed_assets.remove(id);
                 removed.push(*id);
             }
+            AssetEvent::Unused { id: _ } => {}
         }
     }
 
@@ -284,17 +287,20 @@ pub type DrawMaterialUITransparent<M> = (
 pub struct SetMaterialBindGroup<M: MaterialUI, const I: usize>(PhantomData<M>);
 impl<P: PhaseItem, M: MaterialUI, const I: usize> RenderCommand<P> for SetMaterialBindGroup<M, I> {
     type Param = SRes<RenderMaterialsUI<M>>;
-    type ViewWorldQuery = ();
-    type ItemWorldQuery = Read<Handle<M>>;
+    type ViewQuery = ();
+    type ItemQuery = Read<Handle<M>>;
 
     #[inline]
     fn render<'w>(
         _item: &P,
         _view: (),
-        material2d_handle: ROQueryItem<'_, Self::ItemWorldQuery>,
+        material2d_handle: Option<ROQueryItem<'_, Self::ItemQuery>>,
         materials: SystemParamItem<'w, '_, Self::Param>,
         pass: &mut TrackedRenderPass<'w>,
     ) -> RenderCommandResult {
+        let Some(material2d_handle) = material2d_handle else {
+            return RenderCommandResult::Failure;
+        };
         let asset_id: AssetId<M> = material2d_handle.clone_weak().into();
         let material2d = materials.into_inner().get(&asset_id).unwrap();
         pass.set_bind_group(I, &material2d.bind_group, &[]);
@@ -303,7 +309,7 @@ impl<P: PhaseItem, M: MaterialUI, const I: usize> RenderCommand<P> for SetMateri
 }
 
 pub fn queue_material_ui_quads<M: MaterialUI>(
-    render_svgs: Res<RenderSvgs>,
+    #[cfg(feature = "svg")] render_svgs: Res<RenderSvgs>,
     opacity_layers: Res<OpacityLayerManager>,
     mut commands: Commands,
     draw_functions: Res<DrawFunctions<TransparentUI>>,
@@ -410,6 +416,7 @@ pub fn queue_material_ui_quads<M: MaterialUI>(
                     &mut image_bind_groups,
                     &gpu_images,
                     &quad_pipeline,
+                    #[cfg(feature = "svg")]
                     &render_svgs,
                     &mut transparent_phase,
                     &mut opacity_transparent_phase,

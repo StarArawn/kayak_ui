@@ -4,7 +4,10 @@ use bevy::{
         io::{AssetSourceBuilders, Reader},
         AssetLoader, AssetServer, AsyncReadExt, LoadContext,
     },
-    render::render_resource::{Extent3d, TextureFormat},
+    render::{
+        render_asset::RenderAssetUsages,
+        render_resource::{Extent3d, TextureFormat},
+    },
     utils::{BoxedFuture, HashMap},
 };
 
@@ -263,6 +266,7 @@ impl AssetLoader for TTFLoader {
                 bevy::render::render_resource::TextureDimension::D2,
                 image_bytes,
                 TextureFormat::Rgba8Unorm,
+                RenderAssetUsages::all(),
             );
             image.reinterpret_stacked_2d_as_array(char_count);
             let labeled_asset = load_context.begin_labeled_asset();

@@ -154,7 +154,7 @@ pub fn render(
                     >
                         <BackgroundBundle
                             styles={KStyle {
-                                cursor: KCursorIcon(CursorIcon::Hand).into(),
+                                cursor: KCursorIcon(CursorIcon::Pointer).into(),
                                 render_command: RenderCommand::Quad.into(),
                                 background_color: Color::rgba(0.188, 0.203, 0.274, 1.0).into(),
                                 border_radius:  Corner::all(10.0).into(),

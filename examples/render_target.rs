@@ -62,11 +62,10 @@ fn startup(
             camera: Camera {
                 order: -1,
                 target: RenderTarget::Image(image_handle.clone()),
+                clear_color: ClearColorConfig::None,
                 ..Camera::default()
             },
-            camera_2d: Camera2d {
-                clear_color: bevy::core_pipeline::clear_color::ClearColorConfig::Default,
-            },
+            camera_2d: Camera2d,
             ..Default::default()
         })
         .insert(CameraUIKayak)
@@ -107,7 +106,7 @@ fn startup(
     });
 
     let cube_size = 4.0;
-    let cube_handle = meshes.add(Mesh::from(shape::Box::new(cube_size, cube_size, cube_size)));
+    let cube_handle = meshes.add(Mesh::from(Cuboid::from_size(Vec3::splat(cube_size))));
 
     // This material has the texture that has been rendered.
     let material_handle = materials.add(StandardMaterial {
@@ -169,7 +168,7 @@ fn cube_rotator_system(time: Res<Time>, mut query: Query<&mut Transform, With<Ma
 
 fn depsawn_ui(
     mut commands: Commands,
-    keyboard_input: Res<Input<KeyCode>>,
+    keyboard_input: Res<ButtonInput<KeyCode>>,
     ui_query: Query<(Entity, &KayakRootContext), With<MainUI>>,
 ) {
     if keyboard_input.pressed(KeyCode::Escape) {

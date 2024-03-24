@@ -18,8 +18,7 @@ fn startup(
     let tile_size = 16;
     let columns = 272 / tile_size;
     let rows = 128 / tile_size;
-    let atlas = bevy::sprite::TextureAtlas::from_grid(
-        image_handle.clone(),
+    let atlas = bevy::sprite::TextureAtlasLayout::from_grid(
         bevy::prelude::Vec2::splat(tile_size as f32),
         columns,
         rows,

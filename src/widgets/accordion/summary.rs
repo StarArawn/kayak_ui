@@ -61,7 +61,7 @@ pub fn render(
             .with_style(styles)
             .with_style(KStyle {
                 render_command: RenderCommand::Layout.into(),
-                cursor: KCursorIcon(CursorIcon::Hand).into(),
+                cursor: KCursorIcon(CursorIcon::Pointer).into(),
                 width: Units::Stretch(1.0).into(),
                 height: Units::Auto.into(),
                 ..Default::default()
@@ -97,7 +97,7 @@ pub fn render(
                             height: Units::Auto.into(),
                             padding: Edge::new(Units::Pixels(12.0), Units::Pixels(16.0), Units::Pixels(16.0), Units::Pixels(16.0)).into(),
                             layout_type: LayoutType::Row.into(),
-                            cursor: KCursorIcon(CursorIcon::Hand).into(),
+                            cursor: KCursorIcon(CursorIcon::Pointer).into(),
                             ..Default::default()
                         }}
                         on_event={on_event}
@@ -107,7 +107,7 @@ pub fn render(
                             styles={KStyle {
                                 width: Units::Pixels(25.0).into(),
                                 height: Units::Pixels(20.0).into(),
-                                cursor: KCursorIcon(CursorIcon::Hand).into(),
+                                cursor: KCursorIcon(CursorIcon::Pointer).into(),
                                 ..Default::default()
                             }}
                         >
@@ -117,7 +117,7 @@ pub fn render(
                                         <KSvgBundle
                                             styles={KStyle {
                                                 background_color: Color::WHITE.into(),
-                                                cursor: KCursorIcon(CursorIcon::Hand).into(),
+                                                cursor: KCursorIcon(CursorIcon::Pointer).into(),
                                                 width: Units::Pixels(35.0).into(),
                                                 height: Units::Pixels(30.0).into(),
                                                 top: Units::Pixels(-10.0).into(),
@@ -131,7 +131,7 @@ pub fn render(
                                         <KSvgBundle
                                             styles={KStyle {
                                                 background_color: Color::WHITE.into(),
-                                                cursor: KCursorIcon(CursorIcon::Hand).into(),
+                                                cursor: KCursorIcon(CursorIcon::Pointer).into(),
                                                 width: Units::Pixels(35.0).into(),
                                                 height: Units::Pixels(30.0).into(),
                                                 top: Units::Pixels(-10.0).into(),

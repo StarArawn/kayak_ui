@@ -1,20 +1,21 @@
 use std::ops::Range;
 
 use bevy::ecs::prelude::*;
-use bevy::prelude::{Color, Image};
+use bevy::math::FloatOrd;
+use bevy::prelude::Color;
 use bevy::render::render_asset::RenderAssets;
 use bevy::render::render_phase::{
-    CachedRenderPipelinePhaseItem, DrawFunctionId, DrawFunctions, PhaseItem, TrackedRenderPass,
+    CachedRenderPipelinePhaseItem, DrawFunctionId, DrawFunctions, PhaseItem, PhaseItemExtraIndex,
+    TrackedRenderPass,
 };
 use bevy::render::render_resource::{CachedRenderPipelineId, RenderPassColorAttachment};
+use bevy::render::texture::GpuImage;
 use bevy::render::{
     render_graph::{Node, NodeRunError, RenderGraphContext},
     render_resource::{LoadOp, Operations, RenderPassDescriptor},
     renderer::RenderContext,
     view::{ExtractedView, ViewTarget},
 };
-use bevy::utils::nonmax::NonMaxU32;
-use bevy::utils::FloatOrd;
 
 use crate::CameraUIKayak;
 
@@ -38,7 +39,7 @@ pub struct TransparentUI {
     pub rect: bevy::math::Rect,
     pub type_index: u32,
     pub batch_range: Option<Range<u32>>,
-    pub dynamic_offset: Option<NonMaxU32>,
+    pub dynamic_offset: PhaseItemExtraIndex,
 }
 
 impl TransparentUIGeneric for TransparentUI {
@@ -60,13 +61,6 @@ impl TransparentUIGeneric for TransparentUI {
 }
 
 impl PhaseItem for TransparentUI {
-    type SortKey = FloatOrd;
-
-    #[inline]
-    fn sort_key(&self) -> Self::SortKey {
-        self.sort_key
-    }
-
     #[inline]
     fn draw_function(&self) -> DrawFunctionId {
         self.draw_function
@@ -84,12 +78,12 @@ impl PhaseItem for TransparentUI {
         self.batch_range.as_mut().unwrap()
     }
 
-    fn dynamic_offset(&self) -> Option<bevy::utils::nonmax::NonMaxU32> {
+    fn extra_index(&self) -> PhaseItemExtraIndex {
         self.dynamic_offset
     }
 
-    fn dynamic_offset_mut(&mut self) -> &mut Option<bevy::utils::nonmax::NonMaxU32> {
-        &mut self.dynamic_offset
+    fn batch_range_and_extra_index_mut(&mut self) -> (&mut Range<u32>, &mut PhaseItemExtraIndex) {
+        (self.batch_range.as_mut().unwrap(), &mut self.dynamic_offset)
     }
 }
 
@@ -111,7 +105,7 @@ pub struct TransparentOpacityUI {
     pub type_index: u32,
     pub batch_range: Option<Range<u32>>,
     pub opacity_layer: u32,
-    pub dynamic_offset: Option<NonMaxU32>,
+    pub dynamic_offset: PhaseItemExtraIndex,
 }
 
 impl TransparentUIGeneric for TransparentOpacityUI {
@@ -133,13 +127,6 @@ impl TransparentUIGeneric for TransparentOpacityUI {
 }
 
 impl PhaseItem for TransparentOpacityUI {
-    type SortKey = FloatOrd;
-
-    #[inline]
-    fn sort_key(&self) -> Self::SortKey {
-        self.sort_key
-    }
-
     #[inline]
     fn draw_function(&self) -> DrawFunctionId {
         self.draw_function
@@ -157,12 +144,12 @@ impl PhaseItem for TransparentOpacityUI {
         self.batch_range.as_mut().unwrap()
     }
 
-    fn dynamic_offset(&self) -> Option<bevy::utils::nonmax::NonMaxU32> {
+    fn extra_index(&self) -> PhaseItemExtraIndex {
         self.dynamic_offset
     }
 
-    fn dynamic_offset_mut(&mut self) -> &mut Option<bevy::utils::nonmax::NonMaxU32> {
-        &mut self.dynamic_offset
+    fn batch_range_and_extra_index_mut(&mut self) -> (&mut Range<u32>, &mut PhaseItemExtraIndex) {
+        (self.batch_range.as_mut().unwrap(), &mut self.dynamic_offset)
     }
 }
 
@@ -225,7 +212,7 @@ impl Node for MainPassUINode {
 
                 for layer_id in 1..MAX_OPACITY_LAYERS {
                     // Start new render pass.
-                    let gpu_images = world.get_resource::<RenderAssets<Image>>().unwrap();
+                    let gpu_images = world.get_resource::<RenderAssets<GpuImage>>().unwrap();
                     let image_handle = opacity_layer_manager.get_image_handle(layer_id);
                     let gpu_image = gpu_images.get(&image_handle).unwrap();
                     let pass_descriptor = RenderPassDescriptor {
@@ -234,7 +221,9 @@ impl Node for MainPassUINode {
                             view: &gpu_image.texture_view,
                             resolve_target: None,
                             ops: Operations {
-                                load: LoadOp::Clear(Color::rgba(0.0, 0.0, 0.0, 0.0).into()),
+                                load: LoadOp::Clear(
+                                    Color::srgba(0.0, 0.0, 0.0, 0.0).to_linear().into(),
+                                ),
                                 store: bevy::render::render_resource::StoreOp::Store,
                             },
                         })],
@@ -303,11 +292,6 @@ impl<I: PhaseItem + std::fmt::Debug> UIRenderPhase<I> {
         self.items.push(item);
     }
 
-    /// Sorts all of its [`PhaseItem`]s.
-    pub fn sort(&mut self) {
-        I::sort(&mut self.items);
-    }
-
     /// An [`Iterator`] through the associated [`Entity`] for each [`PhaseItem`] in order.
     #[inline]
     pub fn iter_entities(&'_ self) -> impl Iterator<Item = Entity> + '_ {
@@ -348,14 +332,5 @@ impl<I: PhaseItem + std::fmt::Debug> UIRenderPhase<I> {
             draw_function.draw(world, render_pass, view, item);
             index += 1;
         }
-    }
-}
-
-/// This system sorts the [`PhaseItem`]s of all [`RenderPhase`]s of this type.
-pub fn sort_ui_phase_system<I: PhaseItem + std::fmt::Debug>(
-    mut render_phases: Query<&mut UIRenderPhase<I>>,
-) {
-    for mut phase in &mut render_phases {
-        phase.sort();
     }
 }

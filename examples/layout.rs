@@ -37,8 +37,8 @@ fn startup(
                 >
                     <BackgroundBundle
                         styles={KStyle{
-                            background_color: Color::rgb(0.4, 0.9, 0.4).into(),
-                            color: Color::rgb(0.0, 0.0, 0.0).into(),
+                            background_color: Color::srgb(0.4, 0.9, 0.4).into(),
+                            color: Color::srgb(0.0, 0.0, 0.0).into(),
                             padding: Edge::all(Units::Pixels(5.0)).into(),
                             border_radius: Corner::all(10.0).into(),
                             row_index: 0.into(),
@@ -138,5 +138,5 @@ fn main() {
         .add_plugins(DefaultPlugins)
         .add_plugins((KayakContextPlugin, KayakWidgets))
         .add_systems(Startup, startup)
-        .run()
+        .run();
 }

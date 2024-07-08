@@ -42,5 +42,5 @@ fn main() {
         .add_plugins(DefaultPlugins.set(ImagePlugin::default_nearest()))
         .add_plugins((KayakContextPlugin, KayakWidgets))
         .add_systems(Startup, startup)
-        .run()
+        .run();
 }

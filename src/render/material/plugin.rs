@@ -2,8 +2,8 @@ use bevy::{
     prelude::*,
     render::{
         extract_component::ExtractComponentPlugin, render_asset::prepare_assets,
-        render_phase::AddRenderCommand, render_resource::SpecializedRenderPipelines, Render,
-        RenderApp, RenderSet,
+        render_phase::AddRenderCommand, render_resource::SpecializedRenderPipelines,
+        texture::GpuImage, Render, RenderApp, RenderSet,
     },
 };
 use std::hash::Hash;
@@ -52,7 +52,7 @@ where
                 (
                     prepare_materials_ui::<M>
                         .in_set(RenderSet::Prepare)
-                        .after(prepare_assets::<Image>),
+                        .after(prepare_assets::<GpuImage>),
                     queue_material_ui_quads::<M>
                         .in_set(RenderSet::Queue)
                         .after(crate::render::unified::pipeline::queue_quads),

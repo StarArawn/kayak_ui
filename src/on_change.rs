@@ -1,11 +1,10 @@
-use bevy::ecs::component::TableStorage;
 use bevy::prelude::{Component, Entity, In, IntoSystem, System, World};
 use std::fmt::{Debug, Formatter};
 use std::sync::{Arc, RwLock};
 
 use crate::prelude::KayakWidgetContext;
 
-pub trait ChangeValue: Component<Storage = TableStorage> + Default {}
+pub trait ChangeValue: Component + Default {}
 
 /// A container for a function that handles layout
 ///

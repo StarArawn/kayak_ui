@@ -2,11 +2,7 @@ use crate::{
     render::unified::pipeline::{ExtractedQuad, UIQuadType},
     styles::{Corner, Edge},
 };
-use bevy::{
-    math::Vec2,
-    prelude::*,
-    render::{color::Color, texture::Image},
-};
+use bevy::{color::Color, math::Vec2, prelude::*, render::texture::Image};
 
 pub fn extract_nine_patch(
     camera_entity: Entity,

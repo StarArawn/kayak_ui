@@ -113,7 +113,7 @@ fn startup(
                         fastrand::i32(32..64) as f32,
                         fastrand::i32(32..64) as f32,
                     );
-                    let color = Color::rgba(
+                    let color = Color::srgba(
                         fastrand::f32(),
                         fastrand::f32(),
                         fastrand::f32(),
@@ -142,5 +142,5 @@ fn main() {
             KayakWidgets,
         ))
         .add_systems(Startup, startup)
-        .run()
+        .run();
 }

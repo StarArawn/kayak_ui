@@ -1,4 +1,4 @@
-use bevy::prelude::KeyCode;
+use bevy::{input::keyboard::Key, prelude::KeyCode};
 
 /// Events sent to [`KayakContext`](crate::KayakContext) containing user input data
 #[derive(Debug, PartialEq)]
@@ -11,10 +11,12 @@ pub enum InputEvent {
     MouseLeftRelease,
     /// An event that occurs when the user scrolls
     Scroll { dx: f32, dy: f32, is_line: bool },
-    /// An event that occurs when the user types in a character
-    CharEvent { c: smol_str::SmolStr },
     /// An event that occurs when the user presses or releases a key
-    Keyboard { key: KeyCode, is_pressed: bool },
+    Keyboard {
+        key: KeyCode,
+        logical_key: Key,
+        is_pressed: bool,
+    },
 }
 
 /// The various categories an input event can belong to
@@ -36,7 +38,6 @@ impl InputEvent {
             Self::MouseLeftRelease => InputEventCategory::Mouse,
             Self::Scroll { .. } => InputEventCategory::Mouse,
             // Keyboard events
-            Self::CharEvent { .. } => InputEventCategory::Keyboard,
             Self::Keyboard { .. } => InputEventCategory::Keyboard,
         }
     }

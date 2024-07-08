@@ -56,7 +56,7 @@ pub fn button_render(
     state_query: Query<&ButtonState>,
 ) -> bool {
     if let Ok((button, styles, mut computed_styles)) = query.get_mut(entity) {
-        let hover_color = Color::rgba(0.592, 0.627, 0.749, 1.0); //Color::rgba(0.549, 0.666, 0.933, 1.0);
+        let hover_color = Color::srgba(0.592, 0.627, 0.749, 1.0); //Color::rgba(0.549, 0.666, 0.933, 1.0);
 
         let font_size = styles.font_size.resolve_or(16.);
         let height = styles.height.resolve_or(Units::Pixels(28.));
@@ -72,11 +72,11 @@ pub fn button_render(
                 })
                 .with_style(styles)
                 .with_style(KStyle {
-                    background_color: Color::rgba(0.254, 0.270, 0.349, 1.0).into(),
+                    background_color: Color::srgba(0.254, 0.270, 0.349, 1.0).into(),
                     border_color: if state.hovering {
                         hover_color.into()
                     } else {
-                        Color::rgba(0.254, 0.270, 0.349, 1.0).into()
+                        Color::srgba(0.254, 0.270, 0.349, 1.0).into()
                     },
                     border: Edge::all(2.0).into(),
                     border_radius: StyleProp::Value(Corner::all(10.0)),

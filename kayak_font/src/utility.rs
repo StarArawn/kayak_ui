@@ -37,6 +37,7 @@ pub fn split_breakable_words(text: &str) -> BreakableWordIter {
 /// according to [UAX #14](https://www.unicode.org/reports/tr14/).
 #[derive(Copy, Clone, Debug)]
 pub struct BreakableWord<'a> {
+    #[allow(dead_code)]
     /// The index of the last character in this word.
     pub char_index: usize,
     /// The content of this word.

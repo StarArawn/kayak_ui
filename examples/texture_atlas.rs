@@ -18,13 +18,7 @@ fn startup(
     let tile_size = 16;
     let columns = 272 / tile_size;
     let rows = 128 / tile_size;
-    let atlas = bevy::sprite::TextureAtlasLayout::from_grid(
-        bevy::prelude::Vec2::splat(tile_size as f32),
-        columns,
-        rows,
-        None,
-        None,
-    );
+    let atlas = TextureAtlasLayout::from_grid(UVec2::splat(tile_size), columns, rows, None, None);
 
     //The sign in the top right of the image would be index 16
     let sign_index = 16;
@@ -46,7 +40,7 @@ fn startup(
     let sign_position = rect.min;
     let sign_size = rect.max - rect.min;
 
-    let rect = atlas.textures[flower_index];
+    let rect = atlas.textures[flower_index as usize];
     let flower_position = rect.min;
     let flower_size = rect.max - rect.min;
 
@@ -79,5 +73,5 @@ fn main() {
         .add_plugins(DefaultPlugins.set(ImagePlugin::default_nearest()))
         .add_plugins((KayakContextPlugin, KayakWidgets))
         .add_systems(Startup, startup)
-        .run()
+        .run();
 }

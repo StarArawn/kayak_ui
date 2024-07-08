@@ -34,7 +34,7 @@ fn startup(
                         height: Units::Pixels(182.0).into(),
                         box_shadow: vec![
                             BoxShadow {
-                                color: Color::rgb(38.0 / 255.0, 57.0 / 255.0, 77.0 / 255.0),
+                                color: Color::srgb(38.0 / 255.0, 57.0 / 255.0, 77.0 / 255.0),
                                 radius: 30.0,
                                 offset: Vec2::new(0.0, 20.0),
                                 spread: Vec2::new(0.0, -10.0),
@@ -53,7 +53,7 @@ fn startup(
                         height: Units::Pixels(182.0).into(),
                         box_shadow: vec![
                             BoxShadow {
-                                color: Color::rgba(0.0, 0.0, 0.0, 0.1),
+                                color: Color::srgba(0.0, 0.0, 0.0, 0.1),
                                 radius: 12.0,
                                 offset: Vec2::new(0.0, 4.0),
                                 spread: Vec2::new(0.0, 0.0),
@@ -175,9 +175,9 @@ fn startup(
 
 fn main() {
     App::new()
-        .insert_resource(ClearColor(Color::rgb(1.0, 1.0, 1.0)))
+        .insert_resource(ClearColor(Color::srgb(1.0, 1.0, 1.0)))
         .add_plugins(DefaultPlugins.set(ImagePlugin::default_nearest()))
         .add_plugins((KayakContextPlugin, KayakWidgets))
         .add_systems(Startup, startup)
-        .run()
+        .run();
 }

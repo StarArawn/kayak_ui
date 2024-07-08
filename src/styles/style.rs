@@ -4,12 +4,14 @@ use std::ops::Add;
 
 pub use super::units::{KPositionType, LayoutType, Units};
 use super::BoxShadow;
+use bevy::color::Alpha;
+use bevy::color::ColorToComponents;
+use bevy::color::Hsva;
+use bevy::color::Lcha;
 use bevy::prelude::Color;
 use bevy::prelude::Component;
 use bevy::prelude::ReflectComponent;
 use bevy::prelude::Vec2;
-use bevy::prelude::Vec3;
-use bevy::prelude::Vec4;
 use bevy::reflect::FromReflect;
 use bevy::reflect::Reflect;
 use bevy::window::CursorIcon;
@@ -677,8 +679,8 @@ fn lerp_ang(a: f32, b: f32, x: f32) -> f32 {
 
 /// Linear interpolation between two colors in Lch space
 fn lerp_lch(a: Color, b: Color, x: f32) -> Color {
-    let [a_r, a_g, a_b, a_a] = a.as_lcha_f32();
-    let [b_r, b_g, b_b, b_a] = b.as_lcha_f32();
+    let [a_r, a_g, a_b, a_a] = Lcha::from(a).to_f32_array();
+    let [b_r, b_g, b_b, b_a] = Lcha::from(b).to_f32_array();
 
     let hue = lerp_ang(a_b, b_b, x);
     let a_xy = Vec2::new(a_r, a_g);
@@ -687,116 +689,26 @@ fn lerp_lch(a: Color, b: Color, x: f32) -> Color {
 
     let alpha = lerp(a_a, b_a, x);
 
-    Color::Lcha {
+    Color::Lcha(Lcha {
         lightness: xy.x,
         chroma: xy.y,
         hue,
         alpha,
-    }
-    .as_rgba()
-}
-
-fn rgb_to_hsv(from: &Color) -> Vec3 {
-    // xyz <-> hsv
-    let r = from.r();
-    let g = from.g();
-    let b = from.b();
-
-    let mut res = Vec3::ZERO;
-
-    let min = r.min(g).min(b);
-    let max = r.max(g).max(b);
-
-    // Value
-    res.z = max;
-
-    let delta = max - min;
-    // calc Saturation
-    if max != 0.0 {
-        res.y = delta / max;
-    } else {
-        res.x = -1.0;
-        res.y = 0.0;
-
-        return res;
-    }
-
-    // calc Hue
-    if r == max {
-        // between Yellow & Magenta
-        res.x = (g - b) / delta;
-    } else if g == max {
-        // cyan to yellow
-        res.x = 2.0 + (b - r) / delta;
-    } else {
-        // b == max // Megnta to cyan
-        res.x = 4.0 + (r - g) / delta;
-    }
-
-    res.x *= 60.0; // Convert to degrees
-    if res.x < 0.0 {
-        res.x += 360.0; // Unwrap angle in case of negative
-    }
-
-    res
-}
-
-fn hsv_to_rgb(from: &Vec3) -> Color {
-    let h = from.x;
-    let s = from.y;
-    let v = from.z;
-
-    // Calc base values
-    let c = s * v;
-    let x = c * (1.0 - (((h / 60.0) % 2.0) - 1.0).abs());
-    let m = v - c;
-
-    let mut res = Vec4::new(0.0, 0.0, 0.0, 1.0);
-
-    if (0.0..60.0).contains(&h) {
-        res.x = c;
-        res.y = x;
-        res.z = 0.0;
-    } else if (60.0..120.0).contains(&h) {
-        res.x = x;
-        res.y = c;
-        res.z = 0.0;
-    } else if (120.0..180.0).contains(&h) {
-        res.x = 0.0;
-        res.y = c;
-        res.z = x;
-    } else if (180.0..240.0).contains(&h) {
-        res.x = 0.0;
-        res.y = x;
-        res.z = c;
-    } else if (240.0..300.0).contains(&h) {
-        res.x = x;
-        res.y = 0.0;
-        res.z = c;
-    } else {
-        res.x = c;
-        res.y = 0.0;
-        res.z = x;
-    }
-
-    res += Vec4::new(m, m, m, 0.0);
-
-    Color::rgba_from_array(res)
+    })
 }
 
 fn hsv_lerp(from: &Color, to: &Color, amount: f32) -> Color {
-    let from_a = from.a();
-    let to_a = to.a();
-    let from = rgb_to_hsv(from);
-    let to = rgb_to_hsv(to);
-    let mut res = from.lerp(to, amount);
+    let from_a = from.alpha();
+    let to_a = to.alpha();
+    let from = Hsva::from(*from);
+    let to = Hsva::from(*to);
+    let mut res = Hsva::from_vec4(from.to_vec4().lerp(to.to_vec4(), amount));
 
-    if from.x < 0.0 {
-        res.x = to.x;
+    if from.hue < 0.0 {
+        res.hue = to.hue;
     }
-    let mut color = hsv_to_rgb(&res);
-    color.set_a(lerp(from_a, to_a, amount).clamp(0.0, 1.0));
-    color
+    res.set_alpha(lerp(from_a, to_a, amount).clamp(0.0, 1.0));
+    Color::from(res)
 }
 
 pub(crate) fn lerp(a: f32, b: f32, x: f32) -> f32 {

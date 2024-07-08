@@ -1,4 +1,4 @@
-use bevy::{ecs::system::CommandQueue, prelude::*};
+use bevy::{ecs::world::CommandQueue, prelude::*};
 
 use crate::widget_state::WidgetState;
 

@@ -51,5 +51,5 @@ fn main() {
         .add_plugins(DefaultPlugins)
         .add_plugins((KayakContextPlugin, KayakWidgets))
         .add_systems(Startup, startup)
-        .run()
+        .run();
 }

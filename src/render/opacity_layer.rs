@@ -6,7 +6,7 @@ use bevy::{
             Extent3d, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages,
             TextureView,
         },
-        texture::BevyDefault,
+        texture::{BevyDefault, GpuImage},
         view::ViewTarget,
     },
     utils::HashMap,
@@ -107,7 +107,7 @@ impl OpacityCamera {
         };
         for (size, layer_handle) in self.layers.values_mut() {
             if *size != new_size {
-                let layer_image = images.get_mut(layer_handle.clone_weak()).unwrap();
+                let layer_image = images.get_mut(layer_handle.id()).unwrap();
                 layer_image.texture_descriptor.format = main_texture_format;
                 layer_image.resize(new_size);
                 *size = new_size;
@@ -119,7 +119,7 @@ impl OpacityCamera {
         self.layers.get(&layer_id).unwrap().1.clone_weak()
     }
 
-    pub(crate) fn set_texture_views(&mut self, gpu_images: &RenderAssets<Image>) {
+    pub(crate) fn set_texture_views(&mut self, gpu_images: &RenderAssets<GpuImage>) {
         for (layer, image) in self.layers.iter() {
             if let Some(gpu_image) = gpu_images.get(&image.1) {
                 self.views.insert(*layer, gpu_image.texture_view.clone());

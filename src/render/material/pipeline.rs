@@ -6,12 +6,13 @@ use bevy::{
             SystemParamItem,
         },
     },
+    math::FloatOrd,
     prelude::*,
     render::{
         render_asset::RenderAssets,
         render_phase::{
-            DrawFunctions, PhaseItem, RenderCommand, RenderCommandResult, SetItemPipeline,
-            TrackedRenderPass,
+            DrawFunctions, PhaseItem, PhaseItemExtraIndex, RenderCommand, RenderCommandResult,
+            SetItemPipeline, TrackedRenderPass,
         },
         render_resource::{
             AsBindGroupError, BindGroup, BindGroupLayout, OwnedBindingResource, PipelineCache,
@@ -19,10 +20,10 @@ use bevy::{
             SpecializedRenderPipelines,
         },
         renderer::{RenderDevice, RenderQueue},
-        texture::FallbackImage,
+        texture::{FallbackImage, GpuImage},
         Extract,
     },
-    utils::{FloatOrd, HashMap, HashSet},
+    utils::{HashMap, HashSet},
 };
 use kayak_font::bevy::FontTextureCache;
 use std::hash::Hash;
@@ -206,7 +207,7 @@ pub fn prepare_materials_ui<M: MaterialUI>(
     mut extracted_assets: ResMut<ExtractedMaterialsUI<M>>,
     mut render_materials: ResMut<RenderMaterialsUI<M>>,
     render_device: Res<RenderDevice>,
-    images: Res<RenderAssets<Image>>,
+    images: Res<RenderAssets<GpuImage>>,
     fallback_image: Res<FallbackImage>,
     pipeline: Res<MaterialUIPipeline<M>>,
 ) {
@@ -253,7 +254,7 @@ pub fn prepare_materials_ui<M: MaterialUI>(
 pub fn prepare_materialui<M: MaterialUI>(
     material: &M,
     render_device: &RenderDevice,
-    images: &RenderAssets<Image>,
+    images: &RenderAssets<GpuImage>,
     fallback_image: &FallbackImage,
     pipeline: &MaterialUIPipeline<M>,
 ) -> Result<PreparedMaterialUI<M>, AsBindGroupError> {
@@ -301,7 +302,7 @@ impl<P: PhaseItem, M: MaterialUI, const I: usize> RenderCommand<P> for SetMateri
         let Some(material2d_handle) = material2d_handle else {
             return RenderCommandResult::Failure;
         };
-        let asset_id: AssetId<M> = material2d_handle.clone_weak().into();
+        let asset_id: AssetId<M> = material2d_handle.id();
         let material2d = materials.into_inner().get(&asset_id).unwrap();
         pass.set_bind_group(I, &material2d.bind_group, &[]);
         RenderCommandResult::Success
@@ -341,7 +342,7 @@ pub fn queue_material_ui_quads<M: MaterialUI>(
         mut prev_clip,
         prev_index,
     ): (
-        Res<RenderAssets<Image>>,
+        Res<RenderAssets<GpuImage>>,
         Res<FontTextureCache>,
         Res<QuadTypeOffsets>,
         Res<RenderMaterialsUI<M>>,
@@ -387,7 +388,7 @@ pub fn queue_material_ui_quads<M: MaterialUI>(
         let mut pipeline_id = None;
 
         for (mut quad, material_handle, material_z) in extracted_quads.iter_mut() {
-            let asset_id: AssetId<M> = material_handle.clone_weak().into();
+            let asset_id: AssetId<M> = material_handle.id();
             if let Some(materialui) = render_materials.get(&asset_id) {
                 if quad.quad_type == UIQuadType::Clip {
                     prev_clip.rect = quad.rect;
@@ -470,7 +471,7 @@ pub fn queue_material_ui_quads<M: MaterialUI>(
                         rect: last_clip,
                         batch_range: Some(old_item_start..item_end),
                         opacity_layer: last_quad.opacity_layer,
-                        dynamic_offset: None,
+                        dynamic_offset: PhaseItemExtraIndex::NONE,
                     });
                 } else {
                     transparent_phase.add(TransparentUI {
@@ -482,7 +483,7 @@ pub fn queue_material_ui_quads<M: MaterialUI>(
                         type_index: last_quad.quad_type.get_type_index(&quad_type_offsets),
                         rect: last_clip,
                         batch_range: Some(old_item_start..item_end),
-                        dynamic_offset: None,
+                        dynamic_offset: PhaseItemExtraIndex::NONE,
                     });
                 }
             }

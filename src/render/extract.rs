@@ -177,7 +177,7 @@ pub struct UIViewUniform {
     pub world_position: Vec3,
     pub viewport: Vec4,
     pub frustum: [Vec4; 6],
-    pub color_grading: ColorGrading,
+    // pub color_grading: ColorGrading,
     pub mip_bias: f32,
 }
 
@@ -231,7 +231,7 @@ pub fn prepare_view_uniforms(
                 inverse_projection,
                 world_position: camera.transform.translation(),
                 viewport,
-                color_grading: camera.color_grading,
+                // color_grading: camera.color_grading,
                 mip_bias: mip_bias.unwrap_or(&MipBias(0.0)).0,
                 frustum,
             }),

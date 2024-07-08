@@ -12,7 +12,9 @@ use crate::{tags::OpenTag, widget_attributes::WidgetAttributes};
 
 #[derive(Clone, Debug)]
 pub struct Widget {
+    #[allow(dead_code)]
     pub attributes: WidgetAttributes,
+    #[allow(dead_code)]
     pub children: Children,
     declaration: TokenStream,
     pub entity_id: TokenStream,

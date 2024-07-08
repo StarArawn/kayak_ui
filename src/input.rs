@@ -21,12 +21,10 @@ pub(crate) fn process_events(world: &mut World) {
             Res<Events<CursorMoved>>,
             Res<Events<MouseButtonInput>>,
             Res<Events<MouseWheel>>,
-            Res<Events<ReceivedCharacter>>,
             Res<Events<KeyboardInput>>,
             ResMut<CustomEventReader<CursorMoved>>,
             ResMut<CustomEventReader<MouseButtonInput>>,
             ResMut<CustomEventReader<MouseWheel>>,
-            ResMut<CustomEventReader<ReceivedCharacter>>,
             ResMut<CustomEventReader<KeyboardInput>>,
         ),
         _,
@@ -36,12 +34,10 @@ pub(crate) fn process_events(world: &mut World) {
             cursor_moved_events,
             mouse_button_input_events,
             mouse_wheel_events,
-            char_input_events,
             keyboard_input_events,
             mut custom_event_reader_cursor,
             mut custom_event_mouse_button,
             mut custom_event_mouse_wheel,
-            mut custom_event_char_input,
             mut custom_event_keyboard,
         )| {
             if let Some(event) = custom_event_reader_cursor
@@ -77,15 +73,10 @@ pub(crate) fn process_events(world: &mut World) {
                 })
             }
 
-            for event in custom_event_char_input.0.read(&char_input_events) {
-                input_events.push(InputEvent::CharEvent {
-                    c: event.char.clone(),
-                });
-            }
-
             for event in custom_event_keyboard.0.read(&keyboard_input_events) {
                 input_events.push(InputEvent::Keyboard {
                     key: event.key_code,
+                    logical_key: event.logical_key.clone(),
                     is_pressed: matches!(event.state, ButtonState::Pressed),
                 });
             }

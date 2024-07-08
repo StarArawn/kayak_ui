@@ -1,5 +1,6 @@
 use bevy::{
-    prelude::{Handle, Image, Vec2},
+    math::UVec2,
+    prelude::{Handle, Image},
     reflect::Reflect,
 };
 #[cfg(feature = "svg")]
@@ -27,8 +28,8 @@ pub enum RenderCommand {
         handle: Handle<Image>,
     },
     TextureAtlas {
-        position: Vec2,
-        size: Vec2,
+        position: UVec2,
+        size: UVec2,
         handle: Handle<Image>,
     },
     NinePatch {

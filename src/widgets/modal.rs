@@ -137,14 +137,14 @@ pub fn render(
                 <ElementBundle>
                     <BackgroundBundle
                         styles={KStyle {
-                            background_color: Color::rgba(0.0, 0.0, 0.0, modal.overlay_alpha).into(),
+                            background_color: Color::srgba(0.0, 0.0, 0.0, modal.overlay_alpha).into(),
                             ..Default::default()
                         }}
                     />
                     <ElementBundle
                         styles={KStyle {
-                            background_color: Color::rgba(0.188, 0.203, 0.274, 1.0).into(),
-                            border_color: Color::rgba(0.933, 0.745, 0.745, 1.0).into(),
+                            background_color: Color::srgba(0.188, 0.203, 0.274, 1.0).into(),
+                            border_color: Color::srgba(0.933, 0.745, 0.745, 1.0).into(),
                             border: Edge::all(2.0).into(),
                             border_radius: Corner::all(10.0).into(),
                             render_command: RenderCommand::Quad.into(),
@@ -156,7 +156,7 @@ pub fn render(
                             styles={KStyle {
                                 cursor: KCursorIcon(CursorIcon::Pointer).into(),
                                 render_command: RenderCommand::Quad.into(),
-                                background_color: Color::rgba(0.188, 0.203, 0.274, 1.0).into(),
+                                background_color: Color::srgba(0.188, 0.203, 0.274, 1.0).into(),
                                 border_radius:  Corner::all(10.0).into(),
                                 height: Units::Pixels(24.0).into(),
                                 width: Units::Stretch(1.0).into(),
@@ -185,7 +185,7 @@ pub fn render(
                         </BackgroundBundle>
                         <BackgroundBundle
                             styles={KStyle {
-                                background_color: StyleProp::Value(Color::rgba(0.239, 0.258, 0.337, 1.0)),
+                                background_color: StyleProp::Value(Color::srgba(0.239, 0.258, 0.337, 1.0)),
                                 width: Units::Stretch(1.0).into(),
                                 height: Units::Pixels(2.0).into(),
                                 ..Default::default()

@@ -162,8 +162,8 @@ pub fn window_render(
                 <ElementBundle
                     id={"window_entity"}
                     styles={window.window_styles.clone().with_style(KStyle {
-                        background_color: StyleProp::Value(Color::rgba(0.188, 0.203, 0.274, 1.0)),
-                        border_color: StyleProp::Value(if state.focused { Color::rgba(0.933, 0.745, 0.745, 1.0) } else { Color::rgba(0.239, 0.258, 0.337, 1.0) }),
+                        background_color: StyleProp::Value(Color::srgba(0.188, 0.203, 0.274, 1.0)),
+                        border_color: StyleProp::Value(if state.focused { Color::srgba(0.933, 0.745, 0.745, 1.0) } else { Color::srgba(0.239, 0.258, 0.337, 1.0) }),
                         border: StyleProp::Value(Edge::all(2.0)),
                         border_radius: StyleProp::Value(Corner::all(10.0)),
                         render_command: StyleProp::Value(RenderCommand::Quad),
@@ -175,7 +175,7 @@ pub fn window_render(
                         min_width: StyleProp::Value(Units::Pixels(window.size.x)),
                         min_height: StyleProp::Value(Units::Pixels(window.size.y)),
                         box_shadow: vec![BoxShadow {
-                            color: Color::rgba(0.0, 0.0, 0.0, 0.5),
+                            color: Color::srgba(0.0, 0.0, 0.0, 0.5),
                             radius: 8.0,
                             offset: Vec2::new(0.0, 3.0),
                             ..Default::default()
@@ -190,7 +190,7 @@ pub fn window_render(
                         styles={KStyle {
                             cursor: StyleProp::Value(KCursorIcon(CursorIcon::Pointer)),
                             render_command: StyleProp::Value(RenderCommand::Quad),
-                            background_color: StyleProp::Value(Color::rgba(0.188, 0.203, 0.274, 1.0)),
+                            background_color: StyleProp::Value(Color::srgba(0.188, 0.203, 0.274, 1.0)),
                             border_radius: Corner::all(10.0).into(),
                             height: StyleProp::Value(Units::Pixels(24.0)),
                             width: StyleProp::Value(Units::Stretch(1.0)),
@@ -262,7 +262,7 @@ pub fn window_render(
                     }
                     <BackgroundBundle
                         styles={KStyle {
-                            background_color: StyleProp::Value(Color::rgba(0.239, 0.258, 0.337, 1.0)),
+                            background_color: StyleProp::Value(Color::srgba(0.239, 0.258, 0.337, 1.0)),
                             width: Units::Stretch(1.0).into(),
                             height: Units::Pixels(2.0).into(),
                             ..Default::default()

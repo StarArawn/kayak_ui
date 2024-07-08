@@ -184,5 +184,5 @@ fn main() {
         .add_plugins((KayakContextPlugin, KayakWidgets))
         .add_systems(Startup, startup)
         .add_systems(Update, (cube_rotator_system, depsawn_ui))
-        .run()
+        .run();
 }

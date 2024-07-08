@@ -49,7 +49,7 @@ pub fn tab_render(
                 styles.0.width = StyleProp::default();
                 let parent_id = Some(entity);
                 let styles = KStyle {
-                    background_color: StyleProp::Value(Color::rgba(0.0781, 0.0898, 0.101, 1.0)),
+                    background_color: StyleProp::Value(Color::srgba(0.0781, 0.0898, 0.101, 1.0)),
                     padding: StyleProp::Value(Edge::all(Units::Pixels(15.0))),
                     height: Units::Stretch(1.0).into(),
                     width: Units::Stretch(1.0).into(),

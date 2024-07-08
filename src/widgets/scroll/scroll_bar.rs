@@ -1,4 +1,7 @@
-use bevy::prelude::{Bundle, Color, Commands, Component, Entity, In, Query, Res, ResMut};
+use bevy::{
+    color::Srgba,
+    prelude::{Bundle, Color, Commands, Component, Entity, In, Query, Res, ResMut},
+};
 use kayak_ui_macros::rsx;
 
 use crate::{
@@ -80,11 +83,11 @@ pub fn scroll_bar_render(
                 let thickness = scrollbar.thickness;
                 let thumb_color = scrollbar
                     .thumb_color
-                    .unwrap_or_else(|| Color::rgba(0.239, 0.258, 0.337, 1.0));
+                    .unwrap_or_else(|| Color::srgba(0.239, 0.258, 0.337, 1.0));
                 let thumb_styles = scrollbar.thumb_styles.clone();
                 let track_color = scrollbar
                     .track_color
-                    .unwrap_or_else(|| Color::rgba(0.1581, 0.1758, 0.191, 0.15));
+                    .unwrap_or_else(|| Color::srgba(0.1581, 0.1758, 0.191, 0.15));
                 let track_styles = scrollbar.track_styles.clone();
                 // The size of the thumb as a percentage
                 let thumb_size_percent = (if scrollbar.horizontal {
@@ -144,12 +147,12 @@ pub fn scroll_bar_render(
                         });
 
                 let mut border_color = thumb_color;
-                if let Color::Rgba {
+                if let Color::Srgba(Srgba {
                     red,
                     green,
                     blue,
                     alpha,
-                } = &mut border_color
+                }) = &mut border_color
                 {
                     *alpha = (*alpha - 0.2).max(0.0);
                     *red = (*red + 0.1).min(1.0);

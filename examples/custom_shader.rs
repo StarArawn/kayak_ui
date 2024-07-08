@@ -64,5 +64,5 @@ fn main() {
             MaterialUIPlugin::<MyUIMaterial>::default(),
         ))
         .add_systems(Startup, startup)
-        .run()
+        .run();
 }

@@ -2,16 +2,12 @@ use crate::{
     render::unified::pipeline::{ExtractedQuad, UIQuadType},
     styles::Corner,
 };
-use bevy::{
-    math::Vec2,
-    prelude::*,
-    render::{color::Color, texture::Image},
-};
+use bevy::{color::Color, math::Vec2, prelude::*, render::texture::Image};
 
 pub fn extract_texture_atlas(
     camera_entity: Entity,
-    size: Vec2,
-    position: Vec2,
+    size: UVec2,
+    position: UVec2,
     layout: crate::layout::Rect,
     handle: Handle<Image>,
     opacity_layer: u32,
@@ -42,12 +38,12 @@ pub fn extract_texture_atlas(
             max: Vec2::new(layout.posx + layout.width, layout.posy + layout.height),
         },
         uv_min: Some(Vec2::new(
-            position.x / image_size.x,
-            1.0 - ((position.y + size.y) / image_size.y),
+            position.x as f32 / image_size.x,
+            1.0 - ((position.y + size.y) as f32 / image_size.y),
         )),
         uv_max: Some(Vec2::new(
-            (position.x + size.x) / image_size.x,
-            1.0 - (position.y / image_size.y),
+            (position.x + size.x) as f32 / image_size.x,
+            1.0 - (position.y as f32 / image_size.y),
         )),
         color: Color::WHITE,
         char_id: 0,

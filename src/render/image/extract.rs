@@ -2,7 +2,7 @@ use crate::{
     render::unified::pipeline::{ExtractedQuad, UIQuadType},
     styles::Corner,
 };
-use bevy::{math::Vec2, prelude::*, render::color::Color};
+use bevy::{color::Color, math::Vec2, prelude::*};
 
 pub fn extract_images(
     camera_entity: Entity,

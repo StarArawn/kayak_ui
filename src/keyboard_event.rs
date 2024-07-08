@@ -1,4 +1,4 @@
-use bevy::prelude::KeyCode;
+use bevy::{input::keyboard::Key, prelude::KeyCode};
 
 #[derive(Debug, Default, Copy, Clone, PartialEq, Eq, Hash)]
 pub struct KeyboardModifiers {
@@ -14,20 +14,30 @@ pub struct KeyboardModifiers {
     pub is_meta_pressed: bool,
 }
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct KeyboardEvent {
     key: KeyCode,
+    logical_key: Key,
     modifiers: KeyboardModifiers,
 }
 
 impl KeyboardEvent {
-    pub fn new(key: KeyCode, modifiers: KeyboardModifiers) -> Self {
-        Self { key, modifiers }
+    pub fn new(key: KeyCode, logical_key: Key, modifiers: KeyboardModifiers) -> Self {
+        Self {
+            key,
+            logical_key,
+            modifiers,
+        }
     }
 
     /// Returns this event's affected key
     pub fn key(&self) -> KeyCode {
         self.key
+    }
+
+    /// Returns the event's logical key
+    pub fn logical_key(&self) -> &Key {
+        &self.logical_key
     }
 
     /// Returns all modifiers for this event's key

@@ -128,8 +128,6 @@ pub enum EventType {
     Focus,
     /// An event that occurs when a widget loses focus
     Blur,
-    /// An event that occurs when the user types in a character within a _focused_ widget
-    CharInput { c: smol_str::SmolStr },
     /// An event that occurs when the user releases a key within a _focused_ widget
     KeyUp(KeyboardEvent),
     /// An event that occurs when the user presses a key down within a _focused_ widget
@@ -176,7 +174,6 @@ impl EventType {
             Self::MouseDown(..) => true,
             Self::MouseUp(..) => true,
             Self::Scroll(..) => true,
-            Self::CharInput { .. } => true,
             Self::KeyUp(..) => true,
             Self::KeyDown(..) => true,
             // Doesn't Propagate
@@ -199,7 +196,6 @@ impl EventType {
             Self::MouseOut(..) => EventCategory::Mouse,
             Self::Scroll(..) => EventCategory::Mouse,
             // Keyboard
-            Self::CharInput { .. } => EventCategory::Keyboard,
             Self::KeyUp(..) => EventCategory::Keyboard,
             Self::KeyDown(..) => EventCategory::Keyboard,
             // Focus

@@ -1,4 +1,5 @@
 use bevy::{
+    color::Srgba,
     prelude::{Color, Component, Vec2},
     reflect::Reflect,
 };
@@ -92,7 +93,7 @@ impl BoxShadow {
             let color = if is_rgba(color) {
                 parse_rgba(color)
             } else {
-                Color::hex(color).unwrap_or_default()
+                Srgba::hex(color).map(|c| c.into()).unwrap_or_default()
             };
 
             box_shadows.push(BoxShadow {
@@ -132,7 +133,7 @@ fn parse_rgba(s: &str) -> Color {
         .map(|s| s.trim().parse::<f32>().unwrap_or(1.0))
         .unwrap_or(1.0);
 
-    Color::rgba(r, g, b, a)
+    Color::srgba(r, g, b, a)
 }
 
 mod tests {

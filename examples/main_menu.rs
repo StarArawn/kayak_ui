@@ -151,7 +151,7 @@ fn startup(
     let handle_click_close = OnEvent::new(
         move |In(_entity): In<Entity>, event: ResMut<KEvent>, mut exit: EventWriter<AppExit>| {
             if let EventType::Click(..) = event.event_type {
-                exit.send(AppExit);
+                exit.send(AppExit::Success);
             }
         },
     );
@@ -219,5 +219,5 @@ fn main() {
         .add_plugins(DefaultPlugins.set(ImagePlugin::default_nearest()))
         .add_plugins((KayakContextPlugin, KayakWidgets))
         .add_systems(Startup, startup)
-        .run()
+        .run();
 }

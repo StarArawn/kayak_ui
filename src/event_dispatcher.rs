@@ -692,11 +692,11 @@ impl EventDispatcher {
         let mut event_stream = Vec::new();
         if let Some(current_focus) = focus_tree.current() {
             match input_event {
-                InputEvent::CharEvent { c } => event_stream.push(KEvent::new(
-                    current_focus,
-                    EventType::CharInput { c: c.clone() },
-                )),
-                InputEvent::Keyboard { key, is_pressed } => {
+                InputEvent::Keyboard {
+                    key,
+                    logical_key,
+                    is_pressed,
+                } => {
                     // === Modifers === //
                     match key {
                         KeyCode::ControlLeft | KeyCode::ControlRight => {
@@ -718,12 +718,20 @@ impl EventDispatcher {
                     if *is_pressed {
                         event_stream.push(KEvent::new(
                             current_focus,
-                            EventType::KeyDown(KeyboardEvent::new(*key, self.keyboard_modifiers)),
+                            EventType::KeyDown(KeyboardEvent::new(
+                                *key,
+                                logical_key.clone(),
+                                self.keyboard_modifiers,
+                            )),
                         ))
                     } else {
                         event_stream.push(KEvent::new(
                             current_focus,
-                            EventType::KeyUp(KeyboardEvent::new(*key, self.keyboard_modifiers)),
+                            EventType::KeyUp(KeyboardEvent::new(
+                                *key,
+                                logical_key.clone(),
+                                self.keyboard_modifiers,
+                            )),
                         ))
                     }
                 }

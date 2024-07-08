@@ -1,4 +1,7 @@
-use bevy::prelude::{Bundle, Component, Entity, Handle, Image, In, Query, Vec2};
+use bevy::{
+    math::UVec2,
+    prelude::{Bundle, Component, Entity, Handle, Image, In, Query},
+};
 
 use crate::{
     context::WidgetName,
@@ -26,9 +29,9 @@ pub struct TextureAtlasProps {
     /// The handle to image
     pub handle: Handle<Image>,
     /// The position of the tile (in pixels)
-    pub position: Vec2,
+    pub position: UVec2,
     /// The size of the tile (in pixels)
-    pub tile_size: Vec2,
+    pub tile_size: UVec2,
 }
 
 impl Widget for TextureAtlasProps {}

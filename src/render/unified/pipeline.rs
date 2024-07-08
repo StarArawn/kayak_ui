@@ -1,5 +1,7 @@
+use bevy::color::{Color, ColorToComponents};
 use bevy::ecs::query::ROQueryItem;
 use bevy::ecs::system::{SystemParam, SystemParamItem};
+use bevy::math::{FloatOrd, UVec2};
 use bevy::prelude::{Commands, Rect, Resource, With};
 #[cfg(feature = "svg")]
 use bevy::prelude::{Mesh, Vec3};
@@ -7,20 +9,19 @@ use bevy::render::globals::{GlobalsBuffer, GlobalsUniform};
 #[cfg(feature = "svg")]
 use bevy::render::mesh::VertexAttributeValues;
 use bevy::render::render_phase::{
-    DrawFunctionId, PhaseItem, RenderCommand, RenderCommandResult, SetItemPipeline,
+    DrawFunctionId, PhaseItem, PhaseItemExtraIndex, RenderCommand, RenderCommandResult,
+    SetItemPipeline,
 };
 use bevy::render::render_resource::{
     CachedRenderPipelineId, DynamicUniformBuffer, ShaderType, SpecializedRenderPipeline,
     SpecializedRenderPipelines,
 };
 use bevy::render::view::ViewTarget;
-use bevy::utils::FloatOrd;
 use bevy::{
     ecs::system::lifetimeless::{Read, SRes},
     math::{Mat4, Quat, Vec2, Vec4},
     prelude::{Component, Entity, FromWorld, Handle, Query, Res, ResMut, World},
     render::{
-        color::Color,
         render_asset::RenderAssets,
         render_phase::{DrawFunctions, TrackedRenderPass},
         render_resource::{
@@ -90,7 +91,6 @@ pub struct UnifiedPipelineKey {
 
 impl FromWorld for UnifiedPipeline {
     fn from_world(world: &mut World) -> Self {
-        let world = world.cell();
         let render_device = world.resource::<RenderDevice>();
 
         let view_layout = render_device.create_bind_group_layout(
@@ -211,7 +211,7 @@ impl FromWorld for UnifiedPipeline {
             sampler,
             texture_view,
             mip_level_count: 1,
-            size: Vec2::new(1.0, 1.0),
+            size: UVec2::ONE,
             texture_format: TextureFormat::Rgba8UnormSrgb,
         };
 
@@ -413,7 +413,7 @@ impl Default for ExtractedQuad {
 }
 
 #[repr(C)]
-#[derive(Copy, Clone)]
+#[derive(Copy, ShaderType, Clone)]
 pub struct QuadVertex {
     pub position: [f32; 3],
     pub color: [f32; 4],
@@ -690,7 +690,7 @@ pub struct QuadBatch {
 pub struct ImageBindGroups {
     values: HashMap<Handle<Image>, BindGroup>,
     font_values: HashMap<Handle<KayakFont>, BindGroup>,
-    previous_sizes: HashMap<Handle<Image>, Vec2>,
+    previous_sizes: HashMap<Handle<Image>, UVec2>,
 }
 
 #[derive(Component, Debug)]
@@ -843,7 +843,7 @@ pub struct QueueQuads<'w, 's> {
     >,
     image_bind_groups: ResMut<'w, ImageBindGroups>,
     unified_pipeline: Res<'w, UnifiedPipeline>,
-    gpu_images: Res<'w, RenderAssets<Image>>,
+    gpu_images: Res<'w, RenderAssets<GpuImage>>,
     font_texture_cache: Res<'w, FontTextureCache>,
     quad_type_offsets: Res<'w, QuadTypeOffsets>,
     prev_clip: ResMut<'w, PreviousClip>,
@@ -999,7 +999,7 @@ pub fn queue_quads(queue_quads: QueueQuads) {
                     rect: last_clip,
                     batch_range: Some(old_item_start..item_end),
                     opacity_layer: last_quad.opacity_layer,
-                    dynamic_offset: None,
+                    dynamic_offset: PhaseItemExtraIndex::NONE,
                 });
             } else {
                 transparent_phase.add(TransparentUI {
@@ -1011,7 +1011,7 @@ pub fn queue_quads(queue_quads: QueueQuads) {
                     type_index: last_quad.quad_type.get_type_index(&quad_type_offsets),
                     rect: last_clip,
                     batch_range: Some(old_item_start..item_end),
-                    dynamic_offset: None,
+                    dynamic_offset: PhaseItemExtraIndex::NONE,
                 });
             }
         }
@@ -1031,7 +1031,7 @@ pub fn queue_quads_inner(
     font_texture_cache: &FontTextureCache,
     opacity_layers: &OpacityLayerManager,
     image_bind_groups: &mut ImageBindGroups,
-    gpu_images: &RenderAssets<Image>,
+    gpu_images: &RenderAssets<GpuImage>,
     unified_pipeline: &UnifiedPipeline,
     #[cfg(feature = "svg")] render_svgs: &RenderSvgs,
     transparent_phase: &mut UIRenderPhase<TransparentUI>,
@@ -1115,7 +1115,7 @@ pub fn queue_quads_inner(
                     rect: *current_clip,
                     batch_range: Some(*old_item_start..*item_end),
                     opacity_layer: old_quad.opacity_layer,
-                    dynamic_offset: None,
+                    dynamic_offset: PhaseItemExtraIndex::NONE,
                 });
             } else {
                 transparent_phase.add(TransparentUI {
@@ -1127,7 +1127,7 @@ pub fn queue_quads_inner(
                     type_index: current_batch.type_id,
                     rect: *last_clip,
                     batch_range: Some(*old_item_start..*item_end),
-                    dynamic_offset: None,
+                    dynamic_offset: PhaseItemExtraIndex::NONE,
                 });
             }
 
@@ -1346,7 +1346,7 @@ pub fn queue_quads_inner(
         return;
     }
 
-    let color = quad.color.as_linear_rgba_f32();
+    let color = quad.color.to_linear().to_f32_array();
 
     let uv_min = quad.uv_min.unwrap_or(Vec2::ZERO);
     let uv_max = quad.uv_max.unwrap_or(Vec2::ONE);

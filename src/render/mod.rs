@@ -5,6 +5,7 @@ use bevy::{
         render_asset::RenderAssets,
         render_graph::{RenderGraph, RenderLabel, RenderSubGraph, RunGraphOnViewNode},
         render_phase::DrawFunctions,
+        texture::GpuImage,
         Extract, ExtractSchedule, Render, RenderApp, RenderSet,
     },
     window::{PrimaryWindow, Window, WindowRef},
@@ -18,7 +19,7 @@ use crate::{
 use self::{
     extract::BevyKayakUIExtractPlugin,
     opacity_layer::OpacityLayerManager,
-    ui_pass::{sort_ui_phase_system, TransparentOpacityUI, TransparentUI, UIRenderPhase},
+    ui_pass::{TransparentOpacityUI, TransparentUI, UIRenderPhase},
 };
 
 mod extract;
@@ -70,27 +71,19 @@ impl Plugin for BevyKayakUIRenderPlugin {
                 prepare_opacity_layers
                     .in_set(RenderSet::Queue)
                     .before(unified::pipeline::queue_quads),
-            )
-            .add_systems(
-                Render,
-                (
-                    sort_ui_phase_system::<TransparentUI>,
-                    sort_ui_phase_system::<TransparentOpacityUI>,
-                )
-                    .in_set(RenderSet::PhaseSort),
             );
 
         // Render graph
         let ui_graph_2d = get_ui_graph(render_app);
         let ui_graph_3d = get_ui_graph(render_app);
-        let mut graph = render_app.world.resource_mut::<RenderGraph>();
+        let mut graph = render_app.world_mut().resource_mut::<RenderGraph>();
 
         if let Some(graph_2d) = graph.get_sub_graph_mut(bevy::core_pipeline::core_2d::graph::Core2d)
         {
             graph_2d.add_sub_graph(DrawUiGraph, ui_graph_2d);
             graph_2d.add_node(KayakUiPass, RunGraphOnViewNode::new(DrawUiGraph));
             graph_2d.add_node_edge(
-                bevy::core_pipeline::core_2d::graph::Node2d::MainPass,
+                bevy::core_pipeline::core_2d::graph::Node2d::EndMainPass,
                 KayakUiPass,
             );
             graph_2d.add_node_edge(
@@ -123,8 +116,8 @@ impl Plugin for BevyKayakUIRenderPlugin {
     }
 }
 
-fn get_ui_graph(render_app: &mut App) -> RenderGraph {
-    let ui_pass_node = MainPassUINode::new(&mut render_app.world);
+fn get_ui_graph(render_app: &mut SubApp) -> RenderGraph {
+    let ui_pass_node = MainPassUINode::new(render_app.world_mut());
     let mut ui_graph = RenderGraph::default();
     ui_graph.add_node(KayakUiPass, ui_pass_node);
     ui_graph
@@ -170,7 +163,7 @@ pub fn extract_core_pipeline_camera_phases(
 
 fn prepare_opacity_layers(
     mut opacity_layers: ResMut<OpacityLayerManager>,
-    gpu_images: Res<RenderAssets<Image>>,
+    gpu_images: Res<RenderAssets<GpuImage>>,
 ) {
     for (_, layer) in opacity_layers.camera_layers.iter_mut() {
         layer.set_texture_views(&gpu_images);

@@ -3,7 +3,7 @@ use bevy::{
     render::{
         render_asset::RenderAssets,
         renderer::{RenderDevice, RenderQueue},
-        texture::Image,
+        texture::GpuImage,
         Render, RenderApp, RenderSet,
     },
 };
@@ -27,7 +27,7 @@ fn create_and_update_font_cache_texture(
     device: Res<RenderDevice>,
     queue: Res<RenderQueue>,
     mut font_texture_cache: ResMut<FontTextureCache>,
-    images: Res<RenderAssets<Image>>,
+    images: Res<RenderAssets<GpuImage>>,
 ) {
     font_texture_cache.process_new(&device, &queue, &images);
 }

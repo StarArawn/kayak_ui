@@ -1,7 +1,7 @@
 use crate::{ImageType, KayakFont, Sdf};
 use bevy::{
     asset::Handle,
-    math::Vec2,
+    math::{UVec2, Vec2},
     prelude::{Res, Resource},
     render::{
         render_asset::RenderAssets,
@@ -12,7 +12,7 @@ use bevy::{
             TextureViewDimension,
         },
         renderer::{RenderDevice, RenderQueue},
-        texture::{GpuImage, Image},
+        texture::GpuImage,
     },
     utils::HashMap,
 };
@@ -60,7 +60,7 @@ impl FontTextureCache {
     pub fn get_gpu_image<'s>(
         &'s self,
         handle: &Handle<KayakFont>,
-        render_images: &'s RenderAssets<Image>,
+        render_images: &'s RenderAssets<GpuImage>,
     ) -> Option<&'s GpuImage> {
         if let Some(gpu_image) = self.images.get(handle) {
             Some(gpu_image)
@@ -75,7 +75,7 @@ impl FontTextureCache {
         &mut self,
         device: &RenderDevice,
         queue: &RenderQueue,
-        render_images: &Res<RenderAssets<Image>>,
+        render_images: &Res<RenderAssets<GpuImage>>,
     ) {
         let new_fonts: Vec<_> = self.new_fonts.drain(..).collect();
         for kayak_font_handle in new_fonts {
@@ -161,9 +161,9 @@ impl FontTextureCache {
             sampler,
             texture_view,
             mip_level_count: 1,
-            size: Vec2 {
-                x: size.0 as f32,
-                y: size.1 as f32,
+            size: UVec2 {
+                x: size.0,
+                y: size.1,
             },
             texture_format: format,
         };
@@ -208,7 +208,7 @@ impl FontTextureCache {
             sampler,
             texture_view,
             mip_level_count: 1,
-            size: Vec2 { x: 1.0, y: 1.0 },
+            size: UVec2 { x: 1, y: 1 },
             texture_format: TextureFormat::Rgba8Unorm,
         }
     }

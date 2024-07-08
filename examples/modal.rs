@@ -155,7 +155,7 @@ fn startup(
 
 fn main() {
     App::new()
-        .insert_resource(ClearColor(Color::rgb(0.0, 0.0, 0.0)))
+        .insert_resource(ClearColor(Color::srgb(0.0, 0.0, 0.0)))
         .add_plugins(DefaultPlugins)
         .add_plugins((
             KayakContextPlugin,
@@ -163,5 +163,5 @@ fn main() {
             MaterialUIPlugin::<MyUIMaterial>::default(),
         ))
         .add_systems(Startup, startup)
-        .run()
+        .run();
 }

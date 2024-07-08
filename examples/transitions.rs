@@ -97,7 +97,7 @@ fn startup(
             >
                 <BackgroundBundle
                     styles={KStyle {
-                        background_color: Color::rgba(1.0, 0.0, 0.0, 1.0).into(),
+                        background_color: Color::srgba(1.0, 0.0, 0.0, 1.0).into(),
                         ..Default::default()
                     }}
                 />
@@ -128,12 +128,12 @@ fn startup(
                             looping: true,
                             style_a: KStyle {
                                 render_command: RenderCommand::Quad.into(),
-                                background_color: Color::rgba(1.0, 0.0, 0.0, 1.0).into(),
+                                background_color: Color::srgba(1.0, 0.0, 0.0, 1.0).into(),
                                 ..Default::default()
                             },
                             style_b: KStyle {
                                 render_command: RenderCommand::Quad.into(),
-                                background_color: Color::rgba(0.0, 0.0, 1.0, 1.0).into(),
+                                background_color: Color::srgba(0.0, 0.0, 1.0, 1.0).into(),
                                 ..Default::default()
                             },
                             ..Default::default()
@@ -161,7 +161,7 @@ fn startup(
                 <ClipBundle>
                     <BackgroundBundle
                         styles={KStyle {
-                            background_color: Color::rgba(1.0, 0.0, 0.0, 1.0).into(),
+                            background_color: Color::srgba(1.0, 0.0, 0.0, 1.0).into(),
                             ..Default::default()
                         }}
                     />
@@ -183,5 +183,5 @@ fn main() {
             FrameTimeDiagnosticsPlugin,
         ))
         .add_systems(Startup, startup)
-        .run()
+        .run();
 }

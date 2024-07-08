@@ -18,7 +18,7 @@ fn my_widget_1_render(
         // Note: We will see two updates because of the mutable change to styles.
         // Which means when foo changes MyWidget will render twice!
         *computed_styles = KStyle {
-            color: Color::RED.into(),
+            color: Color::srgb(1., 0., 0.).into(),
             render_command: StyleProp::Value(RenderCommand::Text {
                 content: format!("My number is: {}", my_widget.foo),
                 alignment: Alignment::Start,
@@ -113,5 +113,5 @@ fn main() {
         .insert_resource(MyResource(1))
         .add_systems(Startup, startup)
         .add_systems(Update, update_resource)
-        .run()
+        .run();
 }

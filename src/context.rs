@@ -1,7 +1,7 @@
 use std::sync::{Arc, RwLock};
 
 use bevy::{
-    ecs::{event::ManualEventReader, system::CommandQueue},
+    ecs::{event::ManualEventReader, world::CommandQueue},
     prelude::*,
     utils::{HashMap, HashSet},
     window::PrimaryWindow,
@@ -545,7 +545,7 @@ fn recurse_node_tree_to_build_primitives2(
                 .unwrap();
             extracted_quads.push(QuadOrMaterial::Quad(ExtractedQuad {
                 camera_entity,
-                color: Color::rgba(1.0, 1.0, 1.0, opacity),
+                color: Color::srgba(1.0, 1.0, 1.0, opacity),
                 opacity_layer,
                 quad_type: UIQuadType::DrawOpacityLayer,
                 rect: bevy::prelude::Rect {
@@ -1478,9 +1478,6 @@ impl Plugin for KayakContextPlugin {
             >::default()))
             .insert_resource(CustomEventReader(ManualEventReader::<
                 bevy::input::mouse::MouseWheel,
-            >::default()))
-            .insert_resource(CustomEventReader(ManualEventReader::<
-                bevy::window::ReceivedCharacter,
             >::default()))
             .insert_resource(CustomEventReader(ManualEventReader::<
                 bevy::input::keyboard::KeyboardInput,

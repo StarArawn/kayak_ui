@@ -8,6 +8,7 @@ pub struct OpenTag {
     pub name: Option<syn::Path>,
     pub attributes: WidgetAttributes,
     pub self_closing: bool,
+    #[allow(dead_code)]
     pub is_custom_element: bool,
 }
 

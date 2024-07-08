@@ -1,6 +1,6 @@
 use instant::Instant;
 
-use bevy::prelude::*;
+use bevy::{input::keyboard::Key, prelude::*};
 use kayak_font::{KayakFont, TextProperties};
 use kayak_ui_macros::{constructor, rsx};
 
@@ -165,11 +165,11 @@ pub fn text_box_render(
 
             let background_styles = KStyle {
                 render_command: StyleProp::Value(RenderCommand::Quad),
-                background_color: Color::rgba(0.160, 0.172, 0.235, 1.0).into(),
+                background_color: Color::srgba(0.160, 0.172, 0.235, 1.0).into(),
                 border_color: if state.focused {
-                    Color::rgba(0.933, 0.745, 0.745, 1.0).into()
+                    Color::srgba(0.933, 0.745, 0.745, 1.0).into()
                 } else {
-                    Color::rgba(0.360, 0.380, 0.474, 1.0).into()
+                    Color::srgba(0.360, 0.380, 0.474, 1.0).into()
                 },
                 border: Edge::new(0.0, 0.0, 0.0, 2.0).into(),
                 height: Units::Pixels(26.0).into(),
@@ -186,7 +186,7 @@ pub fn text_box_render(
                       font_assets: Res<Assets<KayakFont>>,
                       font_mapping: Res<FontMapping>,
                       mut state_query: Query<&mut TextBoxState>| {
-                    match event.event_type {
+                    match &event.event_type {
                         EventType::KeyDown(key_event) => {
                             if key_event.key() == KeyCode::ArrowRight {
                                 if let Ok(mut state) = state_query.get_mut(state_entity) {
@@ -215,15 +215,34 @@ pub fn text_box_render(
                                 }
                             }
                         }
-                        EventType::CharInput { ref c } => {
+                        EventType::KeyUp(e) => {
                             if let Ok(mut state) = state_query.get_mut(state_entity) {
                                 let cloned_on_change = cloned_on_change.clone();
                                 if !state.focused {
                                     return;
                                 }
                                 let cursor_pos = state.cursor_position;
-                                for c in c.chars() {
-                                    if is_backspace(c) {
+                                match e.logical_key() {
+                                    Key::Character(c) => {
+                                        let char_pos: usize = state.graphemes[0..cursor_pos]
+                                            .iter()
+                                            .map(|g| g.len())
+                                            .sum();
+                                        for c in c.chars() {
+                                            state.current_value.insert(char_pos, c);
+                                        }
+
+                                        state.cursor_position += 1;
+                                    }
+                                    Key::Space => {
+                                        let char_pos: usize = state.graphemes[0..cursor_pos]
+                                            .iter()
+                                            .map(|g| g.len())
+                                            .sum();
+                                        state.current_value.insert(char_pos, ' ');
+                                        state.cursor_position += 1;
+                                    }
+                                    Key::Backspace => {
                                         if !state.current_value.is_empty() {
                                             let char_pos: usize = state.graphemes
                                                 [0..cursor_pos - 1]
@@ -233,15 +252,8 @@ pub fn text_box_render(
                                             state.current_value.remove(char_pos);
                                             state.cursor_position -= 1;
                                         }
-                                    } else if !c.is_control() {
-                                        let char_pos: usize = state.graphemes[0..cursor_pos]
-                                            .iter()
-                                            .map(|g| g.len())
-                                            .sum();
-                                        state.current_value.insert(char_pos, c);
-
-                                        state.cursor_position += 1;
                                     }
+                                    _ => {}
                                 }
 
                                 // Update graphemes
@@ -284,7 +296,7 @@ pub fn text_box_render(
             );
 
             let cursor_styles = KStyle {
-                background_color: Color::rgba(0.933, 0.745, 0.745, 1.0).into(),
+                background_color: Color::srgba(0.933, 0.745, 0.745, 1.0).into(),
                 position_type: KPositionType::SelfDirected.into(),
                 top: Units::Pixels(5.0).into(),
                 left: Units::Pixels(state.cursor_x).into(),

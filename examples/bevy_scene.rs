@@ -1,4 +1,5 @@
 use bevy::{
+    color::palettes::css::{INDIGO, MAROON, TEAL},
     math::{Vec3Swizzles, Vec4Swizzles},
     prelude::*,
     window::PrimaryWindow,
@@ -6,7 +7,7 @@ use bevy::{
 use kayak_ui::prelude::{widgets::*, *};
 
 const TILE_SIZE: Vec2 = Vec2::from_array([50.0, 50.0]);
-const COLORS: &[Color] = &[Color::TEAL, Color::MAROON, Color::INDIGO];
+const COLORS: &[Srgba] = &[TEAL, MAROON, INDIGO];
 
 // ! === Unnecessary Details Below === ! //
 // Below this point are mainly implementation details. The main purpose of this example is to show how to know
@@ -108,10 +109,10 @@ fn on_color_change(
     }
 
     let mut active_tile = active_tile.single_mut();
-    active_tile.color = COLORS[active_color.index];
+    active_tile.color = COLORS[active_color.index].into();
 
     let mut ghost_tile = ghost_tile.single_mut();
-    ghost_tile.color = ghost_color(COLORS[active_color.index]);
+    ghost_tile.color = ghost_color(COLORS[active_color.index].into());
 }
 
 /// A system that sets up the world
@@ -119,7 +120,7 @@ fn world_setup(mut commands: Commands, active_color: Res<ActiveColor>) {
     commands
         .spawn(SpriteBundle {
             sprite: Sprite {
-                color: COLORS[active_color.index],
+                color: COLORS[active_color.index].into(),
                 custom_size: Some(TILE_SIZE),
                 ..Default::default()
             },
@@ -129,7 +130,7 @@ fn world_setup(mut commands: Commands, active_color: Res<ActiveColor>) {
     commands
         .spawn(SpriteBundle {
             sprite: Sprite {
-                color: ghost_color(COLORS[active_color.index]),
+                color: ghost_color(COLORS[active_color.index].into()),
                 custom_size: Some(TILE_SIZE),
                 ..Default::default()
             },
@@ -160,7 +161,7 @@ fn world_to_tile(world_pos: Vec2) -> Vec2 {
 /// Get the ghost tile color for a given color
 fn ghost_color(color: Color) -> Color {
     let mut c = color;
-    c.set_a(0.35);
+    c.set_alpha(0.35);
     c
 }
 
@@ -257,7 +258,7 @@ fn startup(
 
 fn main() {
     App::new()
-        .insert_resource(ClearColor(Color::rgb(0.0, 0.0, 0.0)))
+        .insert_resource(ClearColor(Color::srgb(0.0, 0.0, 0.0)))
         .insert_resource(ActiveColor { index: 0 })
         .add_plugins(DefaultPlugins)
         .add_plugins((KayakContextPlugin, KayakWidgets))
@@ -271,5 +272,5 @@ fn main() {
                 on_color_change,
             ),
         )
-        .run()
+        .run();
 }

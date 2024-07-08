@@ -60,7 +60,7 @@ pub fn render_todo_items(
                     <ElementBundle
                         styles={KStyle {
                             render_command: StyleProp::Value(RenderCommand::Quad),
-                            background_color: Color::rgba(0.160, 0.172, 0.235, 1.0).into(),
+                            background_color: Color::srgba(0.160, 0.172, 0.235, 1.0).into(),
                             border_radius: StyleProp::Value(Corner::all(3.0)),
                             bottom: StyleProp::Value(Units::Pixels(5.0)),
                             height: StyleProp::Value(Units::Auto),

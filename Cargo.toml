@@ -1,7 +1,7 @@
 [package]
 name = "kayak_ui"
 description = "A UI library built using the bevy game engine!"
-version = "0.5.0"
+version = "0.6.0"
 edition = "2021"
 resolver = "2"
 authors = ["John Mitchell"]
@@ -14,12 +14,12 @@ exclude = ["assets/*", "screenshots/*", "book"]
 members = ["kayak_ui_macros", "kayak_font"]
 
 [features]
-svg = ["dep:bevy_svg"]
+# svg = ["dep:bevy_svg"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-bevy = { version = "0.13", default-features = false, features = ["bevy_render", "bevy_asset", "bevy_core_pipeline"] }
+bevy = { version = "0.14", default-features = false, features = ["bevy_render", "bevy_asset", "bevy_core_pipeline"] }
 bevy_svg = { git = "https://github.com/arnfaldur/bevy_svg", rev="53a53e5af050a7b5b236068546be46c5729674e3", default-features = false, optional = true }
 bitflags = "1.3.2"
 bytemuck = "1.12"
@@ -28,8 +28,8 @@ fancy-regex = "0.11.0"
 indexmap = "1.9"
 instant = "0.1"
 interpolation = { version = "0.2" }
-kayak_font = { path = "./kayak_font", version = "0.5" }
-kayak_ui_macros = { path = "./kayak_ui_macros", version = "0.5" }
+kayak_font = { path = "./kayak_font", version = "0.6" }
+kayak_ui_macros = { path = "./kayak_ui_macros", version = "0.6" }
 log = "0.4"
 morphorm = "0.3"
 reorder = "2.1"
@@ -40,8 +40,8 @@ smol_str = {version = "0.2", default-features = false}
 
 [dev-dependencies]
 fastrand = "1.8"
-bevy-inspector-egui = "0.23"
-bevy = { version = "0.13", default-features = true }
+bevy-inspector-egui = "0.25"
+bevy = { version = "0.14", default-features = true }
 
 [[example]]
 name = "tabs"
@@ -52,20 +52,26 @@ name = "todo"
 path = "examples/todo/todo.rs"
 
 [[example]]
+name = "main_menu"
+path = "examples/main_menu.rs"
+
+[[example]]
 name = "svg"
-path = "examples/svg.rs"
+# path = "examples/svg.rs"
+path = "examples/main_menu.rs"
 test = false
 doc = false
 bench = false
-required-features = ["svg"]
+# required-features = ["svg"]
 
 [[example]]
 name = "accordion"
-path = "examples/accordion.rs"
+# path = "examples/accordion.rs"
+path = "examples/main_menu.rs"
 test = false
 doc = false
 bench = false
-required-features = ["svg"]
+# required-features = ["svg"]
 
 [package.metadata.docs.rs]
 features = ["bevy/x11"]
